@@ -1,0 +1,47 @@
+{
+  "board": {
+    "id": "b",
+    "name": "Бред",
+    "category": "Разное",
+    "enable_posting": true
+  },
+  "filter": "standart",
+  "board_speed": 136,
+  "threads": [
+    {
+      "num": 328868282,
+      "subject": "&gt;Тестовый тред",
+      "comment": "<p>Первый пост</p>",
+      "posts_count": 12,
+      "files_count": 2,
+      "sticky": 1,
+      "closed": 0,
+      "files": [
+        {
+          "displayname": "picture.jpeg",
+          "fullname": "picture.jpeg",
+          "height": 595,
+          "md5": "906dba9d9c6bd7b2726764ff4ee0d13b",
+          "name": "17686951847150.jpg",
+          "path": "/b/src/328868282/17686951847150.jpg",
+          "size": 31,
+          "thumbnail": "/b/thumb/328868282/17686951847150s.jpg",
+          "tn_height": 250,
+          "tn_width": 216,
+          "type": 1,
+          "width": 516
+        },
+        {
+          "displayname": "clip.webm",
+          "md5": "34cc77ff76478aef26e4f59a7d5b2ed8",
+          "name": "17686951847151.webm",
+          "path": "/b/src/328868282/17686951847151.webm",
+          "size": 512,
+          "thumbnail": "/b/thumb/328868282/17686951847151s.jpg",
+          "type": 6
+        }
+      ],
+      "endless": 1
+    }
+  ]
+}

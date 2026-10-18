@@ -1,0 +1,216 @@
+#!/bin/bash
+
+set -e -o pipefail
+sources="$1"
+[ -n "$sources" ] || {
+	echo 'Invalid usage' >&2
+	exit 1
+}
+[ -n "$DAV1D_VERSION" ] || {
+	echo 'DAV1D_VERSION is not defined' >&2
+	exit 1
+}
+[ -n "$FFMPEG_VERSION" ] || {
+	echo 'FFMPEG_VERSION is not defined' >&2
+	exit 1
+}
+
+copy_provided_source() {
+	local name="$1"
+	local version="$2"
+	local source="$3"
+	local target="$4"
+	local marker="$target/.nekochan-version"
+	local expected="$name:$version"
+	local source_real target_parent target_real
+	[ -d "$source" ] || {
+		echo "Provided $name source directory does not exist: $source" >&2
+		exit 1
+	}
+	source_real="$(cd "$source" && pwd -P)"
+	mkdir -p "$(dirname "$target")"
+	target_parent="$(cd "$(dirname "$target")" && pwd -P)"
+	target_real="$target_parent/$(basename "$target")"
+	case "$source_real/" in
+		"$target_real/"*)
+			echo "Provided $name source is inside its build target: $source_real" >&2
+			exit 1
+			;;
+	esac
+	case "$target_real/" in
+		"$source_real/"*)
+			echo "Build target for $name is inside the provided source: $target_real" >&2
+			exit 1
+			;;
+	esac
+	echo "Using provided $name source: $source_real"
+	rm -rf "$target"
+	mkdir -p "$target"
+	tar -C "$source_real" --exclude='./.git' --exclude='./.git/*' -cf - . | tar -C "$target" -xf -
+	printf '%s\n' "$expected" > "$marker"
+}
+
+# Pinned checksums for stable release archives.
+DAV1D_SHA256="686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5"
+FFMPEG_SHA256="f3dff3070372593fe579535a9f03b76ec3600c82b7170f8ff8f5aa6927e18fe2"
+FFMPEG_COMMIT="1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7"
+
+download_and_extract() {
+	local url="$1"
+	local checksum="$2"
+	local target="$3"
+	shift 3
+	local archive
+	local cache_dir="${WEBM_ARCHIVE_CACHE_DIR:-}"
+	local cached=0
+	if [ -n "$cache_dir" ]; then
+		mkdir -p "$cache_dir"
+		# The URL and expected checksum identify the archive, not a mutable basename.
+		archive="$cache_dir/$(printf '%s\n%s\n' "$url" "$checksum" | sha256sum | cut -d ' ' -f 1).archive"
+		cached=1
+		if [ -f "$archive" ] && [ -n "$checksum" ] &&
+				! echo "$checksum  $archive" | sha256sum -c - >/dev/null 2>&1; then
+			echo 'Cached archive checksum mismatch; downloading a verified replacement' >&2
+			rm -f "$archive"
+		fi
+	fi
+	rm -rf "$target"
+	mkdir -p "$target"
+	if [ "$cached" -eq 1 ] && [ -s "$archive" ]; then
+		echo "Using cached archive: $archive"
+	else
+		local download
+		if [ "$cached" -eq 1 ]; then
+			download="$(mktemp "$cache_dir/.download.XXXXXXXX")"
+		else
+			download="$(mktemp)"
+		fi
+		echo "Downloading archive: $url"
+		curl --fail --location --retry 1 --retry-delay 2 --retry-all-errors \
+				--connect-timeout 10 --max-time 120 "$url" -o "$download" || {
+			rm -f "$download"
+			rm -rf "$target"
+			return 1
+		}
+		if [ -n "$checksum" ] && ! echo "$checksum  $download" | sha256sum -c -; then
+			rm -f "$download"
+			rm -rf "$target"
+			return 1
+		fi
+		if [ "$cached" -eq 1 ]; then
+			mv -f "$download" "$archive"
+		else
+			archive="$download"
+		fi
+	fi
+	if [ -n "$checksum" ]; then
+		echo "$checksum  $archive" | sha256sum -c - || {
+			rm -f "$archive"
+			rm -rf "$target"
+			return 1
+		}
+	fi
+	tar -C "$target" "$@" -f "$archive" || {
+		rm -f "$archive"
+		rm -rf "$target"
+		return 1
+	}
+	[ "$cached" -eq 1 ] || rm -f "$archive"
+}
+
+prepare_source() {
+	local name="$1"
+	local version="$2"
+	local url="$3"
+	local checksum="$4"
+	local target="$5"
+	local marker="$target/.nekochan-version"
+	local expected="$name:$version"
+	shift 5
+	if [ -f "$marker" ] && [ "$(cat "$marker")" != "$expected" ]; then
+		rm -rf "$target"
+	fi
+	if [ ! -f "$marker" ]; then
+		download_and_extract "$url" "$checksum" "$target" "$@"
+		printf '%s\n' "$expected" > "$marker"
+	fi
+}
+
+prepare_git_source() {
+	local name="$1"
+	local version="$2"
+	local reference="$3"
+	local commit="$4"
+	local url="$5"
+	local target="$6"
+	local marker="$target/.nekochan-version"
+	local expected="$name:$version"
+	local repository
+	if [ -f "$marker" ] && [ "$(cat "$marker")" != "$expected" ]; then
+		rm -rf "$target"
+	fi
+	if [ ! -f "$marker" ]; then
+		repository="$(mktemp -d)"
+		rm -rf "$target"
+		mkdir -p "$target"
+		git -C "$repository" init -q
+		git -C "$repository" remote add origin "$url"
+		git -C "$repository" fetch -q --depth=1 origin "$reference" || {
+			rm -rf "$repository" "$target"
+			return 1
+		}
+		[ "$(git -C "$repository" rev-parse 'FETCH_HEAD^{commit}')" = "$commit" ] || {
+			rm -rf "$repository" "$target"
+			return 1
+		}
+		git -C "$repository" archive 'FETCH_HEAD^{commit}' | tar -C "$target" -x
+		rm -rf "$repository"
+		printf '%s\n' "$expected" > "$marker"
+	fi
+}
+
+prepare_source_with_git_fallback() {
+	local name="$1"
+	local version="$2"
+	local url="$3"
+	local checksum="$4"
+	local git_reference="$5"
+	local git_commit="$6"
+	local git_url="$7"
+	local target="$8"
+	shift 8
+	local marker="$target/.nekochan-version"
+	local expected="$name:$version"
+	if [ -f "$marker" ] && [ "$(cat "$marker")" != "$expected" ]; then
+		rm -rf "$target"
+	fi
+	if [ ! -f "$marker" ]; then
+		if download_and_extract "$url" "$checksum" "$target" "$@"; then
+			printf '%s\n' "$expected" > "$marker"
+		else
+			echo "Primary $name archive is unavailable; using pinned Git fallback" >&2
+			prepare_git_source "$name" "$version" "$git_reference" "$git_commit" "$git_url" "$target"
+		fi
+	fi
+}
+
+sources_dav1d="$sources/dav1d"
+sources_ffmpeg="$sources/ffmpeg"
+
+if [ -n "${NEKOCHAN_DAV1D_SOURCE_DIR:-}" ]; then
+	copy_provided_source dav1d "$DAV1D_VERSION" "$NEKOCHAN_DAV1D_SOURCE_DIR" "$sources_dav1d"
+else
+	prepare_source dav1d "$DAV1D_VERSION" \
+		"https://downloads.videolan.org/videolan/dav1d/$DAV1D_VERSION/dav1d-$DAV1D_VERSION.tar.xz" \
+		"$DAV1D_SHA256" "$sources_dav1d" -xJ --touch --strip-components=1
+fi
+
+if [ -n "${NEKOCHAN_FFMPEG_SOURCE_DIR:-}" ]; then
+	copy_provided_source ffmpeg "$FFMPEG_VERSION" "$NEKOCHAN_FFMPEG_SOURCE_DIR" "$sources_ffmpeg"
+else
+	prepare_source_with_git_fallback ffmpeg "$FFMPEG_VERSION" \
+		"https://ffmpeg.org/releases/ffmpeg-$FFMPEG_VERSION.tar.bz2" \
+		"$FFMPEG_SHA256" "refs/tags/n$FFMPEG_VERSION" "$FFMPEG_COMMIT" \
+		"https://github.com/FFmpeg/FFmpeg.git" "$sources_ffmpeg" \
+		-xj --touch --strip-components=1
+fi

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_challenge_open">Пройти проверку</string>
+    <string name="core_ui_error_loading_data">Ошибка при загрузке данных</string>
+    <string name="core_ui_fast_scrollbar">Прокрутка списка</string>
+    <string name="core_ui_error_rate_limited">Сервер ограничил частоту запросов. Подождите немного и обновите.</string>
+    <string name="core_ui_error_refresh_kept">Не удалось обновить. Показаны ранее загруженные данные.</string>
+    <string name="core_ui_pull_refresh_top">Обновление сверху</string>
+    <string name="core_ui_pull_refresh_bottom">Обновление снизу</string>
+    <string name="core_ui_thread_author">Создатель треда</string>
+    <string name="core_ui_post_sage">Не поднимать</string>
+    <string name="core_ui_post_email">Email автора</string>
+    <string name="core_ui_thread_sticky">Закреплённый тред</string>
+    <string name="core_ui_thread_closed">Тред закрыт</string>
+    <string name="core_ui_thread_cyclical">Цикличный тред</string>
+    <string name="core_ui_post_banned">Автор забанен</string>
+    <string name="core_ui_copied">Скопировано</string>
+</resources>

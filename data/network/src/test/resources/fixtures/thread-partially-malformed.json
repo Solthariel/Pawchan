@@ -1,0 +1,28 @@
+{
+  "threads": [
+    {
+      "posts": [
+        {
+          "num": 42,
+          "parent": 0,
+          "subject": "Тестовый тред",
+          "files": [
+            {
+              "name": 123,
+              "path": "/b/src/broken.jpg"
+            }
+          ]
+        },
+        {
+          "num": "not-a-number",
+          "parent": 42
+        },
+        {
+          "num": 44,
+          "parent": 42,
+          "comment": "Живой ответ"
+        }
+      ]
+    }
+  ]
+}

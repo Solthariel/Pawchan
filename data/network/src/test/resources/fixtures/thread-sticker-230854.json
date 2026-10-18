@@ -1,0 +1,55 @@
+{
+  "board": {
+    "id": "test",
+    "name": "Тест",
+    "enable_subject": true
+  },
+  "threads": [
+    {
+      "posts": [
+        {
+          "banned": 0,
+          "board": "test",
+          "closed": 0,
+          "comment": "",
+          "date": "07/02/26 Суб 17:02:54",
+          "dislikes": 0,
+          "email": "",
+          "endless": 0,
+          "files": [
+            {
+              "displayname": "Стикер",
+              "fullname": "Стикер",
+              "height": 192,
+              "install": "/makaba/stickers/show/qkRFxT86",
+              "md5": "",
+              "name": "osoJgf2g.gif",
+              "pack": "qkRFxT86",
+              "path": "/stickers/qkRFxT86/osoJgf2g.gif",
+              "size": 489,
+              "sticker": "osoJgf2g",
+              "thumbnail": "/stickers/qkRFxT86/osoJgf2g_thumb.gif",
+              "tn_height": 192,
+              "tn_width": 192,
+              "type": 100,
+              "width": 192
+            }
+          ],
+          "lasthit": 1791464339,
+          "likes": 1,
+          "name": "Аноним",
+          "num": 230854,
+          "number": 1,
+          "op": 1,
+          "parent": 0,
+          "sticky": 0,
+          "subject": "",
+          "tags": "",
+          "timestamp": 1770472974,
+          "trip": "",
+          "views": 233
+        }
+      ]
+    }
+  ]
+}

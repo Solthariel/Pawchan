@@ -1,0 +1,40 @@
+{
+  "unique_posters": 2,
+  "threads": [
+    {
+      "posts": [
+        {
+          "num": 42,
+          "parent": 0,
+          "subject": "Тестовый тред",
+          "comment": "Первый пост",
+          "name": "Аноним",
+          "date": "01/01/26 Пнд 12:00:00",
+          "sticky": 1,
+          "timestamp": 1767268800,
+          "trip": "!!abc",
+          "tags": "/news/",
+          "closed": 0,
+          "files": [
+            {
+              "md5": "op-image",
+              "name": "1700000000000.jpg",
+              "displayname": "cat.jpg",
+              "path": "/src/1700000000000.jpg",
+              "thumbnail": "/thumb/1700000000000s.jpg",
+              "size": 12
+            }
+          ]
+        },
+        {
+          "num": 43,
+          "parent": 42,
+          "comment": "Ответ <b>жирным</b>",
+          "email": "mailto:sage",
+          "banned": 1,
+          "files": null
+        }
+      ]
+    }
+  ]
+}

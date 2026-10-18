@@ -1,0 +1,16 @@
+{
+  "board": {
+    "id": "b",
+    "name": "Бред"
+  },
+  "threads": [
+    {
+      "num": 42,
+      "subject": "Sample subject",
+      "comment": "<p>Sample subject</p><p>Generic test message</p>",
+      "posts_count": 3,
+      "files_count": 0,
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="favorite_add">Добавить тред в избранное</string>
+    <string name="favorite_remove">Убрать тред из избранного</string>
+    <string name="refresh">Обновить</string>
+    <string name="reply_open">Написать</string>
+    <string name="watcher_checking">Проверяем новые посты…</string>
+    <string name="watcher_disabled">Автообновление выключено</string>
+    <string name="watcher_error">Автообновление временно недоступно</string>
+    <string name="watcher_new_posts">Новых постов: %1$d</string>
+    <string name="watcher_paused">Автообновление приостановлено</string>
+    <string name="watcher_start">Следить</string>
+    <string name="watcher_stop">Не следить</string>
+    <string name="watcher_stopped_closed">Слежение остановлено: тред закрыт</string>
+    <string name="watcher_stopped_deleted">Слежение остановлено: тред удалён</string>
+    <string name="watcher_waiting">Автообновление каждые 30 секунд</string>
+</resources>

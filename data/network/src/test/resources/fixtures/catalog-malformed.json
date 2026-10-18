@@ -1,0 +1,11 @@
+{
+  "board": {
+    "id": "b",
+    "name": "Бред"
+  },
+  "threads": [
+    {
+      "num": "not-a-number"
+    }
+  ]
+}

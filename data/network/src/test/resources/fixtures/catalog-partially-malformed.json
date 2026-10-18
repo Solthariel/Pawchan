@@ -1,0 +1,23 @@
+{
+  "board": {
+    "id": "b",
+    "name": "Бред"
+  },
+  "threads": [
+    {
+      "num": "not-a-number"
+    },
+    {
+      "num": 42,
+      "subject": "Живой тред",
+      "posts_count": 1,
+      "files_count": 1,
+      "files": [
+        {
+          "name": 123,
+          "path": "/b/src/broken.jpg"
+        }
+      ]
+    }
+  ]
+}

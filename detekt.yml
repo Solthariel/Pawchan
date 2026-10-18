@@ -1,0 +1,33 @@
+# Detekt 1.23.8 reports these budgets at >= threshold.
+# Set threshold to the first forbidden value, not the largest permitted value.
+complexity:
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 16
+  LargeClass:
+    active: true
+    threshold: 401
+  LongMethod:
+    active: true
+    threshold: 61
+  LongParameterList:
+    active: true
+    functionThreshold: 7
+    constructorThreshold: 8
+    ignoreDataClasses: false
+  NestedBlockDepth:
+    active: true
+    threshold: 5
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 12
+    thresholdInClasses: 12
+    thresholdInInterfaces: 12
+    thresholdInObjects: 12
+    thresholdInEnums: 12
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable

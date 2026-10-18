@@ -1,0 +1,22 @@
+{
+  "title": "Pawchan",
+  "applications": [
+    {
+      "name": "client",
+      "type": "client",
+      "title": "Pawchan",
+      "packages": [
+        {
+          "title": "Pawchan 0.1.0",
+          "version_name": "0.1.0",
+          "version_code": 1,
+          "min_sdk": 30,
+          "length": 31961747,
+          "source": null,
+          "changelog": null,
+          "sha256sum": "e847caeaf5c49a9f7d2a5f0f0ff76cc3ff9918a2247e59a2d9857c361426cf91"
+        }
+      ]
+    }
+  ]
+}

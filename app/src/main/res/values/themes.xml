@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Pawchan" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:selectableItemBackground">@drawable/native_pressed_pill</item>
+        <item name="android:selectableItemBackgroundBorderless">@drawable/native_pressed_circle</item>
+        <item name="android:actionBarItemBackground">@drawable/native_pressed_circle</item>
+    </style>
+</resources>

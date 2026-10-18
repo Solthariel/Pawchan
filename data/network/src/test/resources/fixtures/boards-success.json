@@ -1,0 +1,36 @@
+{
+  "global_boards": 4,
+  "global_speed": 142,
+  "boards": [
+    {
+      "id": "b",
+      "name": "Бред",
+      "category": "Разное",
+      "speed": 136,
+      "enable_posting": true,
+      "enable_shield": true,
+      "bump_limit": 500
+    },
+    {
+      "id": "d",
+      "name": "Скла/d/ грязи",
+      "category": "Разное",
+      "speed": 0,
+      "enable_posting": false
+    },
+    {
+      "id": "vn",
+      "name": "Визуальные новеллы",
+      "category": "Японская культура",
+      "speed": 2,
+      "enable_posting": true,
+      "enable_shield": false
+    },
+    {
+      "id": "test",
+      "name": "Тестовая пользовательская доска",
+      "category": "Пользовательские",
+      "speed": 4
+    }
+  ]
+}

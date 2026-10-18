@@ -1,0 +1,133 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "93f520727d3a5e6ae01c46034f4e1dbe",
+    "entities": [
+      {
+        "tableName": "thread_library",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`site` TEXT NOT NULL, `board` TEXT NOT NULL, `threadId` INTEGER NOT NULL, `subject` TEXT, `lastVisitedAtEpochMillis` INTEGER NOT NULL, `favorite` INTEGER NOT NULL, PRIMARY KEY(`site`, `board`, `threadId`))",
+        "fields": [
+          {
+            "fieldPath": "site",
+            "columnName": "site",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "threadId",
+            "columnName": "threadId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastVisitedAtEpochMillis",
+            "columnName": "lastVisitedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "favorite",
+            "columnName": "favorite",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "site",
+            "board",
+            "threadId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_thread_library_favorite_lastVisitedAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "favorite",
+              "lastVisitedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_thread_library_favorite_lastVisitedAtEpochMillis` ON `${TABLE_NAME}` (`favorite`, `lastVisitedAtEpochMillis`)"
+          }
+        ]
+      },
+      {
+        "tableName": "thread_watch",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`site` TEXT NOT NULL, `board` TEXT NOT NULL, `threadId` INTEGER NOT NULL, `subject` TEXT, `lastKnownPostId` INTEGER, `enabledAtEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`site`, `board`, `threadId`))",
+        "fields": [
+          {
+            "fieldPath": "site",
+            "columnName": "site",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "threadId",
+            "columnName": "threadId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastKnownPostId",
+            "columnName": "lastKnownPostId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "enabledAtEpochMillis",
+            "columnName": "enabledAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "site",
+            "board",
+            "threadId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_thread_watch_enabledAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "enabledAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_thread_watch_enabledAtEpochMillis` ON `${TABLE_NAME}` (`enabledAtEpochMillis`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '93f520727d3a5e6ae01c46034f4e1dbe')"
+    ]
+  }
+}
