@@ -1,20 +1,24 @@
 name: Publish signed release
 
-# Release only from a pushed version tag; never from pull requests.
+# A release request on master, or a new version tag. Never pull requests.
 on:
   push:
+    branches: [master]
+    paths: [update/publishing/release-request.json]
     tags:
       - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: pawchan-signed-${{ github.ref }}
+  group: pawchan-publication
   cancel-in-progress: false
 
 jobs:
   build:
+    if: github.repository == 'Solthariel/Pawchan' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
     name: Build, verify and publish release
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -22,7 +26,7 @@ jobs:
       run:
         shell: bash
     env:
-      PAWCHAN_UPDATE_MANIFEST_URL: https://github.com/Solthariel/Pawchan/releases/latest/download/data-v1.json
+      PAWCHAN_UPDATE_MANIFEST_URL: https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/data-v1.json
 
     steps:
       - name: Check signing secrets
@@ -44,10 +48,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate release tag
-        run: |
-          version=$(python3 -c 'import json; print(max(json.load(open("update/publishing/versions.json"))["versions"], key=lambda v: v["code"])["name"])')
-          test "$GITHUB_REF_NAME" = "v$version"
+      - name: Validate publication request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 update/publishing/tools/publish_feed_release.py --check
 
       - name: Set up Java 25
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -140,22 +144,7 @@ jobs:
           retention-days: 14
           compression-level: 0
 
-      - name: Prepare update files and publish public release
+      - name: Publish APK and update feed on master
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          version=$(python3 -c 'import json; print(max(json.load(open("update/publishing/versions.json"))["versions"], key=lambda v: v["code"])["name"])')
-          code=$(python3 -c 'import json; print(max(json.load(open("update/publishing/versions.json"))["versions"], key=lambda v: v["code"])["code"])')
-          tag="$GITHUB_REF_NAME"
-          apk="dist/Pawchan-$version.apk"
-          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag"
-          python3 update/publishing/tools/update_manifest.py "$apk" --publish \
-            --source "$base/Pawchan-$version.apk" --changelog "$base/$code.txt"
-          cp update/publishing/manifest/data-v1.json dist/data-v1.json
-          cp "update/publishing/changelogs/ru/$code.txt" "dist/$code.txt"
-          # Create once. Never replace the assets of an existing release.
-          gh release create "$tag" "$apk" "$apk.sha256" dist/data-v1.json "dist/$code.txt" \
-            --verify-tag --title "Pawchan $version" \
-            --notes-file "dist/$code.txt" --latest
-          echo "- Public release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" >> "$GITHUB_STEP_SUMMARY"
+        run: python3 update/publishing/tools/publish_feed_release.py --publish

@@ -21,7 +21,7 @@ jobs:
       run:
         shell: bash
     env:
-      PAWCHAN_UPDATE_MANIFEST_URL: https://github.com/Solthariel/Pawchan/releases/latest/download/data-v1.json
+      PAWCHAN_UPDATE_MANIFEST_URL: https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/data-v1.json
 
     steps:
       - name: Check signing secrets

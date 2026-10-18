@@ -54,8 +54,8 @@ val updateManifestUrl =
     providers
         .gradleProperty("pawchan.updateManifestUrl")
         .orElse(providers.environmentVariable("PAWCHAN_UPDATE_MANIFEST_URL"))
-        .orNull
-        .orEmpty()
+        .orElse("https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/data-v1.json")
+        .get()
 val hasReleaseSigning =
     listOf(
         releaseKeystorePath,
