@@ -99,8 +99,18 @@ jobs:
             -file "$signing_dir/certificate.der"
           expected=$(sha256sum "$signing_dir/certificate.der" | cut -d ' ' -f 1)
           signer=$("$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$apk")
-          actual=$(printf '%s\n' "$signer" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          # Build Tools 37: "V3.0 Signer: ..."; older versions: "Signer #1 ...".
+          # Deduplicate schemes, but reject additional distinct signing certificates.
+          actual=$(printf '%s\n' "$signer" |
+            sed -nE 's/^(Signer #[0-9]+|V[0-9]+([.][0-9]+)? Signer):? certificate SHA-256 digest: ([[:xdigit:]]{64})[[:space:]]*$/\3/p' |
+            tr '[:upper:]' '[:lower:]' | sort -u)
+          if [[ -z "$actual" ]]; then
+            echo "::error::Could not read the APK signing certificate SHA-256 fingerprint"
+            exit 1
+          fi
           if [[ "$actual" != "$expected" ]]; then
+            # Certificate fingerprints are public; no passwords or private keys are printed.
+            printf 'Expected certificate SHA-256: %s\nActual certificate SHA-256:\n%s\n' "$expected" "$actual"
             echo "::error::APK signature does not match the configured release key"
             exit 1
           fi
