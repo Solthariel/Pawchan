@@ -1,0 +1,22 @@
+{
+  "title": "Pawchan",
+  "applications": [
+    {
+      "name": "client",
+      "type": "client",
+      "title": "Pawchan",
+      "packages": [
+        {
+          "title": "Pawchan 0.1.0",
+          "version_name": "0.1.0",
+          "version_code": 1,
+          "min_sdk": 30,
+          "length": 31961747,
+          "source": "https://github.com/Solthariel/Pawchan/releases/download/v0.1.0/Pawchan-0.1.0.apk",
+          "changelog": "https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/changelogs/1.txt",
+          "sha256sum": "b1e7b91e8240474db3187927b64b6321ed6e75c43f837a099515cb09e907a352"
+        }
+      ]
+    }
+  ]
+}
