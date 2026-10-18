@@ -56,7 +56,7 @@ def check(latest, tag, replacement):
     release = api("releases/tags/" + tag)
     reference = api("git/ref/tags/" + tag)
     if replacement:
-        if not release or release["id"] != replacement["release_id"]:
+        if release and release["id"] != replacement["release_id"]:
             raise SystemExit("The original release changed. Refusing to delete a different release.")
         if (not reference or reference["object"]["type"] != "commit"
                 or reference["object"]["sha"] != replacement["tag_commit"]):
@@ -90,7 +90,8 @@ def publish_release(latest, tag, replacement, apk):
     check(latest, tag, replacement)
     sha = os.environ["GITHUB_SHA"]
     if replacement:
-        run("gh", "release", "delete", tag, "--repo", REPO, "--yes")
+        if api("releases/tags/" + tag) is not None:
+            run("gh", "release", "delete", tag, "--repo", REPO, "--yes")
         run("gh", "api", "--method", "PATCH", f"repos/{REPO}/git/refs/tags/{tag}",
             "-f", "sha=" + sha, "-F", "force=true")
     # Draft first: upload both assets before making the new release public.
