@@ -1,4 +1,5 @@
 import com.android.build.api.artifact.SingleArtifact
+import groovy.json.JsonSlurper
 import java.util.zip.ZipFile
 
 plugins {
@@ -41,6 +42,48 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
             check(missing.isEmpty()) { "${apk.name} is missing native libraries: $missing" }
         }
         report.get().asFile.writeText(apks.joinToString("\n") { it.name })
+    }
+}
+
+/** Bundles history from the existing publication sources, without maintaining a second copy by hand. */
+abstract class PrepareChangelogHistory : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val metadataFile: RegularFileProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val notesDirectory: DirectoryProperty
+
+    @get:Input
+    abstract val installedCode: Property<Int>
+
+    @get:OutputDirectory
+    abstract val assetsDirectory: DirectoryProperty
+
+    @TaskAction
+    fun prepare() {
+        val metadata = JsonSlurper().parse(metadataFile.get().asFile) as Map<*, *>
+        val versions = metadata["versions"] as? List<*> ?: error("Missing release history")
+        val codes =
+            versions.map { raw ->
+                val version = raw as? Map<*, *> ?: error("Invalid release history entry")
+                (version["code"] as? Number)?.toInt() ?: error("Missing release code")
+            }
+        check(codes.all { it > 0 } && codes.distinct().size == codes.size) { "Invalid release codes" }
+        check(installedCode.get() in codes) { "Installed release is missing from history" }
+        val notes =
+            codes.filter { it <= installedCode.get() }.associateWith { code ->
+                notesDirectory.get().file("$code.txt").asFile.readText().also {
+                    check(it.isNotBlank()) { "Empty release notes: $code" }
+                }
+            }
+        val output = assetsDirectory.get().asFile
+        check(!output.exists() || output.deleteRecursively()) { "Cannot clear generated changelog assets" }
+        val history = output.resolve("changelog-history").apply { mkdirs() }
+        metadataFile.get().asFile.copyTo(history.resolve("versions.json"))
+        val notesOutput = history.resolve("changelogs/ru").apply { mkdirs() }
+        notes.forEach { (code, text) -> notesOutput.resolve("$code.txt").writeText(text) }
     }
 }
 
@@ -167,8 +210,17 @@ android {
     }
 }
 
+val prepareChangelogHistory =
+    tasks.register<PrepareChangelogHistory>("prepareChangelogHistory") {
+        metadataFile.set(rootProject.layout.projectDirectory.file("update/publishing/versions.json"))
+        notesDirectory.set(rootProject.layout.projectDirectory.dir("update/publishing/changelogs/ru"))
+        installedCode.set(appVersionCode)
+        assetsDirectory.set(layout.buildDirectory.dir("generated/changelogAssets"))
+    }
+
 androidComponents {
     onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(prepareChangelogHistory) { it.assetsDirectory }
         val name = variant.name.replaceFirstChar(Char::uppercaseChar)
         val verify =
             tasks.register<VerifyApkNativeLibraries>("verify${name}ApkNativeLibraries") {

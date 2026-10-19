@@ -136,7 +136,12 @@ private fun createMediaLoaders(
 ): MediaLoaders =
     MediaLoaders(
         imageLoader = createAppImageLoader(context, contentClient, totalBytes - totalBytes / THUMBNAIL_CACHE_SHARE),
-        thumbnailLoader = ThumbnailLoader(context.applicationContext, contentClient, totalBytes / THUMBNAIL_CACHE_SHARE),
+        thumbnailLoader =
+            ThumbnailLoader(
+                context.applicationContext,
+                contentClient,
+                totalBytes / THUMBNAIL_CACHE_SHARE,
+            ),
         mediaDownloadQueue = MediaDownloadQueue(context, settings),
         contentClient = contentClient,
         threadRepository = threadRepository,
