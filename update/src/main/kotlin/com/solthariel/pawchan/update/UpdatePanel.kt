@@ -40,14 +40,9 @@ public fun UpdatePanel(
             text = stringResource(R.string.update_title),
             style = MaterialTheme.typography.bodyLarge,
         )
-        Text(
-            text =
-                stringResource(
-                    R.string.update_current_version,
-                    configuration.currentVersionName,
-                ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+        UpdateVersionSummary(
+            installedVersion = configuration.currentVersionName,
+            availableVersion = state.availableVersionName(),
         )
         UpdateStatus(
             state = state,
@@ -102,18 +97,8 @@ private fun AvailableUpdate(
     state: UpdateUiState.Available,
     onDownload: (UpdatePackage) -> Unit,
 ) {
-    Text(
-        stringResource(
-            R.string.update_available,
-            state.release.versionName,
-        ),
-    )
     state.changelog?.takeIf(String::isNotBlank)?.let { changelog ->
-        Text(
-            text = stringResource(R.string.update_changelog),
-            style = MaterialTheme.typography.labelLarge,
-        )
-        Text(changelog, style = MaterialTheme.typography.bodyMedium)
+        ReleaseNotesContent(changelog)
     }
     ActionButton(R.string.update_download) { onDownload(state.release) }
 }

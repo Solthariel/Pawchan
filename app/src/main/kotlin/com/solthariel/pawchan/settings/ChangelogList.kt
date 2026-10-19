@@ -14,6 +14,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.BuildConfig
+import com.solthariel.pawchan.update.ReleaseNotesEntry
+import com.solthariel.pawchan.update.ReleaseNotesHeading
 
 @Composable
 internal fun ChangelogList(
@@ -31,22 +33,14 @@ internal fun ChangelogList(
             }
             release.sections.forEachIndexed { groupIndex, section ->
                 item(key = "heading-${release.code}-$groupIndex", contentType = "heading") {
-                    Text(
-                        section.title,
-                        Modifier.padding(top = 4.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    ReleaseNotesHeading(section.title)
                 }
                 items(
                     section.entries.size,
                     key = { "entry-${release.code}-$groupIndex-$it" },
                     contentType = { "entry" },
                 ) { index ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(section.entries[index], style = MaterialTheme.typography.bodyMedium)
-                    }
+                    ReleaseNotesEntry(section.entries[index])
                 }
             }
         }

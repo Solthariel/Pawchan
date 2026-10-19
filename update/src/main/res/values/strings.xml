@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_title">Обновления</string>
-    <string name="update_current_version">Текущая версия: %1$s</string>
+    <string name="update_current_version">Установлена: %1$s</string>
     <string name="update_check">Проверить обновления</string>
     <string name="update_checking">Проверяем обновления…</string>
     <string name="update_up_to_date">Установлена актуальная версия.</string>
-    <string name="update_available">Доступна версия %1$s.</string>
+    <string name="update_available">Доступна: %1$s</string>
     <string name="update_download">Скачать обновление</string>
     <string name="update_downloading">Загрузка: %1$d%%</string>
     <string name="update_install">Установить обновление</string>
@@ -13,5 +13,4 @@
     <string name="update_not_configured">Адрес сервера обновлений ещё не настроен.</string>
     <string name="update_error">Не удалось проверить или загрузить обновление.</string>
     <string name="update_permission">Разрешите установку обновлений и нажмите «Установить» ещё раз.</string>
-    <string name="update_changelog">Изменения</string>
 </resources>
