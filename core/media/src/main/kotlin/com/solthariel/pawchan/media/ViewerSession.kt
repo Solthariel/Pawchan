@@ -23,10 +23,8 @@ internal fun rememberViewerSession(selection: MediaViewerSelection): ViewerSessi
     val attachment = selection.attachment
     val viewing = attachment != null && attachment.viewer != AttachmentViewer.NONE
     val events = LocalMediaViewEvents.current
-    val seen = remember { mutableSetOf<String>() }
     LaunchedEffect(attachment, viewing) {
-        if (viewing && seen.add(attachment.originalUrl)) events.opened(attachment)
-        if (!viewing) seen.clear()
+        if (viewing) events.opened(attachment)
     }
     LaunchedEffect(viewing) {
         if (!viewing) {

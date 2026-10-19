@@ -24,12 +24,15 @@ enum class UsageMetric {
 data class UsageDay(
     val epochDay: Long,
     val values: Map<UsageMetric, Long>,
+    /** Hashed object IDs and weights; values includes these objects plus any legacy aggregate. */
+    val objects: Map<UsageMetric, Map<String, Long>> = emptyMap(),
 )
 
 interface UsageStatisticsRepository {
     val days: Flow<List<UsageDay>>
     val available: Flow<Boolean>
 
+    /** Positive records require an object identity; only byte volume may have a weight other than one. */
     suspend fun record(
         metric: UsageMetric,
         amount: Long = 1L,

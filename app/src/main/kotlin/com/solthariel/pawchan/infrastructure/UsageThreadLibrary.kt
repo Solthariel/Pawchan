@@ -25,7 +25,9 @@ internal class UsageThreadLibrary(
             val before = delegate.loadEntry(address)
             val result = delegate.setFavorite(address, subject, favorite, updatedAtEpochMillis)
             if (result is DomainOutcome.Success && before is DomainOutcome.Success) {
-                if (favorite && before.value?.favorite != true) usage.record(UsageMetric.THREADS_FAVORITED)
+                if (favorite && before.value?.favorite != true) {
+                    usage.record(UsageMetric.THREADS_FAVORITED, identity = address.toString())
+                }
             }
             result
         }

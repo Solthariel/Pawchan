@@ -33,6 +33,31 @@ class UsageLibraryAndFiltersTest {
             library.setFavorite(address, "title", true, 4)
             val expected = listOf(UsageMetric.THREADS_FAVORITED, UsageMetric.THREADS_FAVORITED)
             assertEquals(expected, stats.events.map { it.first })
+            assertEquals(listOf(address.toString(), address.toString()), stats.events.map { it.second })
+        }
+
+    @Test fun rehiddenThreadsUseTheSameIdentityAndDoNotCountNewPostsAsHides() =
+        runTest {
+            val stats = UsageEvents()
+            val before =
+                com.solthariel.pawchan.domain.workspace
+                    .WorkspaceState()
+            val hidden = before.copy(marks = before.marks.copy(hidden = setOf(address)))
+            com.solthariel.pawchan.workspace
+                .recordWorkspaceChanges(stats, before, hidden)
+            com.solthariel.pawchan.workspace
+                .recordWorkspaceChanges(stats, hidden, hidden)
+            com.solthariel.pawchan.workspace
+                .recordWorkspaceChanges(stats, hidden, before)
+            com.solthariel.pawchan.workspace
+                .recordWorkspaceChanges(stats, before, hidden)
+            assertEquals(
+                listOf(
+                    UsageMetric.THREADS_HIDDEN to address.toString(),
+                    UsageMetric.THREADS_HIDDEN to address.toString(),
+                ),
+                stats.events,
+            )
         }
 
     @Test fun rejectedFavoriteWriteDoesNotIncreaseCounter() =

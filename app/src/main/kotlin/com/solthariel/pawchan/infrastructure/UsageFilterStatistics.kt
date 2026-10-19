@@ -6,7 +6,7 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
 
-/** Only catalog hides count as hidden threads. Identity deduplicates rules and reloads per day. */
+/** Only catalog hides count as hidden threads; stable identities deduplicate rules and reloads. */
 internal class UsageFilterStatistics(
     private val delegate: ContentFilterStatisticsRepository,
     private val usage: UsageStatisticsRepository,

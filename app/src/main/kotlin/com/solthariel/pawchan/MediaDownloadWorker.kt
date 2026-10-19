@@ -66,7 +66,7 @@ internal class MediaDownloadWorker(
             val result = stream.use { output -> downloader.download(url, output) }
             when (result) {
                 MediaDownloadResult.Success -> {
-                    recordSavedDownload(applicationContext.contentResolver, destination, id.toString(), settings.usage)
+                    recordSavedDownload(applicationContext.contentResolver, destination, url, settings.usage)
                     Result.success()
                 }
 

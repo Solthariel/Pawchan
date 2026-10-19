@@ -10,6 +10,8 @@ import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.domain.posting.ReplyDraft
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Counts the prepared files actually accepted by the server, not local preview attachments. */
 internal class UsagePostingRepository(
@@ -45,14 +47,21 @@ internal class UsagePostingRepository(
     ) {
         stats.record(UsageMetric.POSTS_SENT, identity = identity)
         stats.record(if (created) UsageMetric.THREADS_CREATED else UsageMetric.REPLIES_SENT, identity = identity)
-        files.forEachIndexed { index, file ->
+        files.forEach { file ->
             val metric =
                 when {
                     file.mimeType?.startsWith("image/", ignoreCase = true) == true -> UsageMetric.IMAGES_SENT
                     file.mimeType?.startsWith("video/", ignoreCase = true) == true -> UsageMetric.VIDEOS_SENT
                     else -> null
                 }
-            if (metric != null) stats.record(metric, identity = "$identity/$index")
+            if (metric != null) {
+                val fileIdentity =
+                    withContext(Dispatchers.Default) {
+                        com.solthariel.pawchan.domain.statistics
+                            .usageFileIdentity(file.content)
+                    }
+                stats.record(metric, identity = fileIdentity)
+            }
         }
     }
 }

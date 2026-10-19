@@ -9,7 +9,7 @@ fun appendPostCount(
     comment: String,
     days: List<UsageDay>,
 ): String {
-    val totals = UsageMetric.entries.associateWith { metric -> days.sumOf { it.values[metric] ?: 0L } }
+    val totals = usageTotals(days)
     return comment.trimEnd() + "\n\nСтатистика за всё время:\n" +
         UsageMetric.entries.joinToString("\n") { metric ->
             val unit = if (metric == UsageMetric.BYTES_DOWNLOADED) " байт" else ""

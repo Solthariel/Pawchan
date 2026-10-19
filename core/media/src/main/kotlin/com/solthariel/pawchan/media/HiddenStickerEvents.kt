@@ -19,7 +19,10 @@ fun visiblePostAttachments(display: PostMediaDisplay): List<MediaAttachmentUi> {
     val hidden = if (hide) display.stickers else emptyList()
     LaunchedEffect(hidden, events) {
         hidden.forEach { attachment ->
-            events.hidden("${attachment.source.ownerPostId}|${attachment.id}|${attachment.originalUrl}")
+            events.hidden(
+                com.solthariel.pawchan.domain.statistics
+                    .usageMediaIdentity(attachment.originalUrl),
+            )
         }
     }
     return display.visible(hide)

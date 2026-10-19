@@ -2,6 +2,7 @@ package com.solthariel.pawchan.settings
 
 import com.solthariel.pawchan.domain.statistics.UsageDay
 import com.solthariel.pawchan.domain.statistics.UsageMetric
+import com.solthariel.pawchan.domain.statistics.usageTotals
 import java.time.LocalDate
 
 internal fun usagePeriodTotals(
@@ -15,7 +16,5 @@ internal fun usagePeriodTotals(
             1 -> today.withDayOfMonth(1).toEpochDay()
             else -> Long.MIN_VALUE
         }
-    return UsageMetric.entries.associateWith { metric ->
-        days.filter { it.epochDay in lower..today.toEpochDay() }.sumOf { it.values[metric] ?: 0L }
-    }
+    return usageTotals(days, lower, today.toEpochDay())
 }

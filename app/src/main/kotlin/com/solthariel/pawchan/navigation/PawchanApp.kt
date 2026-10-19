@@ -187,5 +187,8 @@ private fun mediaViewEvents(workspace: com.solthariel.pawchan.workspace.Workspac
             } else {
                 com.solthariel.pawchan.domain.statistics.UsageMetric.IMAGES_OPENED
             },
+            identity =
+                com.solthariel.pawchan.domain.statistics
+                    .usageMediaIdentity(attachment.originalUrl),
         )
     }

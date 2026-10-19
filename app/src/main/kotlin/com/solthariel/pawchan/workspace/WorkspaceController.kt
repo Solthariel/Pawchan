@@ -73,8 +73,9 @@ internal class WorkspaceController(
     fun recordUsage(
         metric: com.solthariel.pawchan.domain.statistics.UsageMetric,
         amount: Long = 1L,
+        identity: String,
     ) {
-        scope.launch { statistics?.record(metric, amount) }
+        scope.launch { statistics?.record(metric, amount, identity) }
     }
 
     fun reload() {

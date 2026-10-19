@@ -28,6 +28,7 @@ import com.solthariel.pawchan.catalog.CatalogBottomBar
 import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
+import com.solthariel.pawchan.domain.statistics.hasLegacyUsage
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -73,6 +74,11 @@ internal fun UsageStatisticsScreen(
         UsagePeriodOptions(period) { period = it }
         if (available) {
             LazyColumn(Modifier.weight(1f)) {
+                if (days.any { it.hasLegacyUsage() }) {
+                    item(key = "legacy-usage-notice") {
+                        LegacyUsageNotice()
+                    }
+                }
                 items(UsageMetric.entries, key = { it.name }) { metric ->
                     UsageValueRow(metric.usageLabel(), usageValue(metric, values[metric] ?: 0L))
                 }
@@ -106,4 +112,14 @@ internal fun UsageValueRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun LegacyUsageNotice() {
+    Text(
+        "Старые итоги сохранены. Уникальность данных до обновления восстановить нельзя.",
+        Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }

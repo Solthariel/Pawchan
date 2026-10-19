@@ -12,7 +12,10 @@ internal suspend fun recordSavedDownload(
     identity: String,
     stats: UsageStatisticsRepository,
 ) {
-    stats.record(UsageMetric.FILES_DOWNLOADED, identity = identity)
+    val fileIdentity =
+        com.solthariel.pawchan.domain.statistics
+            .usageMediaIdentity(identity)
+    stats.record(UsageMetric.FILES_DOWNLOADED, identity = fileIdentity)
     val size =
         try {
             resolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
@@ -21,5 +24,5 @@ internal suspend fun recordSavedDownload(
         } catch (_: SecurityException) {
             0L
         }
-    if (size > 0) stats.record(UsageMetric.BYTES_DOWNLOADED, size, identity)
+    if (size > 0) stats.record(UsageMetric.BYTES_DOWNLOADED, size, fileIdentity)
 }

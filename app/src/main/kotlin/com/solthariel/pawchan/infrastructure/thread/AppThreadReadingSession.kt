@@ -10,15 +10,16 @@ import com.solthariel.pawchan.workspace.readingPosition
 internal class AppThreadReadingSession(
     private val workspace: WorkspaceController,
 ) : ThreadReadingSession {
-    private val seen = mutableSetOf<String>()
-    private val opened = mutableSetOf<ThreadAddress>()
-
     override fun viewed(
         address: ThreadAddress,
         postIds: List<Long>,
     ) {
-        val added = postIds.count { seen.add("$address/$it") }
-        workspace.recordUsage(com.solthariel.pawchan.domain.statistics.UsageMetric.POSTS_VIEWED, added.toLong())
+        postIds.distinct().forEach { post ->
+            workspace.recordUsage(
+                com.solthariel.pawchan.domain.statistics.UsageMetric.POSTS_VIEWED,
+                identity = "$address/$post",
+            )
+        }
     }
 
     override fun restore(address: ThreadAddress): ThreadReadingPosition? =
@@ -26,9 +27,10 @@ internal class AppThreadReadingSession(
 
     override fun contentReady(address: ThreadAddress) {
         workspace.requestedPost = null
-        if (opened.add(address)) {
-            workspace.recordUsage(com.solthariel.pawchan.domain.statistics.UsageMetric.THREADS_OPENED)
-        }
+        workspace.recordUsage(
+            com.solthariel.pawchan.domain.statistics.UsageMetric.THREADS_OPENED,
+            identity = address.toString(),
+        )
     }
 
     override fun visible(

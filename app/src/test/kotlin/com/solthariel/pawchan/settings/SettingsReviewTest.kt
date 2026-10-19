@@ -32,6 +32,19 @@ class SettingsReviewTest {
         }
     }
 
+    @Test fun periodsDeduplicateRepeatedObjectsAcrossDays() {
+        val today = LocalDate.of(2026, 10, 19)
+        val metric = UsageMetric.THREADS_OPENED
+        val days =
+            listOf(
+                UsageDay(today.minusDays(1).toEpochDay(), mapOf(metric to 1L), mapOf(metric to mapOf("a" to 1L))),
+                UsageDay(today.toEpochDay(), mapOf(metric to 2L), mapOf(metric to mapOf("a" to 1L, "b" to 1L))),
+            )
+        assertEquals(2L, usagePeriodTotals(days, 0, today)[metric])
+        assertEquals(2L, usagePeriodTotals(days, 1, today)[metric])
+        assertEquals(2L, usagePeriodTotals(days, 2, today)[metric])
+    }
+
     @Test fun periodsExcludeOtherDaysAndFutureEntries() {
         val today = LocalDate.of(2026, 10, 16)
         val metric = UsageMetric.POSTS_SENT

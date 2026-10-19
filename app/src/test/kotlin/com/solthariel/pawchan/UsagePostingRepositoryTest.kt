@@ -50,6 +50,20 @@ class UsagePostingRepositoryTest {
             assertTrue(stats.events.none { it.first == UsageMetric.THREADS_CREATED })
         }
 
+    @Test fun samePreparedFilesKeepIdentityAcrossDifferentPostsAndAttachmentOrder() =
+        runBlocking {
+            val stats = RecordingUsage()
+            val posting = UsagePostingRepository(FakePostingRepository(), stats)
+            posting.submitReply(address, ReplyDraft("first", null, files))
+            posting.createThread(board, NewThreadDraft("title", "second", null, files.reversed()))
+            listOf(UsageMetric.IMAGES_SENT, UsageMetric.VIDEOS_SENT).forEach { metric ->
+                val ids = stats.events.filter { it.first == metric }.map { it.third }
+                assertEquals(2, ids.size)
+                assertEquals(ids.first(), ids.last())
+                assertTrue(ids.first()?.startsWith("content:") == true)
+            }
+        }
+
     @Test fun failureDoesNotCountPostOrFiles() =
         runBlocking {
             val stats = RecordingUsage()
