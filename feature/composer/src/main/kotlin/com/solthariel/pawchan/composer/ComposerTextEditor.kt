@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
@@ -129,17 +131,28 @@ private fun ComposerSubjectField(
 }
 
 @Composable
-private fun ComposerCommentField(
+internal fun ComposerCommentField(
     value: TextFieldValue,
     limits: ComposerLimits,
     enabled: Boolean,
     focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
     onChange: (TextFieldValue) -> Unit,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp).focusRequester(focusRequester),
+        modifier = modifier.fillMaxWidth().heightIn(min = 120.dp).focusRequester(focusRequester),
+        // Keep leading below the glyphs instead of distributing it above and below
+        // the baseline when the paragraph changes from one line to several lines.
+        textStyle =
+            MaterialTheme.typography.bodyLarge.copy(
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Top,
+                        trim = LineHeightStyle.Trim.None,
+                    ),
+            ),
         label = { Text(stringResource(R.string.reply_comment)) },
         supportingText = {
             Text(
