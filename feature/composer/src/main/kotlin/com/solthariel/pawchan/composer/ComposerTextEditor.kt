@@ -16,11 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
@@ -139,20 +139,20 @@ internal fun ComposerCommentField(
     modifier: Modifier = Modifier,
     onChange: (TextFieldValue) -> Unit,
 ) {
+    val density = LocalDensity.current
+    val textStyle = MaterialTheme.typography.bodyLarge
+    // Material3 1.4.0 centers the inner editor in a 24.dp minimum-height box.
+    // Below fontScale=1 a 24.sp line is shorter, so its extra top inset disappears
+    // on Enter. Match that minimum without changing the font size or stored text.
+    val lineHeight =
+        with(density) {
+            maxOf(textStyle.lineHeight.toPx(), COMMENT_MIN_LINE_HEIGHT.toPx()).toSp()
+        }
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         modifier = modifier.fillMaxWidth().heightIn(min = 120.dp).focusRequester(focusRequester),
-        // Keep leading below the glyphs instead of distributing it above and below
-        // the baseline when the paragraph changes from one line to several lines.
-        textStyle =
-            MaterialTheme.typography.bodyLarge.copy(
-                lineHeightStyle =
-                    LineHeightStyle(
-                        alignment = LineHeightStyle.Alignment.Top,
-                        trim = LineHeightStyle.Trim.None,
-                    ),
-            ),
+        textStyle = textStyle.copy(lineHeight = lineHeight),
         label = { Text(stringResource(R.string.reply_comment)) },
         supportingText = {
             Text(
@@ -186,3 +186,5 @@ internal fun formatComposerMegabytes(bytes: Int): String {
 private const val DEFAULT_MAX_FILES = 4
 private const val DEFAULT_MAX_FILE_BYTES = 40 * 1024 * 1024
 private const val BYTES_PER_MEGABYTE = 1024 * 1024
+
+private val COMMENT_MIN_LINE_HEIGHT = 24.dp
