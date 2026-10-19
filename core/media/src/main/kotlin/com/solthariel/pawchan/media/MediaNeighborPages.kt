@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.media
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,10 +16,11 @@ internal fun MediaNeighborPages(
     navigation: MediaViewerNavigation,
     loader: ImageLoader,
     motion: ImageViewerMotion,
+    pages: ViewerImagePages? = null,
 ) {
-    val originals = neighborOriginalsAllowed()
-    navigation.previousItem?.let { MediaNeighborPage(it, loader, motion, -1f, originals) }
-    navigation.nextItem?.let { MediaNeighborPage(it, loader, motion, 1f, originals) }
+    val originals = pages?.originals ?: neighborOriginalsAllowed()
+    navigation.previousItem?.let { MediaNeighborPage(it, loader, motion, -1f, originals, pages) }
+    navigation.nextItem?.let { MediaNeighborPage(it, loader, motion, 1f, originals, pages) }
 }
 
 @Composable
@@ -28,6 +30,7 @@ private fun MediaNeighborPage(
     motion: ImageViewerMotion,
     side: Float,
     originals: Boolean,
+    pages: ViewerImagePages?,
 ) {
     val shift =
         Modifier.graphicsLayer {
@@ -44,10 +47,21 @@ private fun MediaNeighborPage(
         return
     }
     val url = if (originals) item.originalUrl else item.thumbnailUrl
+    val resolved = url?.let { resolvedMediaUrl(it) }
+    val painter = resolved?.let { pages?.painters?.get(it) }
+    if (painter != null) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().then(shift),
+        )
+        return
+    }
     AsyncImage(
         model =
             rememberMediaImageRequest(
-                url?.let { resolvedMediaUrl(it) },
+                resolved,
             ),
         imageLoader = loader,
         contentDescription = null,

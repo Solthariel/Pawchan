@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.media
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,8 +29,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil3.compose.SubcomposeAsyncImage
-import coil3.request.ImageRequest
+import coil3.compose.AsyncImagePainter
 import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.media.metadata.imageMetadataSource
 
@@ -51,10 +53,12 @@ internal fun ImageViewer(
     DisposableEffect(motion) { onDispose { motion.stop() } }
     val url = resolvedMediaUrl(image.originalUrl)
     val request = rememberMediaImageRequest(url, retryToken)
+    val pages = rememberViewerImagePages(image, navigation, imageLoader, retryToken)
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
+                .then(pages.sizeResolver)
                 .clipToBounds()
                 .graphicsLayer { alpha = motion.windowAlpha },
     ) {
@@ -63,17 +67,11 @@ internal fun ImageViewer(
             retryToken += 1
         }
         MediaBackdrop(motion)
-        MediaNeighborPages(navigation, imageLoader, motion)
+        MediaNeighborPages(navigation, imageLoader, motion, pages)
         ViewerImage(
-            model =
-                ViewerImageModel(
-                    request = request,
-                    contentDescription = image.fileName,
-                    width = image.dimensions?.width ?: 0,
-                    height = image.dimensions?.height ?: 0,
-                    thumbnailUrl = image.thumbnailUrl,
-                ),
+            model = image.viewerImageModel(pages),
             imageLoader = imageLoader,
+            painter = pages[url],
             motion = motion,
             onRetry = refresh,
         )
@@ -100,18 +98,40 @@ internal fun ImageViewer(
 }
 
 @Composable
+private fun MediaAttachmentUi.viewerImageModel(pages: ViewerImagePages): ViewerImageModel =
+    ViewerImageModel(
+        contentDescription = fileName,
+        width = dimensions?.width ?: 0,
+        height = dimensions?.height ?: 0,
+        thumbnailUrl = thumbnailUrl,
+        thumbnailPainter = thumbnailUrl?.let { pages.painters[resolvedMediaUrl(it)] },
+    )
+
+@Composable
 private fun ViewerImage(
     model: ViewerImageModel,
     imageLoader: coil3.ImageLoader,
+    painter: AsyncImagePainter,
     motion: ImageViewerMotion,
     onRetry: () -> Unit,
 ) {
-    // Миниатюра лежит под оригиналом, пока тот не загрузится: без мигания пустого кадра.
-    var settled by remember(model.request) { mutableStateOf(false) }
-    if (!settled) MediaLoadingImage(model.thumbnailUrl, imageLoader, Modifier.mediaTransform(motion))
-    SubcomposeAsyncImage(
-        model = model.request,
-        imageLoader = imageLoader,
+    val state by painter.state.collectAsState()
+    if (state !is AsyncImagePainter.State.Success && state !is AsyncImagePainter.State.Error) {
+        ViewerImagePlaceholder(model, imageLoader, motion)
+    }
+    val result = (state as? AsyncImagePainter.State.Success)?.result
+    LaunchedEffect(result, motion) {
+        if (result != null) {
+            motion.resize(
+                motion.viewport.copy(
+                    imageWidth = model.width.takeIf { it > 0 }?.toFloat() ?: result.image.width.toFloat(),
+                    imageHeight = model.height.takeIf { it > 0 }?.toFloat() ?: result.image.height.toFloat(),
+                ),
+            )
+        }
+    }
+    Image(
+        painter = painter,
         contentDescription = model.contentDescription,
         modifier =
             Modifier
@@ -121,39 +141,44 @@ private fun ViewerImage(
                         ImageViewport(
                             size.width.toFloat(),
                             size.height.toFloat(),
-                            model.width.takeIf { it > 0 }?.toFloat() ?: size.width.toFloat(),
-                            model.height.takeIf { it > 0 }?.toFloat() ?: size.height.toFloat(),
+                            model.width.takeIf { it > 0 }?.toFloat()
+                                ?: result?.image?.width?.toFloat() ?: size.width.toFloat(),
+                            model.height.takeIf { it > 0 }?.toFloat()
+                                ?: result?.image?.height?.toFloat() ?: size.height.toFloat(),
                         ),
                     )
                 }.mediaTransform(motion),
-        onSuccess = { success ->
-            settled = true
-            val viewport = motion.viewport
-            motion.resize(
-                viewport.copy(
-                    imageWidth =
-                        model.width.takeIf { it > 0 }?.toFloat() ?: success.result.image.width
-                            .toFloat(),
-                    imageHeight =
-                        model.height.takeIf { it > 0 }?.toFloat() ?: success.result.image.height
-                            .toFloat(),
-                ),
-            )
-        },
         contentScale = ContentScale.Fit,
-        loading = {},
-        onError = { settled = true },
-        error = { ImageError(onRetry) },
     )
+    if (state is AsyncImagePainter.State.Error) ImageError(onRetry)
 }
 
 private data class ViewerImageModel(
-    val request: ImageRequest,
     val contentDescription: String,
     val width: Int,
     val height: Int,
     val thumbnailUrl: String?,
+    val thumbnailPainter: AsyncImagePainter?,
 )
+
+@Composable
+private fun ViewerImagePlaceholder(
+    model: ViewerImageModel,
+    imageLoader: coil3.ImageLoader,
+    motion: ImageViewerMotion,
+) {
+    val preview = model.thumbnailPainter
+    val previewState = preview?.state?.collectAsState()?.value
+    if (preview != null && previewState is AsyncImagePainter.State.Success) {
+        Image(preview, null, Modifier.fillMaxSize().mediaTransform(motion), contentScale = ContentScale.Fit)
+    } else {
+        MediaLoadingImage(
+            model.thumbnailUrl?.let { resolvedMediaUrl(it) },
+            imageLoader,
+            Modifier.mediaTransform(motion),
+        )
+    }
+}
 
 @Composable
 private fun ImageError(onRetry: () -> Unit) {
