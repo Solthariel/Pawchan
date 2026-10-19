@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.BuildConfig
 
@@ -33,7 +33,7 @@ internal fun ChangelogList(
                 item(key = "heading-${release.code}-$groupIndex", contentType = "heading") {
                     Text(
                         section.title,
-                        Modifier.padding(top = 12.dp),
+                        Modifier.padding(top = 4.dp),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -55,18 +55,47 @@ internal fun ChangelogList(
 
 @Composable
 private fun ChangelogReleaseHeading(release: ChangelogRelease) {
-    Column(
-        modifier = Modifier.padding(top = 12.dp).testTag("changelog-version-${release.code}"),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("changelog-version-${release.code}"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Версия ${release.version}", style = MaterialTheme.typography.headlineSmall)
         Text(
-            release.date,
+            release.version,
+            Modifier.alignByBaseline().testTag("changelog-version-label-${release.code}"),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(
+            "·",
+            Modifier.alignByBaseline(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Text(
+            release.date,
+            Modifier.alignByBaseline().testTag("changelog-date-${release.code}"),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
+        )
         if (release.code == BuildConfig.VERSION_CODE) {
-            Text("Установлена", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "·",
+                Modifier.alignByBaseline(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Установлена",
+                Modifier.alignByBaseline().testTag("changelog-installed-${release.code}"),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }
