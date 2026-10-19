@@ -1,0 +1,44 @@
+{
+  "board": {
+    "id": "mobi",
+    "name": "Мобильные устройства"
+  },
+  "threads": [
+    {
+      "num": 2766787,
+      "subject": "Pawchan",
+      "posts_count": 3,
+      "files_count": 1,
+      "files": [
+        {
+          "displayname": "image",
+          "fullname": "image",
+          "height": 2201,
+          "md5": "2f8b2b01a474bbe2f1489e1de4ed6d65",
+          "name": "17923734742940186592.png",
+          "path": "/mobi/src/2766787/17923734742940186592.png",
+          "size": 836,
+          "thumbnail": "/mobi/thumb/2766787/17923734742940186592s.jpg",
+          "tn_height": 300,
+          "tn_width": 147,
+          "type": 2,
+          "width": 1080
+        },
+        {
+          "displayname": "image",
+          "fullname": "image",
+          "height": 2201,
+          "md5": "5b8f0f760fd3624394e2f901e12edfb5",
+          "name": "17923734742951829501.png",
+          "path": "/mobi/src/2766787/17923734742951829501.png",
+          "size": 839,
+          "thumbnail": "/mobi/thumb/2766787/17923734742951829501s.jpg",
+          "tn_height": 300,
+          "tn_width": 147,
+          "type": 2,
+          "width": 1080
+        }
+      ]
+    }
+  ]
+}

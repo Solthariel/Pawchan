@@ -119,6 +119,22 @@ class ReleaseTests(unittest.TestCase):
                 release.publish_release(self.latest, "v0.1.0", self.replace, Path("app.apk"))
             run.assert_not_called()
 
+    def test_missing_original_release_allows_new_publication(self):
+        self.remote["releases/tags/v0.1.0"] = None
+        commands = []
+        with patch.object(release, "api", side_effect=self.remote.get), patch.object(
+                release, "run", side_effect=lambda *a: commands.append(a) or ""):
+            release.publish_release(self.latest, "v0.1.0", self.replace, Path("dist/app.apk"))
+        self.assertFalse(any(c[:3] == ("gh", "release", "delete") for c in commands))
+        self.assertTrue(any(c[:3] == ("gh", "release", "create") for c in commands))
+
+    def test_missing_release_with_changed_tag_is_rejected(self):
+        self.remote["releases/tags/v0.1.0"] = None
+        self.remote["git/ref/tags/v0.1.0"]["object"]["sha"] = "another"
+        with patch.object(release, "api", side_effect=self.remote.get):
+            with self.assertRaises(SystemExit):
+                release.check(self.latest, "v0.1.0", self.replace)
+
     def test_missing_apk_stops_before_preparation(self):
         with patch.object(release, "run") as run:
             with self.assertRaises(SystemExit):

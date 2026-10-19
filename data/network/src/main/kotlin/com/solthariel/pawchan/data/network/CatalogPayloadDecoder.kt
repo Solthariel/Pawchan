@@ -83,11 +83,14 @@ private fun CatalogThreadDto.toDomain(
     val statistics =
         ThreadStatistics.create(
             replies = postsCount,
-            files = filesCount,
+            // Catalog counters can lag behind the OP attachment list.
+            // Preserve the thread and use decoded attachments as a lower bound.
+            files = filesCount.coerceAtLeast(attachments.size),
             images = attachments.count(MediaAttachment::isImage),
             knownMediaBytes = attachments.sumOf { attachment -> attachment.byteSize?.value ?: 0L },
             mediaBytesComplete =
                 attachments.size == filesCount &&
+                    attachments.size == files.orEmpty().size &&
                     attachments.all { attachment -> attachment.byteSize != null },
         )
     return if (address != null && statistics != null) {
