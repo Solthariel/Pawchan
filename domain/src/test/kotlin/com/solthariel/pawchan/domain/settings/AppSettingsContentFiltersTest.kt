@@ -22,7 +22,10 @@ class AppSettingsContentFiltersTest {
                     AppBehavior(
                         videoStartMuted = true,
                         updateSavedCopies = false,
-                        vocarooDns = VocarooDns(VocarooDnsProvider.CUSTOM, "https://example.org/dns-query"),
+                        dns =
+                            ServiceDnsPreferences(
+                                vocaroo = ServiceDns(DnsProvider.CUSTOM, "https://example.org/dns-query"),
+                            ),
                     ),
             )
         val next = previous.withContentFilters(rules)

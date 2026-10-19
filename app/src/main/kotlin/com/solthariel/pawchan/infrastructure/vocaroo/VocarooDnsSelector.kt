@@ -1,7 +1,9 @@
 package com.solthariel.pawchan.infrastructure.vocaroo
 
 import android.util.Log
-import com.solthariel.pawchan.domain.settings.VocarooDns
+import com.solthariel.pawchan.domain.settings.ServiceDns
+import com.solthariel.pawchan.infrastructure.dns.DohEndpoint
+import com.solthariel.pawchan.infrastructure.dns.dohEndpoint
 import okhttp3.Dns
 import okhttp3.OkHttpClient
 import okhttp3.dnsoverhttps.DnsOverHttps
@@ -17,12 +19,12 @@ internal class VocarooDnsSelector(
     private val bootstrapClient: OkHttpClient,
 ) : Dns {
     @Volatile
-    private var resolver: Pair<VocarooDns, Dns?> = VocarooDns() to null
+    private var resolver: Pair<ServiceDns, Dns?> = ServiceDns() to null
 
     /** Вызывается при изменении настройки; DoH-клиент пересоздаётся только для нового адреса. */
-    fun update(dns: VocarooDns) {
+    fun update(dns: ServiceDns) {
         if (resolver.first == dns) return
-        resolver = dns to vocarooDohEndpoint(dns)?.let(::dohFor)
+        resolver = dns to dohEndpoint(dns)?.let(::dohFor)
     }
 
     val usesSystemDns: Boolean
@@ -42,7 +44,7 @@ internal class VocarooDnsSelector(
         }
     }
 
-    private fun dohFor(endpoint: VocarooDohEndpoint): Dns {
+    private fun dohFor(endpoint: DohEndpoint): Dns {
         val client =
             bootstrapClient
                 .newBuilder()

@@ -16,6 +16,7 @@ import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.settings.StoragePreferences
 import com.solthariel.pawchan.domain.thread.PostVoteRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
+import com.solthariel.pawchan.infrastructure.dns.ArhivachDnsSelector
 import com.solthariel.pawchan.infrastructure.media.MediaDownloadQueue
 import com.solthariel.pawchan.infrastructure.vocaroo.VocarooNetwork
 import com.solthariel.pawchan.media.MediaViewerResources
@@ -95,19 +96,13 @@ internal class AppNetworkStack private constructor(
                     .addInterceptor(mirror)
                     .build()
             val boardDirectory = DvachBoardDirectoryApi.create(httpClient)
-            val contentClient = DvachHttpClient.createContentClient(httpClient)
-            val imageLoader =
-                createAppImageLoader(
-                    context,
-                    contentClient,
-                    totalBytes - totalBytes / THUMBNAIL_CACHE_SHARE,
-                )
-            val thumbnailLoader =
-                ThumbnailLoader(
-                    context.applicationContext,
-                    contentClient,
-                    totalBytes / THUMBNAIL_CACHE_SHARE,
-                )
+            val arhivachDns = ArhivachDnsSelector(httpClient)
+            val contentClient =
+                DvachHttpClient
+                    .createContentClient(httpClient)
+                    .newBuilder()
+                    .dns(arhivachDns)
+                    .build()
             val threadApi = DvachThreadApi.create(httpClient)
             return AppNetworkStack(
                 httpClient = httpClient,
@@ -124,19 +119,30 @@ internal class AppNetworkStack private constructor(
                         posting = DvachPostingApi.create(httpClient),
                         votes = threadApi,
                     ),
-                mediaLoaders =
-                    MediaLoaders(
-                        imageLoader = imageLoader,
-                        thumbnailLoader = thumbnailLoader,
-                        mediaDownloadQueue = MediaDownloadQueue(context, settings),
-                        contentClient = contentClient,
-                        threadRepository = DvachThreadApi.create(httpClient),
-                        vocaroo = VocarooNetwork(context.applicationContext, contentClient),
-                    ),
+                mediaLoaders = createMediaLoaders(context, settings, contentClient, totalBytes, arhivachDns, threadApi),
             )
         }
     }
 }
+
+/** Binds app-owned media resources to the scoped external-service DNS profiles. */
+private fun createMediaLoaders(
+    context: Context,
+    settings: com.solthariel.pawchan.domain.settings.AppSettingsRepository,
+    contentClient: OkHttpClient,
+    totalBytes: Long,
+    arhivachDns: ArhivachDnsSelector,
+    threadRepository: ThreadRepository,
+): MediaLoaders =
+    MediaLoaders(
+        imageLoader = createAppImageLoader(context, contentClient, totalBytes - totalBytes / THUMBNAIL_CACHE_SHARE),
+        thumbnailLoader = ThumbnailLoader(context.applicationContext, contentClient, totalBytes / THUMBNAIL_CACHE_SHARE),
+        mediaDownloadQueue = MediaDownloadQueue(context, settings),
+        contentClient = contentClient,
+        threadRepository = threadRepository,
+        vocaroo = VocarooNetwork(context.applicationContext, contentClient),
+        arhivachDns = arhivachDns,
+    )
 
 internal data class NetworkRepositories(
     val boardDirectory: BoardDirectoryRepository,
@@ -156,6 +162,7 @@ internal data class MediaLoaders(
     val threadRepository: ThreadRepository? = null,
     /** Записи Vocaroo: DoH, Cronet и журнал; null — обычный клиент медиа (тесты, превью). */
     val vocaroo: VocarooNetwork? = null,
+    val arhivachDns: ArhivachDnsSelector? = null,
 ) {
     val viewer = MediaViewerResources(imageLoader, contentClient)
 }

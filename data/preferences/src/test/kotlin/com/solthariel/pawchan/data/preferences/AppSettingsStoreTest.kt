@@ -6,6 +6,9 @@ import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppBehavior
 import com.solthariel.pawchan.domain.settings.AppSettings
+import com.solthariel.pawchan.domain.settings.DnsProvider
+import com.solthariel.pawchan.domain.settings.ServiceDns
+import com.solthariel.pawchan.domain.settings.ServiceDnsPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -65,6 +68,11 @@ class AppSettingsStoreTest {
                         AppBehavior(
                             postCountEnabled = false,
                             videoStartMuted = true,
+                            dns =
+                                ServiceDnsPreferences(
+                                    vocaroo = ServiceDns(DnsProvider.XBOX),
+                                    arhivach = ServiceDns(DnsProvider.CUSTOM, "https://archive.example/dns-query"),
+                                ),
                             updateSavedCopies = false,
                             showHiddenThreads = true,
                             client =

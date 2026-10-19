@@ -12,6 +12,7 @@ import com.solthariel.pawchan.domain.thread.ThreadCheckPassRepository
 import com.solthariel.pawchan.domain.watch.CheckWatchedThread
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
+import com.solthariel.pawchan.infrastructure.dns.withArhivachDns
 import com.solthariel.pawchan.watch.BackgroundWatchRunResult
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
 import com.solthariel.pawchan.watch.ThreadWatchBackgroundRunner
@@ -27,10 +28,8 @@ internal class ThreadWatchWorker(
     private val preferences: com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository,
 ) : CoroutineWorker(appContext, parameters) {
     override suspend fun doWork(): Result {
-        val clientSettings =
-            preferences.appSettings
-                .first()
-                .behavior.client
+        val behavior = preferences.appSettings.first().behavior
+        val clientSettings = behavior.client
         val automation = clientSettings.automation
         if (!com.solthariel.pawchan.watch
                 .backgroundNetworkAllowed(applicationContext, automation.wifiOnly)
@@ -48,6 +47,7 @@ internal class ThreadWatchWorker(
                 ).apply {
                     if (automation.wifiOnly) addNetworkInterceptor(BackgroundWifiInterceptor(applicationContext))
                 }.build()
+                .withArhivachDns(behavior.dns.arhivach)
         return try {
             val repository = ThreadCheckPassRepository(DvachThreadApi.create(client))
             if (com.solthariel.pawchan.watch.runBackgroundChecks(

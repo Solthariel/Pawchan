@@ -15,7 +15,7 @@ internal enum class SettingsSection(
     MEDIA(UiIconKind.IMAGE, "Медиа", "Звук видео, перелистывание, галерея"),
     POSTING(UiIconKind.TUNE, "Отправка", "Поля формы и обработка вложений по умолчанию"),
     AUTOHIDE(UiIconKind.FILTER, "Автоскрытие", "Правила скрытия постов и тредов"),
-    NETWORK(UiIconKind.GLOBE, "Сеть", "DNS для записей Vocaroo"),
+    NETWORK(UiIconKind.GLOBE, "Сеть", "DNS для Vocaroo и Архивача"),
     STORAGE(UiIconKind.TUNE, "Хранилище", "Лимит и очистка кэша, резервные копии, статистика"),
     ABOUT(UiIconKind.INFO, "О программе", "Версия и обновления"),
 }

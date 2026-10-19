@@ -31,21 +31,20 @@ data class AppSettings(
     }
 }
 
-/** Поведение приложения: медиа, сохранённые копии, DNS Vocaroo и автоскрытие содержимого. */
+/** Поведение приложения: медиа, сохранённые копии, DNS сервисов и автоскрытие содержимого. */
 data class AppBehavior(
     val postCountEnabled: Boolean = true,
     val videoStartMuted: Boolean = false,
     /** Сохранённые копии тредов дополняются новыми постами, пока тред жив. */
     val updateSavedCopies: Boolean = true,
-    /** Через какой DNS искать серверы Vocaroo (только для записей Vocaroo). */
-    val vocarooDns: VocarooDns = VocarooDns(),
+    val dns: ServiceDnsPreferences = ServiceDnsPreferences(),
     val contentFilters: List<ContentFilterRule> = emptyList(),
     val showHiddenThreads: Boolean = false,
     val client: ClientPreferences = ClientPreferences(),
 )
 
-/** Публичные DoH-серверы для Vocaroo; [SYSTEM] — обычный DNS телефона. */
-enum class VocarooDnsProvider {
+/** Публичные DoH-серверы для внешних сервисов; [SYSTEM] — обычный DNS телефона. */
+enum class DnsProvider {
     SYSTEM,
     COMSS,
     XBOX,
@@ -53,9 +52,9 @@ enum class VocarooDnsProvider {
     CUSTOM,
 }
 
-/** [customUrl] — свой адрес DoH (только https), используется при [VocarooDnsProvider.CUSTOM]. */
-data class VocarooDns(
-    val provider: VocarooDnsProvider = VocarooDnsProvider.SYSTEM,
+/** [customUrl] — свой адрес DoH (только https), используется при [DnsProvider.CUSTOM]. */
+data class ServiceDns(
+    val provider: DnsProvider = DnsProvider.SYSTEM,
     val customUrl: String = "",
 )
 
@@ -64,3 +63,9 @@ interface AppSettingsRepository {
 
     suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings): DomainOutcome<Unit>
 }
+
+/** Независимые DNS-профили внешних сервисов, не меняющие DNS самого форума. */
+data class ServiceDnsPreferences(
+    val vocaroo: ServiceDns = ServiceDns(),
+    val arhivach: ServiceDns = ServiceDns(),
+)

@@ -13,8 +13,9 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppBehavior
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
-import com.solthariel.pawchan.domain.settings.VocarooDns
-import com.solthariel.pawchan.domain.settings.VocarooDnsProvider
+import com.solthariel.pawchan.domain.settings.DnsProvider
+import com.solthariel.pawchan.domain.settings.ServiceDns
+import com.solthariel.pawchan.domain.settings.ServiceDnsPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -58,13 +59,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
                 showHiddenThreads = this[SHOW_HIDDEN_THREADS] ?: defaults.behavior.showHiddenThreads,
                 videoStartMuted = this[VIDEO_MUTED] ?: defaults.behavior.videoStartMuted,
                 updateSavedCopies = this[UPDATE_COPIES] ?: defaults.behavior.updateSavedCopies,
-                vocarooDns =
-                    VocarooDns(
-                        provider =
-                            VocarooDnsProvider.entries.firstOrNull { it.name == this[VOCAROO_DNS] }
-                                ?: defaults.behavior.vocarooDns.provider,
-                        customUrl = this[VOCAROO_DNS_URL] ?: defaults.behavior.vocarooDns.customUrl,
-                    ),
+                dns = readServiceDns(defaults.behavior.dns),
             ),
     )
 }
@@ -82,8 +77,10 @@ internal fun MutablePreferences.write(settings: AppSettings) {
     this[COLLAPSE_LINES] = settings.collapseLines
     this[VIDEO_MUTED] = settings.behavior.videoStartMuted
     this[UPDATE_COPIES] = settings.behavior.updateSavedCopies
-    this[VOCAROO_DNS] = settings.behavior.vocarooDns.provider.name
-    this[VOCAROO_DNS_URL] = settings.behavior.vocarooDns.customUrl
+    this[ARHIVACH_DNS] = settings.behavior.dns.arhivach.provider.name
+    this[ARHIVACH_DNS_URL] = settings.behavior.dns.arhivach.customUrl
+    this[VOCAROO_DNS] = settings.behavior.dns.vocaroo.provider.name
+    this[VOCAROO_DNS_URL] = settings.behavior.dns.vocaroo.customUrl
 }
 
 private val CONTENT_FILTERS = stringPreferencesKey("app_content_filters_v1")
@@ -99,3 +96,21 @@ private val UPDATE_COPIES = booleanPreferencesKey("app_update_saved_copies")
 private val VOCAROO_DNS = stringPreferencesKey("app_vocaroo_dns")
 private val VOCAROO_DNS_URL = stringPreferencesKey("app_vocaroo_dns_url")
 private val SHOW_HIDDEN_THREADS = booleanPreferencesKey("app_show_hidden_threads")
+
+private val ARHIVACH_DNS = stringPreferencesKey("app_arhivach_dns")
+private val ARHIVACH_DNS_URL = stringPreferencesKey("app_arhivach_dns_url")
+
+private fun Preferences.readServiceDns(defaults: ServiceDnsPreferences): ServiceDnsPreferences =
+    ServiceDnsPreferences(
+        vocaroo = readDnsProfile(VOCAROO_DNS, VOCAROO_DNS_URL, defaults.vocaroo),
+        arhivach = readDnsProfile(ARHIVACH_DNS, ARHIVACH_DNS_URL, defaults.arhivach),
+    )
+
+private fun Preferences.readDnsProfile(
+    providerKey: Preferences.Key<String>,
+    urlKey: Preferences.Key<String>,
+    defaults: ServiceDns,
+): ServiceDns {
+    val provider = DnsProvider.entries.firstOrNull { it.name == this[providerKey] } ?: defaults.provider
+    return ServiceDns(provider, this[urlKey] ?: defaults.customUrl)
+}

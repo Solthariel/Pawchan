@@ -1,10 +1,10 @@
 package com.solthariel.pawchan
 
-import com.solthariel.pawchan.domain.settings.VocarooDns
-import com.solthariel.pawchan.domain.settings.VocarooDnsProvider
-import com.solthariel.pawchan.infrastructure.vocaroo.customDohUrl
+import com.solthariel.pawchan.domain.settings.DnsProvider
+import com.solthariel.pawchan.domain.settings.ServiceDns
+import com.solthariel.pawchan.infrastructure.dns.customDohUrl
+import com.solthariel.pawchan.infrastructure.dns.dohEndpoint
 import com.solthariel.pawchan.infrastructure.vocaroo.isVocarooHost
-import com.solthariel.pawchan.infrastructure.vocaroo.vocarooDohEndpoint
 import com.solthariel.pawchan.infrastructure.vocaroo.vocarooUsesCronet
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,16 +23,16 @@ class VocarooNetworkPolicyTest {
     }
 
     @Test fun presetsCarryBootstrapAddressesAndCustomUrlIsHttpsOnly() {
-        assertNull(vocarooDohEndpoint(VocarooDns()))
-        val comss = requireNotNull(vocarooDohEndpoint(VocarooDns(VocarooDnsProvider.COMSS)))
+        assertNull(dohEndpoint(ServiceDns()))
+        val comss = requireNotNull(dohEndpoint(ServiceDns(DnsProvider.COMSS)))
         assertEquals("dns.comss.one", comss.url.host)
         assertTrue(comss.bootstrap.isNotEmpty())
-        assertEquals("xbox-dns.ru", vocarooDohEndpoint(VocarooDns(VocarooDnsProvider.XBOX))?.url?.host)
-        assertEquals("dns.geohide.ru", vocarooDohEndpoint(VocarooDns(VocarooDnsProvider.GEOHIDE))?.url?.host)
+        assertEquals("xbox-dns.ru", dohEndpoint(ServiceDns(DnsProvider.XBOX))?.url?.host)
+        assertEquals("dns.geohide.ru", dohEndpoint(ServiceDns(DnsProvider.GEOHIDE))?.url?.host)
         assertNull(customDohUrl("http://dns.example/dns-query"))
         assertNull(customDohUrl("not a url"))
         assertEquals("dns.example", customDohUrl(" https://dns.example/dns-query ")?.host)
-        assertNull(vocarooDohEndpoint(VocarooDns(VocarooDnsProvider.CUSTOM, "http://dns.example")))
+        assertNull(dohEndpoint(ServiceDns(DnsProvider.CUSTOM, "http://dns.example")))
     }
 
     @Test fun cronetAlternatesWithOkHttpOnlyWithSystemDns() {

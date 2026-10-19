@@ -1,7 +1,7 @@
 package com.solthariel.pawchan.infrastructure.vocaroo
 
 import android.content.Context
-import com.solthariel.pawchan.domain.settings.VocarooDns
+import com.solthariel.pawchan.domain.settings.ServiceDns
 import com.solthariel.pawchan.thread.vocaroo.OkHttpVocarooTransport
 import com.solthariel.pawchan.thread.vocaroo.VocarooRequest
 import com.solthariel.pawchan.thread.vocaroo.VocarooTransport
@@ -35,7 +35,7 @@ internal class VocarooNetwork(
     private val cronet = VocarooCronet(context)
 
     /** Настройка «DNS для Vocaroo» применяется к следующему запросу. */
-    fun update(settings: VocarooDns) = dns.update(settings)
+    fun update(settings: ServiceDns) = dns.update(settings)
 
     override suspend fun download(
         request: VocarooRequest,

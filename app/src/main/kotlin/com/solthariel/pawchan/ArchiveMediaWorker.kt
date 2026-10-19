@@ -9,6 +9,7 @@ import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.data.network.DvachHttpClient
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
+import com.solthariel.pawchan.infrastructure.dns.withArhivachDns
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -21,10 +22,8 @@ internal class ArchiveMediaWorker(
     private val settings: AppSettingsRepository,
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
-        val clientSettings =
-            settings.appSettings
-                .first()
-                .behavior.client
+        val behavior = settings.appSettings.first().behavior
+        val clientSettings = behavior.client
         val wifiOnly = clientSettings.automation.wifiOnly
         if (!com.solthariel.pawchan.watch
                 .backgroundNetworkAllowed(applicationContext, wifiOnly)
@@ -42,6 +41,7 @@ internal class ArchiveMediaWorker(
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .build()
+                .withArhivachDns(behavior.dns.arhivach)
         val repository = FileWorkspaceRepository(File(applicationContext.filesDir, "workspace"))
         val media = ArchiveMediaStore(File(applicationContext.filesDir, "archive-media"), client)
         return try {

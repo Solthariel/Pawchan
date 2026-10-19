@@ -17,37 +17,50 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.settings.AppSettings
-import com.solthariel.pawchan.domain.settings.VocarooDns
-import com.solthariel.pawchan.domain.settings.VocarooDnsProvider
-import com.solthariel.pawchan.infrastructure.vocaroo.customDohUrl
+import com.solthariel.pawchan.domain.settings.DnsProvider
+import com.solthariel.pawchan.domain.settings.ServiceDns
+import com.solthariel.pawchan.infrastructure.dns.customDohUrl
 
-/** «DNS для Vocaroo»: пресеты DoH и свой адрес; действует только на записи Vocaroo. */
+/** Независимые настройки внешних сервисов, общий выбор провайдера и редактор URL. */
 internal fun vocarooDnsItems(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
+): List<SettingsItem> =
+    serviceDnsItems("Vocaroo", app.behavior.dns.vocaroo) { dns ->
+        update { it.copy(behavior = it.behavior.copy(dns = it.behavior.dns.copy(vocaroo = dns))) }
+    }
+
+internal fun arhivachDnsItems(
+    app: AppSettings,
+    update: ((AppSettings) -> AppSettings) -> Unit,
+): List<SettingsItem> =
+    serviceDnsItems("Архивача", app.behavior.dns.arhivach) { dns ->
+        update { it.copy(behavior = it.behavior.copy(dns = it.behavior.dns.copy(arhivach = dns))) }
+    }
+
+private fun serviceDnsItems(
+    service: String,
+    dns: ServiceDns,
+    onSave: (ServiceDns) -> Unit,
 ): List<SettingsItem> {
-    val dns = app.behavior.vocarooDns
-    val providers = VocarooDnsProvider.entries
+    val providers = DnsProvider.entries
     val choice =
         SettingsItem.Choice(
-            "DNS для Vocaroo",
-            providers.map(VocarooDnsProvider::label),
+            "DNS для $service",
+            providers.map(DnsProvider::label),
             providers.indexOf(dns.provider),
-        ) { index ->
-            update { it.withVocarooDns { dns -> dns.copy(provider = providers[index]) } }
-        }
-    if (dns.provider != VocarooDnsProvider.CUSTOM) return listOf(choice)
-    val custom =
-        SettingsItem.Custom("Адрес DoH для Vocaroo") {
-            VocarooDohField(dns.customUrl) { url ->
-                update { it.withVocarooDns { dns -> dns.copy(customUrl = url) } }
-            }
-        }
-    return listOf(choice, custom)
+        ) { index -> onSave(dns.copy(provider = providers[index])) }
+    if (dns.provider != DnsProvider.CUSTOM) return listOf(choice)
+    return listOf(
+        choice,
+        SettingsItem.Custom("Адрес DoH для $service") {
+            ServiceDohField(dns.customUrl) { url -> onSave(dns.copy(customUrl = url)) }
+        },
+    )
 }
 
 @Composable
-private fun VocarooDohField(
+private fun ServiceDohField(
     saved: String,
     onSave: (String) -> Unit,
 ) {
@@ -76,15 +89,12 @@ private fun VocarooDohField(
     )
 }
 
-private val VocarooDnsProvider.label: String
+private val DnsProvider.label: String
     get() =
         when (this) {
-            VocarooDnsProvider.SYSTEM -> "Системный"
-            VocarooDnsProvider.COMSS -> "Comss"
-            VocarooDnsProvider.XBOX -> "XBOX DNS"
-            VocarooDnsProvider.GEOHIDE -> "GeoHide"
-            VocarooDnsProvider.CUSTOM -> "Свой адрес"
+            DnsProvider.SYSTEM -> "Системный"
+            DnsProvider.COMSS -> "Comss"
+            DnsProvider.XBOX -> "XBOX DNS"
+            DnsProvider.GEOHIDE -> "GeoHide"
+            DnsProvider.CUSTOM -> "Свой адрес"
         }
-
-private fun AppSettings.withVocarooDns(transform: (VocarooDns) -> VocarooDns): AppSettings =
-    copy(behavior = behavior.copy(vocarooDns = transform(behavior.vocarooDns)))

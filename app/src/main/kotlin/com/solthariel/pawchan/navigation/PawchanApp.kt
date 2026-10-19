@@ -148,7 +148,7 @@ private fun AppSessionSurface(
     }
 }
 
-/** Настройки, которые применяются к долгоживущим сервисам: видео, обновление копий, DNS для Vocaroo. */
+/** Настройки долгоживущих сервисов: видео, обновление копий, DNS внешних сервисов. */
 @Composable
 private fun BindAppSettingsEffects(
     appSettings: AppSettings,
@@ -171,8 +171,11 @@ private fun BindAppSettingsEffects(
         ThreadWatchScheduler
             .schedule(context, appSettings.behavior.client.automation)
     }
-    LaunchedEffect(loaders, appSettings.behavior.vocarooDns) {
-        loaders.vocaroo?.update(appSettings.behavior.vocarooDns)
+    LaunchedEffect(loaders, appSettings.behavior.dns.arhivach) {
+        loaders.arhivachDns?.update(appSettings.behavior.dns.arhivach)
+    }
+    LaunchedEffect(loaders, appSettings.behavior.dns.vocaroo) {
+        loaders.vocaroo?.update(appSettings.behavior.dns.vocaroo)
     }
 }
 
