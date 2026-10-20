@@ -45,7 +45,7 @@ internal class ThreadToolsState(
     var query by mutableStateOf("")
     var flag by mutableStateOf<ThreadSearchFlag?>(null)
     var results by mutableStateOf<List<Long>>(emptyList())
-    var resultIndex by mutableIntStateOf(0)
+    var resultIndex by mutableIntStateOf(-1)
     var selecting by mutableStateOf(false)
     var selected by mutableStateOf<Set<Long>>(emptySet())
     var notice by mutableStateOf<String?>(null)
@@ -87,7 +87,7 @@ internal class ThreadToolsState(
                         }
                     if (generation == expected) {
                         results = ids
-                        resultIndex = 0
+                        resultIndex = -1
                     }
                 } finally {
                     if (generation == expected) searching = false

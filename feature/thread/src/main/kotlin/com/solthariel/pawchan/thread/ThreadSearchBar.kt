@@ -34,7 +34,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 internal fun ThreadSearchBar(
     tools: ThreadToolsState,
     content: ThreadUiState.Content?,
-    onResult: (Long) -> Unit,
+    onResult: (Int) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -121,7 +121,7 @@ private fun ThreadSearchPlaceholder(
 @Composable
 private fun RowScope.ThreadSearchNavigation(
     tools: ThreadToolsState,
-    onResult: (Long) -> Unit,
+    onResult: (Int) -> Unit,
 ) {
     Text(
         text = if (tools.results.isEmpty()) "0" else "${tools.resultIndex + 1}/${tools.results.size}",
@@ -133,23 +133,12 @@ private fun RowScope.ThreadSearchNavigation(
         kind = UiIconKind.UP,
         description = "Предыдущее совпадение",
         enabled = tools.results.isNotEmpty(),
-        onClick = { moveThreadSearch(tools, -1, onResult) },
+        onClick = { onResult(-1) },
     )
     ThreadToolbarButton(
         kind = UiIconKind.DOWN,
         description = "Следующее совпадение",
         enabled = tools.results.isNotEmpty(),
-        onClick = { moveThreadSearch(tools, 1, onResult) },
+        onClick = { onResult(1) },
     )
-}
-
-private fun moveThreadSearch(
-    tools: ThreadToolsState,
-    delta: Int,
-    onResult: (Long) -> Unit,
-) {
-    val count = tools.results.size
-    if (count == 0) return
-    tools.resultIndex = (tools.resultIndex + delta + count) % count
-    onResult(tools.results[tools.resultIndex])
 }

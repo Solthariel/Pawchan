@@ -46,6 +46,8 @@ internal class WorkspaceThreadRepository(
     private val arhivach: (suspend (ThreadAddress, String) -> DomainOutcome<ThreadSnapshot>)? = null,
 ) : com.solthariel.pawchan.domain.thread.ReportingThreadRepository,
     com.solthariel.pawchan.domain.thread.CachedThreadRepository {
+    override suspend fun isThreadDeleted(address: ThreadAddress): Boolean = remote.isThreadDeleted(address)
+
     override suspend fun cachedThread(address: ThreadAddress): ThreadSnapshot? {
         if (workspace?.offlineAddress == address) return savedCopy(address)?.readOnlySnapshot()
         // Тред из памяти чтения отдаётся сразу, без похода к сохранённым копиям на диске.

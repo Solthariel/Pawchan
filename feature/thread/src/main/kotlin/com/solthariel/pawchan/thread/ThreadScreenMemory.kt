@@ -13,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 internal class ThreadScreenMemory(
@@ -23,6 +24,22 @@ internal class ThreadScreenMemory(
     private val maxLines: MutableIntState,
     val gallery: com.solthariel.pawchan.media.MediaGallerySession,
 ) {
+    private var searchScroll: Job? = null
+    private var searchTarget: Long? = null
+
+    fun moveSearch(
+        content: ThreadUiState.Content?,
+        delta: Int,
+    ) {
+        val positions = content?.presentation?.postPositions ?: return
+        val anchor = if (searchScroll?.isActive == true) searchTarget?.let(positions::get) else null
+        val target = threadSearchTarget(tools.results, positions, anchor ?: list.firstVisibleItemIndex, delta) ?: return
+        tools.resultIndex = tools.results.indexOf(target)
+        searchTarget = target
+        searchScroll?.cancel()
+        searchScroll = scope.launch { list.animateScrollToItem(positions.getValue(target)) }
+    }
+
     var opened by mutableStateOf<MediaAttachmentUi?>(null)
     var syncThreadPosition: Boolean = false
 

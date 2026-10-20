@@ -6,7 +6,10 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlin.math.roundToInt
@@ -19,10 +22,14 @@ fun UiRefreshButton(
     enabled: Boolean = true,
 ) {
     val rotation = remember { Animatable(0f) }
-    LaunchedEffect(isRefreshing) {
+    var clicks by remember { mutableIntStateOf(0) }
+    LaunchedEffect(isRefreshing, clicks) {
         if (isRefreshing) {
             rotateWhileRefreshing(rotation)
         } else {
+            if (clicks > 0 && rotation.value == 0f) {
+                rotation.animateTo(FULL_ROTATION_DEGREES, tween(REFRESH_ROTATION_DURATION_MS, easing = LinearEasing))
+            }
             settleRefreshRotation(rotation)
         }
     }
@@ -31,7 +38,10 @@ fun UiRefreshButton(
         description = description,
         rotationDegrees = rotation.value,
         enabled = enabled,
-        onClick = onClick,
+        onClick = {
+            clicks++
+            onClick()
+        },
     )
 }
 

@@ -49,7 +49,15 @@ internal class ThreadWatchWorker(
                 }.build()
                 .withArhivachDns(behavior.dns.arhivach)
         return try {
-            val repository = ThreadCheckPassRepository(DvachThreadApi.create(client))
+            val repository =
+                ThreadCheckPassRepository(
+                    com.solthariel.pawchan.domain.thread.MissingAwareThreadRepository(
+                        DvachThreadApi.create(client),
+                        com.solthariel.pawchan.data.drafts.FileThreadDeletionStore(
+                            File(applicationContext.filesDir, "missing-threads"),
+                        ),
+                    ),
+                )
             if (com.solthariel.pawchan.watch.runBackgroundChecks(
                     applicationContext,
                     repository,

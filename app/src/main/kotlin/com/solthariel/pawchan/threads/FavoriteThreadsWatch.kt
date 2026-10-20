@@ -50,7 +50,13 @@ internal class FavoriteThreadsWatch(
         counters =
             addresses.associateWith { address ->
                 val previous = counters[address] ?: ThreadCounter()
-                previous.copy(count = newPostsCount(history.load(address), seen[address]))
+                val deleted = previous.deleted || threads?.isThreadDeleted(address) == true
+                previous.copy(
+                    count = if (deleted) 0 else newPostsCount(history.load(address), seen[address]),
+                    deleted = deleted,
+                    error = !deleted && previous.error,
+                    running = false,
+                )
             }
     }
 
@@ -61,6 +67,10 @@ internal class FavoriteThreadsWatch(
         job =
             scope.launch {
                 addresses.forEach { address ->
+                    if (counters[address]?.deleted == true || threads.isThreadDeleted(address)) {
+                        update(address) { it.copy(count = 0, running = false, deleted = true, error = false) }
+                        return@forEach
+                    }
                     update(address) { it.copy(running = true) }
                     val loaded = threads.loadThread(address)
                     val counter =
@@ -76,7 +86,8 @@ internal class FavoriteThreadsWatch(
                             }
 
                             is DomainOutcome.Failure -> {
-                                val missing = loaded.reason == DomainFailure.NotFound
+                                val missing =
+                                    counters[address]?.deleted == true || loaded.reason == DomainFailure.NotFound
                                 (counters[address] ?: ThreadCounter()).copy(
                                     running = false,
                                     deleted = missing,

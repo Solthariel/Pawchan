@@ -15,11 +15,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.feature.composer.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Header/EXIF reads only: changing controls never encodes or decodes a full bitmap on Main. */
+/** Header/EXIF and debounced output-size calculation stay off Main. */
 @Composable
 internal fun AttachmentReencodingSummary(
     file: ComposerAttachment,
@@ -32,22 +33,24 @@ internal fun AttachmentReencodingSummary(
     val name = if (pending.validName) pending.displayName else stringResource(R.string.attachment_result_invalid_name)
     val dimensions = source?.let { reencodingDimensions(it.width, it.height, settings)?.oriented(it.orientation) }
     val resolution =
-        dimensions?.let { "${it.width} × ${it.height}" }
+        dimensions?.let { "${it.width}×${it.height}" }
             ?: stringResource(R.string.attachment_result_resolution_unknown)
+    val result by rememberReencodingSize(pending)
+    val size = if (result.calculating) "…" else result.bytes?.let(::formatByteSizeForUi) ?: "?"
     Row(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
             name,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f, fill = false),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.MiddleEllipsis,
         )
         Text(
-            "· ${if (settings.jpeg) "JPEG" else "PNG"} · $resolution",
+            "· $resolution · $size",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

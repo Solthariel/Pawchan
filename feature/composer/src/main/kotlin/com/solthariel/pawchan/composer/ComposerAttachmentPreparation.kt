@@ -68,7 +68,7 @@ private fun composerAttachmentRejection(
         }
     }
 
-private fun prepareAttachment(file: ComposerAttachment): ReplyAttachment {
+internal fun prepareAttachment(file: ComposerAttachment): ReplyAttachment {
     val options = file.options
     var content = file.source.content
     val reencoding = options.reencoding

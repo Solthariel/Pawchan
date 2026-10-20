@@ -28,7 +28,7 @@ internal fun ThreadScreen(
     memory.onShowHidden = selection.showHidden
     val refreshActions =
         actions.copy(onRefresh = {
-            media.thumbnails.retryVisible()
+            if ((content?.presentation?.missingThreadNotice ?: 0) == 0L) media.thumbnails.retryVisible()
             actions.onRefresh()
         })
     val vocaroo = rememberVocarooPlayer(media.vocaroo, media.viewer.contentClient)

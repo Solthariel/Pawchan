@@ -30,7 +30,7 @@ internal fun ThreadTopBar(
     actions: ThreadActions,
     tools: ThreadToolsState,
     selection: ThreadSelectionActions,
-    onSearchResult: (Long) -> Unit,
+    onSearchResult: (Int) -> Unit,
 ) {
     if (tools.selecting) {
         ThreadSelectionBar(tools, selection)
@@ -44,7 +44,7 @@ internal fun ThreadToolbar(
     state: ThreadUiState,
     actions: ThreadActions,
     tools: ThreadToolsState,
-    onSearchResult: (Long) -> Unit,
+    onSearchResult: (Int) -> Unit,
 ) {
     val content = state as? ThreadUiState.Content
     Box(

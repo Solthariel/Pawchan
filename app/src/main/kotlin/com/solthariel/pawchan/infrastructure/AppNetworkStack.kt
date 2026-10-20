@@ -104,6 +104,12 @@ internal class AppNetworkStack private constructor(
                     .dns(arhivachDns)
                     .build()
             val threadApi = DvachThreadApi.create(httpClient)
+            val threadRepository =
+                com.solthariel.pawchan.domain.thread.MissingAwareThreadRepository(
+                    threadApi,
+                    com.solthariel.pawchan.data.drafts
+                        .FileThreadDeletionStore(File(context.filesDir, "missing-threads")),
+                )
             return AppNetworkStack(
                 httpClient = httpClient,
                 mirror = mirror,
@@ -115,11 +121,12 @@ internal class AppNetworkStack private constructor(
                         boardDetails = DvachBoardDetailsApi.create(httpClient),
                         postingAccess = cookies,
                         catalog = DvachCatalogApi.create(httpClient, boardDirectory),
-                        thread = threadApi,
+                        thread = threadRepository,
                         posting = DvachPostingApi.create(httpClient),
                         votes = threadApi,
                     ),
-                mediaLoaders = createMediaLoaders(context, settings, contentClient, totalBytes, arhivachDns, threadApi),
+                mediaLoaders =
+                    createMediaLoaders(context, settings, contentClient, totalBytes, arhivachDns, threadRepository),
             )
         }
     }

@@ -23,8 +23,9 @@ fun AppAlertDialog(
     title: (@Composable () -> Unit)? = null,
     text: (@Composable () -> Unit)? = null,
     dismissButton: (@Composable () -> Unit)? = null,
+    keyboardStable: Boolean = false,
 ) {
-    AppDialog(onDismissRequest) {
+    AppDialog(onDismissRequest, keyboardStable = keyboardStable) {
         Column(Modifier.padding(AppDialogStyle.contentPadding), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             title?.let { ProvideTextStyle(MaterialTheme.typography.titleLarge, it) }
             text?.let {

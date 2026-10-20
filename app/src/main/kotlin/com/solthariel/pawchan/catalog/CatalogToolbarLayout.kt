@@ -3,11 +3,9 @@ package com.solthariel.pawchan.catalog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +30,10 @@ internal fun CatalogToolbarRow(
             Modifier
                 .fillMaxWidth()
                 .height(CATALOG_TOOLBAR_CONTENT_HEIGHT)
-                .padding(horizontal = CATALOG_HORIZONTAL_INSET),
+                .padding(
+                    start = if (ui.header.searchVisible) CATALOG_HORIZONTAL_INSET else CATALOG_TITLE_START_INSET,
+                    end = CATALOG_HORIZONTAL_INSET,
+                ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CatalogLeadingButton(ui.header.searchVisible, actions.onCloseSearch)
@@ -64,8 +65,6 @@ private fun CatalogLeadingButton(
             description = stringResource(R.string.close_search),
             onClick = onCloseSearch,
         )
-    } else {
-        Spacer(Modifier.width(CATALOG_TITLE_START_INSET))
     }
 }
 
@@ -120,7 +119,7 @@ private fun CatalogIdentityRow(
                         } else {
                             Modifier
                         },
-                    ).padding(start = 8.dp),
+                    ).padding(start = if (onChooseBoard == null) 20.dp else 0.dp),
             switchable = onChooseBoard != null,
         )
         CatalogIconButton(

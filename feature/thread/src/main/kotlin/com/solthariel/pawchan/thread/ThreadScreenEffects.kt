@@ -26,7 +26,6 @@ internal fun BindThreadScreenEffects(
     LaunchedEffect(content, tools.flag, tools.searchOpen) {
         if (tools.searchOpen) tools.search(content)
     }
-    LaunchedEffect(tools.results) { tools.results.firstOrNull()?.let { memory.goTo(content, it) } }
     LaunchedEffect(tools.notice) {
         when (val notice = tools.notice) {
             ARCHIVE_REQUEST -> {

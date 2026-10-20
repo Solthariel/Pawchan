@@ -33,7 +33,7 @@ internal fun ThreadWorkspace(
     val content = state as? ThreadUiState.Content
     val tools = memory.tools
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
-        ThreadTopBar(state, actions, tools, selection) { memory.goTo(content, it) }
+        ThreadTopBar(state, actions, tools, selection) { memory.moveSearch(content, it) }
         content?.presentation?.contentFilterNotice?.let { label ->
             androidx.compose.material3.Text(
                 "Тред соответствует фильтру: $label",

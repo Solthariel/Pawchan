@@ -12,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -22,14 +23,20 @@ import androidx.compose.ui.window.DialogProperties
 fun AppDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    keyboardStable: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    if (keyboardStable) {
+        StableKeyboardDialog(onDismissRequest, modifier, content)
+        return
+    }
     Dialog(onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        val focused = LocalWindowInfo.current.isWindowFocused
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
                 .systemBarsPadding()
-                .imePadding()
+                .then(if (focused) Modifier.imePadding() else Modifier)
                 .padding(AppDialogStyle.screenPadding),
             contentAlignment = Alignment.Center,
         ) {

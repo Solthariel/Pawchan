@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -16,7 +17,21 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.catalog.BoardInformationState
+import com.solthariel.pawchan.catalog.BoardMenuNavigation
+import com.solthariel.pawchan.catalog.BoardMenuPreferences
+import com.solthariel.pawchan.catalog.BoardPreferenceActions
 import com.solthariel.pawchan.catalog.CatalogBoardIdentity
+import com.solthariel.pawchan.catalog.CatalogBoardLookupBindings
+import com.solthariel.pawchan.catalog.CatalogHeaderUi
+import com.solthariel.pawchan.catalog.CatalogMenuBindings
+import com.solthariel.pawchan.catalog.CatalogMenuState
+import com.solthariel.pawchan.catalog.CatalogMenuUi
+import com.solthariel.pawchan.catalog.CatalogToolbarNavigationActions
+import com.solthariel.pawchan.catalog.CatalogToolbarRow
+import com.solthariel.pawchan.catalog.CatalogToolbarRowActions
+import com.solthariel.pawchan.catalog.CatalogToolbarRowUi
+import com.solthariel.pawchan.catalog.CatalogToolbarSearchActions
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.navigation.defaultBoardAddress
@@ -69,6 +84,36 @@ class CatalogHeaderRuntimeTest {
             .onNodeWithTag("disclosure-indicator", useUnmergedTree = true)
             .assertWidthIsEqualTo(20.dp)
             .assertHeightIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun titleAndSpeedKeepHistoricalLeftInsetWithTheIndicatorInTheMargin() {
+        val lookup = CatalogBoardLookupBindings(false, "", {}, {}, {}) {}
+        val menu =
+            CatalogMenuBindings(
+                CatalogMenuState(BoardMenuPreferences(), BoardInformationState.Closed),
+                BoardPreferenceActions({}, {}, {}),
+                BoardMenuNavigation({}, {}, {}),
+                {},
+                boardLookup = lookup,
+            )
+        val focus = FocusRequester()
+        compose.setContent {
+            MaterialTheme {
+                CatalogToolbarRow(
+                    CatalogToolbarRowUi(CatalogHeaderUi(board, "Highlights", 1, false, ""), false, CatalogMenuUi(false, {})),
+                    focus,
+                    CatalogToolbarRowActions(CatalogToolbarSearchActions({}, {}, {}), CatalogToolbarNavigationActions({}), menu),
+                )
+            }
+        }
+        val label = compose.onNodeWithText("/hry/ — Highlights", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val arrow = compose.onNodeWithTag("disclosure-indicator", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val speed = compose.onNodeWithText("1 сообщение в час", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(28f * compose.density.density, label.left, 1f)
+        assertEquals(label.left, speed.left, 1f)
+        assertEquals(8f * compose.density.density, arrow.left, 1f)
+        assertTrue(arrow.right <= label.left)
     }
 
     private fun show() {

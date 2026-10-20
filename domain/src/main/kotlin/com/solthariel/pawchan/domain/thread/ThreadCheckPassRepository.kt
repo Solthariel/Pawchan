@@ -13,6 +13,8 @@ class ThreadCheckPassRepository(
     private val mutex = Mutex()
     private val outcomes = mutableMapOf<ThreadAddress, DomainOutcome<ThreadSnapshot>>()
 
+    override suspend fun isThreadDeleted(address: ThreadAddress): Boolean = source.isThreadDeleted(address)
+
     override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> =
         mutex.withLock {
             outcomes[address] ?: source.loadThread(address).also { outcomes[address] = it }

@@ -26,6 +26,7 @@ internal suspend fun refreshBackgroundFavorites(
     var success = true
     try {
         for (entry in entries) {
+            if (repository.isThreadDeleted(entry.address)) continue
             when (val result = repository.loadThread(entry.address)) {
                 is DomainOutcome.Success -> {
                     history.save(mergeThreadHistory(history.load(entry.address), result.value))
@@ -40,7 +41,7 @@ internal suspend fun refreshBackgroundFavorites(
                 }
 
                 is DomainOutcome.Failure -> {
-                    success = false
+                    if (result.reason != com.solthariel.pawchan.domain.model.DomainFailure.NotFound) success = false
                 }
             }
         }

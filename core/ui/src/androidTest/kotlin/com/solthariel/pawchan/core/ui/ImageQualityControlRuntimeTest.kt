@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -13,6 +17,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -42,6 +47,9 @@ class ImageQualityControlRuntimeTest {
         compose.onNodeWithText("85%").performClick().assertIsSelected()
         compose.runOnIdle { assertEquals(85, quality.value) }
         compose.onNodeWithContentDescription("Ввести качество JPEG").performClick()
+        compose.onNodeWithTag("number-input").assertIsFocused().assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.TextSelectionRange, TextRange(0, 3)),
+        )
         compose.onNodeWithText("Значение").performTextReplacement("93")
         compose.onNodeWithTag("number-confirm").performClick()
         compose.onNodeWithText("93%").assertIsSelected()

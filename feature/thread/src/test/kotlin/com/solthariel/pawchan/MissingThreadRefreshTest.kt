@@ -44,12 +44,15 @@ class MissingThreadRefreshTest {
                         emptyList(),
                     )
                 val snapshot = ThreadSnapshot(address, "cached", ThreadFlags(false, false, false), listOf(post))
+                var calls = 0
                 val repository =
                     object : CachedThreadRepository {
                         override suspend fun cachedThread(address: ThreadAddress): ThreadSnapshot = snapshot
 
-                        override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> =
-                            DomainOutcome.Failure(DomainFailure.NotFound)
+                        override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> {
+                            calls++
+                            return DomainOutcome.Failure(DomainFailure.NotFound)
+                        }
                     }
                 val model =
                     ThreadViewModel(
@@ -73,6 +76,9 @@ class MissingThreadRefreshTest {
                 )
                 assertEquals(2L, second.presentation.missingThreadNotice)
                 assertEquals(false, second.isRefreshing)
+                model.reopen()
+                advanceUntilIdle()
+                assertEquals(1, calls)
             } finally {
                 Dispatchers.resetMain()
             }

@@ -9,7 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -37,15 +39,30 @@ class AttachmentReencodingSummaryRuntimeTest {
             compose
                 .onAllNodes(
                     androidx.compose.ui.test
-                        .hasText("· JPEG · 100 × 200"),
+                        .hasText("· 100×200 ·", substring = true),
                     useUnmergedTree = true,
                 ).fetchSemanticsNodes()
                 .isNotEmpty()
         }
         compose.onNodeWithText("photo.jpg", useUnmergedTree = true).assertExists()
         compose.runOnIdle { settings.value = ImageReencoding(jpeg = false, scaleDivisor = 4) }
-        compose.onNodeWithText("· PNG · 25 × 50", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("· 25×50 ·", substring = true, useUnmergedTree = true).assertExists()
         compose.onNodeWithText("photo.png", useUnmergedTree = true).assertExists()
+        val pending = file.copy(options = file.options.copy(reencoding = settings.value))
+        val size = formatByteSizeForUi(requireNotNull(encodedAttachmentSize(pending)))
+        compose.waitUntil(5_000) {
+            compose
+                .onAllNodes(
+                    androidx.compose.ui.test
+                        .hasText("· 25×50 · $size"),
+                    useUnmergedTree = true,
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        val name = compose.onNodeWithText("photo.png", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val details = compose.onNodeWithText("· 25×50 · $size", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(name.top, details.top, 1f)
+        assertEquals(4f * compose.density.density, details.left - name.right, 1f)
         assertNull(file.options.reencoding)
     }
 }

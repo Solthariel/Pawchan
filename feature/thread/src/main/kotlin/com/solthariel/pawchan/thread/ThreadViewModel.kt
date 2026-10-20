@@ -68,6 +68,7 @@ internal class ThreadViewModel(
     private var reopenJob: Job? = null
     private var watchPersistenceJob: Job? = null
     private var opened = false
+    private var confirmedMissing = false
     private val reopenCache = ThreadReopenCache(address, repository, watches)
 
     override val postPreferences =
@@ -143,11 +144,20 @@ internal class ThreadViewModel(
         loadJob =
             viewModelScope.launch {
                 val cached = showCachedThread()
+                if (confirmedMissing || repository.isThreadDeleted(address)) {
+                    confirmedMissing = true
+                    mutableState.value =
+                        ThreadUiState.Error(ThreadError.NOT_FOUND).keepContentOnRefreshFailure(mutableState.value)
+                    return@launch
+                }
                 if (reopening && cached != null && reopenCache.isCurrent(cached)) {
                     visits.record(DomainOutcome.Success(cached))
                     return@launch
                 }
                 val outcome = requestMutex.withLock { repository.loadThread(address) }
+                if (outcome == DomainOutcome.Failure(com.solthariel.pawchan.domain.model.DomainFailure.NotFound)) {
+                    confirmedMissing = true
+                }
                 val favorite = favorites.load(outcome)
                 val previous = mutableState.value
                 val own = ownPostIds.toSet()
@@ -172,7 +182,7 @@ internal class ThreadViewModel(
      * запрос в сеть идёт фоном и только если копия в памяти устарела по данным наблюдателя.
      */
     override fun reopen() {
-        if (loadJob?.isActive == true || reopenJob?.isActive == true) return
+        if (confirmedMissing || loadJob?.isActive == true || reopenJob?.isActive == true) return
         if (mutableState.value !is ThreadUiState.Content) return
         reopenJob =
             viewModelScope.launch {
@@ -275,6 +285,12 @@ internal class ThreadViewModel(
     }
 
     private suspend fun pollForUpdates(): ThreadWatcherPoll? {
+        if (confirmedMissing || repository.isThreadDeleted(address)) {
+            return ThreadWatcherPoll(
+                0,
+                stopReason = com.solthariel.pawchan.thread.watch.ThreadWatcherStopReason.DELETED,
+            )
+        }
         val previous =
             if (loadJob?.isActive == true) {
                 null

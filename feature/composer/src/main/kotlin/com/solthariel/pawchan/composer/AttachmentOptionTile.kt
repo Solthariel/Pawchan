@@ -56,7 +56,7 @@ internal fun AttachmentOptionTile(
     val foreground =
         when {
             !state.enabled -> colors.onSurface.copy(alpha = 0.38f)
-            state.checked -> colors.onPrimaryContainer
+            state.checked -> colors.onSecondaryContainer
             else -> colors.onSurface
         }
     val interactionSource = remember { MutableInteractionSource() }
@@ -111,10 +111,10 @@ private fun AttachmentOptionIcon(
         Modifier
             .size(38.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (state.checked) colors.primaryContainer else colors.surfaceVariant)
+            .background(if (state.checked) colors.secondaryContainer else colors.surfaceVariant)
             .border(
                 1.dp,
-                if (state.checked) colors.primary else colors.outline,
+                if (state.checked) colors.secondary else colors.outline,
                 RoundedCornerShape(10.dp),
             )
             // Keep press/focus feedback inside the fixed tile, not the wider touch target.
