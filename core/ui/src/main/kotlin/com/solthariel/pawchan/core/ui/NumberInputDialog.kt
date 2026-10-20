@@ -40,7 +40,6 @@ fun NumberInputDialog(
     val number = input.text.toIntOrNull()?.takeIf { it in range }
     AppAlertDialog(
         onDismissRequest = onDismiss,
-        keyboardStable = true,
         title = { Text(title) },
         text = {
             Column {

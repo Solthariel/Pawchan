@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.solthariel.pawchan.core.ui.uiOptionColors
 import com.solthariel.pawchan.feature.composer.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,13 +53,8 @@ internal fun AttachmentOptionTile(
     val icon = attachmentTileIcon(state.label)
     val description = stringResource(state.label)
     val status = stringResource(if (state.checked) R.string.composer_option_on else R.string.composer_option_off)
-    val colors = MaterialTheme.colorScheme
-    val foreground =
-        when {
-            !state.enabled -> colors.onSurface.copy(alpha = 0.38f)
-            state.checked -> colors.onSecondaryContainer
-            else -> colors.onSurface
-        }
+    val tone = uiOptionColors(state.checked, state.enabled)
+    val foreground = tone.foreground
     val interactionSource = remember { MutableInteractionSource() }
     // Keep Row parent data on the direct child, outside TooltipBox's internal wrapper.
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -85,7 +81,7 @@ internal fun AttachmentOptionTile(
         Text(
             text = stringResource(attachmentTileCaption(state.label)),
             modifier = Modifier.fillMaxWidth(),
-            color = foreground,
+            color = tone.caption,
             style = MaterialTheme.typography.labelSmall,
             autoSize = TextAutoSize.StepBased(minFontSize = 7.sp, maxFontSize = 9.sp, stepSize = 0.5.sp),
             lineHeight = 11.sp,
@@ -104,17 +100,17 @@ private fun AttachmentOptionIcon(
     foreground: Color,
     interactionSource: MutableInteractionSource,
 ) {
-    val colors = MaterialTheme.colorScheme
+    val tone = uiOptionColors(state.checked, state.enabled)
     val pressed by interactionSource.collectIsPressedAsState()
     val focused by interactionSource.collectIsFocusedAsState()
     Box(
         Modifier
             .size(38.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (state.checked) colors.secondaryContainer else colors.surfaceVariant)
+            .background(tone.background)
             .border(
                 1.dp,
-                if (state.checked) colors.secondary else colors.outline,
+                tone.foreground,
                 RoundedCornerShape(10.dp),
             )
             // Keep press/focus feedback inside the fixed tile, not the wider touch target.

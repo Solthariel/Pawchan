@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -13,6 +12,7 @@ import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
 import com.solthariel.pawchan.domain.filter.ContentFilterStatisticsRepository
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 @Composable
 internal fun ContentFilterStatisticsDialog(

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.focusedWindowImePadding
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.settings.ComposerField
 import com.solthariel.pawchan.feature.composer.R
@@ -72,7 +72,7 @@ internal fun ComposerEditorScreen(
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
-            .imePadding(),
+            .focusedWindowImePadding(),
     ) {
         ComposerScreenHeader(
             title,

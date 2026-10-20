@@ -8,9 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.solthariel.pawchan.BuildConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.IOException
+import java.io.File
 
 @Composable
 internal fun ChangelogSettings() {
@@ -18,25 +16,34 @@ internal fun ChangelogSettings() {
     var open by remember { mutableStateOf(false) }
     var releases by remember { mutableStateOf<List<ChangelogRelease>?>(null) }
     var failed by remember { mutableStateOf(false) }
-    LaunchedEffect(open) {
-        if (open && releases == null) {
-            failed = false
-            releases =
-                withContext(Dispatchers.IO) {
-                    try {
-                        readChangelogHistory(BuildConfig.VERSION_CODE) { path ->
-                            context.assets
-                                .open(path)
-                                .bufferedReader()
-                                .use { it.readText() }
-                        }
-                    } catch (_: IOException) {
-                        null
-                    } catch (_: IllegalArgumentException) {
-                        null
+    val repository =
+        remember(context) {
+            val url = historyUrl(BuildConfig.UPDATE_MANIFEST_URL)
+            val http = ChangelogHttp()
+            ChangelogHistoryRepository(
+                cache = url?.let { ChangelogCache(File(context.filesDir, "changelog/history-v1.json"), it) },
+                bundled = {
+                    readChangelogHistory(BuildConfig.VERSION_CODE) { path ->
+                        context.assets
+                            .open(path)
+                            .bufferedReader()
+                            .use { it.readText() }
                     }
-                }
-            failed = releases == null
+                },
+                download = { etag -> url?.let { http.download(it, etag) } ?: ChangelogDownload(null, null) },
+            )
+        }
+    LaunchedEffect(open) {
+        if (open) {
+            failed = false
+            try {
+                releases = repository.local()
+                repository.refresh()?.let { releases = it }
+            } catch (_: java.io.IOException) {
+                failed = releases == null
+            } catch (_: IllegalArgumentException) {
+                failed = releases == null
+            }
         }
     }
     SettingsItemRow(SettingsItem.Action("Список изменений", null, onClick = { open = true }))

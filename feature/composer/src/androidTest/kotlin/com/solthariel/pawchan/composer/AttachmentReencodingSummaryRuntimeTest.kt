@@ -60,7 +60,9 @@ class AttachmentReencodingSummaryRuntimeTest {
                 .isNotEmpty()
         }
         val name = compose.onNodeWithText("photo.png", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val details = compose.onNodeWithText("· 25×50 · $size", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val details =
+            compose.onNodeWithText("· 25×50 · $size", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(160f * compose.density.density, (name.left + details.right) / 2f, 1f)
         assertEquals(name.top, details.top, 1f)
         assertEquals(4f * compose.density.density, details.left - name.right, 1f)
         assertNull(file.options.reencoding)

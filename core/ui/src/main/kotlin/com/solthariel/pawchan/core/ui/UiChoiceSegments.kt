@@ -32,6 +32,7 @@ fun UiChoiceSegments(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         options.forEachIndexed { index, label ->
             val active = index == selected
+            val tone = uiOptionColors(active, enabled)
             val editable = index == options.lastIndex && lastOptionDescription != null
             Surface(
                 modifier =
@@ -40,14 +41,9 @@ fun UiChoiceSegments(
                         .semantics { if (editable) contentDescription = requireNotNull(lastOptionDescription) }
                         .selectable(active, enabled, Role.RadioButton) { onSelect(index) },
                 shape = RoundedCornerShape(8.dp),
-                color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                contentColor =
-                    if (active) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = tone.background,
+                contentColor = tone.foreground,
+                border = BorderStroke(1.dp, tone.foreground),
             ) {
                 Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
                     Text(

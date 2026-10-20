@@ -39,7 +39,7 @@ internal fun AttachmentReencodingSummary(
     val size = if (result.calculating) "…" else result.bytes?.let(::formatByteSizeForUi) ?: "?"
     Row(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, androidx.compose.ui.Alignment.CenterHorizontally),
     ) {
         Text(
             name,

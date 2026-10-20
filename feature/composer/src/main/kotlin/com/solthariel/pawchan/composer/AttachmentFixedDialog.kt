@@ -1,23 +1,20 @@
 package com.solthariel.pawchan.composer
 
-import android.view.WindowManager
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
+import com.solthariel.pawchan.core.ui.KeepWindowBounds
 
 /** Keep the same window bounds while the keyboard opens or closes. */
 @Composable
@@ -30,13 +27,8 @@ internal fun AttachmentFixedDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        val view = LocalView.current
         val dismiss by rememberUpdatedState(onDismiss)
-        SideEffect {
-            (view.parent as? DialogWindowProvider)?.window?.setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING,
-            )
-        }
+        KeepWindowBounds()
         Box(Modifier.fillMaxSize()) {
             Box(
                 Modifier.matchParentSize().pointerInput(Unit) {

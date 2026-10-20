@@ -115,6 +115,22 @@ def publish_feed(latest, manifest, notes):
     print("Update feed published on master")
 
 
+def published_history(latest):
+    """One conditional-download file, generated only for the successfully published cutoff."""
+    metadata = json.loads((ROOT / "update/publishing/versions.json").read_text())
+    releases = []
+    for version in sorted(metadata["versions"], key=lambda v: v["code"], reverse=True):
+        if version["code"] > latest["code"]:
+            continue
+        notes = (ROOT / f"update/publishing/changelogs/ru/{version['code']}.txt").read_text()
+        if not notes.strip():
+            raise ValueError("Empty published release notes")
+        releases.append({**version, "notes": notes})
+    if not releases or releases[0]["code"] != latest["code"]:
+        raise ValueError("Published release is missing from history")
+    return (json.dumps({"schema": 1, "releases": releases}, ensure_ascii=False, indent=2) + "\n").encode()
+
+
 def write_feed(worktree, latest, manifest, notes):
     def git(*args):
         return subprocess.check_output(("git", *args), cwd=worktree, text=True).strip()
@@ -122,10 +138,12 @@ def write_feed(worktree, latest, manifest, notes):
     feed = worktree / "update/feed"
     (feed / "changelogs").mkdir(parents=True, exist_ok=True)
     (feed / "data-v1.json").write_bytes(manifest)
+    (feed / "history-v1.json").write_bytes(published_history(latest))
     (feed / f"changelogs/{latest['code']}.txt").write_bytes(notes)
     git("config", "user.name", "github-actions[bot]")
     git("config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
-    git("add", "--", "update/feed/data-v1.json", f"update/feed/changelogs/{latest['code']}.txt")
+    git("add", "--", "update/feed/data-v1.json", "update/feed/history-v1.json",
+        f"update/feed/changelogs/{latest['code']}.txt")
     if git("diff", "--cached", "--name-only"):
         git("commit", "-m", f"Publish update feed for {latest['name']}")
         # A concurrent master update causes a safe failure, never a force push.

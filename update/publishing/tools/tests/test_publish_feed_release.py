@@ -41,6 +41,23 @@ class ReleaseTests(unittest.TestCase):
     def save_request(self):
         (self.root / "update/publishing/release-request.json").write_text(json.dumps(self.request))
 
+    def test_history_excludes_future_publication_and_keeps_notes(self):
+        metadata = {"versions": [
+            {"code": 1, "name": "0.1.0", "date": "01.10.2026"},
+            {"code": 2, "name": "0.1.1", "date": "02.10.2026"}]}
+        directory = self.root / "update/publishing"
+        (directory / "versions.json").write_text(json.dumps(metadata))
+        (directory / "changelogs/ru").mkdir(parents=True)
+        (directory / "changelogs/ru/1.txt").write_text("Исправления\n• Запись")
+        result = json.loads(release.published_history({"code": 1}))
+        self.assertEqual(result["schema"], 1)
+        self.assertEqual([v["code"] for v in result["releases"]], [1])
+        self.assertIn("Запись", result["releases"][0]["notes"])
+
+    def test_missing_published_notes_prevents_history_generation(self):
+        with self.assertRaises(FileNotFoundError):
+            release.published_history({"code": 1})
+
     def test_context_initial_replacement(self):
         self.assertEqual(release.context(), (self.latest, "v0.1.0", self.replace))
 

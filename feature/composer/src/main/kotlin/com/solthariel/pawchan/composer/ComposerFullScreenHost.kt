@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.solthariel.pawchan.core.ui.KeepWindowBounds
 
 @Composable
 fun ComposerFullScreenHost(
@@ -21,6 +22,7 @@ fun ComposerFullScreenHost(
             onDismissRequest = onClose,
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
+            KeepWindowBounds()
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { form() }
         }
     }
