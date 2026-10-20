@@ -12,6 +12,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.solthariel.pawchan.MediaDownloadWorker
+import com.solthariel.pawchan.PawchanApplication
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.DownloadPreferences
@@ -27,6 +28,7 @@ internal class MediaDownloadQueue(
 ) : MediaSaveQueue,
     AutoCloseable {
     private val appContext = context.applicationContext
+    private val permissions = (appContext as? PawchanApplication)?.downloadPermissions
     private val workManager by lazy { WorkManager.getInstance(appContext) }
 
     override fun close() = Unit
@@ -34,6 +36,8 @@ internal class MediaDownloadQueue(
     @Volatile var preferences =
         DownloadPreferences()
     override val defaultDirectory: String? get() = preferences.treeUri
+
+    override fun useDirectory(directory: Uri): AutoCloseable = permissions?.useDirectory(directory.toString()) ?: AutoCloseable {}
 
     override fun suggestedName(attachment: MediaAttachmentUi): String = downloadName(attachment, preferences.naming)
 
@@ -70,6 +74,35 @@ internal class MediaDownloadQueue(
             }
         }
 
+    private fun enqueueWithPermissionLease(
+        attachment: MediaAttachmentUi,
+        destination: Uri,
+    ) {
+        val tree =
+            if (android.provider.DocumentsContract.isTreeUri(destination)) {
+                android.provider.DocumentsContract.buildTreeDocumentUri(
+                    destination.authority,
+                    android.provider.DocumentsContract.getTreeDocumentId(destination),
+                )
+            } else {
+                null
+            }
+        val lease = tree?.let { permissions?.useDirectory(it.toString()) }
+        try {
+            val operation = workManager.enqueue(createMediaDownloadRequest(attachment, destination))
+            operation.result.addListener(
+                { lease?.let { permissions?.closeAfterCommit(it) } },
+                java.util.concurrent.Executor { it.run() },
+            )
+        } catch (failure: IllegalStateException) {
+            lease?.close()
+            throw failure
+        } catch (failure: IllegalArgumentException) {
+            lease?.close()
+            throw failure
+        }
+    }
+
     override fun enqueue(
         attachment: MediaAttachmentUi,
         destination: Uri,
@@ -91,7 +124,7 @@ internal class MediaDownloadQueue(
                     throw failure
                 }
             }
-            workManager.enqueue(createMediaDownloadRequest(attachment, destination))
+            enqueueWithPermissionLease(attachment, destination)
             true
         } catch (_: SecurityException) {
             false

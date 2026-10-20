@@ -113,10 +113,17 @@ private fun BindTabNavigation(
     restoredRoute: String?,
 ) {
     var restorePending by rememberSaveable { mutableStateOf(true) }
-    LaunchedEffect(navController) {
+    val incoming = LocalIncomingLinks.current
+    val pending = incoming?.pending?.collectAsStateWithLifecycle()?.value
+    val workspace = LocalWorkspace.current?.controller
+    LaunchedEffect(navController, pending) {
         if (restorePending) {
             restorePending = false
-            navController.openRestoredRoute(restoredRoute)
+            if (pending == null) navController.openRestoredRoute(restoredRoute)
+        }
+        pending?.let { url ->
+            incomingForumLink(url)?.let { navController.openIncomingLink(it, workspace) }
+            incoming?.consume(url)
         }
     }
     BackHandler(enabled = destinationRoute in TAB_ROUTES) { navController.navigateCatalogBase() }

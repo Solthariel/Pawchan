@@ -9,6 +9,9 @@ fun interface MediaSaveQueue {
 
     suspend fun selectDirectory(uri: Uri): Boolean = false
 
+    /** Holds a selected tree while documents are being created and enqueued. */
+    fun useDirectory(directory: Uri): AutoCloseable = AutoCloseable {}
+
     fun enqueue(
         attachment: MediaAttachmentUi,
         destination: Uri,

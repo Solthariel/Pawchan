@@ -18,9 +18,14 @@ class PawchanApplication :
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     internal val backupRecovery by lazy {
         BackupRecovery(this, preferences, applicationScope) {
+            downloadPermissions.start()
             ThreadWatchNotifier.createChannel(this)
             ThreadWatchScheduler.schedule(this)
         }
+    }
+    internal val downloadPermissions by lazy {
+        com.solthariel.pawchan.infrastructure.media
+            .DownloadDirectoryPermissions(this, preferences, applicationScope)
     }
     val preferences by lazy {
         DataStoreSettingsRepository

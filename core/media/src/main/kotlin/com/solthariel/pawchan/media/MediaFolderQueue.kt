@@ -14,8 +14,10 @@ internal suspend fun saveToFolder(
     withContext(Dispatchers.IO) {
         val queued =
             try {
-                createFolderDocuments(resolver, tree, attachments, "application/octet-stream", queue::suggestedName)
-                    .count { (attachment, destination) -> queue.enqueue(attachment, destination) }
+                queue.useDirectory(tree).use {
+                    createFolderDocuments(resolver, tree, attachments, "application/octet-stream", queue::suggestedName)
+                        .count { (attachment, destination) -> queue.enqueue(attachment, destination) }
+                }
             } catch (_: IllegalArgumentException) {
                 0
             }
