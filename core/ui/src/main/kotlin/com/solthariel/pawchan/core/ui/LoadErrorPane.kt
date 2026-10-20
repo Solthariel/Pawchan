@@ -23,9 +23,10 @@ fun LoadErrorPane(
     challengeUrl: String? = null,
     onChallenge: (String) -> Unit = {},
     rateLimited: Boolean = false,
+    message: String? = null,
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        fullScreenErrorItem(challengeUrl, onChallenge, rateLimited)
+        fullScreenErrorItem(challengeUrl, onChallenge, rateLimited, message)
     }
 }
 
@@ -33,6 +34,7 @@ private fun LazyListScope.fullScreenErrorItem(
     challengeUrl: String?,
     onChallenge: (String) -> Unit,
     rateLimited: Boolean,
+    customMessage: String?,
 ) {
     val message = if (rateLimited) R.string.core_ui_error_rate_limited else R.string.core_ui_error_loading_data
     item {
@@ -50,7 +52,7 @@ private fun LazyListScope.fullScreenErrorItem(
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    text = stringResource(message),
+                    text = customMessage ?: stringResource(message),
                     modifier = Modifier.padding(horizontal = 24.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

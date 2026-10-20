@@ -10,6 +10,7 @@ internal data class ThreadContentPresentation(
     val isFavorite: Boolean,
     val isRefreshing: Boolean = false,
     val refreshFailure: RefreshFailure? = null,
+    val missingThreadNotice: Long = 0,
     val gallery: MediaGalleryContent = MediaGalleryContent(),
     val navigation: ThreadPostNavigation = ThreadPostNavigation(),
     val contentFilters: ThreadContentFilterState = ThreadContentFilterState(),

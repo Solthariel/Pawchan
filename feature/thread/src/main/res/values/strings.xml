@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <string name="thread_not_exists">Тред не существует</string>
     <string name="favorite_add">Добавить тред в избранное</string>
     <string name="favorite_remove">Убрать тред из избранного</string>
     <string name="refresh">Обновить</string>

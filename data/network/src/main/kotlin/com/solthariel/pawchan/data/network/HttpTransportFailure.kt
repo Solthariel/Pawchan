@@ -71,7 +71,7 @@ internal fun <T> Response.toDomainOutcome(decode: (String) -> T?): DomainOutcome
     val payload = body.string()
     val challenge = ProtectionChallengeDetector.detect(this, payload)
     return when {
-        code == NOT_FOUND_STATUS -> DomainOutcome.Failure(DomainFailure.NotFound)
+        code == NOT_FOUND_STATUS || code == GONE_STATUS -> DomainOutcome.Failure(DomainFailure.NotFound)
         challenge != null -> DomainOutcome.Failure(challenge)
         !isSuccessful -> DomainOutcome.Failure(DomainFailure.HttpStatus(code))
         else -> decodeDomainPayload(payload, decode)
@@ -121,3 +121,4 @@ private fun <T> HttpTransportFailure.toPostingOutcome(): PostingOutcome<T> =
     )
 
 private const val NOT_FOUND_STATUS = 404
+private const val GONE_STATUS = 410

@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.BidirectionalPullRefreshBox
 import com.solthariel.pawchan.core.ui.LoadErrorPane
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.PullRefreshOptions
 import com.solthariel.pawchan.core.ui.RefreshFailureNotice
+import com.solthariel.pawchan.feature.thread.R
 import com.solthariel.pawchan.media.MediaSaveActions
 import com.solthariel.pawchan.media.MediaSaveStatusText
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
@@ -86,6 +88,12 @@ private fun ThreadBody(
 
             is ThreadUiState.Error -> {
                 LoadErrorPane(
+                    message =
+                        if (state.reason == ThreadError.NOT_FOUND) {
+                            stringResource(R.string.thread_not_exists)
+                        } else {
+                            null
+                        },
                     challengeUrl = state.challengeUrl,
                     rateLimited =
                         state.reason == ThreadError.RATE_LIMITED,

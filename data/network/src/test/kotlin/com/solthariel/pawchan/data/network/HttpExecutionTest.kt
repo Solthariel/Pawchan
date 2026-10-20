@@ -16,9 +16,10 @@ import org.junit.Test
 class HttpExecutionTest {
     @Test
     fun domainResponseClassifiesNotFoundBeforeDecoding() {
-        val outcome = response(404).toDomainOutcome { "decoded" }
-
-        assertEquals(DomainOutcome.Failure(DomainFailure.NotFound), outcome)
+        listOf(404, 410).forEach { code ->
+            val outcome = response(code).toDomainOutcome { error("Missing content must not be decoded") }
+            assertEquals(DomainOutcome.Failure(DomainFailure.NotFound), outcome)
+        }
     }
 
     @Test

@@ -73,7 +73,12 @@ internal class WorkspaceThreadRepository(
             }
 
             is DomainOutcome.Failure -> {
-                (copy ?: history?.load(address))?.let { DomainOutcome.Success(it) } ?: arhivachCopy(address, outcome)
+                val cached = copy ?: history?.load(address)
+                when {
+                    cached == null -> arhivachCopy(address, outcome)
+                    outcome.reason == DomainFailure.NotFound -> outcome
+                    else -> DomainOutcome.Success(cached)
+                }
             }
         }
     }

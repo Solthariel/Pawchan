@@ -31,4 +31,30 @@ class ThreadRefreshFailureTest {
         assertEquals(false, next.isRefreshing)
         assertEquals("https://2ch.su/b/res/42.html", next.presentation.refreshFailure?.challengeUrl)
     }
+
+    @Test
+    fun missingThreadKeepsContentAndProducesANewNoticeForEveryRefresh() {
+        val previous =
+            ThreadUiState.Content(
+                42,
+                "Тред",
+                emptyList(),
+                ThreadContentFlags(false),
+                ThreadContentPresentation(true, true),
+                ThreadContentStatistics(),
+            )
+        val missing = ThreadUiState.Error(ThreadError.NOT_FOUND)
+        val first = missing.keepContentOnRefreshFailure(previous) as ThreadUiState.Content
+        val second = missing.keepContentOnRefreshFailure(first) as ThreadUiState.Content
+        assertSame(previous.posts, first.posts)
+        assertEquals(true, first.isFavorite)
+        assertEquals(false, first.isRefreshing)
+        assertEquals(null, first.presentation.refreshFailure)
+        assertEquals(1L, first.presentation.missingThreadNotice)
+        assertEquals(2L, second.presentation.missingThreadNotice)
+        val error = ThreadUiState.Error(ThreadError.NETWORK)
+        val network = error.keepContentOnRefreshFailure(second) as ThreadUiState.Content
+        assertEquals(2L, network.presentation.missingThreadNotice)
+        assertSame(missing, missing.keepContentOnRefreshFailure(ThreadUiState.Loading))
+    }
 }

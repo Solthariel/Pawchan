@@ -12,8 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -100,6 +102,7 @@ internal fun ImageViewer(
 @Composable
 private fun MediaAttachmentUi.viewerImageModel(pages: ViewerImagePages): ViewerImageModel =
     ViewerImageModel(
+        originalUrl = originalUrl,
         contentDescription = fileName,
         width = dimensions?.width ?: 0,
         height = dimensions?.height ?: 0,
@@ -115,11 +118,14 @@ private fun ViewerImage(
     motion: ImageViewerMotion,
     onRetry: () -> Unit,
 ) {
-    val state by painter.state.collectAsState()
-    if (state !is AsyncImagePainter.State.Success && state !is AsyncImagePainter.State.Error) {
-        ViewerImagePlaceholder(model, imageLoader, motion)
+    val state = key(painter) { painter.state.collectAsState().value }
+    var retained by remember(model.originalUrl, imageLoader) { mutableStateOf<AsyncImagePainter.State.Success?>(null) }
+    val success = (state as? AsyncImagePainter.State.Success) ?: retained
+    SideEffect { if (state is AsyncImagePainter.State.Success) retained = state as AsyncImagePainter.State.Success }
+    if (success == null) {
+        ViewerImagePlaceholder(model, imageLoader, motion, state is AsyncImagePainter.State.Error, onRetry)
     }
-    val result = (state as? AsyncImagePainter.State.Success)?.result
+    val result = success?.result
     LaunchedEffect(result, motion) {
         if (result != null) {
             motion.resize(
@@ -131,7 +137,7 @@ private fun ViewerImage(
         }
     }
     Image(
-        painter = painter,
+        painter = success?.painter ?: painter,
         contentDescription = model.contentDescription,
         modifier =
             Modifier
@@ -150,10 +156,10 @@ private fun ViewerImage(
                 }.mediaTransform(motion),
         contentScale = ContentScale.Fit,
     )
-    if (state is AsyncImagePainter.State.Error) ImageError(onRetry)
 }
 
 private data class ViewerImageModel(
+    val originalUrl: String,
     val contentDescription: String,
     val width: Int,
     val height: Int,
@@ -166,9 +172,12 @@ private fun ViewerImagePlaceholder(
     model: ViewerImageModel,
     imageLoader: coil3.ImageLoader,
     motion: ImageViewerMotion,
+    originalFailed: Boolean,
+    onRetry: () -> Unit,
 ) {
+    var previewFailed by remember(model.originalUrl, model.thumbnailUrl, imageLoader) { mutableStateOf(false) }
     val preview = model.thumbnailPainter
-    val previewState = preview?.state?.collectAsState()?.value
+    val previewState = key(preview) { preview?.state?.collectAsState()?.value }
     if (preview != null && previewState is AsyncImagePainter.State.Success) {
         Image(preview, null, Modifier.fillMaxSize().mediaTransform(motion), contentScale = ContentScale.Fit)
     } else {
@@ -176,8 +185,10 @@ private fun ViewerImagePlaceholder(
             model.thumbnailUrl?.let { resolvedMediaUrl(it) },
             imageLoader,
             Modifier.mediaTransform(motion),
+            onState = { previewFailed = it == "coil_failed" || it == "missing_url" },
         )
     }
+    if (originalFailed && previewState !is AsyncImagePainter.State.Success && previewFailed) ImageError(onRetry)
 }
 
 @Composable

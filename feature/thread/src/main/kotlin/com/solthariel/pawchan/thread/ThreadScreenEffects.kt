@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import com.solthariel.pawchan.feature.thread.R
 
 @Composable
 internal fun BindThreadScreenEffects(
@@ -16,6 +17,11 @@ internal fun BindThreadScreenEffects(
 ) {
     val tools = memory.tools
     val context = LocalContext.current
+    LaunchedEffect(content?.address, content?.presentation?.missingThreadNotice) {
+        if ((content?.presentation?.missingThreadNotice ?: 0) > 0) {
+            Toast.makeText(context, R.string.thread_not_exists, Toast.LENGTH_SHORT).show()
+        }
+    }
     DisposableEffect(tools) { onDispose { tools.cancel() } }
     LaunchedEffect(content, tools.flag, tools.searchOpen) {
         if (tools.searchOpen) tools.search(content)
