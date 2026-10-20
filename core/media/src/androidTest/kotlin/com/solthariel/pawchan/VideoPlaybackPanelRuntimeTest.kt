@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import com.solthariel.pawchan.media.MediaViewerNavigation
 import com.solthariel.pawchan.media.video.VideoPlaybackControls
 import com.solthariel.pawchan.media.video.VideoPlaybackPanel
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
@@ -19,6 +20,7 @@ import com.solthariel.pawchan.media.video.VideoSoundState
 import com.solthariel.pawchan.media.video.VideoSpeed
 import com.solthariel.pawchan.media.video.VideoStage
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -37,6 +39,24 @@ class VideoPlaybackPanelRuntimeTest {
         compose.onNodeWithContentDescription("Воспроизвести").assertIsDisplayed()
         compose.onNodeWithContentDescription("Воспроизвести").performClick()
         compose.onNodeWithContentDescription("Пауза").assertIsDisplayed()
+    }
+
+    @Test
+    fun errorKeepsControlsAndNeighborNavigationAvailable() {
+        val player = TestVideoControls()
+        var next = 0
+        compose.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                Box(Modifier.fillMaxSize()) {
+                    VideoPlaybackPanel(player, MediaViewerNavigation(next = { next += 1 }))
+                }
+            }
+        }
+        compose.runOnIdle { player.status.value = player.status.value.copy(stage = VideoStage.ERROR) }
+        compose.onAllNodesWithText("0:00").assertCountEquals(2)
+        compose.onNodeWithContentDescription("Воспроизвести").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Следующий файл").performClick()
+        compose.runOnIdle { assertEquals(1, next) }
     }
 }
 

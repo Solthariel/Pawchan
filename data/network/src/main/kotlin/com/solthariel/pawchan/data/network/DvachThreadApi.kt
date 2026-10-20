@@ -10,7 +10,6 @@ import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.thread.PostVote
 import com.solthariel.pawchan.domain.thread.PostVoteRepository
 import com.solthariel.pawchan.domain.thread.ReportingThreadRepository
-import kotlinx.serialization.json.Json
 import okhttp3.Call
 
 class DvachThreadApi private constructor(
@@ -46,15 +45,7 @@ class DvachThreadApi private constructor(
         )
 
     private suspend fun loadArchived(address: ThreadAddress): DomainOutcome<ThreadSnapshot> =
-        callFactory.executeHttpCall(
-            request = boardDetailsRequest(address.board, listOf("arch", "res", "${address.thread.value}.json")),
-            onTransportFailure = { it.toDomainOutcome() },
-            handleResponse = { response ->
-                response.toDomainOutcome { payload ->
-                    decoder.decode(address, payload)?.archived(response.request.url.encodedPath)
-                }
-            },
-        )
+        DvachArchivedThreadLoader(callFactory, decoder).load(address)
 
     companion object {
         fun create(callFactory: Call.Factory): DvachThreadApi {

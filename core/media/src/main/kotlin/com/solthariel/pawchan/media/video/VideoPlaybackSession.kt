@@ -134,7 +134,9 @@ internal class VideoPlaybackSession(
     override fun togglePlay() {
         requestedPlaying = !status.value.playing
         if (requestedPlaying) {
-            if (status.value.ended) {
+            if (status.value.stage == VideoStage.ERROR) {
+                retry()
+            } else if (status.value.ended) {
                 mutableStatus.value = status.value.copy(ended = false)
                 engine.seekTo(0L)
                 start()

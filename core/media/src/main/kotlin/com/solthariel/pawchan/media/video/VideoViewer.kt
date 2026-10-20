@@ -159,8 +159,8 @@ private fun VideoSurface(
         VideoStateOverlay(state, actions.onRetry)
         MediaViewerChrome(
             motion,
-            // Панель не пропадает на время загрузки (в том числе при перелистывании): кнопки на месте, время 0:00.
-            bottom = { if (state.stage != VideoStage.ERROR) VideoPlaybackPanel(player, navigation, actions.onPip) },
+            // Ошибка загрузки не убирает кнопки, время и переход к соседним вложениям.
+            bottom = { VideoPlaybackPanel(player, navigation, actions.onPip) },
         ) {
             MediaToolbar(
                 video,

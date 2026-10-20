@@ -19,6 +19,32 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class VideoRecoveryTest {
     @Test
+    fun playAfterTerminalFailureReopensTheSource() =
+        runTest {
+            val engine = TestVideoEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, VIDEO_TEST_URL)
+            try {
+                session.start()
+                assertFalse(engine.opened.receive())
+                engine.emit(VideoEvent.ERROR)
+                assertTrue(engine.opened.receive())
+                engine.emit(VideoEvent.ERROR)
+                assertEquals(
+                    com.solthariel.pawchan.media.video.VideoStage.ERROR,
+                    session.status.value.stage,
+                )
+                session.togglePlay()
+                assertTrue(engine.opened.receive())
+                assertEquals(
+                    com.solthariel.pawchan.media.video.VideoStage.BUFFERING,
+                    session.status.value.stage,
+                )
+            } finally {
+                session.close()
+            }
+        }
+
+    @Test
     fun galleryReattachCanForcePausedPlayback() =
         runTest {
             val engine = TestVideoEngine()

@@ -168,7 +168,7 @@ internal fun ThreadCounterCell(
     width: Dp,
 ) {
     val colors = MaterialTheme.colorScheme
-    val active = counter.count > 0 || counter.deleted || counter.error
+    val active = !counter.deleted && (counter.count > 0 || counter.error)
     val container =
         when {
             !active -> colors.surfaceVariant

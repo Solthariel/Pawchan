@@ -67,8 +67,8 @@ class ThreadsHubModelTest {
     @Test
     fun counterLabelsFollowDashchan() {
         assertEquals("5", ThreadCounter(5).label)
-        assertEquals("5X", ThreadCounter(5, deleted = true).label)
-        assertEquals("X", ThreadCounter(deleted = true).label)
+        assertEquals("×", ThreadCounter(5, deleted = true).label)
+        assertEquals("×", ThreadCounter(deleted = true).label)
         assertEquals("?", ThreadCounter(error = true).label)
         assertEquals("1K+", ThreadCounter(1500).label)
         assertEquals(false, ThreadCounter().visible)
@@ -79,6 +79,6 @@ class ThreadsHubModelTest {
         assertEquals("0", ThreadCounter().cellLabel)
         assertEquals("", ThreadCounter(running = true).cellLabel)
         assertEquals("7", ThreadCounter(7).cellLabel)
-        assertEquals("X", ThreadCounter(deleted = true).cellLabel)
+        assertEquals("×", ThreadCounter(deleted = true).cellLabel)
     }
 }

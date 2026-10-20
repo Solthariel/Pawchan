@@ -77,7 +77,11 @@ internal class FavoriteThreadsWatch(
 
                             is DomainOutcome.Failure -> {
                                 val missing = loaded.reason == DomainFailure.NotFound
-                                (counters[address] ?: ThreadCounter()).copy(deleted = missing, error = !missing)
+                                (counters[address] ?: ThreadCounter()).copy(
+                                    running = false,
+                                    deleted = missing,
+                                    error = !missing,
+                                )
                             }
                         }
                     update(address) { counter }
