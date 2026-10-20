@@ -36,7 +36,8 @@ internal fun ContentFilterRuleRow(
             Text(
                 rule.label,
                 style = MaterialTheme.typography.bodyLarge,
-                maxLines = 2,
+                maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 color =
                     if (rule.enabled) {

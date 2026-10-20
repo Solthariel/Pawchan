@@ -4,10 +4,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
 
 internal data class ContentFilterInputPresentation(
@@ -30,11 +29,13 @@ internal fun filterConditionPresentation(mode: String): ContentFilterInputPresen
 @Composable
 internal fun FilterInputHint(
     presentation: ContentFilterInputPresentation,
-    visible: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
     Text(
         presentation.error?.let { "$it. ${presentation.hint}" } ?: presentation.hint,
-        modifier = if (visible) Modifier else Modifier.alpha(0f).clearAndSetSemantics {},
+        modifier = modifier,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
         style = MaterialTheme.typography.bodyMedium,
         color =
             if (presentation.error != null) {

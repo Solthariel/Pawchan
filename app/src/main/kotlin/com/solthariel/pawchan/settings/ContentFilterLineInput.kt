@@ -55,6 +55,8 @@ internal fun FilterLineInput(
                     .padding(vertical = 8.dp)
                     .semantics { contentDescription = label },
             singleLine = singleLine,
+            // Keep the viewport stable when adding newlines or changing the overlaid hint.
+            minLines = if (singleLine) 1 else 3,
             maxLines = if (singleLine) 1 else 3,
             textStyle =
                 MaterialTheme.typography.bodyLarge.copy(
@@ -67,9 +69,11 @@ internal fun FilterLineInput(
             interactionSource = interaction,
             visualTransformation = transformation,
             decorationBox = { inner ->
-                Box {
-                    if (presentation.hint.isNotEmpty()) FilterInputHint(presentation, visible = value.isBlank())
+                Box(Modifier.fillMaxWidth()) {
                     inner()
+                    if (value.isBlank() && presentation.hint.isNotEmpty()) {
+                        FilterInputHint(presentation, Modifier.matchParentSize())
+                    }
                 }
             },
         )
