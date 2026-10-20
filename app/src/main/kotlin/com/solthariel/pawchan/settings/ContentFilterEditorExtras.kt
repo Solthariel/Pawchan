@@ -19,5 +19,4 @@ internal fun FilterLegacyFields(draft: ContentFilterDraft) {
     if (draft.label.isNotBlank()) FilterLineInput("Название", draft.label, { draft.label = it })
     if (draft.exceptions.isNotBlank()) FilterLineInput("Исключения", draft.exceptions, { draft.exceptions = it })
     if (draft.expires.isNotBlank()) FilterLineInput("Дата отключения", draft.expires, { draft.expires = it })
-    FilterCheck("Правило включено", draft.enabled, { draft.enabled = it })
 }

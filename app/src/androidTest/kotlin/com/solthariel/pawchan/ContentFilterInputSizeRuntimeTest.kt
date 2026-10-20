@@ -24,6 +24,7 @@ import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.settings.FilterLineInput
 import com.solthariel.pawchan.settings.filterConditionPresentation
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -38,7 +39,7 @@ class ContentFilterInputSizeRuntimeTest {
 
     @Test fun smallTextKeepsHeightWhenHintChanges() = checkModeChanges("", 0.9f)
 
-    @Test fun newlinesKeepInputHeightAndFollowingContentPosition() {
+    @Test fun newlinesPreserveFirstBaselineAndGrowOnlyUpToThreeLines() {
         var text by mutableStateOf("строка")
         compose.setContent {
             MaterialTheme {
@@ -48,17 +49,34 @@ class ContentFilterInputSizeRuntimeTest {
                 }
             }
         }
-        val before = compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot
         val input = compose.onNodeWithContentDescription("Условие")
-        val initialHeight = input.fetchSemanticsNode().boundsInRoot.height
+        val originalTop = input.fetchSemanticsNode().boundsInRoot.top
+        var previousHeight = input.fetchSemanticsNode().boundsInRoot.height
         val baseline = firstBaseline()
         listOf("строка\n", "строка\nдругая\n", "строка\nдругая\nтретья\nчетвёртая").forEach { value ->
             input.performTextReplacement(value)
             compose.runOnIdle { assertEquals(value, text) }
             assertEquals(baseline, firstBaseline(), 0.01f)
-            assertEquals(initialHeight, input.fetchSemanticsNode().boundsInRoot.height, 1f)
-            assertEquals(before, compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot)
+            val bounds = input.fetchSemanticsNode().boundsInRoot
+            assertEquals(originalTop, bounds.top, 1f)
+            assertTrue(bounds.height >= previousHeight)
+            previousHeight = bounds.height
         }
+        input.performTextReplacement("1\n2\n3\n4\n5")
+        assertEquals(previousHeight, input.fetchSemanticsNode().boundsInRoot.height, 1f)
+    }
+
+    @Test fun emptyProbeUsesOneLineInsteadOfThreeEmptyLines() {
+        compose.setContent {
+            MaterialTheme { Column(Modifier.width(240.dp)) { FilterLineInput("Проверяемый текст", "", {}) } }
+        }
+        val height =
+            compose
+                .onNodeWithContentDescription("Проверяемый текст")
+                .fetchSemanticsNode()
+                .boundsInRoot.height
+        val limit = with(compose.density) { 56.dp.toPx() }
+        assertTrue(height < limit)
     }
 
     private fun firstBaseline(): Float {

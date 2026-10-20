@@ -4,6 +4,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -37,26 +39,42 @@ internal fun FilterLineInput(
     presentation: ContentFilterInputPresentation = ContentFilterInputPresentation(),
     singleLine: Boolean = false,
 ) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val minimumHeight = filterInputMinimumHeight(presentation, maxWidth)
+            FilterTextInput(label, value, onChange, presentation, singleLine, minimumHeight)
+        }
+    }
+}
+
+@Composable
+private fun FilterTextInput(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    presentation: ContentFilterInputPresentation,
+    singleLine: Boolean,
+    minimumHeight: Dp,
+) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val baseStyle = MaterialTheme.typography.bodyLarge
     val lineHeight = with(LocalDensity.current) { maxOf(baseStyle.lineHeight.toPx(), 24.dp.toPx()).toSp() }
     val preview = presentation.preview
     val transformation = remember(preview) { VisualTransformation { filterInputPreview(it, preview) } }
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column {
         BasicTextField(
             value = value,
             onValueChange = onChange,
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 36.dp)
+                    .heightIn(min = minimumHeight)
                     .padding(vertical = 8.dp)
                     .semantics { contentDescription = label },
             singleLine = singleLine,
-            // Keep the viewport stable when adding newlines or changing the overlaid hint.
-            minLines = if (singleLine) 1 else 3,
+            minLines = 1,
             maxLines = if (singleLine) 1 else 3,
             textStyle =
                 MaterialTheme.typography.bodyLarge.copy(

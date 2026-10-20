@@ -13,17 +13,19 @@ internal data class ContentFilterInputPresentation(
     val hint: String = "",
     val error: String? = null,
     val preview: AnnotatedString? = null,
+    val hintAlternatives: List<String> = emptyList(),
 )
 
 internal fun filterConditionPresentation(mode: String): ContentFilterInputPresentation =
     ContentFilterInputPresentation(
         hint =
             if (mode == ContentFilterMode.ALL_WORDS.name) {
-                "Слова через пробел или запятую. Порядок не важен"
+                FILTER_CONDITION_HINTS[1]
             } else {
-                "Введите фразу целиком"
+                FILTER_CONDITION_HINTS[0]
             },
         error = null,
+        hintAlternatives = FILTER_CONDITION_HINTS,
     )
 
 @Composable
@@ -61,3 +63,9 @@ internal fun filterEmptyErrorIsInline(
     error: String,
     text: String,
 ): Boolean = text.isBlank() && (error == "Условие пустое" || error == "Введите одну точную фразу")
+
+private val FILTER_CONDITION_HINTS =
+    listOf(
+        "Введите фразу целиком",
+        "Слова через пробел или запятую. Порядок не важен",
+    )
