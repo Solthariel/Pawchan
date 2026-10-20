@@ -116,7 +116,7 @@ internal fun FilterCheck(
         modifier.heightIn(min = 48.dp).toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = checked, onCheckedChange = null)
+        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.size(24.dp))
         Text(label, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
     }
 }

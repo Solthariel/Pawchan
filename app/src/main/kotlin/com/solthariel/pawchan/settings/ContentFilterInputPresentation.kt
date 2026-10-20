@@ -13,7 +13,6 @@ internal data class ContentFilterInputPresentation(
     val hint: String = "",
     val error: String? = null,
     val preview: AnnotatedString? = null,
-    val hintAlternatives: List<String> = emptyList(),
 )
 
 internal fun filterConditionPresentation(mode: String): ContentFilterInputPresentation =
@@ -25,7 +24,6 @@ internal fun filterConditionPresentation(mode: String): ContentFilterInputPresen
                 FILTER_CONDITION_HINTS[0]
             },
         error = null,
-        hintAlternatives = FILTER_CONDITION_HINTS,
     )
 
 @Composable
@@ -36,7 +34,7 @@ internal fun FilterInputHint(
     Text(
         presentation.error?.let { "$it. ${presentation.hint}" } ?: presentation.hint,
         modifier = modifier,
-        maxLines = 3,
+        maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         style = MaterialTheme.typography.bodyMedium,
         color =

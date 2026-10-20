@@ -24,8 +24,6 @@ import com.solthariel.pawchan.domain.filter.FilterMatchField
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 internal fun ContentFilterProbe(
@@ -33,29 +31,23 @@ internal fun ContentFilterProbe(
     samples: List<ContentFilterSample> = emptyList(),
 ) {
     var text by rememberSaveable { mutableStateOf("") }
-    var result by remember(text) { mutableStateOf<FilterProbeResult?>(null) }
-    var checkedRule by remember(text) { mutableStateOf<ContentFilterRule?>(null) }
-    val currentResult = result.takeIf { checkedRule == rule }
-    LaunchedEffect(rule, text) {
-        if (text.isNotBlank()) {
-            val threadId = samples.firstOrNull()?.threadId ?: rule.targets.threadIds.firstOrNull()
-            result = withContext(Dispatchers.Default) { filterProbeResult(rule, text, threadId) }
-            checkedRule = rule
-        }
-    }
+    val state = remember { ContentFilterProbeState() }
+    val threadId = samples.firstOrNull()?.threadId ?: rule.targets.threadIds.firstOrNull()
+    val input = FilterProbeInput(rule, text, threadId)
+    LaunchedEffect(input) { state.check(input) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FilterLineInput(
             "Проверяемый текст",
             text,
             { text = it },
-            presentation = ContentFilterInputPresentation(preview = currentResult?.preview),
+            presentation = ContentFilterInputPresentation(preview = state.preview(input)),
         )
         Text(
-            if (text.isBlank()) "" else currentResult?.caption ?: "Проверка…",
+            state.caption(text),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            minLines = 2,
-            maxLines = 2,
+            minLines = 1,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }

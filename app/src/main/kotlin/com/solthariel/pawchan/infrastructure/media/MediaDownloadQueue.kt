@@ -37,7 +37,10 @@ internal class MediaDownloadQueue(
         DownloadPreferences()
     override val defaultDirectory: String? get() = preferences.treeUri
 
-    override fun useDirectory(directory: Uri): AutoCloseable = permissions?.useDirectory(directory.toString()) ?: AutoCloseable {}
+    override fun useDirectory(directory: Uri): AutoCloseable {
+        val lease = permissions?.useDirectory(directory.toString())
+        return lease ?: AutoCloseable {}
+    }
 
     override fun suggestedName(attachment: MediaAttachmentUi): String = downloadName(attachment, preferences.naming)
 

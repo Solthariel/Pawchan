@@ -58,8 +58,8 @@ internal fun FilterEditorBody(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) { content() }
         HorizontalDivider()
-        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-            FilterCheck("Правило включено", draft.enabled, { draft.enabled = it })
+        Column(Modifier.fillMaxWidth().padding(horizontal = AppDialogStyle.contentPadding, vertical = 4.dp)) {
+            FilterCheck("Правило включено", draft.enabled, { draft.enabled = it }, Modifier.fillMaxWidth())
             FilterEditorButtons(onClose, onDelete, confirm)
         }
     }
