@@ -70,4 +70,9 @@
     <string name="attachment_reduce_factor">%1$d×</string>
     <string name="attachment_reencode_apply">Применить</string>
     <string name="attachment_reencode_reset">Сбросить перекодирование</string>
+    <string name="attachment_result_invalid_name">Некорректное имя</string>
+    <string name="attachment_result_resolution_unknown">— × —</string>
+    <string name="attachment_position">Вложение %1$d из %2$d</string>
+    <string name="attachment_move_before">Переместить раньше</string>
+    <string name="attachment_move_after">Переместить позже</string>
 </resources>

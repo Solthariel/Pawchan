@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +41,7 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
             "Условие",
             draft.text,
             { draft.text = it },
-            presentation = filterConditionPresentation(draft.mode, draft.text),
+            presentation = filterConditionPresentation(draft.mode),
         )
     }
 }
@@ -57,19 +59,29 @@ private fun FilterMatchModes(draft: ContentFilterDraft) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        modes.forEach { mode ->
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
-                    selected = draft.mode == mode.name,
-                    role = Role.RadioButton,
-                    onClick = { draft.selectMode(mode) },
-                ),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(selected = draft.mode == mode.name, onClick = null)
-                Text(filterModeLabel(mode), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
-            }
+        Row(Modifier.fillMaxWidth().selectableGroup()) {
+            basic.forEach { mode -> FilterModeChoice(draft, mode, Modifier.weight(1f)) }
         }
+        modes.filterNot { it in basic }.forEach { mode -> FilterModeChoice(draft, mode, Modifier.fillMaxWidth()) }
+    }
+}
+
+@Composable
+private fun FilterModeChoice(
+    draft: ContentFilterDraft,
+    mode: ContentFilterMode,
+    modifier: Modifier,
+) {
+    Row(
+        modifier.heightIn(min = 48.dp).selectable(
+            selected = draft.mode == mode.name,
+            role = Role.RadioButton,
+            onClick = { draft.selectMode(mode) },
+        ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = draft.mode == mode.name, onClick = null, modifier = Modifier.size(24.dp))
+        Text(filterModeLabel(mode), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
     }
 }
 

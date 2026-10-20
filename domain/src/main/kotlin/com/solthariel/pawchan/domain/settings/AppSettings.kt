@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 /** Глобальные настройки из экрана «Настройки»; значения по умолчанию — поведение до появления настройки. */
 data class AppSettings(
     val postMarkers: Boolean = true,
-    val bubblePosts: Boolean = true,
+    val bubblePosts: Boolean = false,
     val hideStickers: Boolean = false,
     val showDefaultName: Boolean = false,
     val textSize: Int = DEFAULT_TEXT_SIZE,

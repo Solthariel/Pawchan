@@ -153,7 +153,10 @@ class DataStoreSettingsRepository private constructor(
         fun create(context: Context): DataStoreSettingsRepository {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             val dataStore =
-                PreferenceDataStoreFactory.create(scope = scope) {
+                PreferenceDataStoreFactory.create(
+                    scope = scope,
+                    migrations = listOf(PostAppearanceMigration),
+                ) {
                     context.applicationContext.preferencesDataStoreFile(DATASTORE_FILE)
                 }
             return DataStoreSettingsRepository(

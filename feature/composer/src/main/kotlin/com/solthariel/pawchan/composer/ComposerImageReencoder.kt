@@ -9,7 +9,6 @@ import com.solthariel.pawchan.data.network.PostingMediaBytes
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import kotlin.math.roundToInt
 
 internal fun reencodeAttachmentImage(
     content: ByteArray,
@@ -17,8 +16,12 @@ internal fun reencodeAttachmentImage(
 ): ByteArray {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeByteArray(content, 0, content.size, bounds)
-    val width = (bounds.outWidth * settings.scaleFactor).roundToInt().coerceAtLeast(1)
-    val height = (bounds.outHeight * settings.scaleFactor).roundToInt().coerceAtLeast(1)
+    val dimensions =
+        requireNotNull(reencodingDimensions(bounds.outWidth, bounds.outHeight, settings)) {
+            "Не удалось определить разрешение изображения"
+        }
+    val width = dimensions.width
+    val height = dimensions.height
     require(bounds.outWidth > 0 && bounds.outHeight > 0 && width.toLong() * height <= MAX_REENCODE_PIXELS) {
         "Изображение слишком большое для перекодирования: уменьшите масштаб"
     }

@@ -17,12 +17,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -36,6 +39,8 @@ internal fun FilterLineInput(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val baseStyle = MaterialTheme.typography.bodyLarge
+    val lineHeight = with(LocalDensity.current) { maxOf(baseStyle.lineHeight.toPx(), 24.dp.toPx()).toSp() }
     val preview = presentation.preview
     val transformation = remember(preview) { VisualTransformation { filterInputPreview(it, preview) } }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -51,19 +56,25 @@ internal fun FilterLineInput(
                     .semantics { contentDescription = label },
             singleLine = singleLine,
             maxLines = if (singleLine) 1 else 3,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+            textStyle =
+                MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = lineHeight,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
+                ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             interactionSource = interaction,
             visualTransformation = transformation,
             decorationBox = { inner ->
                 Box {
-                    if (value.isBlank()) FilterInputHint(presentation)
+                    if (presentation.hint.isNotEmpty()) FilterInputHint(presentation, visible = value.isBlank())
                     inner()
                 }
             },
         )
         HorizontalDivider(
-            thickness = if (focused) 2.dp else 1.dp,
+            thickness = 1.dp,
             color = filterInputColor(focused, presentation.error != null),
         )
     }

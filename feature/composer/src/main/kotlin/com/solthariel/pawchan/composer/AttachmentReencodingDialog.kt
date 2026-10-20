@@ -46,6 +46,7 @@ internal fun AttachmentReencodingDialog(
                 modifier = Modifier.fillMaxWidth(),
             )
             AttachmentReencodingControls(settings, enabled) { settings = it }
+            AttachmentReencodingSummary(file, settings)
             AttachmentReencodingActions(
                 enabled = enabled,
                 onDismiss = onDismiss,

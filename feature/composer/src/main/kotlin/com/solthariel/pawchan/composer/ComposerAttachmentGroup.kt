@@ -22,11 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -41,7 +45,9 @@ internal fun ComposerAttachmentStrip(
     onChange: (List<ComposerAttachment>) -> Unit,
 ) {
     var selectedId by remember { mutableStateOf<String?>(null) }
-    if (files.isNotEmpty()) ComposerMediaRows(files, imageLoader, enabled) { selectedId = it.id }
+    if (files.isNotEmpty()) {
+        ComposerMediaRows(files, imageLoader, enabled, onChange) { selectedId = it.id }
+    }
     files.firstOrNull { it.id == selectedId }?.let { file ->
         key(file.id) {
             ComposerAttachmentViewer(
@@ -64,21 +70,72 @@ private fun ComposerMediaRows(
     files: List<ComposerAttachment>,
     imageLoader: ImageLoader,
     enabled: Boolean,
+    onChange: (List<ComposerAttachment>) -> Unit,
     onSelect: (ComposerAttachment) -> Unit,
 ) {
+    val drag = remember { ComposerAttachmentDragState() }
+    val density = LocalDensity.current
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val metrics = calculateComposerStripMetrics(files.size, maxWidth.value)
-        Column(Modifier.height(metrics.totalHeight.dp), verticalArrangement = Arrangement.spacedBy(MEDIA_GAP.dp)) {
-            files.chunked(MEDIA_COLUMNS).forEach { row ->
-                Row(
-                    Modifier.fillMaxWidth().height(metrics.cellHeight.dp),
-                    horizontalArrangement = Arrangement.spacedBy(MEDIA_GAP.dp),
-                ) {
-                    repeat(MEDIA_COLUMNS) { index ->
-                        Box(Modifier.weight(1f).fillMaxSize()) {
-                            row.getOrNull(index)?.let { file ->
-                                key(file.id) {
-                                    ComposerMediaCell(file, imageLoader, enabled) { onSelect(file) }
+        val grid =
+            with(density) {
+                ComposerDropGrid(maxWidth.toPx(), metrics.cellHeight.dp.toPx(), MEDIA_GAP.dp.toPx(), rtl)
+            }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(
+                    metrics.totalHeight.dp,
+                ).composerAttachmentDragModifier(drag, grid, files, enabled, onChange),
+        ) {
+            ComposerMediaGrid(
+                drag.arrange(files),
+                imageLoader,
+                enabled,
+                metrics,
+                drag.id,
+                ComposerMediaActions(onChange, onSelect),
+            )
+            files.firstOrNull { it.id == drag.id }?.let { ComposerAttachmentDragOverlay(it, imageLoader, grid, drag) }
+        }
+    }
+}
+
+private data class ComposerMediaActions(
+    val onChange: (List<ComposerAttachment>) -> Unit,
+    val onSelect: (ComposerAttachment) -> Unit,
+)
+
+@Composable
+private fun ComposerMediaGrid(
+    files: List<ComposerAttachment>,
+    imageLoader: ImageLoader,
+    enabled: Boolean,
+    metrics: ComposerStripMetrics,
+    draggingId: String?,
+    actions: ComposerMediaActions,
+) {
+    Column(Modifier.height(metrics.totalHeight.dp), verticalArrangement = Arrangement.spacedBy(MEDIA_GAP.dp)) {
+        files.chunked(MEDIA_COLUMNS).forEachIndexed { rowIndex, row ->
+            Row(
+                Modifier.fillMaxWidth().height(metrics.cellHeight.dp),
+                horizontalArrangement = Arrangement.spacedBy(MEDIA_GAP.dp),
+            ) {
+                repeat(MEDIA_COLUMNS) { index ->
+                    Box(Modifier.weight(1f).fillMaxSize()) {
+                        row.getOrNull(index)?.let { file ->
+                            key(file.id) {
+                                val order =
+                                    Modifier.composerAttachmentOrderSemantics(
+                                        rowIndex * MEDIA_COLUMNS + index,
+                                        files,
+                                        enabled,
+                                        actions.onChange,
+                                    )
+                                val alpha = if (file.id == draggingId) 0f else 1f
+                                ComposerMediaCell(file, imageLoader, enabled, order.alpha(alpha)) {
+                                    actions.onSelect(file)
                                 }
                             }
                         }
@@ -94,10 +151,11 @@ private fun ComposerMediaCell(
     file: ComposerAttachment,
     imageLoader: ImageLoader,
     enabled: Boolean,
+    modifier: Modifier,
     onClick: () -> Unit,
 ) {
     Box(
-        Modifier
+        modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)

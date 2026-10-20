@@ -10,7 +10,7 @@ data class PostDisplayPreferences(
     /** Часовой пояс телефона; передаётся явно для детерминированного форматирования. */
     val zone: ZoneId = ZoneId.systemDefault(),
     val showStateMarkers: Boolean = true,
-    val bubblePosts: Boolean = true,
+    val bubblePosts: Boolean = false,
     val hideStickers: Boolean = false,
     /** Показывать имя по умолчанию («Аноним»). */
     val showDefaultName: Boolean = false,

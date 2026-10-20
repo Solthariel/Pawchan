@@ -33,11 +33,14 @@ internal fun ContentFilterProbe(
     samples: List<ContentFilterSample> = emptyList(),
 ) {
     var text by rememberSaveable { mutableStateOf("") }
-    var result by remember(rule, text) { mutableStateOf<FilterProbeResult?>(null) }
+    var result by remember(text) { mutableStateOf<FilterProbeResult?>(null) }
+    var checkedRule by remember(text) { mutableStateOf<ContentFilterRule?>(null) }
+    val currentResult = result.takeIf { checkedRule == rule }
     LaunchedEffect(rule, text) {
         if (text.isNotBlank()) {
             val threadId = samples.firstOrNull()?.threadId ?: rule.targets.threadIds.firstOrNull()
             result = withContext(Dispatchers.Default) { filterProbeResult(rule, text, threadId) }
+            checkedRule = rule
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -45,17 +48,16 @@ internal fun ContentFilterProbe(
             "Проверяемый текст",
             text,
             { text = it },
-            presentation = ContentFilterInputPresentation(preview = result?.preview),
+            presentation = ContentFilterInputPresentation(preview = currentResult?.preview),
         )
-        result?.let { checked ->
-            Text(
-                checked.caption,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Text(
+            if (text.isBlank()) "" else currentResult?.caption ?: "Проверка…",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            minLines = 2,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

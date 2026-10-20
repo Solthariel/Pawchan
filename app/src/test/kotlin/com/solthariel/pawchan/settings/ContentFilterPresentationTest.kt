@@ -13,14 +13,14 @@ import java.nio.charset.CharacterCodingException
 class ContentFilterPresentationTest {
     @Test
     fun emptyConditionHintExplainsTheSelectedModeInTheField() {
-        val words = filterConditionPresentation(ContentFilterMode.ALL_WORDS.name, "")
-        val phrase = filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name, " ")
-        assertEquals("Условие пусто", words.error)
+        val words = filterConditionPresentation(ContentFilterMode.ALL_WORDS.name)
+        val phrase = filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name)
+        assertNull(words.error)
         assertTrue(words.hint.contains("пробел или запятую"))
         assertTrue(words.hint.contains("Порядок не важен"))
-        assertEquals("Условие пусто", phrase.error)
+        assertNull(phrase.error)
         assertTrue(phrase.hint.contains("фразу целиком"))
-        assertNull(filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name, "хлеб").error)
+        assertNull(filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name).error)
     }
 
     @Test

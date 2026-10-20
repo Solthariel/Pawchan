@@ -89,10 +89,10 @@ private fun interfaceGroups(
                     themes.indexOf(state.theme),
                 ) { actions.onTheme(themes[it]) },
                 SettingsItem.Choice(
-                    "Вид постов",
-                    listOf("Пузыри", "Без пузырей"),
-                    if (app.bubblePosts) 0 else 1,
-                ) { selected -> update { it.copy(bubblePosts = selected == 0) } },
+                    "Оформление постов",
+                    listOf("Без рамок", "Карточки"),
+                    if (app.bubblePosts) 1 else 0,
+                ) { selected -> update { it.copy(bubblePosts = selected == 1) } },
                 SettingsItem.Toggle(
                     "Скрывать стикеры",
                     "Скрывать вложения стикеров, оставляя текст поста",
