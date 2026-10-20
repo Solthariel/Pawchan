@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.catalog
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +41,7 @@ internal fun CatalogToolbarRow(
             focusRequester,
             actions.onQueryChange,
             actions.onOpenSearch,
+            actions.overflow.boardLookup?.onOpen,
         )
         CatalogRefreshButton(ui.refreshing, actions.onRefresh)
         CatalogOverflowMenu(
@@ -75,6 +77,7 @@ private fun RowScope.CatalogAnimatedHeader(
     focusRequester: FocusRequester,
     onQueryChange: (String) -> Unit,
     onOpenSearch: () -> Unit,
+    onChooseBoard: (() -> Unit)?,
 ) {
     UiToolbarSearchTransition(
         searchVisible = header.searchVisible,
@@ -89,7 +92,7 @@ private fun RowScope.CatalogAnimatedHeader(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             )
         } else {
-            CatalogIdentityRow(header, onOpenSearch)
+            CatalogIdentityRow(header, onOpenSearch, onChooseBoard)
         }
     }
 }
@@ -98,13 +101,27 @@ private fun RowScope.CatalogAnimatedHeader(
 private fun CatalogIdentityRow(
     header: CatalogHeaderUi,
     onOpenSearch: () -> Unit,
+    onChooseBoard: (() -> Unit)?,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         CatalogBoardIdentity(
             board = header.board,
             title = header.title,
             boardSpeed = header.speed,
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .then(
+                        if (onChooseBoard != null) {
+                            Modifier.clickable(
+                                onClickLabel = stringResource(R.string.choose_board),
+                                onClick = onChooseBoard,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ).padding(start = 8.dp),
+            switchable = onChooseBoard != null,
         )
         CatalogIconButton(
             kind = UiIconKind.SEARCH,

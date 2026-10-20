@@ -100,27 +100,29 @@ private fun CatalogThreadsPane(
         onSearchQueryChange(query)
         actions.catalog.onSearchQueryChange(query)
     }
-    Column(modifier = Modifier.fillMaxSize()) {
-        CatalogToolbar(
-            input =
-                CatalogToolbarInput(
-                    board = presentation.board,
-                    state = presentation.state,
-                    searchQuery = searchQuery,
-                ),
-            onSearchQueryChange = updateSearchQuery,
-            actions = actions.catalog,
-            menu = menu,
-        )
-        RefreshFailureNotice(
-            (presentation.state as? CatalogUiState.Content)?.refreshFailure,
-            actions.catalog.onChallenge,
-        )
-        CatalogBody(
-            presentation = presentation,
-            actions = actions,
-            modifier = Modifier.weight(1f),
-        )
+    CatalogBoardLookupLayer(menu.boardLookup) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            CatalogToolbar(
+                input =
+                    CatalogToolbarInput(
+                        board = presentation.board,
+                        state = presentation.state,
+                        searchQuery = searchQuery,
+                    ),
+                onSearchQueryChange = updateSearchQuery,
+                actions = actions.catalog,
+                menu = menu,
+            )
+            RefreshFailureNotice(
+                (presentation.state as? CatalogUiState.Content)?.refreshFailure,
+                actions.catalog.onChallenge,
+            )
+            CatalogBody(
+                presentation = presentation,
+                actions = actions,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

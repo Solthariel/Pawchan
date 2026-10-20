@@ -8,7 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.solthariel.pawchan.core.ui.MenuNavigation
 import com.solthariel.pawchan.core.ui.OVAL_BUTTON_SHAPE
+import com.solthariel.pawchan.core.ui.UiBackwardIndicator
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -39,7 +42,7 @@ private fun ThreadMainMenuItems(
         tools.menu = false
         tools.selecting = true
     }
-    ThreadMenuItem("Содержимое ›") { tools.contents = true }
+    ThreadMenuItem("Содержимое", navigation = MenuNavigation.FORWARD) { tools.contents = true }
     ThreadMenuItem("Внешний вид") { tools.openDialog(ThreadDialog.APPEARANCE) }
     HorizontalDivider()
     ThreadMenuItem("Сохранить копию…", enabled = !tools.exporting) { tools.openDialog(ThreadDialog.ARCHIVE) }
@@ -69,7 +72,7 @@ private fun ThreadContentsItems(
     actions: ThreadActions?,
 ) {
     val history = actions?.history
-    ThreadMenuItem("‹ Назад") { tools.contents = false }
+    ThreadMenuItem("Назад", navigation = MenuNavigation.BACK) { tools.contents = false }
     ThreadMenuItem("Перезагрузить") {
         tools.closeMenu()
         actions?.onRefresh?.invoke()
@@ -97,11 +100,24 @@ private fun ThreadContentsItems(
 internal fun ThreadMenuItem(
     title: String,
     enabled: Boolean = true,
+    navigation: MenuNavigation? = null,
     onClick: () -> Unit,
 ) {
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(title) },
+        leadingIcon =
+            if (navigation == MenuNavigation.BACK) {
+                { UiBackwardIndicator() }
+            } else {
+                null
+            },
+        trailingIcon =
+            if (navigation == MenuNavigation.FORWARD) {
+                { UiForwardIndicator() }
+            } else {
+                null
+            },
         enabled = enabled,
         onClick = onClick,
     )

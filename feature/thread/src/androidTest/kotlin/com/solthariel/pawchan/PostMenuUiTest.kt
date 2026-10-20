@@ -35,12 +35,12 @@ class PostMenuUiTest {
         var command: PostMenuCommand? = null
         val options = PostMenuOptions(true, false, true, false, false, hasLink = true)
         compose.setContent { PostMenuDialog(options, { command = it }, {}) }
-        compose.onNodeWithText("Копировать ›").performClick()
+        compose.onNodeWithText("Копировать").performClick()
         compose.onNodeWithText("Текст").assertIsDisplayed()
         compose.onNodeWithText("Разметку").assertIsDisplayed()
         compose.onNodeWithText("Ссылку").assertIsDisplayed()
-        compose.onNodeWithText("‹ Назад").performClick()
-        compose.onNodeWithText("Скрыть ›").performClick()
+        compose.onNodeWithText("Назад").performClick()
+        compose.onNodeWithText("Скрыть").performClick()
         compose.onNodeWithText("Дерево ответов").assertIsDisplayed()
         compose.onNodeWithText("Посты с тем же именем").assertIsDisplayed()
         compose.onNodeWithText("Похожие посты").assertIsDisplayed()
@@ -55,7 +55,7 @@ class PostMenuUiTest {
         compose.onNodeWithText("Цитировать").assertIsNotEnabled()
         compose.onNodeWithText("Пожаловаться").assertIsNotEnabled()
         compose.onNodeWithText("Моё сообщение").assertIsDisplayed()
-        compose.onNodeWithText("Скрыть ›").assertIsDisplayed()
+        compose.onNodeWithText("Скрыть").assertIsDisplayed()
     }
 
     @Test

@@ -7,6 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.solthariel.pawchan.core.ui.ActionMenuItem
+import com.solthariel.pawchan.core.ui.MenuNavigation
 
 internal enum class PostMenuPage { MAIN, COPY, HIDE }
 
@@ -75,7 +76,7 @@ private fun PostMenuMain(
 ) {
     ActionMenuItem("Ответить", { onCommand(PostMenuCommand.REPLY) }, !options.closed)
     ActionMenuItem("Цитировать", { onCommand(PostMenuCommand.QUOTE) }, !options.closed && options.hasText)
-    ActionMenuItem("Копировать ›", { onPage(PostMenuPage.COPY) })
+    ActionMenuItem("Копировать", { onPage(PostMenuPage.COPY) }, navigation = MenuNavigation.FORWARD)
     ActionMenuItem("Пожаловаться", { onCommand(PostMenuCommand.REPORT) }, options.canReport)
     TextButton(onClick = { onCommand(PostMenuCommand.OWN) }, modifier = Modifier.fillMaxWidth()) {
         Text("Моё сообщение", Modifier.weight(1f))
@@ -83,6 +84,6 @@ private fun PostMenuMain(
     }
     if (canAddRule) ActionMenuItem("Добавить правило", { onCommand(PostMenuCommand.ADD_FILTER) })
     if (!options.hidden) {
-        ActionMenuItem("Скрыть ›", { onPage(PostMenuPage.HIDE) })
+        ActionMenuItem("Скрыть", { onPage(PostMenuPage.HIDE) }, navigation = MenuNavigation.FORWARD)
     }
 }

@@ -68,6 +68,11 @@ private fun CatalogToolbarHeader(
 ) {
     var menuVisible by rememberSaveable { mutableStateOf(false) }
     val search = rememberCatalogSearchState(input.searchQuery, onSearchQueryChange)
+    val lookup = menu.boardLookup
+    if (lookup?.visible == true) {
+        CatalogBoardLookupToolbar(lookup)
+        return
+    }
     val searchVisible = search.visible
     val content = input.state as? CatalogUiState.Content
     CatalogToolbarRow(

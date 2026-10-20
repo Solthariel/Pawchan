@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 
 @Composable
 internal fun BoardDirectoryRow(
@@ -79,12 +80,7 @@ private fun BoardRowContent(
         TextButton(onClick = { actions.onFavoriteChanged(row.entry.address.board, !row.favorite) }) {
             Text(if (row.favorite) "★" else "☆")
         }
-        Text(
-            text = "›",
-            modifier = Modifier.padding(end = 14.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.titleLarge,
-        )
+        UiForwardIndicator(Modifier.padding(end = 14.dp))
     }
 }
 

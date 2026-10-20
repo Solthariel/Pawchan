@@ -12,4 +12,5 @@ internal data class BoardRepositories(
     val settings: SettingsRepository,
     val preferences: BoardPreferencesRepository,
     val postingAccess: PostingAccessRepository,
+    val recent: com.solthariel.pawchan.domain.boards.RecentBoardsRepository? = null,
 )

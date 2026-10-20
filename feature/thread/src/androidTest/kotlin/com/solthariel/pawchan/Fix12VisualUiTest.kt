@@ -31,7 +31,7 @@ class Fix12VisualUiTest {
                 PostMenuDialog(PostMenuOptions(true, false, true, true, false, hasLink = true), {}, {})
             }
         }
-        compose.onNodeWithText("Скрыть ›").assertIsDisplayed()
+        compose.onNodeWithText("Скрыть").assertIsDisplayed()
         saveThreadChromeScreenshot("fix12-post-menu")
     }
 }

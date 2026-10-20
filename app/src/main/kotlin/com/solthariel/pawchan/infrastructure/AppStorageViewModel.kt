@@ -16,6 +16,7 @@ import com.solthariel.pawchan.data.drafts.FileComposerDraftRepository
 import com.solthariel.pawchan.data.drafts.FileThreadHistoryRepository
 import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
+import com.solthariel.pawchan.data.preferences.PreferencesRecentBoardsRepository
 import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.watch.ThreadWatchRepository
@@ -28,6 +29,7 @@ internal class AppStorageViewModel private constructor(
     draftsDirectory: File,
     private val appContext: Context,
 ) : ViewModel() {
+    val recentBoards = PreferencesRecentBoardsRepository(appContext)
     val workspace =
         WorkspaceController(
             viewModelScope,

@@ -87,4 +87,5 @@
     <string name="media_image_copied">Изображение скопировано</string>
     <string name="media_image_copy_failed">Не удалось скопировать изображение</string>
     <string name="link_file_post_missing">Пост с этим файлом не найден</string>
+    <string name="choose_board">Выбрать доску</string>
 </resources>

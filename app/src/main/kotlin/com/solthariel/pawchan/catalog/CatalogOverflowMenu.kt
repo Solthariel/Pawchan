@@ -15,6 +15,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.OVAL_BUTTON_SHAPE
+import com.solthariel.pawchan.core.ui.UiBackwardIndicator
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.settings.labelResource
@@ -59,7 +61,7 @@ private fun BoardMenuItems(
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(stringResource(R.string.board_appearance)) },
-        trailingIcon = { Text("›") },
+        trailingIcon = { UiForwardIndicator() },
         onClick = onAppearance,
     )
     BoardMenuItem(
@@ -85,7 +87,7 @@ private fun AppearanceMenu(
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(stringResource(R.string.board_appearance)) },
-        leadingIcon = { Text("‹") },
+        leadingIcon = { UiBackwardIndicator() },
         onClick = onBack,
     )
     ThemePreference.entries.forEach { theme ->

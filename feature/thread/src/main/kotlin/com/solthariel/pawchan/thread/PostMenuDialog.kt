@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppDialog
+import com.solthariel.pawchan.core.ui.MenuNavigation
 
 @Composable
 internal fun PostMenuDialog(
@@ -25,7 +26,9 @@ internal fun PostMenuDialog(
     val back = { if (page == PostMenuPage.MAIN) onClose() else page = PostMenuPage.MAIN }
     AppDialog(back) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp)) {
-            if (page != PostMenuPage.MAIN) ActionMenuItem("‹ Назад", { page = PostMenuPage.MAIN })
+            if (page != PostMenuPage.MAIN) {
+                ActionMenuItem("Назад", { page = PostMenuPage.MAIN }, navigation = MenuNavigation.BACK)
+            }
             PostMenuContent(page, options, { page = it }, onCommand, canAddRule)
         }
     }

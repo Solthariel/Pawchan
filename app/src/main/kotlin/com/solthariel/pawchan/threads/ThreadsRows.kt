@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -31,7 +30,8 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.catalog.CatalogIconButton
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
-import com.solthariel.pawchan.core.ui.UiIcon
+import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
 
 /** Заголовок секции: нажатие сворачивает и разворачивает; справа сумма счётчиков и действие секции. */
@@ -52,8 +52,9 @@ internal fun ThreadsSectionHeader(
             .padding(start = THREADS_ROW_START, end = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        UiDisclosureIndicator(expanded)
         Text(
-            "${if (expanded) "▾" else "▸"}  ${section.title}",
+            section.title,
             Modifier.weight(1f),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -255,11 +256,7 @@ internal fun ThreadsLinkRow(
             )
         }
         Box(Modifier.width(THREADS_TRAILING_WIDTH), contentAlignment = Alignment.Center) {
-            UiIcon(
-                UiIconKind.DOWN,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                Modifier.size(20.dp).rotate(LINK_CHEVRON_ROTATION),
-            )
+            UiForwardIndicator()
         }
     }
 }
@@ -274,5 +271,3 @@ private const val MUTED_ZERO_ALPHA = 0.6f
 
 /** Ширина кнопки «Закрыть» ([CatalogIconButton]): по ней выравнивается колонка счётчиков. */
 private val THREADS_TRAILING_WIDTH = APP_TOOLBAR_BUTTON_SIZE
-
-private const val LINK_CHEVRON_ROTATION = -90f

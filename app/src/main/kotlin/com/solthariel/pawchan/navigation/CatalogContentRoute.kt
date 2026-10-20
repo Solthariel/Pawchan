@@ -42,6 +42,7 @@ internal fun CatalogContentRoute(
     bottomActions: CatalogBottomActions,
     onMediaVisibilityChanged: (Boolean) -> Unit = {},
 ) {
+    val boardLookup = rememberCatalogBoardLookup(board, dependencies, navigation.onBoardSelected)
     val filters =
         com.solthariel.pawchan.settings
             .rememberQuickContentFilter(dependencies.appSettings)
@@ -91,7 +92,9 @@ internal fun CatalogContentRoute(
                 ),
             actions = catalogActions,
             bottomActions = bottomActions,
-            menu = rememberCatalogMenu(board, dependencies.repositories.boards, navigation),
+            menu =
+                rememberCatalogMenu(board, dependencies.repositories.boards, navigation)
+                    .copy(boardLookup = boardLookup),
         )
     }
     val samples = (state as? CatalogUiState.Content)?.filterSamples.orEmpty()

@@ -11,7 +11,7 @@ internal fun rememberAppDependencies(
     network: AppNetworkViewModel,
     storage: AppStorageViewModel,
 ): AppDependencies =
-    remember(network.stack, storage.library, storage.settings) {
+    remember(network.stack, storage.library, storage.settings, storage.recentBoards) {
         AppDependencies(
             repositories =
                 AppRepositories(
@@ -22,6 +22,7 @@ internal fun rememberAppDependencies(
                             settings = storage.settings,
                             preferences = storage.settings,
                             postingAccess = network.stack.postingAccessRepository,
+                            recent = storage.recentBoards,
                         ),
                     content =
                         ContentRepositories(

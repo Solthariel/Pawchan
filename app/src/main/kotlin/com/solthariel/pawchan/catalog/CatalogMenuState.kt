@@ -49,6 +49,7 @@ internal data class CatalogMenuBindings(
     val navigation: BoardMenuNavigation,
     val onDismiss: () -> Unit,
     val hiddenThreads: CatalogHiddenThreadsMenu? = null,
+    val boardLookup: CatalogBoardLookupBindings? = null,
 )
 
 internal data class CatalogHiddenThreadsMenu(

@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.CompactSlider
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.russianPlural
 import kotlin.math.roundToInt
 
@@ -117,7 +118,7 @@ private fun SettingsRow(
 private fun ChoiceRow(item: SettingsItem.Choice) {
     var open by remember { mutableStateOf(false) }
     SettingsRow(item.title, item.options.getOrNull(item.selected), onClick = { open = true }) {
-        Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 20.sp)
+        UiForwardIndicator()
     }
     if (open) {
         com.solthariel.pawchan.core.ui.AppAlertDialog(
@@ -185,7 +186,7 @@ private fun ActionRow(item: SettingsItem.Action) {
         onClick = item.onClick,
     ) {
         if (item.onClick != null && !item.danger) {
-            Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 20.sp)
+            UiForwardIndicator()
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -27,6 +28,7 @@ import com.solthariel.pawchan.R
 import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
+import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
 
 @Composable
 internal fun BoardsDirectoryList(
@@ -108,6 +110,9 @@ private fun BoardCategoryHeader(
                 .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(Modifier.size(20.dp)) {
+            if (row.enabled || row.expanded) UiDisclosureIndicator(row.expanded)
+        }
         Text(
             text = row.label,
             modifier = Modifier.weight(1f),
@@ -122,12 +127,5 @@ private fun BoardCategoryHeader(
                 },
             fontWeight = FontWeight.SemiBold,
         )
-        if (row.enabled || row.expanded) {
-            Text(
-                text = if (row.expanded) "⌄" else "›",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
