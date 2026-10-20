@@ -24,13 +24,13 @@ import com.solthariel.pawchan.domain.filter.ContentFilterMode
 
 @Composable
 internal fun FilterEditorFields(draft: ContentFilterDraft) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FilterLineInput("Доски", draft.boards, { draft.boards = it }, Modifier.weight(1f), singleLine = true)
             FilterLineInput("Треды", draft.threadIds, { draft.threadIds = it }, Modifier.weight(1f), singleLine = true)
         }
         Column {
-            Row(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilterCheck("ОП-посты", draft.threads, { draft.threads = it }, Modifier.weight(1f))
                 FilterCheck("Ответы", draft.comments, { draft.comments = it }, Modifier.weight(1f))
             }
@@ -59,7 +59,7 @@ private fun FilterMatchModes(draft: ContentFilterDraft) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Row(Modifier.fillMaxWidth().selectableGroup()) {
+        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             basic.forEach { mode -> FilterModeChoice(draft, mode, Modifier.weight(1f)) }
         }
         modes.filterNot { it in basic }.forEach { mode -> FilterModeChoice(draft, mode, Modifier.fillMaxWidth()) }
@@ -87,13 +87,7 @@ private fun FilterModeChoice(
 
 @Composable
 private fun FilterOpFields(draft: ContentFilterDraft) {
-    Text(
-        "В ОП-постах искать:",
-        Modifier.padding(top = 4.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Row(Modifier.fillMaxWidth()) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         val subject = draft.fields != ContentFilterFields.ORIGINAL_POST.name
         val body = draft.fields != ContentFilterFields.SUBJECT.name
         FilterCheck("Заголовок", subject, { enabled ->

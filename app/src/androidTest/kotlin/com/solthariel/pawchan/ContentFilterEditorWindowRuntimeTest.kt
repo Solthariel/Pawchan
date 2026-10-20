@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -44,11 +45,11 @@ class ContentFilterEditorWindowRuntimeTest {
             }
         }
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
-        compose.onNodeWithText("Правило включено").assertIsDisplayed()
+        compose.onNodeWithTag("filter-editor-enabled").assertIsDisplayed()
         compose.onNodeWithContentDescription("Проверяемый текст").performScrollTo().performTextReplacement("кот")
         compose.onNodeWithContentDescription("Проверяемый текст").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
-        compose.onNodeWithText("Правило включено").assertIsDisplayed()
+        compose.onNodeWithTag("filter-editor-enabled").assertIsDisplayed()
     }
 
     @Test fun saveRemainsEnabledImmediatelyAfterEachValidEdit() {

@@ -76,8 +76,8 @@ class ContentFilterProbeStateTest {
         }
 
     @Test fun inputHasOneTouchableLineAndRespectsLargeFontsWithoutHintDependentSpace() {
-        assertEquals(48.dp, filterInputHeight(24.dp))
-        assertEquals(48.dp, filterInputHeight(28.dp))
-        assertEquals(64.dp, filterInputHeight(48.dp))
+        assertEquals(56.dp, filterInputHeight(24.dp))
+        assertEquals(60.dp, filterInputHeight(28.dp))
+        assertEquals(80.dp, filterInputHeight(48.dp))
     }
 }

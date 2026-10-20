@@ -4,7 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
@@ -45,17 +44,6 @@ internal fun FilterInputHint(
             },
     )
 }
-
-@Composable
-internal fun filterInputColor(
-    focused: Boolean,
-    error: Boolean,
-): Color =
-    when {
-        error -> MaterialTheme.colorScheme.error
-        focused -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
 
 internal fun filterEmptyErrorIsInline(
     error: String,

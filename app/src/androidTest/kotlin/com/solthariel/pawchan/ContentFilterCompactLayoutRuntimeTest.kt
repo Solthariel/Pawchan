@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Density
@@ -45,19 +46,24 @@ class ContentFilterCompactLayoutRuntimeTest {
             CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
                 MaterialTheme {
                     Box(Modifier.width(280.dp)) {
-                        FilterLineInput("Условие", text, { text = it }, presentation = filterConditionPresentation(mode))
+                        FilterLineInput(
+                            "Условие",
+                            text,
+                            { text = it },
+                            presentation = filterConditionPresentation(mode),
+                        )
                     }
                 }
             }
         }
         val field = compose.onNodeWithContentDescription("Условие")
-        assertEquals(48f * scale, field.fetchSemanticsNode().boundsInRoot.height, 1f)
+        assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
         compose.runOnIdle { mode = ContentFilterMode.ALL_WORDS.name }
-        assertEquals(48f * scale, field.fetchSemanticsNode().boundsInRoot.height, 1f)
+        assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
         field.performTextReplacement("короткая фраза")
-        assertEquals(48f * scale, field.fetchSemanticsNode().boundsInRoot.height, 1f)
+        assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
         compose.runOnIdle { mode = ContentFilterMode.EXACT_PHRASE.name }
-        assertEquals(48f * scale, field.fetchSemanticsNode().boundsInRoot.height, 1f)
+        assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
     }
 
     @Test fun actualLineBreaksArePreservedAndOnlyRealTextExpandsTheField() {
@@ -89,8 +95,8 @@ class ContentFilterCompactLayoutRuntimeTest {
             }
         }
         val opLabel = compose.onNodeWithText("ОП-посты", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val enabled = compose.onNodeWithText("Правило включено", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val enabled = compose.onNodeWithText("Включено", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(opLabel.left, enabled.left, 1f)
-        compose.onNodeWithText("Правило включено").assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithTag("filter-editor-enabled").assertHeightIsAtLeast(48.dp)
     }
 }

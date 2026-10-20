@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Reserve one editable line, not the height of a longer placeholder from another search mode. */
+/** Use the standard outlined field height; the floating label shares the same field. */
 @Composable
 internal fun filterInputMinimumHeight(): Dp =
     with(LocalDensity.current) {
@@ -16,4 +16,4 @@ internal fun filterInputMinimumHeight(): Dp =
         )
     }
 
-internal fun filterInputHeight(lineHeight: Dp): Dp = maxOf(48.dp, lineHeight + 16.dp)
+internal fun filterInputHeight(lineHeight: Dp): Dp = maxOf(56.dp, lineHeight + 32.dp)
