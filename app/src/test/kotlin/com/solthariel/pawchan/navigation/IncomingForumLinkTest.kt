@@ -42,6 +42,17 @@ class IncomingForumLinkTest {
         assertNull(incomingForumLink("pawchan://thread/unknown/b/123"))
     }
 
+    @Test fun replyNotificationHasAnExplicitIndependentEntryKind() {
+        assertEquals(
+            ForumWebLink.Thread(defaultThreadAddress(123L), null, replies = true),
+            incomingForumLink("pawchan://thread/dvach/b/123?replies=1"),
+        )
+        assertEquals(
+            ForumWebLink.Thread(defaultThreadAddress(123L), 456L),
+            incomingForumLink("https://2ch.su/b/res/123.html?replies=1#456"),
+        )
+    }
+
     @Test fun otherOriginsAndCredentialsAreRejected() {
         listOf(
             "https://2ch.su.evil.example/b/res/123.html",

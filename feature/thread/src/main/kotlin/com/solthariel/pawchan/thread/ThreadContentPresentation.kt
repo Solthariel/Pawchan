@@ -34,6 +34,9 @@ internal data class ThreadPostNavigation(
     val postPositions: Map<Long, Int> = emptyMap(),
     val replyIndex: Map<Long, ThreadReplyGroup> = emptyMap(),
     val mediaGroups: Map<Long, List<MediaAttachmentUi>> = emptyMap(),
+    val scrollMarkers: com.solthariel.pawchan.core.ui.FastScrollMarkers =
+        com.solthariel.pawchan.core.ui
+            .FastScrollMarkers(),
 )
 
 /** Explanations and loaded-data samples belong to this filtered snapshot, not persistent settings. */

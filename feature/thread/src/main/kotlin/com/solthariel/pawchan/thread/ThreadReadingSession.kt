@@ -1,6 +1,8 @@
 package com.solthariel.pawchan.thread
 
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 data class ThreadReadingPosition(
     val postId: Long,
@@ -10,6 +12,17 @@ data class ThreadReadingPosition(
 /** Borrowed app persistence; the screen owns only collection of visible positions. */
 interface ThreadReadingSession {
     fun restore(address: ThreadAddress): ThreadReadingPosition?
+
+    fun pendingPost(address: ThreadAddress): Long? = null
+
+    fun clearPendingPost(address: ThreadAddress) = Unit
+
+    fun returnPoint(address: ThreadAddress): Flow<ThreadReadingPosition?> = flowOf(null)
+
+    fun returned(
+        address: ThreadAddress,
+        point: ThreadReadingPosition,
+    ) = Unit
 
     fun contentReady(address: ThreadAddress)
 

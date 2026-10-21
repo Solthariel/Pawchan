@@ -9,12 +9,12 @@ import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.domain.settings.ReadingPreferences
 import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
 import com.solthariel.pawchan.domain.workspace.OpenThread
-import com.solthariel.pawchan.domain.workspace.ThreadCopy
 import com.solthariel.pawchan.domain.workspace.WorkspaceRepository
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import com.solthariel.pawchan.domain.workspace.observe
 import com.solthariel.pawchan.domain.workspace.storePost
 import com.solthariel.pawchan.domain.workspace.visit
+import com.solthariel.pawchan.domain.workspace.withReadingPosition
 import com.solthariel.pawchan.navigation.AppRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +64,7 @@ internal class WorkspaceController(
     var latestSnapshot: ThreadSnapshot? = null
         private set
     var offlineAddress by mutableStateOf<ThreadAddress?>(null)
-    var requestedPost: Long? = null
+    var requestedPost: RequestedThreadPost? = null
 
     init {
         reload()
@@ -138,19 +138,7 @@ internal class WorkspaceController(
     ) {
         if (!readingPreferences.rememberPosition) return
         reading.position(address, postId, offset)
-        change { state ->
-            state.copy(
-                tabs = state.tabs.map { if (it.address == address) it.copy(postId = postId, offset = offset) else it },
-                copies =
-                    state.copies.map {
-                        if (it.snapshot.address == address) {
-                            it.copy(position = OpenThread(address, it.snapshot.subject, postId, offset))
-                        } else {
-                            it
-                        }
-                    },
-            )
-        }
+        change { it.withReadingPosition(address, postId, offset) }
     }
 
     fun closeTab(address: ThreadAddress) =

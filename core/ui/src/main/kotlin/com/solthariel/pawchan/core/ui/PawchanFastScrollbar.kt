@@ -152,6 +152,7 @@ data class FastScrollMarkers(
     val itemCount: Int = 0,
     val own: List<Int> = emptyList(),
     val replies: List<Int> = emptyList(),
+    val reading: Int? = null,
 )
 
 @Composable
@@ -163,6 +164,7 @@ private fun fastScrollbarMarkerStyle(): FastScrollbarMarkerStyle {
             height = FAST_SCROLL_MARKER_HEIGHT.toPx(),
             own = colors.primary,
             reply = colors.tertiary,
+            reading = colors.secondary,
         )
     }
 }
@@ -184,6 +186,7 @@ private fun DrawScope.drawFastScrollbarMarkers(
     }
     markers.own.forEach { marker(it, style.own) }
     markers.replies.filterNot(markers.own::contains).forEach { marker(it, style.reply) }
+    markers.reading?.takeIf { it in 0 until markers.itemCount }?.let { marker(it, style.reading) }
 }
 
 @Composable
@@ -234,6 +237,7 @@ private data class FastScrollbarMarkerStyle(
     val height: Float,
     val own: Color,
     val reply: Color,
+    val reading: Color,
 )
 
 // Reserve only the drawn width + 2 dp in card padding; the 16 dp touch target overlays it.

@@ -39,6 +39,7 @@ import com.solthariel.pawchan.workspace.BindWorkspaceReplyChecks
 import com.solthariel.pawchan.workspace.BindWorkspaceRoute
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.validRestorableRoute
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 @Composable
@@ -116,12 +117,13 @@ private fun BindTabNavigation(
     val incoming = LocalIncomingLinks.current
     val pending = incoming?.pending?.collectAsStateWithLifecycle()?.value
     val workspace = LocalWorkspace.current?.controller
-    LaunchedEffect(navController, pending) {
+    LaunchedEffect(navController, pending, workspace) {
         if (restorePending) {
             restorePending = false
             if (pending == null) navController.openRestoredRoute(restoredRoute)
         }
         pending?.let { url ->
+            workspace?.ready?.first { it }
             incomingForumLink(url)?.let { navController.openIncomingLink(it, workspace) }
             incoming?.consume(url)
         }

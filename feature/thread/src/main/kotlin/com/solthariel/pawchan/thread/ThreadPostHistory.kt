@@ -51,6 +51,7 @@ internal fun ThreadUiState.Content.withPostNavigation(): ThreadUiState.Content {
                 gallery = visible.flatMap(ThreadPostUi::attachments).toMediaGalleryContent(),
                 navigation =
                     ThreadPostNavigation(
+                        scrollMarkers = prepareThreadScrollMarkers(posts),
                         mediaGroups = visible.associate { it.id to it.attachments.viewerItems() },
                         replyIndex = prepareThreadReplyIndex(posts),
                         postPositions = posts.mapIndexed { index, post -> post.id to index }.toMap(),

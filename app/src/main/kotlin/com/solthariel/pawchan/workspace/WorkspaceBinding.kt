@@ -20,7 +20,7 @@ internal fun WorkspaceBinding.openThread(
     post: Long?,
 ) {
     controller.offlineAddress = null
-    controller.requestedPost = post
+    controller.requestPost(address, post)
     navigate(address)
 }
 

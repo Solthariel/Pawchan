@@ -17,6 +17,7 @@ internal fun ThreadScreen(
     actions: ThreadActions,
     presentation: ThreadPresentation,
     host: ThreadScreenHost,
+    requestPost: suspend (Long) -> Unit = {},
     contentHost: @Composable (content: @Composable () -> Unit) -> Unit = { content -> content() },
 ) {
     val media = host.mediaHost.resources
@@ -34,7 +35,9 @@ internal fun ThreadScreen(
     val vocaroo = rememberVocarooPlayer(media.vocaroo, media.viewer.contentClient)
     val spoilers = remember { RevealedSpoilers() }
     BindThreadScreenEffects(memory, content, actions, exports)
+    BindThreadPendingPost(memory, content, presentation.postContext?.address, host.reading, requestPost)
     BindThreadReadingPosition(memory, content, presentation.postContext?.address, host.reading)
+    BindThreadReadingReturn(memory, content, presentation.postContext?.address, host.reading)
     contentHost {
         MediaContentHost(
             MediaViewerSelection(

@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 abstract class ThreadSession internal constructor() : ViewModel() {
     abstract fun refresh()
 
+    internal open suspend fun ensurePost(id: Long) = Unit
+
     abstract fun refreshFavorite()
 
     abstract fun onPostSubmitted(post: BoardPost)

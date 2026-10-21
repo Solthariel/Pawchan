@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
-import com.solthariel.pawchan.core.ui.FastScrollMarkers
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
@@ -55,7 +54,7 @@ internal fun ThreadContent(
                 key = { _, post -> post.id },
                 contentType = { _, _ -> "thread-post" },
             ) { index, post ->
-                Column {
+                Column(Modifier.readingReturnMarker(post.id == bindings.tools.readingReturn?.postId)) {
                     if (post.metadata.hidden) {
                         HiddenPostCard(
                             post,
@@ -72,7 +71,7 @@ internal fun ThreadContent(
         PawchanFastScrollbar(
             state = list,
             inputGesture = loading.gesture,
-            markers = content.fastScrollMarkers(),
+            markers = content.readingReturnScrollMarkers(bindings.tools.readingReturn),
             mode = com.solthariel.pawchan.core.ui.FastScrollMode.ITEMS,
             modifier = Modifier.align(Alignment.CenterEnd),
         )
@@ -121,16 +120,3 @@ private fun ThreadPostItem(
         FreshPostHighlight(fresh)
     }
 }
-
-private fun ThreadUiState.Content.fastScrollMarkers(): FastScrollMarkers =
-    FastScrollMarkers(
-        itemCount = posts.size,
-        own =
-            posts.mapIndexedNotNull { index, post ->
-                index.takeIf { post.metadata.changes.own && !post.metadata.hidden }
-            },
-        replies =
-            posts.mapIndexedNotNull { index, post ->
-                index.takeIf { post.metadata.changes.replyToMe && !post.metadata.hidden }
-            },
-    )

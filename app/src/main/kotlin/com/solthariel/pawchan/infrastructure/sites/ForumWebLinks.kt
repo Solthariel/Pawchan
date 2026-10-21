@@ -38,6 +38,7 @@ internal sealed interface ForumWebLink {
     data class Thread(
         val thread: ThreadAddress,
         val postId: Long?,
+        val replies: Boolean = false,
     ) : ForumWebLink
 
     /** Файл, загруженный на сайт, который можно показать встроенным просмотрщиком. */

@@ -34,6 +34,8 @@ internal class ThreadToolsState(
     private val scope: CoroutineScope,
     private val searchDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
+    var readingReturn by mutableStateOf<ThreadReadingPosition?>(null)
+    var onReadingReturn: () -> Unit = {}
     var menu by mutableStateOf(false)
     var advanced by mutableStateOf(false)
 

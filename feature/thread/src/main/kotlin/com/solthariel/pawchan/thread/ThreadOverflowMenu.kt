@@ -37,6 +37,12 @@ private fun ThreadMainMenuItems(
     actions: ThreadActions?,
     scope: CoroutineScope,
 ) {
+    if (tools.readingReturn != null) {
+        ThreadMenuItem("Вернуться к месту чтения") {
+            tools.closeMenu()
+            tools.onReadingReturn()
+        }
+    }
     ThreadMenuItem("Расширенный поиск") { tools.advanced = true }
     ThreadMenuItem("Выделить") {
         tools.menu = false

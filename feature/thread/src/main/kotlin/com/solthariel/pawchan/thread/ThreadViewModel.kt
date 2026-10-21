@@ -26,6 +26,8 @@ import com.solthariel.pawchan.thread.watch.ThreadWatcherPoll
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -178,6 +180,13 @@ internal class ThreadViewModel(
      * Повторный показ уже загруженного треда: посты остаются на экране, как в Dashchan;
      * запрос в сеть идёт фоном и только если копия в памяти устарела по данным наблюдателя.
      */
+    override suspend fun ensurePost(id: Long) {
+        loadJob?.join()
+        currentCoroutineContext().ensureActive()
+        val content = mutableState.value as? ThreadUiState.Content
+        if (!confirmedMissing && content?.presentation?.postPositions?.containsKey(id) != true) refresh()
+    }
+
     override fun reopen() {
         if (confirmedMissing || loadJob?.isActive == true || reopenJob?.isActive == true) return
         if (mutableState.value !is ThreadUiState.Content) return

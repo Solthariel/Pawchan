@@ -68,6 +68,7 @@ fun ThreadFeatureScreen(
                     ),
             ),
         host = host,
+        requestPost = session::ensurePost,
         contentHost = contentHost,
     )
 }

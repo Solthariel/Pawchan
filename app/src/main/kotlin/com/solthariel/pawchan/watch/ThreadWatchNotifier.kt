@@ -65,7 +65,7 @@ internal class ThreadWatchNotifier(
         val intent =
             Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
-                data = AppRoute.threadDeepLink(subscription.address).toUri()
+                data = (AppRoute.threadDeepLink(subscription.address) + if (replies) "?replies=1" else "").toUri()
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
         return PendingIntent.getActivity(

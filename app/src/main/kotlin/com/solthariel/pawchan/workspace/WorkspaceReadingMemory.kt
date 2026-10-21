@@ -40,7 +40,7 @@ internal fun WorkspaceController.readingPosition(address: ThreadAddress?): Pair<
         } else {
             null
         }
-    return requestedPost?.let { it to 0 } ?: saved
+    return saved
 }
 
 private const val MAX_RECENT_SNAPSHOTS = 6

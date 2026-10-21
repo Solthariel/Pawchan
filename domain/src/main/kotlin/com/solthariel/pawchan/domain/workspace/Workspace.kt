@@ -54,6 +54,8 @@ data class ThreadMarks(
     val seen: Map<ThreadAddress, Long> = emptyMap(),
     /** Треды, убранные из «Ответов» вручную; новый свой пост возвращает тред обратно. */
     val dismissedReplies: Set<ThreadAddress> = emptySet(),
+    /** Independent return anchors; normal scrolling never moves these. */
+    val readingReturns: Map<ThreadAddress, ReadingReturnPoint> = emptyMap(),
 )
 
 /** Запоминает последний пост треда; держит не больше [SEEN_THREADS_LIMIT] тредов, старые отбрасываются. */

@@ -67,6 +67,7 @@ internal fun encodeWorkspace(state: WorkspaceState): String =
         put("hiddenThreads", JsonArray(state.marks.hidden.map { it.encodeAddress() }))
         put("arhivach", encodeArhivachLinks(state.marks.arhivach))
         put("seen", encodeSeenThreads(state.marks.seen))
+        put("readingReturns", encodeReadingReturns(state.marks.readingReturns))
         put("dismissedReplies", JsonArray(state.marks.dismissedReplies.map { it.encodeAddress() }))
         put("media", JsonArray(state.media.map { it.encodeMedia() }))
         put(
@@ -168,6 +169,7 @@ private fun kotlinx.serialization.json.JsonObject.decodeMarks(): ThreadMarks =
                         item.requiredValue("url").jsonPrimitive.content
                 }.orEmpty(),
         seen = decodeSeenThreads(this["seen"]),
+        readingReturns = decodeReadingReturns(this["readingReturns"]),
         dismissedReplies =
             this["dismissedReplies"]
                 ?.jsonArray

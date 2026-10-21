@@ -41,7 +41,7 @@ private fun incomingNotificationLink(uri: URI): ForumWebLink? {
     return AppRoute
         .threadAddress("thread${uri.path}")
         ?.takeIf { it.site.value == "dvach" }
-        ?.let { ForumWebLink.Thread(it, null) }
+        ?.let { ForumWebLink.Thread(it, null, replies = uri.rawQuery == "replies=1") }
 }
 
 private const val HTTP_PORT = 80
