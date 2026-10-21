@@ -18,9 +18,6 @@ import com.solthariel.pawchan.domain.thread.CachedThreadRepository
 import com.solthariel.pawchan.domain.thread.ReportingThreadRepository
 import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
-import com.solthariel.pawchan.domain.thread.withRestoredPosts
-import com.solthariel.pawchan.domain.thread.withoutDeleted
-import com.solthariel.pawchan.domain.thread.withoutOldDeleted
 import com.solthariel.pawchan.domain.watch.CheckWatchedThread
 import com.solthariel.pawchan.domain.watch.ThreadWatchRepository
 import com.solthariel.pawchan.thread.watch.ForegroundThreadWatch
@@ -219,42 +216,15 @@ internal class ThreadViewModel(
 
     override val history: ThreadHistoryActions? =
         storedHistory?.let { stored ->
-            ThreadHistoryActions(
-                restore = { archived, done -> editHistory(stored, done) { it.withRestoredPosts(archived) } },
-                clearOld = { editHistory(stored) { it.withoutOldDeleted() } },
-                clearDeleted = { editHistory(stored) { it.withoutDeleted() } },
-                // «Стереть»: история забывается, тред загружается заново без удалённых постов.
-                erase = {
-                    viewModelScope.launch {
-                        requestMutex.withLock { stored.erase(address) }
-                        refresh()
-                    }
-                },
-            )
+            ThreadHistoryController(
+                viewModelScope,
+                address,
+                stored,
+                requestMutex,
+                { mutableState.value as? ThreadUiState.Content },
+                ::showSnapshot,
+            ).actions(::refresh)
         }
-
-    /**
-     * Правка истории треда: «Очистить старые/удалённые» и «Восстановить из Архивача»
-     * (недостающие посты добавляются как удалённые). [done] получает изменение числа постов.
-     */
-    private fun editHistory(
-        stored: ThreadHistoryRepository,
-        done: (Int) -> Unit = {},
-        transform: (ThreadSnapshot) -> ThreadSnapshot,
-    ) {
-        viewModelScope.launch {
-            requestMutex.withLock {
-                val content = mutableState.value as? ThreadUiState.Content ?: return@withLock
-                val history = stored.load(address) ?: return@withLock
-                val edited = transform(history)
-                if (edited != history) {
-                    stored.save(edited)
-                    showSnapshot(edited, content.isFavorite)
-                }
-                done(edited.posts.size - history.posts.size)
-            }
-        }
-    }
 
     override fun setFavorite(favorite: Boolean) = favorites.set(favorite)
 

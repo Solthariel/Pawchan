@@ -60,6 +60,10 @@ internal class RegexInput(
 
 fun contentFilterValidationError(rule: ContentFilterRule): String? =
     when {
+        oversizedFilterCondition(rule) -> {
+            "До $MAX_FILTER_VALUES значений/исключений и $MAX_FILTER_CONDITION_CHARACTERS символов в условии"
+        }
+
         !rule.threads && !rule.comments -> {
             "Выберите ОП-пост или ответы"
         }
@@ -84,17 +88,16 @@ fun contentFilterValidationError(rule: ContentFilterRule): String? =
             null
         }
 
-        rule.values.size != 1 -> {
-            "Введите одно регулярное выражение"
-        }
-
-        rule.values.single().length > MAX_FILTER_REGEX_LENGTH -> {
-            "Regex длиннее $MAX_FILTER_REGEX_LENGTH символов"
-        }
-
         else -> {
-            regexValidationError(rule.values.single())
+            regexConditionError(rule)
         }
+    }
+
+private fun regexConditionError(rule: ContentFilterRule): String? =
+    when {
+        rule.values.size != 1 -> "Введите одно регулярное выражение"
+        rule.values.single().length > MAX_FILTER_REGEX_LENGTH -> "Regex длиннее $MAX_FILTER_REGEX_LENGTH символов"
+        else -> regexValidationError(rule.values.single())
     }
 
 private fun regexValidationError(expression: String): String? =

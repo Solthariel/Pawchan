@@ -97,7 +97,10 @@ class PreviewStackRuntimeTest {
         val window = compose.onNodeWithTag("preview-active").fetchSemanticsNode().boundsInRoot
         val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
         assertTrue("Short preview must wrap its content", window.height < screen.height / 2f)
-        assertTrue("Preview must remain inside the screen", screen.contains(window.topLeft) && screen.contains(window.bottomRight))
+        assertTrue(
+            "Preview must remain inside the screen",
+            screen.contains(window.topLeft) && screen.contains(window.bottomRight),
+        )
     }
 
     @Test fun nestedShortPostShrinksOverLongRepliesAndBackRestoresTheirHeight() {
@@ -122,16 +125,37 @@ class PreviewStackRuntimeTest {
         compose.onNodeWithTag("preview-loading").assertDoesNotExist()
     }
 
-    private fun showStack(initial: List<PostPreviewTarget>): MutableState<List<PostPreviewTarget>> {
+    @Test fun liveChainSurvivesSourceRefreshAndBackWithoutEmptyWindows() {
+        val local = mutableStateOf(content())
+        val targets = showStack(listOf(PostPreviewTarget(null, 2)), local)
+        compose.runOnIdle { targets.value += listOf(PostPreviewTarget(null, 3), PostPreviewTarget(null, 4)) }
+        compose.onNodeWithText("Пост 4", substring = true).assertIsDisplayed()
+        compose.runOnIdle {
+            local.value = local.value.copy(posts = local.value.posts.take(1)).withPostNavigation()
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("Пост 4", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("preview-loading").assertDoesNotExist()
+        repeat(2) {
+            Espresso.pressBack()
+            compose.waitForIdle()
+            compose.onNodeWithText("Пост ${3 - it}", substring = true).assertIsDisplayed()
+            compose.onNodeWithTag("preview-loading").assertDoesNotExist()
+        }
+    }
+
+    private fun showStack(
+        initial: List<PostPreviewTarget>,
+        local: MutableState<ThreadUiState.Content> = mutableStateOf(content()),
+    ): MutableState<List<PostPreviewTarget>> {
         val targets = mutableStateOf(initial)
-        val local = content()
         compose.setContent {
             ThreadTestTheme(ThemePreference.DARK) {
                 val resources = previewResources()
                 if (targets.value.isNotEmpty()) {
                     PostPreviewStack(
                         targets.value,
-                        local,
+                        local.value,
                         ThreadAppearance(),
                         resources,
                         bindings = { _ ->
@@ -150,8 +174,10 @@ class PreviewStackRuntimeTest {
         }
         compose.waitUntil(timeoutMillis = 5_000) {
             compose
-                .onAllNodes(hasTestTag("preview-list") and hasAnyAncestor(hasTestTag("preview-active")), useUnmergedTree = true)
-                .fetchSemanticsNodes()
+                .onAllNodes(
+                    hasTestTag("preview-list") and hasAnyAncestor(hasTestTag("preview-active")),
+                    useUnmergedTree = true,
+                ).fetchSemanticsNodes()
                 .isNotEmpty()
         }
         return targets
@@ -193,7 +219,13 @@ class PreviewStackRuntimeTest {
                             PostTextRun("Пост $id"),
                         ),
                     )
-                ThreadPostUi(id, document, RichPostTextUi.create(document), ThreadPostMetadataUi(null, null, false), emptyList())
+                ThreadPostUi(
+                    id,
+                    document,
+                    RichPostTextUi.create(document),
+                    ThreadPostMetadataUi(null, null, false),
+                    emptyList(),
+                )
             }
         return ThreadUiState
             .Content(

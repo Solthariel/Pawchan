@@ -250,7 +250,7 @@ private fun DomainFailure.toCatalogError(): CatalogError =
             CatalogError.STORAGE
         }
 
-        DomainFailure.InvalidResponse -> {
+        DomainFailure.UnsupportedSite, DomainFailure.InvalidResponse -> {
             CatalogError.INVALID_RESPONSE
         }
 

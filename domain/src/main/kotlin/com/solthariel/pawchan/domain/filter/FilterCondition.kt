@@ -53,7 +53,7 @@ internal class FilterCondition(
             }
 
             ContentFilterMode.ORDERED -> {
-                ordered(text)
+                OrderedFilterMatcher(values, rule.options.maxGap).ranges(text)
             }
 
             ContentFilterMode.REGEX -> {
@@ -92,38 +92,6 @@ internal class FilterCondition(
             }
         return ranges
     }
-
-    private fun ordered(text: String): List<IntRange>? {
-        // Keep all reachable occurrences: a greedy first occurrence can miss a valid bounded chain.
-        var chains: List<List<IntRange>> = occurrences(text, values.first()).map { listOf(it) }
-        for (value in values.drop(1)) {
-            var previous = 0
-            val gapLimit = rule.options.maxGap
-            chains =
-                occurrences(text, value).mapNotNull { next ->
-                    while (previous < chains.size && gapLimit != null &&
-                        next.first.toLong() - chains[previous].last().last - 1 > gapLimit
-                    ) {
-                        previous++
-                    }
-                    chains.getOrNull(previous)?.takeIf { it.last().last < next.first }?.plus(listOf(next))
-                }
-            if (chains.isEmpty()) return null
-        }
-        return chains.firstOrNull()
-    }
-
-    private fun occurrences(
-        text: String,
-        value: String,
-    ): List<IntRange> =
-        buildList {
-            var offset = text.indexOf(value)
-            while (offset >= 0) {
-                add(offset until offset + value.length)
-                offset = text.indexOf(value, offset + 1)
-            }
-        }
 
     private fun wordBounds(
         text: String,

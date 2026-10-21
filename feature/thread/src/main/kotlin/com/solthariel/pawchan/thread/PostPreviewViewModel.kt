@@ -12,6 +12,8 @@ import com.solthariel.pawchan.domain.thread.ThreadRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,10 +63,15 @@ internal class PostPreviewViewModel(
         loadedTarget = target
         loadedLocal = source
         localPostPreview(target, source)?.let {
-            mutableState.value = it
+            mutableState.value = retainPreview(mutableState.value, it)
             return
         }
-        job = viewModelScope.launch { mutableState.value = prepare(target, local) }
+        job =
+            viewModelScope.launch {
+                val replacement = prepare(target, local)
+                currentCoroutineContext().ensureActive()
+                mutableState.value = retainPreview(mutableState.value, replacement)
+            }
     }
 
     private suspend fun prepare(
@@ -116,6 +123,7 @@ internal class PostPreviewViewModel(
     private suspend fun loadRemote(address: ThreadAddress?): ThreadUiState.Content? {
         if (address == null || repository == null) return null
         val outcome = repository.loadThread(address)
+        currentCoroutineContext().ensureActive()
         return withContext(presentationDispatcher) { outcome.toThreadUiState() as? ThreadUiState.Content }
     }
 

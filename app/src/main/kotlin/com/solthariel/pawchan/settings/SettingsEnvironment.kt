@@ -12,6 +12,7 @@ internal data class SettingsEnvironment(
     val cacheSize: String?,
     val onClearCache: () -> Unit,
     val updates: @Composable () -> Unit = {},
+    val changelog: @Composable () -> Unit = { ChangelogSettings() },
 )
 
 @Composable
@@ -182,7 +183,7 @@ private fun aboutGroups(environment: SettingsEnvironment): List<SettingsGroup> =
             "Приложение",
             listOf(
                 SettingsItem.Action("Версия", BuildConfig.VERSION_NAME),
-                SettingsItem.Custom("Список изменений") { ChangelogSettings() },
+                SettingsItem.Custom("Список изменений", environment.changelog),
                 SettingsItem.Custom("Обновления", environment.updates),
             ),
         ),

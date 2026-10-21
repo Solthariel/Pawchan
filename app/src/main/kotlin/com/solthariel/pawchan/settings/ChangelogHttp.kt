@@ -26,13 +26,16 @@ internal class ChangelogHttp(
     suspend fun download(
         url: String,
         etag: String?,
+        minimumCode: Long? = null,
     ): ChangelogDownload {
         val request =
             Request
                 .Builder()
-                .url(url)
-                .apply { etag?.let { header("If-None-Match", it) } }
-                .build()
+                .url(historyRequestUrl(url, minimumCode))
+                .apply {
+                    etag?.let { header("If-None-Match", it) }
+                    if (minimumCode != null) header("Cache-Control", "no-cache")
+                }.build()
         return client.newCall(request).executeAsync().use { response ->
             if (response.code == HTTP_NOT_MODIFIED) return@use ChangelogDownload(null, etag)
             if (!response.isSuccessful) throw IOException("History request failed: ${response.code}")
@@ -57,3 +60,17 @@ private val historyHttpClient =
         .callTimeout(HISTORY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .followSslRedirects(false)
         .build()
+
+private fun historyRequestUrl(
+    url: String,
+    minimumCode: Long?,
+): String =
+    if (minimumCode == null) {
+        url
+    } else {
+        requireNotNull(url.toHttpUrlOrNull())
+            .newBuilder()
+            .setQueryParameter("release_code", minimumCode.toString())
+            .build()
+            .toString()
+    }

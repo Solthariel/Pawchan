@@ -221,7 +221,7 @@ internal fun DomainFailure.toThreadError(): ThreadError =
             ThreadError.STORAGE
         }
 
-        DomainFailure.InvalidResponse -> {
+        DomainFailure.UnsupportedSite, DomainFailure.InvalidResponse -> {
             ThreadError.INVALID_RESPONSE
         }
 

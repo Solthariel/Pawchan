@@ -54,6 +54,25 @@ class VersioningTest(unittest.TestCase):
             self.assertEqual(0, packages[1]["length"])
             self.assertEqual((publishing / "changelogs/ru/2.txt").read_text(), (root / "app/src/main/assets/settings-changelog.txt").read_text())
 
+    def test_heading_is_written_explicitly_for_both_phone_assets_and_github_notes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            publishing, _ = self.fixture(root)
+            bump.prepare_release(root, "patch", "• Один\n• Два", date.today())
+            text = (publishing / "changelogs/ru/2.txt").read_text()
+            self.assertEqual("Версия 0.1.1\n\nИзменения\n\n• Один\n• Два\n", text)
+            self.assertEqual(text, (root / "app/src/main/assets/settings-changelog.txt").read_text())
+
+    def test_unstructured_notes_cannot_create_an_empty_history_entry(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            publishing, _ = self.fixture(root)
+            before = (publishing / "versions.json").read_bytes()
+            with self.assertRaises(ValueError):
+                bump.prepare_release(root, "patch", "Исправления без пунктов", date.today())
+            self.assertEqual(before, (publishing / "versions.json").read_bytes())
+            self.assertFalse((publishing / "changelogs/ru/2.txt").exists())
+
     def test_cannot_prepare_two_versions_without_publication(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

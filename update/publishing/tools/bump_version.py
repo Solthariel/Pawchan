@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 
 from release_sequence import identity, read_history
+from release_notes_format import explicit_sections, validate_notes
 
 SEMVER = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 MAX_VERSION_CODE = 2_100_000_000
@@ -49,8 +50,7 @@ def prepare_release(project, change, notes, release_date):
     code = previous["code"] + 1
     if code > MAX_VERSION_CODE:
         raise ValueError("Android versionCode limit reached")
-    if not notes.strip():
-        raise ValueError("Release notes cannot be empty")
+    notes = validate_notes(explicit_sections(notes.strip()))
     changelog = publishing / "changelogs" / "ru" / f"{code}.txt"
     if changelog.exists():
         raise ValueError(f"Changelog already exists: {changelog.name}")

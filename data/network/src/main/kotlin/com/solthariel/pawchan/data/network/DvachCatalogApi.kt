@@ -14,6 +14,7 @@ class DvachCatalogApi private constructor(
     private val directory: BoardDirectoryRepository,
 ) : CatalogRepository {
     override suspend fun loadCatalog(board: BoardAddress): DomainOutcome<CatalogSnapshot> {
+        if (!board.isDvachSource()) return unsupportedDvachSource()
         val catalog =
             executeDomainRequest(
                 callFactory,

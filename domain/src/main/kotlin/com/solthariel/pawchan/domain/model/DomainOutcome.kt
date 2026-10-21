@@ -1,6 +1,8 @@
 package com.solthariel.pawchan.domain.model
 
 sealed interface DomainFailure {
+    data object UnsupportedSite : DomainFailure
+
     data object NetworkUnavailable : DomainFailure
 
     data object NetworkTimeout : DomainFailure

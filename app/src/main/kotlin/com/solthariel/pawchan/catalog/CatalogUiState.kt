@@ -205,7 +205,7 @@ private fun DomainFailure.toCatalogErrorState(): CatalogUiState.Error =
             CatalogUiState.Error(CatalogError.STORAGE)
         }
 
-        DomainFailure.InvalidResponse -> {
+        DomainFailure.UnsupportedSite, DomainFailure.InvalidResponse -> {
             CatalogUiState.Error(CatalogError.INVALID_RESPONSE)
         }
 

@@ -18,14 +18,23 @@ internal class UpdateViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
     val state: StateFlow<UpdateUiState> = mutableState.asStateFlow()
+    private val entryChecks = UpdateEntryChecks()
+
+    fun checkOnEntry(
+        request: UpdateCheckRequest?,
+        configuration: UpdateConfiguration,
+    ) {
+        if (entryChecks.consume(request, state.value)) check(configuration)
+    }
 
     fun check(configuration: UpdateConfiguration) {
+        if (state.value is UpdateUiState.Downloading || state.value == UpdateUiState.Checking) return
         if (configuration.manifestUrl.isBlank()) {
             mutableState.value = UpdateUiState.Error(UpdateError.NOT_CONFIGURED)
             return
         }
+        mutableState.value = UpdateUiState.Checking
         viewModelScope.launch {
-            mutableState.value = UpdateUiState.Checking
             mutableState.value =
                 runCatching { client.check() }
                     .fold(

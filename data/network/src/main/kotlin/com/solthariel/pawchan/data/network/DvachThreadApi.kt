@@ -18,6 +18,7 @@ class DvachThreadApi private constructor(
 ) : ReportingThreadRepository,
     PostVoteRepository {
     override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> {
+        if (!address.board.isDvachSource()) return unsupportedDvachSource()
         val request = ThreadRequestFactory.create(address)
         val live = executeDomainRequest(callFactory, request) { payload -> decoder.decode(address, payload) }
         return if (live == DomainOutcome.Failure(DomainFailure.NotFound)) loadArchived(address) else live
@@ -28,21 +29,29 @@ class DvachThreadApi private constructor(
         post: PostId,
         comment: String,
     ): PostingOutcome<Unit> =
-        executePostingRequest(
-            callFactory = callFactory,
-            request = reportPostRequest(address, post, comment),
-            decode = ::decodeReportResponse,
-        )
+        if (!address.board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            executePostingRequest(
+                callFactory = callFactory,
+                request = reportPostRequest(address, post, comment),
+                decode = ::decodeReportResponse,
+            )
+        }
 
     override suspend fun vote(
         post: PostAddress,
         vote: PostVote,
     ): PostingOutcome<Unit> =
-        executePostingRequest(
-            callFactory = callFactory,
-            request = postVoteRequest(post, vote),
-            decode = ::decodePostVoteResponse,
-        )
+        if (!post.thread.board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            executePostingRequest(
+                callFactory = callFactory,
+                request = postVoteRequest(post, vote),
+                decode = ::decodePostVoteResponse,
+            )
+        }
 
     private suspend fun loadArchived(address: ThreadAddress): DomainOutcome<ThreadSnapshot> =
         DvachArchivedThreadLoader(callFactory, decoder).load(address)

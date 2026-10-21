@@ -41,6 +41,30 @@ class ChangelogHttpTest {
             Unit
         }
 
+    @Test fun knownNewVersionRevalidatesASeparateUrlWithoutLosingExistingParameters() =
+        runTest {
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor { chain ->
+                        val request = chain.request()
+                        assertEquals("22", request.url.queryParameter("release_code"))
+                        assertEquals("stable", request.url.queryParameter("channel"))
+                        assertEquals("no-cache", request.header("Cache-Control"))
+                        assertNull(request.header("If-None-Match"))
+                        Response
+                            .Builder()
+                            .request(request)
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("Test")
+                            .body(historyBody(22, 1).toResponseBody())
+                            .build()
+                    }.build()
+            val response = ChangelogHttp(client).download("https://example.org/history.json?channel=stable", null, 22)
+            assertEquals(historyBody(22, 1), response.body)
+        }
+
     private fun client(
         code: Int,
         body: String,

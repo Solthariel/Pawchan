@@ -11,6 +11,8 @@ import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.withAccountLimits
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 internal data class ComposerCaptchaContext(
@@ -85,6 +87,7 @@ internal class ComposerCaptchaSession(
             scope.launch {
                 when (val outcome = posting.selectEmoji(challenge.id, number)) {
                     is PostingOutcome.Success -> {
+                        currentCoroutineContext().ensureActive()
                         val state = bindings.read()
                         bindings.write(
                             state.copy(
@@ -95,6 +98,7 @@ internal class ComposerCaptchaSession(
                     }
 
                     is PostingOutcome.Failure -> {
+                        currentCoroutineContext().ensureActive()
                         bindings.fail(outcome)
                     }
                 }
@@ -109,13 +113,16 @@ internal class ComposerCaptchaSession(
                 }
 
                 is PostingOutcome.Failure -> {
+                    currentCoroutineContext().ensureActive()
                     bindings.fail(outcome)
                     return
                 }
             }
+        currentCoroutineContext().ensureActive()
         bindings.write(bindings.read().copy(rules = rules))
         when (val outcome = posting.loadCaptcha(context.board, context.thread)) {
             is PostingOutcome.Success -> {
+                currentCoroutineContext().ensureActive()
                 bindings.write(
                     bindings.read().copy(
                         rules = rules.withAccountLimits(outcome.value.uploadLimits),
@@ -134,6 +141,7 @@ internal class ComposerCaptchaSession(
             }
 
             is PostingOutcome.Failure -> {
+                currentCoroutineContext().ensureActive()
                 bindings.fail(outcome)
             }
         }

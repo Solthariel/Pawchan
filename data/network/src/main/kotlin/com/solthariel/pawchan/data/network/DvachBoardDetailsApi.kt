@@ -18,6 +18,7 @@ class DvachBoardDetailsApi private constructor(
         board: BoardAddress,
         page: Int?,
     ): DomainOutcome<BoardArchiveSnapshot> {
+        if (!board.isDvachSource()) return unsupportedDvachSource()
         require(page == null || page >= 0)
         val file = if (page == null) "index.json" else "$page.json"
         return executeDomainRequest(callFactory, boardDetailsRequest(board, listOf("arch", file))) {
@@ -26,8 +27,12 @@ class DvachBoardDetailsApi private constructor(
     }
 
     override suspend fun loadInformation(board: BoardAddress): DomainOutcome<BoardInformation> =
-        executeDomainRequest(callFactory, boardDetailsRequest(board, listOf("index.json"))) {
-            decoder.information(board, it)
+        if (!board.isDvachSource()) {
+            unsupportedDvachSource()
+        } else {
+            executeDomainRequest(callFactory, boardDetailsRequest(board, listOf("index.json"))) {
+                decoder.information(board, it)
+            }
         }
 
     companion object {

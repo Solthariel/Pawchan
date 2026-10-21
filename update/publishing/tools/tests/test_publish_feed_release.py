@@ -22,6 +22,8 @@ class ReleaseTests(unittest.TestCase):
         p = self.root / "update/publishing"
         p.mkdir(parents=True)
         self.latest = {"name": "0.1.0", "code": 1}
+        (p / "changelogs/ru").mkdir(parents=True)
+        (p / "changelogs/ru/1.txt").write_text("Исправления\n• Запись")
         (p / "versions.json").write_text(json.dumps({"versions": [self.latest]}))
         self.replace = {"release_id": 10, "tag_commit": "old"}
         self.request = {"version": "0.1.0", "code": 1,
@@ -49,7 +51,7 @@ class ReleaseTests(unittest.TestCase):
 
     def test_history_appends_only_the_successfully_published_release(self):
         directory = self.root / "update/publishing"
-        (directory / "changelogs/ru").mkdir(parents=True)
+        (directory / "changelogs/ru").mkdir(parents=True, exist_ok=True)
         (directory / "changelogs/ru/1.txt").write_text("Исправления\n• Запись")
         result = json.loads(release.published_history(self.latest))
         self.assertEqual(result["schema"], 1)
@@ -60,13 +62,13 @@ class ReleaseTests(unittest.TestCase):
         directory = self.root / "update/publishing"
         latest = {"code": 2, "name": "0.1.1"}
         (directory / "versions.json").write_text(json.dumps({"versions": [self.latest, latest]}))
-        (directory / "changelogs/ru").mkdir(parents=True)
+        (directory / "changelogs/ru").mkdir(parents=True, exist_ok=True)
         (directory / "changelogs/ru/1.txt").write_text("edited old draft")
-        (directory / "changelogs/ru/2.txt").write_text("new published notes")
+        (directory / "changelogs/ru/2.txt").write_text("Новое\n• new published notes")
         baseline = [{**self.latest, "notes": "original published notes"}]
         result = json.loads(release.published_history(latest, baseline))["releases"]
         self.assertEqual([2, 1], [v["code"] for v in result])
-        self.assertEqual("new published notes", result[0]["notes"])
+        self.assertEqual("Новое\n• new published notes", result[0]["notes"])
         self.assertEqual("original published notes", result[1]["notes"])
 
     def test_unpublished_intermediate_version_prevents_history_generation(self):
@@ -77,6 +79,7 @@ class ReleaseTests(unittest.TestCase):
             release.published_history({"code": 2, "name": "0.1.1"})
 
     def test_missing_published_notes_prevents_history_generation(self):
+        (self.root / "update/publishing/changelogs/ru/1.txt").unlink()
         with self.assertRaises(FileNotFoundError):
             release.published_history(self.latest)
 

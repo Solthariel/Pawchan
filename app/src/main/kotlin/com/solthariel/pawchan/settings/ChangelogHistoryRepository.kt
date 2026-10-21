@@ -11,7 +11,7 @@ import java.io.IOException
 internal class ChangelogHistoryRepository(
     private val cache: ChangelogCache?,
     private val bundled: () -> List<ChangelogRelease>,
-    private val download: suspend (String?) -> ChangelogDownload,
+    private val download: suspend (String?, Long?) -> ChangelogDownload,
 ) {
     private val mutex = Mutex()
 
@@ -23,16 +23,20 @@ internal class ChangelogHistoryRepository(
             }
         }
 
-    suspend fun refresh(): List<ChangelogRelease>? =
+    suspend fun refresh(minimumCode: Long = 0): List<ChangelogRelease>? =
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 historyOrNull refreshed@{
                     val saved = historyOrNull { cache?.load() }
-                    val response = download(saved?.etag)
                     val current = mergeHistory(saved?.body?.let(::decodeRemoteChangelog).orEmpty(), bundled())
-                    if (response.body == null) return@refreshed current.takeIf { saved != null }
+                    val missingVersion = minimumCode.takeIf { it > current.first().code }
+                    val response = download(saved?.etag?.takeIf { missingVersion == null }, missingVersion)
+                    if (response.body == null) {
+                        return@refreshed current.takeIf { saved != null && missingVersion == null }
+                    }
                     val remote = decodeRemoteChangelog(response.body)
-                    require(remote.first().code >= current.first().code) { "Stale history" }
+                    val requiredCode = maxOf(current.first().code.toLong(), minimumCode)
+                    require(remote.first().code >= requiredCode) { "Stale history" }
                     require(remote.map { it.code }.containsAll(current.map { it.code })) { "Incomplete history" }
                     val combined = mergeHistory(remote, current)
                     cache?.save(response)

@@ -22,15 +22,23 @@ class DvachPostingApi private constructor(
     private val decoder: PostingPayloadDecoder,
 ) : PostingRepository {
     override suspend fun loadRules(board: BoardAddress): PostingOutcome<PostingRules> =
-        execute(PostingRequestFactory.boardRules(board)) { decodePostingRules(board, it) }
+        if (!board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            execute(PostingRequestFactory.boardRules(board)) { decodePostingRules(board, it) }
+        }
 
     override suspend fun loadCaptcha(
         board: BoardAddress,
         thread: ThreadId?,
     ): PostingOutcome<PostingCaptchaState> =
-        when (val idOutcome = execute(PostingRequestFactory.captchaId(board, thread), decoder::decodeCaptchaId)) {
-            is PostingOutcome.Failure -> idOutcome
-            is PostingOutcome.Success -> loadCaptchaContent(idOutcome.value)
+        if (!board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            when (val idOutcome = execute(PostingRequestFactory.captchaId(board, thread), decoder::decodeCaptchaId)) {
+                is PostingOutcome.Failure -> idOutcome
+                is PostingOutcome.Success -> loadCaptchaContent(idOutcome.value)
+            }
         }
 
     override suspend fun selectEmoji(
@@ -45,14 +53,23 @@ class DvachPostingApi private constructor(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
-    ): PostingOutcome<PostId> = execute(PostingRequestFactory.reply(address, draft), decoder::decodeReply)
+    ): PostingOutcome<PostId> =
+        if (!address.board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            execute(PostingRequestFactory.reply(address, draft), decoder::decodeReply)
+        }
 
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
     ): PostingOutcome<ThreadAddress> =
-        execute(PostingRequestFactory.newThread(board, draft)) { payload ->
-            decoder.decodeNewThread(board, payload)
+        if (!board.isDvachSource()) {
+            unsupportedDvachPosting()
+        } else {
+            execute(PostingRequestFactory.newThread(board, draft)) { payload ->
+                decoder.decodeNewThread(board, payload)
+            }
         }
 
     private suspend fun loadCaptchaContent(result: CaptchaIdResult): PostingOutcome<PostingCaptchaState> =

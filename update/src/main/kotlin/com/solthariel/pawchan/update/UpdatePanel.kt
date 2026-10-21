@@ -11,25 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 public fun UpdatePanel(
-    configuration: UpdateConfiguration,
+    controller: UpdatePanelController,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val factory = remember(context, configuration) { UpdateViewModel.factory(context, configuration) }
-    val updateViewModel: UpdateViewModel =
-        viewModel(
-            key = "update-${configuration.currentVersionCode}-${configuration.manifestUrl}",
-            factory = factory,
-        )
+    val updateViewModel = controller.model
+    val configuration = controller.configuration
     val state by updateViewModel.state.collectAsState()
 
     Column(

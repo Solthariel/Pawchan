@@ -43,6 +43,7 @@ class ArhivachApi(
         address: ThreadAddress,
         captcha: String,
     ): ArchiveSubmission {
+        if (!address.board.isDvachSource()) return ArchiveSubmission.Rejected("Этот источник не поддерживается")
         val form =
             FormBody
                 .Builder()
@@ -86,20 +87,19 @@ class ArhivachApi(
         address: ThreadAddress,
         url: String,
     ): DomainOutcome<ThreadSnapshot> {
-        if (!validArhivachUrl(
-                url,
-            )
-        ) {
-            return DomainOutcome.Failure(DomainFailure.InvalidResponse)
-        }
-        return when (val result = calls.arhivachPayload(Request.Builder().url(url).build())) {
-            is DomainOutcome.Success -> {
-                decodeArhivachThread(address, url, result.value)?.let { DomainOutcome.Success(it) }
-                    ?: DomainOutcome.Failure(DomainFailure.InvalidResponse)
-            }
+        if (!address.board.isDvachSource()) return unsupportedDvachSource()
+        return if (!validArhivachUrl(url)) {
+            DomainOutcome.Failure(DomainFailure.InvalidResponse)
+        } else {
+            when (val result = calls.arhivachPayload(Request.Builder().url(url).build())) {
+                is DomainOutcome.Success -> {
+                    decodeArhivachThread(address, url, result.value)?.let { DomainOutcome.Success(it) }
+                        ?: DomainOutcome.Failure(DomainFailure.InvalidResponse)
+                }
 
-            is DomainOutcome.Failure -> {
-                result
+                is DomainOutcome.Failure -> {
+                    result
+                }
             }
         }
     }

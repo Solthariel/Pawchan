@@ -16,9 +16,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,8 +35,10 @@ import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.domain.settings.ThemePreference
+import com.solthariel.pawchan.update.UpdateCheckRequest
 import com.solthariel.pawchan.update.UpdateConfiguration
 import com.solthariel.pawchan.update.UpdatePanel
+import com.solthariel.pawchan.update.rememberUpdatePanel
 
 /** Settings search lives in the fixed toolbar, just as in the catalog. */
 @Composable
@@ -45,7 +49,14 @@ internal fun SettingsScreen(
 ) {
     var section by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
-    val content = settingsContent(state, actions, rememberSettingsEnvironment { ReleaseUpdatePanel() })
+    val history = rememberChangelogHistory()
+    val aboutEntry = remember(section) { if (section == SettingsSection.ABOUT) UpdateCheckRequest() else null }
+    LaunchedEffect(aboutEntry) { aboutEntry?.let(history::enter) }
+    val updates = rememberUpdatePanel(releaseUpdateConfiguration(), aboutEntry, history::updateFound)
+    val environment =
+        rememberSettingsEnvironment { UpdatePanel(updates) }
+            .copy(changelog = { ChangelogSettings(history) })
+    val content = settingsContent(state, actions, environment)
     BackHandler(enabled = section != null) { section = null }
     val search = rememberCatalogSearchState(query) { query = it }
     val openSection: (SettingsSection?) -> Unit = { next ->
@@ -136,17 +147,12 @@ private fun SettingsSectionList(onOpen: (SettingsSection) -> Unit) {
     }
 }
 
-@Composable
-private fun ReleaseUpdatePanel() {
-    UpdatePanel(
-        configuration =
-            UpdateConfiguration(
-                manifestUrl = BuildConfig.UPDATE_MANIFEST_URL,
-                currentVersionCode = BuildConfig.VERSION_CODE.toLong(),
-                currentVersionName = BuildConfig.VERSION_NAME,
-            ),
+private fun releaseUpdateConfiguration(): UpdateConfiguration =
+    UpdateConfiguration(
+        manifestUrl = BuildConfig.UPDATE_MANIFEST_URL,
+        currentVersionCode = BuildConfig.VERSION_CODE.toLong(),
+        currentVersionName = BuildConfig.VERSION_NAME,
     )
-}
 
 internal val ThemePreference.labelResource: Int
     get() =

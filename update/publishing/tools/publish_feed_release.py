@@ -10,6 +10,8 @@ import urllib.error
 import urllib.request
 
 from release_sequence import identity, read_history, validate_local, validate_sequence
+from release_notes_format import current_notes
+from release_notes_corrections import correct_published_notes
 
 ROOT = Path(__file__).resolve().parents[3]
 REPO = "Solthariel/Pawchan"
@@ -79,6 +81,8 @@ def check(latest, tag, replacement):
     branch = api("branches/master")
     if branch is None:
         raise SystemExit("master is unavailable")
+    current_notes(ROOT, latest)
+    correct_published_notes(ROOT, latest, api, run)
     print("Publication preflight passed:", tag)
 
 
@@ -91,7 +95,7 @@ def prepare(latest, tag):
     run("python3", "update/publishing/tools/update_manifest.py", str(apk), "--publish",
         "--source", source, "--changelog", changelog)
     manifest = (ROOT / "update/publishing/manifest/data-v1.json").read_bytes()
-    notes = (ROOT / f"update/publishing/changelogs/ru/{latest['code']}.txt").read_bytes()
+    notes = current_notes(ROOT, latest).encode("utf-8")
     return apk, manifest, notes
 
 
@@ -132,9 +136,7 @@ def published_history(latest, baseline=None):
     validate_sequence(metadata["versions"], releases)
     if identity(latest) != identity(metadata["versions"][-1]):
         raise ValueError("Published release is not the requested version")
-    notes = (ROOT / f"update/publishing/changelogs/ru/{latest['code']}.txt").read_text()
-    if not notes.strip():
-        raise ValueError("Empty published release notes")
+    notes = current_notes(ROOT, latest)
     history = sorted([*releases, {**latest, "notes": notes}], key=lambda v: v["code"], reverse=True)
     return (json.dumps({"schema": 1, "releases": history}, ensure_ascii=False, indent=2) + "\n").encode()
 
@@ -170,6 +172,7 @@ def main():
     if args.check:
         return
     apk, manifest, notes = prepare(latest, tag)
+    correct_published_notes(ROOT, latest, api, run, apply=True)
     publish_release(latest, tag, replacement, apk)
     publish_feed(latest, manifest, notes)
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
