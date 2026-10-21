@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 
 enum class UsageMetric {
     THREADS_OPENED,
-    POSTS_VIEWED,
     POSTS_SENT,
     THREADS_CREATED,
     REPLIES_SENT,

@@ -22,16 +22,6 @@ internal fun BindThreadReadingPosition(
 ) {
     if (reading == null) return
     val latest by rememberUpdatedState(content)
-    LaunchedEffect(address, reading, content != null) {
-        if (address == null || content == null) return@LaunchedEffect
-        snapshotFlow {
-            memory.list.layoutInfo.visibleItemsInfo
-                .filter { item ->
-                    item.offset + item.size > memory.list.layoutInfo.viewportStartOffset &&
-                        item.offset < memory.list.layoutInfo.viewportEndOffset
-                }.mapNotNull { latest?.posts?.getOrNull(it.index)?.id }
-        }.collectViewedPosts(address, reading)
-    }
     LaunchedEffect(address, content != null, reading) {
         if (address == null || content == null) return@LaunchedEffect
         val positions =
@@ -58,22 +48,3 @@ internal suspend fun ThreadReadingSession.collectPositions(
 }
 
 private const val POSITION_SAVE_DELAY_MILLIS = 300L
-
-@OptIn(kotlinx.coroutines.FlowPreview::class)
-internal suspend fun Flow<List<Long>>.collectViewedPosts(
-    address: ThreadAddress,
-    reading: ThreadReadingSession,
-) {
-    val pending = linkedSetOf<Long>()
-    try {
-        distinctUntilChanged()
-            .onEach { pending.addAll(it) }
-            .debounce(POSITION_SAVE_DELAY_MILLIS)
-            .collect {
-                if (pending.isNotEmpty()) reading.viewed(address, pending.toList())
-                pending.clear()
-            }
-    } finally {
-        if (pending.isNotEmpty()) reading.viewed(address, pending.toList())
-    }
-}

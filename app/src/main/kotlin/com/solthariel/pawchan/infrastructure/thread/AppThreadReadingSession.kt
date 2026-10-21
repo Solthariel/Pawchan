@@ -10,18 +10,6 @@ import com.solthariel.pawchan.workspace.readingPosition
 internal class AppThreadReadingSession(
     private val workspace: WorkspaceController,
 ) : ThreadReadingSession {
-    override fun viewed(
-        address: ThreadAddress,
-        postIds: List<Long>,
-    ) {
-        postIds.distinct().forEach { post ->
-            workspace.recordUsage(
-                com.solthariel.pawchan.domain.statistics.UsageMetric.POSTS_VIEWED,
-                identity = "$address/$post",
-            )
-        }
-    }
-
     override fun restore(address: ThreadAddress): ThreadReadingPosition? =
         workspace.readingPosition(address)?.let { ThreadReadingPosition(it.first, it.second) }
 

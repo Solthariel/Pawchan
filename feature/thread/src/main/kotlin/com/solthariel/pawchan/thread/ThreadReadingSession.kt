@@ -9,11 +9,6 @@ data class ThreadReadingPosition(
 
 /** Borrowed app persistence; the screen owns only collection of visible positions. */
 interface ThreadReadingSession {
-    fun viewed(
-        address: ThreadAddress,
-        postIds: List<Long>,
-    ) = Unit
-
     fun restore(address: ThreadAddress): ThreadReadingPosition?
 
     fun contentReady(address: ThreadAddress)

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 
+from release_sequence import identity, read_history
+
 SEMVER = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 MAX_VERSION_CODE = 2_100_000_000
 
@@ -39,6 +41,9 @@ def prepare_release(project, change, notes, release_date):
     for version in versions:
         if SEMVER.fullmatch(version["name"]) is None:
             raise ValueError("Release history contains an invalid SemVer name")
+    published = read_history(project)
+    if [identity(v) for v in versions] != [identity(v) for v in published]:
+        raise ValueError("Publish the pending release before preparing another version")
     previous = versions[-1]
     name = next_version(previous["name"], change)
     code = previous["code"] + 1
@@ -67,6 +72,8 @@ def prepare_release(project, change, notes, release_date):
     (project / "app/src/main/assets/settings-changelog.txt").write_text(text, encoding="utf-8")
     versions_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (publishing / "release-request.json").write_text(
+        json.dumps({"version": name, "code": code, "revision": 1}, indent=2) + "\n", encoding="utf-8")
     return name, code
 
 

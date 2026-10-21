@@ -51,7 +51,10 @@ jobs:
       - name: Validate publication request
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 update/publishing/tools/publish_feed_release.py --check
+        run: |
+          python3 -m unittest discover -s update/publishing/tests -v
+          python3 -m unittest discover -s update/publishing/tools/tests -v
+          python3 update/publishing/tools/publish_feed_release.py --check
 
       - name: Set up Java 25
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0

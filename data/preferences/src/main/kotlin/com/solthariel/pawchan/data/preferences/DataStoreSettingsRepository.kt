@@ -155,7 +155,7 @@ class DataStoreSettingsRepository private constructor(
             val dataStore =
                 PreferenceDataStoreFactory.create(
                     scope = scope,
-                    migrations = listOf(PostAppearanceMigration),
+                    migrations = listOf(PostAppearanceMigration, RemovedUsageMigration),
                 ) {
                     context.applicationContext.preferencesDataStoreFile(DATASTORE_FILE)
                 }

@@ -5,7 +5,6 @@ fun UsageMetric.usageLabel(): String = requireNotNull(USAGE_LABELS[this])
 private val USAGE_LABELS =
     mapOf(
         UsageMetric.THREADS_OPENED to "Открыто тредов",
-        UsageMetric.POSTS_VIEWED to "Просмотрено постов",
         UsageMetric.POSTS_SENT to "Отправлено постов",
         UsageMetric.THREADS_CREATED to "Создано тредов",
         UsageMetric.REPLIES_SENT to "Отправлено ответов",

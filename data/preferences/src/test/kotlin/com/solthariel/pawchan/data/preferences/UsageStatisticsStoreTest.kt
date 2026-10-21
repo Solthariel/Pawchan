@@ -132,7 +132,7 @@ class UsageStatisticsStoreTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun batchCountersCannotPretendToRepresentOneObject() =
-        runBlocking { UsageStatisticsStore(MemoryStore()).record(UsageMetric.POSTS_VIEWED, 7, "post") }
+        runBlocking { UsageStatisticsStore(MemoryStore()).record(UsageMetric.POSTS_SENT, 7, "post") }
 
     private class MemoryStore : DataStore<Preferences> {
         private val state = MutableStateFlow(emptyPreferences())

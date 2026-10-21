@@ -9,6 +9,8 @@ import tempfile
 import urllib.error
 import urllib.request
 
+from release_sequence import identity, read_history, validate_local, validate_sequence
+
 ROOT = Path(__file__).resolve().parents[3]
 REPO = "Solthariel/Pawchan"
 
@@ -66,6 +68,14 @@ def check(latest, tag, replacement):
             raise SystemExit("Release already exists. Published APKs are not overwritten.")
         if reference and reference["object"]["sha"] != os.environ["GITHUB_SHA"]:
             raise SystemExit("Tag points to another commit")
+    try:
+        published = validate_local(ROOT)
+    except (ValueError, KeyError, OSError, StopIteration) as error:
+        raise SystemExit(f"Release sequence rejected: {error}") from error
+    public_latest = api("releases/latest")
+    expected_tag = "v" + published[-1]["name"] if published else None
+    if (public_latest or {}).get("tag_name") != expected_tag:
+        raise SystemExit("Latest public release and published baseline differ; repair the feed before publishing")
     branch = api("branches/master")
     if branch is None:
         raise SystemExit("master is unavailable")
@@ -115,30 +125,29 @@ def publish_feed(latest, manifest, notes):
     print("Update feed published on master")
 
 
-def published_history(latest):
-    """One conditional-download file, generated only for the successfully published cutoff."""
+def published_history(latest, baseline=None):
+    """Append only the release just published; never infer releases from unshipped notes."""
     metadata = json.loads((ROOT / "update/publishing/versions.json").read_text())
-    releases = []
-    for version in sorted(metadata["versions"], key=lambda v: v["code"], reverse=True):
-        if version["code"] > latest["code"]:
-            continue
-        notes = (ROOT / f"update/publishing/changelogs/ru/{version['code']}.txt").read_text()
-        if not notes.strip():
-            raise ValueError("Empty published release notes")
-        releases.append({**version, "notes": notes})
-    if not releases or releases[0]["code"] != latest["code"]:
-        raise ValueError("Published release is missing from history")
-    return (json.dumps({"schema": 1, "releases": releases}, ensure_ascii=False, indent=2) + "\n").encode()
+    releases = read_history(ROOT) if baseline is None else baseline
+    validate_sequence(metadata["versions"], releases)
+    if identity(latest) != identity(metadata["versions"][-1]):
+        raise ValueError("Published release is not the requested version")
+    notes = (ROOT / f"update/publishing/changelogs/ru/{latest['code']}.txt").read_text()
+    if not notes.strip():
+        raise ValueError("Empty published release notes")
+    history = sorted([*releases, {**latest, "notes": notes}], key=lambda v: v["code"], reverse=True)
+    return (json.dumps({"schema": 1, "releases": history}, ensure_ascii=False, indent=2) + "\n").encode()
 
 
 def write_feed(worktree, latest, manifest, notes):
     def git(*args):
         return subprocess.check_output(("git", *args), cwd=worktree, text=True).strip()
 
+    history = published_history(latest, read_history(worktree))
     feed = worktree / "update/feed"
     (feed / "changelogs").mkdir(parents=True, exist_ok=True)
     (feed / "data-v1.json").write_bytes(manifest)
-    (feed / "history-v1.json").write_bytes(published_history(latest))
+    (feed / "history-v1.json").write_bytes(history)
     (feed / f"changelogs/{latest['code']}.txt").write_bytes(notes)
     git("config", "user.name", "github-actions[bot]")
     git("config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")

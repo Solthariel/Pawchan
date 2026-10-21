@@ -1,9 +1,12 @@
 import importlib.util
+import sys
 import json
 from datetime import date
 from pathlib import Path
 import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 SPEC = importlib.util.spec_from_file_location("bump_version", Path(__file__).parents[1] / "tools/bump_version.py")
 bump = importlib.util.module_from_spec(SPEC)
@@ -31,6 +34,10 @@ class VersioningTest(unittest.TestCase):
         package = {"version_code": 1, "version_name": "0.1.0", "min_sdk": 30, "length": 123,
                    "source": "https://example.test/old.apk", "changelog": "https://example.test/1.txt", "sha256sum": "original"}
         (publishing / "manifest/data-v1.json").write_text(json.dumps({"applications": [{"name": "client", "packages": [package]}]}))
+        feed = root / "update/feed"
+        feed.mkdir(parents=True)
+        (feed / "history-v1.json").write_text(json.dumps({"schema": 1, "releases": [
+            {"code": 1, "name": "0.1.0", "date": "01.10.2026", "notes": "old"}]}))
         return publishing, package
 
     def test_new_release_keeps_published_package_and_uses_next_ordinal(self):
@@ -46,6 +53,19 @@ class VersioningTest(unittest.TestCase):
                 self.assertIsNone(packages[1][field])
             self.assertEqual(0, packages[1]["length"])
             self.assertEqual((publishing / "changelogs/ru/2.txt").read_text(), (root / "app/src/main/assets/settings-changelog.txt").read_text())
+
+    def test_cannot_prepare_two_versions_without_publication(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            publishing, _ = self.fixture(root)
+            bump.prepare_release(root, "patch", "* Fix", date.today())
+            request = json.loads((publishing / "release-request.json").read_text())
+            self.assertEqual({"version": "0.1.1", "code": 2, "revision": 1}, request)
+            before = (publishing / "versions.json").read_bytes()
+            with self.assertRaises(ValueError):
+                bump.prepare_release(root, "patch", "* Another fix", date.today())
+            self.assertEqual(before, (publishing / "versions.json").read_bytes())
+            self.assertFalse((publishing / "changelogs/ru/3.txt").exists())
 
     def test_empty_notes_do_not_change_files(self):
         with tempfile.TemporaryDirectory() as folder:

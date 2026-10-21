@@ -1,10 +1,13 @@
 import importlib.util
+import sys
 import json
 import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 SPEC = importlib.util.spec_from_file_location(
     "release", Path(__file__).resolve().parents[1] / "publish_feed_release.py")
@@ -24,6 +27,9 @@ class ReleaseTests(unittest.TestCase):
         self.request = {"version": "0.1.0", "code": 1,
                         "replace_first_release": self.replace}
         self.save_request()
+        (p / "manifest").mkdir()
+        (p / "manifest/data-v1.json").write_text(json.dumps({"applications": [
+            {"name": "client", "packages": [{"version_code": 1, "version_name": "0.1.0"}]}]}))
         self.root_patch = patch.object(release, "ROOT", self.root)
         self.root_patch.start()
         self.env = patch.dict(os.environ, {"GITHUB_REPOSITORY": "Solthariel/Pawchan",
@@ -41,22 +47,38 @@ class ReleaseTests(unittest.TestCase):
     def save_request(self):
         (self.root / "update/publishing/release-request.json").write_text(json.dumps(self.request))
 
-    def test_history_excludes_future_publication_and_keeps_notes(self):
-        metadata = {"versions": [
-            {"code": 1, "name": "0.1.0", "date": "01.10.2026"},
-            {"code": 2, "name": "0.1.1", "date": "02.10.2026"}]}
+    def test_history_appends_only_the_successfully_published_release(self):
         directory = self.root / "update/publishing"
-        (directory / "versions.json").write_text(json.dumps(metadata))
         (directory / "changelogs/ru").mkdir(parents=True)
         (directory / "changelogs/ru/1.txt").write_text("Исправления\n• Запись")
-        result = json.loads(release.published_history({"code": 1}))
+        result = json.loads(release.published_history(self.latest))
         self.assertEqual(result["schema"], 1)
         self.assertEqual([v["code"] for v in result["releases"]], [1])
         self.assertIn("Запись", result["releases"][0]["notes"])
 
+    def test_history_preserves_published_notes_instead_of_reimporting_old_drafts(self):
+        directory = self.root / "update/publishing"
+        latest = {"code": 2, "name": "0.1.1"}
+        (directory / "versions.json").write_text(json.dumps({"versions": [self.latest, latest]}))
+        (directory / "changelogs/ru").mkdir(parents=True)
+        (directory / "changelogs/ru/1.txt").write_text("edited old draft")
+        (directory / "changelogs/ru/2.txt").write_text("new published notes")
+        baseline = [{**self.latest, "notes": "original published notes"}]
+        result = json.loads(release.published_history(latest, baseline))["releases"]
+        self.assertEqual([2, 1], [v["code"] for v in result])
+        self.assertEqual("new published notes", result[0]["notes"])
+        self.assertEqual("original published notes", result[1]["notes"])
+
+    def test_unpublished_intermediate_version_prevents_history_generation(self):
+        directory = self.root / "update/publishing"
+        (directory / "versions.json").write_text(json.dumps({"versions": [
+            self.latest, {"code": 2, "name": "0.1.1"}]}))
+        with self.assertRaises(ValueError):
+            release.published_history({"code": 2, "name": "0.1.1"})
+
     def test_missing_published_notes_prevents_history_generation(self):
         with self.assertRaises(FileNotFoundError):
-            release.published_history({"code": 1})
+            release.published_history(self.latest)
 
     def test_context_initial_replacement(self):
         self.assertEqual(release.context(), (self.latest, "v0.1.0", self.replace))
@@ -151,6 +173,27 @@ class ReleaseTests(unittest.TestCase):
         with patch.object(release, "api", side_effect=self.remote.get):
             with self.assertRaises(SystemExit):
                 release.check(self.latest, "v0.1.0", self.replace)
+
+    def test_public_release_ahead_of_feed_blocks_publication(self):
+        self.remote["releases/tags/v0.1.0"] = None
+        self.remote["git/ref/tags/v0.1.0"] = None
+        self.remote["releases/latest"] = {"tag_name": "v0.1.1"}
+        with patch.object(release, "api", side_effect=self.remote.get), patch.object(release, "run") as run:
+            with self.assertRaises(SystemExit):
+                release.publish_release(self.latest, "v0.1.0", None, Path("app.apk"))
+            run.assert_not_called()
+
+    def test_feed_write_rejects_concurrent_publication_before_touching_files(self):
+        worktree = self.root / "worktree"
+        feed = worktree / "update/feed"
+        feed.mkdir(parents=True)
+        original = json.dumps({"schema": 1, "releases": [self.latest]})
+        (feed / "history-v1.json").write_text(original)
+        with patch.object(release, "run"):
+            with self.assertRaises(ValueError):
+                release.write_feed(worktree, self.latest, b"manifest", b"notes")
+        self.assertEqual(original, (feed / "history-v1.json").read_text())
+        self.assertFalse((feed / "data-v1.json").exists())
 
     def test_missing_apk_stops_before_preparation(self):
         with patch.object(release, "run") as run:
