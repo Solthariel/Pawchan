@@ -42,7 +42,7 @@ class NewThreadViewModelTest {
                 val viewModel =
                     NewThreadViewModel(defaultBoardAddress(), repository, prepareFiles = { files, _ ->
                         PostingOutcome.Success(files.map { it.source })
-                    })
+                    }, preparationDispatcher = Dispatchers.Unconfined)
                 advanceUntilIdle()
                 viewModel.updateDraft(
                     ComposerDraftState(
@@ -78,7 +78,7 @@ class NewThreadViewModelTest {
                 val viewModel =
                     NewThreadViewModel(defaultBoardAddress(), FakeNewThreadPosting(), prepareFiles = { files, _ ->
                         PostingOutcome.Success(files.map { it.source })
-                    })
+                    }, preparationDispatcher = Dispatchers.Unconfined)
                 advanceUntilIdle()
                 val draft =
                     ComposerDraftState(
@@ -115,7 +115,12 @@ class NewThreadViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
-                val viewModel = NewThreadViewModel(defaultBoardAddress(), FakeNewThreadPosting())
+                val viewModel =
+                    NewThreadViewModel(
+                        defaultBoardAddress(),
+                        FakeNewThreadPosting(),
+                        preparationDispatcher = Dispatchers.Unconfined,
+                    )
                 advanceUntilIdle()
                 val previous =
                     ComposerDraftState(
@@ -159,7 +164,7 @@ class NewThreadViewModelTest {
                 val viewModel =
                     NewThreadViewModel(defaultBoardAddress(), repository, prepareFiles = { files, _ ->
                         PostingOutcome.Success(files.map { it.source })
-                    })
+                    }, preparationDispatcher = Dispatchers.Unconfined)
                 advanceUntilIdle()
                 val file = ComposerAttachment(ReplyAttachment("cat.png", "image/png", byteArrayOf(1)))
                 viewModel.updateDraft(

@@ -18,6 +18,7 @@ import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -185,5 +186,6 @@ private class RaceCaptchaFixture(
             ComposerCaptchaContext(defaultBoardAddress()),
             ComposerCaptchaBindings({ state }, { state = it }, { failures += it }),
             now,
+            preparationDispatcher = Dispatchers.Unconfined,
         )
 }

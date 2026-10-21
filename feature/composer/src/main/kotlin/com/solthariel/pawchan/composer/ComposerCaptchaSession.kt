@@ -9,11 +9,14 @@ import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.withAccountLimits
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal data class ComposerCaptchaContext(
     val board: BoardAddress,
@@ -40,6 +43,7 @@ internal class ComposerCaptchaSession(
     private val context: ComposerCaptchaContext,
     private val bindings: ComposerCaptchaBindings,
     private val nowMillis: () -> Long = SystemClock::elapsedRealtime,
+    private val preparationDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private var job: Job? = null
 
@@ -89,10 +93,14 @@ internal class ComposerCaptchaSession(
                     is PostingOutcome.Success -> {
                         currentCoroutineContext().ensureActive()
                         val state = bindings.read()
+                        val captcha =
+                            withContext(preparationDispatcher) { state.captcha.acceptStep(outcome.value, image) }
+                        currentCoroutineContext().ensureActive()
+                        val latest = bindings.read()
                         bindings.write(
-                            state.copy(
-                                captcha = state.captcha.acceptStep(outcome.value, image),
-                                progress = state.progress.copy(captchaSelecting = false),
+                            latest.copy(
+                                captcha = captcha,
+                                progress = latest.progress.copy(captchaSelecting = false),
                             ),
                         )
                     }
@@ -156,7 +164,14 @@ private fun ComposerCaptchaState.acceptStep(
     return when (step) {
         is EmojiCaptchaStep.Challenge -> {
             ComposerCaptchaState(
-                challenge = EmojiCaptchaChallenge(requireNotNull(challenge).id, step.taskImage, step.options),
+                challenge =
+                    EmojiCaptchaChallenge(
+                        requireNotNull(challenge).id,
+                        challenge.taskImage.takeIf { it.contentEquals(step.taskImage) } ?: step.taskImage,
+                        step.options,
+                        challenge.lifetimeSeconds,
+                    ),
+                keyboard = stableCaptchaKeyboard(keyboard, step.options),
                 selectedImages = selected,
                 deadlineElapsedMillis = deadlineElapsedMillis,
             )

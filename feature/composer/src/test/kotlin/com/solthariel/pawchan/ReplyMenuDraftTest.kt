@@ -7,6 +7,7 @@ import com.solthariel.pawchan.composer.toStoredDraft
 import com.solthariel.pawchan.domain.drafts.ComposerDraftKey
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,7 +31,9 @@ class ReplyMenuDraftTest {
                     { testScheduler.currentTime },
                     StandardTestDispatcher(testScheduler),
                 )
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = coordinator)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = coordinator, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false, ">>7\n")
             advanceUntilIdle()
             assertEquals("Сохранённый\n>>7\n", controller.state.value.comment)
@@ -44,7 +47,14 @@ class ReplyMenuDraftTest {
     fun closingDuringRestoreDoesNotReopenOrInsertIntoAnotherForm() =
         runTest {
             val address = ThreadAddress(defaultBoardAddress(), requireNotNull(ThreadId.parse(42)))
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {})
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
             controller.open(false, ">>7\n")
             controller.close()
             advanceUntilIdle()

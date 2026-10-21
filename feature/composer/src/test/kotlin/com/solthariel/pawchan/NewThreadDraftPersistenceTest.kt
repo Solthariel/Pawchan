@@ -28,7 +28,14 @@ class NewThreadDraftPersistenceTest {
                 val key = ComposerDraftKey(board)
                 disk.saved[key] = ComposerDraftState(comment = "remembered").toStoredDraft()
                 val storage = ComposerDraftCoordinator(this, disk, { testScheduler.currentTime }, dispatcher)
-                val model = NewThreadViewModel(board, FakePostingRepository(), drafts = storage, autoOpen = false)
+                val model =
+                    NewThreadViewModel(
+                        board,
+                        FakePostingRepository(),
+                        drafts = storage,
+                        autoOpen = false,
+                        preparationDispatcher = Dispatchers.Unconfined,
+                    )
                 model.saveDraftNow()
                 advanceUntilIdle()
                 assertEquals("remembered", disk.saved[key]?.text?.comment)

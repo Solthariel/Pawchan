@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.composer
 
 import com.solthariel.pawchan.domain.posting.EmojiCaptchaChallenge
+import com.solthariel.pawchan.domain.posting.EmojiCaptchaOption
 import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.PostingRules
@@ -72,6 +73,7 @@ data class ComposerCaptchaState(
     val token: String? = null,
     val satisfied: Boolean = false,
     val deadlineElapsedMillis: Long? = null,
+    val keyboard: List<EmojiCaptchaOption?> = challenge?.options.orEmpty(),
 )
 
 internal fun PostingFailure.toReplyError(): Pair<ReplyError, String?> =

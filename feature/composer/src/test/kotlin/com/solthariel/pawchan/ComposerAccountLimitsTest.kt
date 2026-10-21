@@ -9,6 +9,7 @@ import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.posting.AccountUploadLimits
 import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -29,7 +30,8 @@ class ComposerAccountLimitsTest {
     fun anonymousExcessSelectionIsPreservedWhenSubmissionIsRejected() =
         runTest {
             val repository = FakePostingRepository()
-            val controller = ReplyComposerController(this, address, repository, {})
+            val controller =
+                ReplyComposerController(this, address, repository, {}, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(ComposerDraftState(attachments = files))
@@ -51,7 +53,7 @@ class ComposerAccountLimitsTest {
                     assertEquals(8, rules.maxFiles)
                     assertTrue(rules.accepts(selected.map { it.source }))
                     PostingOutcome.Success(selected.map { it.source })
-                })
+                }, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             assertEquals(
@@ -80,7 +82,8 @@ class ComposerAccountLimitsTest {
     fun spoilerSurvivesPreparationAndReachesPostingRepository() =
         runTest {
             val repository = FakePostingRepository()
-            val controller = ReplyComposerController(this, address, repository, {})
+            val controller =
+                ReplyComposerController(this, address, repository, {}, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             val bytes =

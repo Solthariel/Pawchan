@@ -12,6 +12,7 @@ import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -39,7 +40,7 @@ class ComposerControllerTest {
             val controller =
                 ReplyComposerController(this, address, repository, {}, prepareFiles = { selected, _ ->
                     PostingOutcome.Success(selected.map { it.source })
-                })
+                }, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(ComposerDraftState(comment = "[b]reply[/b]", email = "sage", attachments = files))
@@ -54,7 +55,14 @@ class ComposerControllerTest {
     @Test
     fun clearAllResetsEveryFieldAndRejectsLateImportFromOldDraft() =
         runTest {
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {})
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
             controller.open(false)
             advanceUntilIdle()
             val old =
@@ -92,7 +100,7 @@ class ComposerControllerTest {
                     } finally {
                         cancelled = true
                     }
-                })
+                }, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(ComposerDraftState(attachments = files))
@@ -108,7 +116,14 @@ class ComposerControllerTest {
     @Test
     fun eightFilesMayBeSelectedButInvalidRenameCannotBeSubmitted() =
         runTest {
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {})
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(ComposerDraftState(attachments = List(8) { files.first() }))
@@ -130,7 +145,8 @@ class ComposerControllerTest {
     fun replyAppliesOptionsAndHonorsBoardRestrictions() =
         runTest {
             val allowed = FakePostingRepository()
-            val first = ReplyComposerController(this, address, allowed, {})
+            val first =
+                ReplyComposerController(this, address, allowed, {}, preparationDispatcher = Dispatchers.Unconfined)
             first.open(false)
             advanceUntilIdle()
             first.updateDraft(
@@ -150,7 +166,8 @@ class ComposerControllerTest {
                         features = PostingFeatures(sage = false),
                     ),
                 )
-            val second = ReplyComposerController(this, address, restricted, {})
+            val second =
+                ReplyComposerController(this, address, restricted, {}, preparationDispatcher = Dispatchers.Unconfined)
             second.open(false)
             advanceUntilIdle()
             second.updateDraft(ComposerDraftState(comment = "reply", options = PostingOptions("Neko", sage = true)))

@@ -6,7 +6,9 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyDraft
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,7 @@ class ReplyComposerController internal constructor(
     private val onPosted: (BoardPost) -> Unit,
     private val prepareFiles: AttachmentPreparer = ::prepareComposerAttachments,
     drafts: ComposerDraftCoordinator? = null,
+    preparationDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val mutableState = MutableStateFlow(ReplyComposerState())
     private var job: Job? = null
@@ -64,6 +67,7 @@ class ReplyComposerController internal constructor(
                 },
                 fail = ::handleFailure,
             ),
+            preparationDispatcher = preparationDispatcher,
         )
 
     val state: StateFlow<ReplyComposerState> = mutableState.asStateFlow()

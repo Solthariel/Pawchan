@@ -19,6 +19,7 @@ import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -199,5 +200,6 @@ private class CaptchaSessionFixture(
             ComposerCaptchaContext(defaultBoardAddress(), thread),
             ComposerCaptchaBindings({ state }, { state = it }, { failures += it }),
             nowMillis,
+            preparationDispatcher = Dispatchers.Unconfined,
         )
 }

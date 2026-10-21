@@ -6,6 +6,7 @@ import com.solthariel.pawchan.composer.ReplyComposerController
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -25,7 +26,7 @@ class ReplySuccessStatusTest {
             val controller =
                 ReplyComposerController(this, address, repository, { posted++ }, prepareFiles = { files, _ ->
                     PostingOutcome.Success(files.map { it.source })
-                })
+                }, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             val draft = ComposerDraftState(comment = "Ответ", email = "mail")

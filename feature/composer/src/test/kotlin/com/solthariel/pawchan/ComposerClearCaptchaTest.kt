@@ -50,7 +50,8 @@ class ComposerClearCaptchaTest {
     @Test fun replyClearKeepsSolvedCaptchaAndDoesNotReloadRulesOrChallenge() =
         runTest {
             val posting = posting()
-            val controller = ReplyComposerController(this, address, posting, {})
+            val controller =
+                ReplyComposerController(this, address, posting, {}, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.selectEmoji(1)
@@ -76,7 +77,7 @@ class ComposerClearCaptchaTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
                 val posting = posting()
-                val model = NewThreadViewModel(board, posting)
+                val model = NewThreadViewModel(board, posting, preparationDispatcher = Dispatchers.Unconfined)
                 advanceUntilIdle()
                 model.selectEmoji(1)
                 advanceUntilIdle()
@@ -103,7 +104,8 @@ class ComposerClearCaptchaTest {
             val posting = posting()
             val gate = CompletableDeferred<Unit>()
             posting.selectionGate = gate
-            val controller = ReplyComposerController(this, address, posting, {})
+            val controller =
+                ReplyComposerController(this, address, posting, {}, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.selectEmoji(1)
@@ -122,7 +124,8 @@ class ComposerClearCaptchaTest {
         runTest {
             val posting = posting()
             posting.nextStep = EmojiCaptchaStep.Challenge(byteArrayOf(3), listOf(EmojiCaptchaOption(2, byteArrayOf(4))))
-            val controller = ReplyComposerController(this, address, posting, {})
+            val controller =
+                ReplyComposerController(this, address, posting, {}, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.selectEmoji(1)

@@ -2,6 +2,7 @@ package com.solthariel.pawchan.composer
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,7 +21,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.solthariel.pawchan.domain.posting.EmojiCaptchaOption
 import com.solthariel.pawchan.feature.composer.R
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 
 @Composable
 internal fun ComposerCaptcha(
@@ -50,19 +51,19 @@ private fun ComposerEmojiChallenge(
                 .fillMaxWidth()
                 .heightIn(max = 160.dp),
     )
-    CaptchaOptionsGrid(captcha.options, imageLoader, !state.selectionEnabled, onEmojiSelected)
-    if (state.captchaSelecting) {
-        CircularProgressIndicator()
-    }
+    CaptchaOptionsGrid(state.data.keyboard, imageLoader, !state.selectionEnabled, onEmojiSelected)
 }
 
 @Composable
 private fun CaptchaOptionsGrid(
-    options: List<EmojiCaptchaOption>,
+    options: List<EmojiCaptchaOption?>,
     imageLoader: ImageLoader,
     selecting: Boolean,
     onEmojiSelected: (Int) -> Unit,
 ) {
+    val colors = CardDefaults.cardColors()
+    val stableColors =
+        colors.copy(disabledContainerColor = colors.containerColor, disabledContentColor = colors.contentColor)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val rows = (options.size + CAPTCHA_COLUMNS - 1) / CAPTCHA_COLUMNS
         val gap = CAPTCHA_GAP_DP.dp
@@ -77,21 +78,27 @@ private fun CaptchaOptionsGrid(
             verticalArrangement = Arrangement.spacedBy(gap),
             userScrollEnabled = false,
         ) {
-            gridItems(
+            gridItemsIndexed(
                 items = options,
-                key = { option -> option.number },
-            ) { option ->
-                Card(
-                    onClick = { onEmojiSelected(option.number) },
-                    enabled = !selecting,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-                ) {
-                    EmojiImage(
-                        option.image,
-                        imageLoader,
-                        stringResource(R.string.captcha_emoji_option, option.number + 1),
-                        Modifier.fillMaxSize().padding(3.dp),
-                    )
+                key = { index, _ -> index },
+                contentType = { _, option -> if (option == null) "empty" else "emoji" },
+            ) { index, option ->
+                if (option == null) {
+                    Spacer(Modifier.fillMaxWidth().aspectRatio(1f))
+                } else {
+                    Card(
+                        onClick = { onEmojiSelected(option.number) },
+                        enabled = !selecting,
+                        colors = stableColors,
+                        modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                    ) {
+                        EmojiImage(
+                            option.image,
+                            imageLoader,
+                            stringResource(R.string.captcha_emoji_option, index + 1),
+                            Modifier.fillMaxSize().padding(3.dp),
+                        )
+                    }
                 }
             }
         }

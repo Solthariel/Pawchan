@@ -13,6 +13,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -56,7 +57,9 @@ class ComposerDraftPersistenceTest {
                     { testScheduler.currentTime },
                     StandardTestDispatcher(testScheduler),
                 )
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = storage)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = storage, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(draft)
@@ -108,7 +111,9 @@ class ComposerDraftPersistenceTest {
                     { testScheduler.currentTime },
                     StandardTestDispatcher(testScheduler),
                 )
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = storage)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = storage, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(draft)
@@ -136,7 +141,9 @@ class ComposerDraftPersistenceTest {
                     { testScheduler.currentTime },
                     StandardTestDispatcher(testScheduler),
                 )
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = storage)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = storage, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(draft)
@@ -165,7 +172,9 @@ class ComposerDraftPersistenceTest {
                     { testScheduler.currentTime },
                     StandardTestDispatcher(testScheduler),
                 )
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = storage)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = storage, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.saveDraftNow()
@@ -191,7 +200,9 @@ class ComposerDraftPersistenceTest {
                 )
             val newKey = ComposerDraftKey(board)
             disk.saved[newKey] = ComposerDraftState(comment = "new thread").toStoredDraft()
-            val controller = ReplyComposerController(this, address, FakePostingRepository(), {}, drafts = storage)
+            val controller =
+                ReplyComposerController(this, address, FakePostingRepository(), {
+                }, drafts = storage, preparationDispatcher = Dispatchers.Unconfined)
             controller.open(false)
             advanceUntilIdle()
             controller.updateDraft(ComposerDraftState(comment = "reply"))

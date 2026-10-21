@@ -14,6 +14,8 @@ import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyDraft
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,6 +79,7 @@ class NewThreadViewModel internal constructor(
     private val prepareFiles: AttachmentPreparer = ::prepareComposerAttachments,
     drafts: ComposerDraftCoordinator? = null,
     autoOpen: Boolean = true,
+    preparationDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(NewThreadUiState())
     private var job: Job? = null
@@ -121,6 +124,7 @@ class NewThreadViewModel internal constructor(
                 },
                 fail = ::handleFailure,
             ),
+            preparationDispatcher = preparationDispatcher,
         )
 
     val state: StateFlow<NewThreadUiState> = mutableState.asStateFlow()
