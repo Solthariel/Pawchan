@@ -8,11 +8,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.postContainerShape
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import kotlinx.coroutines.launch
 
@@ -57,10 +61,17 @@ internal fun BindThreadReadingReturn(
 @Composable
 internal fun Modifier.readingReturnMarker(marked: Boolean): Modifier {
     val color = MaterialTheme.colorScheme.secondary
+    val shape = postContainerShape()
     return if (marked) {
-        semantics { stateDescription = "Место чтения" }.drawWithContent {
-            drawContent()
-            drawLine(color, Offset.Zero, Offset(size.width, 0f), strokeWidth = 2.dp.toPx())
+        semantics { stateDescription = "Место чтения" }.drawWithCache {
+            val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithCache)) }
+            val stroke = 2.dp.toPx()
+            onDrawWithContent {
+                drawContent()
+                clipPath(path) {
+                    drawLine(color, Offset(0f, stroke / 2), Offset(size.width, stroke / 2), strokeWidth = stroke)
+                }
+            }
         }
     } else {
         this

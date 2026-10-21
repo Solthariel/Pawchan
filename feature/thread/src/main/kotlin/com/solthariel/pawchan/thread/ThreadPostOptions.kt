@@ -7,7 +7,6 @@ internal data class ThreadPostOptions(
     val changes: ThreadPostChanges = ThreadPostChanges(),
     val replyLabel: String? = null,
     val interactions: ThreadPostInteractions = ThreadPostInteractions(),
-    val framed: Boolean = true,
 )
 
 internal data class ThreadPostInteractions(

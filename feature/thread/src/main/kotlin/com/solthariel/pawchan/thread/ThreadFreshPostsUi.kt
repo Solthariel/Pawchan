@@ -28,11 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
+import com.solthariel.pawchan.core.ui.postContainerShape
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -77,13 +78,15 @@ internal fun rememberThreadFreshPosts(
 internal fun BoxScope.FreshPostHighlight(fresh: Boolean) {
     val alpha = animateFloatAsState(if (fresh) HIGHLIGHT_ALPHA else 0f, tween(HIGHLIGHT_FADE_MS), label = "fresh-post")
     val color = MaterialTheme.colorScheme.primary
+    val shape = postContainerShape()
     Box(
         Modifier
             .matchParentSize()
-            .drawBehind {
-                val current = alpha.value
-                if (current > 0f) {
-                    drawRoundRect(color.copy(alpha = current), cornerRadius = CornerRadius(HIGHLIGHT_CORNER.toPx()))
+            .drawWithCache {
+                val outline = shape.createOutline(size, layoutDirection, this)
+                onDrawBehind {
+                    val current = alpha.value
+                    if (current > 0f) drawOutline(outline, color.copy(alpha = current))
                 }
             },
     )
@@ -166,4 +169,3 @@ private const val SEEN_DELAY_MS = 1_500L
 private const val NOTICE_DURATION_MS = 6_000L
 private const val HIGHLIGHT_ALPHA = 0.12f
 private const val HIGHLIGHT_FADE_MS = 900
-private val HIGHLIGHT_CORNER = 14.dp

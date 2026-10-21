@@ -184,7 +184,6 @@ private fun PreviewPostCard(
         options =
             ThreadPostOptions(
                 appearance = appearance,
-                framed = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts,
                 replyLabel = content.presentation.replyIndex[post.id]?.label,
                 interactions = ThreadPostInteractions(onReplies = { bindings.onReplies(post.id) }, onMenu = onMenu),
             ),

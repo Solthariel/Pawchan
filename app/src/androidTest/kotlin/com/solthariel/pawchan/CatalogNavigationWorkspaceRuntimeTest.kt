@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.PixelMap
@@ -29,7 +30,9 @@ import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
+import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
+import com.solthariel.pawchan.core.ui.PostDisplayPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -119,7 +122,7 @@ class CatalogNavigationWorkspaceRuntimeTest {
     @Test
     fun floatingNavigationStillReceivesRealPointerClicks() {
         showWorkspace()
-        compose.onNodeWithContentDescription("Избранное").performTouchInput {
+        compose.onNodeWithContentDescription("Треды").performTouchInput {
             down(center)
             up()
         }
@@ -129,11 +132,13 @@ class CatalogNavigationWorkspaceRuntimeTest {
     private fun showWorkspace() {
         compose.setContent {
             MaterialTheme {
-                CatalogNavigationWorkspace(
-                    actions = CatalogBottomActions({}, {}, { libraryClicks++ }, {}),
-                    selected = CatalogBottomDestination.CATALOG,
-                ) {
-                    WorkspaceContent()
+                CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = true)) {
+                    CatalogNavigationWorkspace(
+                        actions = CatalogBottomActions({}, {}, { libraryClicks++ }, {}),
+                        selected = CatalogBottomDestination.CATALOG,
+                    ) {
+                        WorkspaceContent()
+                    }
                 }
             }
         }

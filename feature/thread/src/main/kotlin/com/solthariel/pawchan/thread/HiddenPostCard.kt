@@ -4,7 +4,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -13,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.postContainerShape
 
 @Composable
 internal fun HiddenPostCard(
@@ -20,8 +20,7 @@ internal fun HiddenPostCard(
     onShow: () -> Unit,
     onMenu: () -> Unit,
 ) {
-    val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
-    val shape = if (bubble) RoundedCornerShape(14.dp) else androidx.compose.ui.graphics.RectangleShape
+    val shape = postContainerShape()
     Surface(
         modifier =
             Modifier

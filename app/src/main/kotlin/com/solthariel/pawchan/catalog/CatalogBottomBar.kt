@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
+import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.settings.labelResource
 import com.solthariel.pawchan.threads.unreadReplies
 import com.solthariel.pawchan.workspace.LocalWorkspace
@@ -71,42 +73,53 @@ private fun CatalogBottomSurface(
     selected: CatalogBottomDestination?,
     actions: CatalogBottomActions,
 ) {
-    Surface(
+    val bubble = LocalPostDisplayPreferences.current.bubblePosts
+    Box(
         modifier =
             Modifier
                 .padding(horizontal = FAST_SCROLL_CONTENT_INSET)
                 .fillMaxWidth()
                 .height(CATALOG_BOTTOM_BAR_HEIGHT),
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        val unread = rememberUnreadRepliesBadge()
-        Row(modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp)) {
-            CatalogBottomItem(
-                R.string.catalog,
-                R.drawable.ic_nav_catalog,
-                selected == CatalogBottomDestination.CATALOG,
-                actions.onCatalogClick,
-            )
-            CatalogBottomItem(
-                R.string.threads_hub,
-                R.drawable.ic_nav_threads,
-                selected == CatalogBottomDestination.THREADS,
-                actions.onLibraryClick,
-                unread,
-            )
-            CatalogBottomItem(
-                R.string.boards,
-                R.drawable.ic_nav_boards,
-                selected == CatalogBottomDestination.BOARDS,
-                actions.onBoardsClick,
-            )
-            CatalogBottomItem(
-                R.string.settings_short,
-                R.drawable.ic_nav_settings,
-                selected == CatalogBottomDestination.SETTINGS,
-                actions.onSettingsClick,
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+        ) {
+            val unread = rememberUnreadRepliesBadge()
+            Row(modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp)) {
+                CatalogBottomItem(
+                    R.string.catalog,
+                    R.drawable.ic_nav_catalog,
+                    selected == CatalogBottomDestination.CATALOG,
+                    actions.onCatalogClick,
+                )
+                CatalogBottomItem(
+                    R.string.threads_hub,
+                    R.drawable.ic_nav_threads,
+                    selected == CatalogBottomDestination.THREADS,
+                    actions.onLibraryClick,
+                    unread,
+                )
+                CatalogBottomItem(
+                    R.string.boards,
+                    R.drawable.ic_nav_boards,
+                    selected == CatalogBottomDestination.BOARDS,
+                    actions.onBoardsClick,
+                )
+                CatalogBottomItem(
+                    R.string.settings_short,
+                    R.drawable.ic_nav_settings,
+                    selected == CatalogBottomDestination.SETTINGS,
+                    actions.onSettingsClick,
+                )
+            }
+        }
+        if (!bubble) {
+            HorizontalDivider(
+                Modifier.align(Alignment.TopCenter).padding(horizontal = 8.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
         }
     }

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,7 +21,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.PostStatsText
+import com.solthariel.pawchan.core.ui.postContainerShape
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.PostAttachments
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
@@ -45,7 +45,7 @@ internal fun ThreadPostCard(
     options: ThreadPostOptions = ThreadPostOptions(),
 ) {
     val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
-    val displayOptions = options.copy(framed = bubble)
+    val shape = postContainerShape(bubble)
     var expanded by rememberSaveable(post.id) { mutableStateOf(false) }
     var limited by rememberSaveable(post.id, options.appearance.maxLines) { mutableStateOf(false) }
     Surface(
@@ -55,9 +55,9 @@ internal fun ThreadPostCard(
                 // Удалённый пост целиком полупрозрачный, как в Dashchan.
                 .alpha(if (post.metadata.changes.deleted) DELETED_ALPHA else 1f)
                 .semantics { selected = options.selected },
-        shape = if (displayOptions.framed) RoundedCornerShape(14.dp) else RectangleShape,
+        shape = shape,
         color = postCardColor(options),
-        border = if (displayOptions.framed) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+        border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
         val markerColor =
             when {
@@ -69,7 +69,7 @@ internal fun ThreadPostCard(
             modifier =
                 Modifier
                     .postCardMarker(markerColor)
-                    .postCardModifier(displayOptions),
+                    .postCardModifier(options, shape),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ThreadPostPrimaryContent(
@@ -105,10 +105,13 @@ private fun Modifier.postCardMarker(color: androidx.compose.ui.graphics.Color?):
         }
     }
 
-private fun Modifier.postCardModifier(options: ThreadPostOptions): Modifier =
+private fun Modifier.postCardModifier(
+    options: ThreadPostOptions,
+    shape: Shape,
+): Modifier =
     this
         .fillMaxWidth()
-        .clip(if (options.framed) RoundedCornerShape(14.dp) else RectangleShape)
+        .clip(shape)
         .combinedClickable(
             onClick = { if (options.selecting) options.interactions.onSelect() },
             onLongClick = {
