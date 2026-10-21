@@ -10,6 +10,7 @@ import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingCaptchaState
 import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyDraft
@@ -53,21 +54,23 @@ class DvachPostingApi private constructor(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> =
         if (!address.board.isDvachSource()) {
             unsupportedDvachPosting()
         } else {
-            execute(PostingRequestFactory.reply(address, draft), decoder::decodeReply)
+            execute(PostingRequestFactory.reply(address, draft, observer), decoder::decodeReply)
         }
 
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<ThreadAddress> =
         if (!board.isDvachSource()) {
             unsupportedDvachPosting()
         } else {
-            execute(PostingRequestFactory.newThread(board, draft)) { payload ->
+            execute(PostingRequestFactory.newThread(board, draft, observer)) { payload ->
                 decoder.decodeNewThread(board, payload)
             }
         }

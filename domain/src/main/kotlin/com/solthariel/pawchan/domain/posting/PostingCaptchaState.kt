@@ -8,11 +8,11 @@ data class PostingCaptchaState(
 
 data class AccountUploadLimits(
     val maxFiles: Int,
-    val maxFileBytes: Int,
+    val maxTotalFileBytes: Int,
 ) {
     init {
         require(maxFiles in 1..PostingRules.MAX_LOCAL_FILES)
-        require(maxFileBytes in 1..ReplyAttachment.MAX_ATTACHMENT_BYTES)
+        require(maxTotalFileBytes in 1..PostingRules.MAX_TOTAL_BYTES.toInt())
     }
 }
 
@@ -22,6 +22,6 @@ fun PostingRules.withAccountLimits(limits: AccountUploadLimits?): PostingRules =
     } else {
         copy(
             maxFiles = limits.maxFiles,
-            maxFileBytes = maxOf(maxFileBytes, limits.maxFileBytes),
+            maxTotalFileBytes = limits.maxTotalFileBytes,
         )
     }

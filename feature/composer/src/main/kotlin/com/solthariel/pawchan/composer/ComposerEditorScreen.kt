@@ -44,6 +44,7 @@ internal data class ComposerScreenStatus(
     val progress: ComposerProgressState,
     val failure: ComposerFailureState,
     val canSubmit: Boolean,
+    val uploadBudget: ComposerUploadBudget? = null,
 )
 
 internal data class ComposerScreenActions(
@@ -111,7 +112,12 @@ private fun ComposerScreenBody(
     ) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ComposerEditorFields(state, imageLoader, actions, newThread, picker)
-            ComposerStatusLine(state.captcha, state.status, actions.captcha.onReloadCaptcha, imageLoader)
+            ComposerStatusLine(
+                state.captcha,
+                state.status.copy(uploadBudget = composerUploadBudget(state.draft.attachments, state.rules)),
+                actions.captcha.onReloadCaptcha,
+                imageLoader,
+            )
         }
         ComposerCaptcha(state.captcha, state.status.progress, imageLoader, actions.captcha)
         ComposerSubmitButton(state, newThread, actions.onSubmit)

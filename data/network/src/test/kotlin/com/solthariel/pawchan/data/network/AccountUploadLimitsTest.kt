@@ -2,7 +2,7 @@ package com.solthariel.pawchan.data.network
 
 import com.solthariel.pawchan.domain.posting.AccountUploadLimits
 import com.solthariel.pawchan.domain.posting.PostingOutcome
-import com.solthariel.pawchan.domain.posting.ReplyAttachment
+import com.solthariel.pawchan.domain.posting.PostingRules
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -37,7 +37,7 @@ class AccountUploadLimitsTest {
     @Test
     fun excessiveServerLimitsCannotOverflowLocalSafetyBudget() {
         assertEquals(
-            AccountUploadLimits(8, ReplyAttachment.MAX_ATTACHMENT_BYTES),
+            AccountUploadLimits(8, PostingRules.MAX_TOTAL_BYTES.toInt()),
             skip("""{"result":2,"maxFiles":100,"maxFilesSize":9223372036854775807}""").uploadLimits,
         )
     }

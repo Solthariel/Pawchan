@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class NewThreadUiState(
@@ -62,7 +63,7 @@ data class NewThreadUiState(
                 comment.isNotBlank() &&
                 comment.length <= (rules?.maxCommentLength ?: ReplyDraft.MAX_COMMENT_LENGTH) &&
                 attachments.isNotEmpty() &&
-                rules?.acceptsSelection(attachments.map { it.source }) == true &&
+                preparedSelectionAllowed(attachments, rules) &&
                 !draft.filesLoading &&
                 attachments.all { it.validName } &&
                 captchaSatisfied &&
@@ -86,6 +87,20 @@ class NewThreadViewModel internal constructor(
     private var active = false
     private var openedBefore = false
 
+    private val uploadPreparation =
+        ComposerUploadPreparation(
+            viewModelScope,
+            preparationDispatcher,
+        ) { prepared ->
+            mutableState.update { current ->
+                if (sameUploadSelection(current.draft.attachments, prepared)) {
+                    current.copy(draft = current.draft.copy(attachments = prepared))
+                } else {
+                    current
+                }
+            }
+        }
+
     private val draftSession =
         ComposerDraftSession(
             viewModelScope,
@@ -93,7 +108,10 @@ class NewThreadViewModel internal constructor(
             ComposerDraftKey(board),
             ComposerDraftSessionActions(
                 read = { mutableState.value.draft },
-                write = { mutableState.value = mutableState.value.copy(draft = it) },
+                write = {
+                    mutableState.value = mutableState.value.copy(draft = it)
+                    uploadPreparation.update(it.attachments)
+                },
                 fail = {
                     mutableState.value =
                         mutableState.value.copy(
@@ -149,6 +167,7 @@ class NewThreadViewModel internal constructor(
         if (!active || busy) return
         job?.cancel()
         captchaSession.cancel()
+        uploadPreparation.update(emptyList())
         draftSession.close(mutableState.value.draft) {
             mutableState.value =
                 NewThreadUiState(draft = ComposerDraftState(resetId = mutableState.value.draft.resetId + 1))
@@ -170,6 +189,7 @@ class NewThreadViewModel internal constructor(
                     draft = draft.copy(attachments = draft.attachments.toList()),
                     failure = if (current.rules == null) current.failure else ComposerFailureState(),
                 )
+            uploadPreparation.update(mutableState.value.draft.attachments)
             draftSession.changed(mutableState.value.draft)
         }
     }
@@ -178,6 +198,7 @@ class NewThreadViewModel internal constructor(
         val current = mutableState.value
         if (!current.submitting && !current.progress.sent) {
             mutableState.value = current.copy(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
+            uploadPreparation.update(emptyList())
             draftSession.clear(mutableState.value.draft)
         }
     }
@@ -208,7 +229,7 @@ class NewThreadViewModel internal constructor(
         captchaSession.cancel()
         mutableState.value =
             current.copy(
-                progress = current.progress.copy(submitting = true),
+                progress = current.progress.copy(submitting = true, upload = null),
                 failure = ComposerFailureState(),
             )
         job =
@@ -233,18 +254,21 @@ class NewThreadViewModel internal constructor(
                         email = current.draft.email,
                         options = current.draft.options.allowedBy(rules),
                     )
-                when (val outcome = posting.createThread(board, draft)) {
+                when (
+                    val outcome =
+                        posting.createThread(
+                            board,
+                            draft,
+                            composerProgressObserver(
+                                coroutineContext[kotlinx.coroutines.Job],
+                                mutableState,
+                            ) { state, upload ->
+                                state.copy(progress = state.progress.copy(upload = upload))
+                            },
+                        )
+                ) {
                     is PostingOutcome.Success -> {
-                        lastCreatedPost = postedNewThread(outcome.value, draft)
-                        active = false
-                        draftSession.sent()
-                        mutableState.value =
-                            current.copy(
-                                progress = ComposerProgressState(sent = true),
-                                failure = ComposerFailureState(),
-                            )
-                        delay(COMPOSER_SUCCESS_DISPLAY_MILLIS)
-                        mutableState.value = mutableState.value.copy(createdThread = outcome.value)
+                        completeSubmission(current, draft, outcome.value)
                     }
 
                     is PostingOutcome.Failure -> {
@@ -252,6 +276,24 @@ class NewThreadViewModel internal constructor(
                     }
                 }
             }
+    }
+
+    private suspend fun completeSubmission(
+        current: NewThreadUiState,
+        draft: NewThreadDraft,
+        value: com.solthariel.pawchan.domain.model.ThreadAddress,
+    ) {
+        lastCreatedPost = postedNewThread(value, draft)
+        active = false
+        uploadPreparation.update(emptyList())
+        draftSession.sent()
+        mutableState.value =
+            current.copy(
+                progress = ComposerProgressState(sent = true),
+                failure = ComposerFailureState(),
+            )
+        delay(COMPOSER_SUCCESS_DISPLAY_MILLIS)
+        mutableState.value = mutableState.value.copy(createdThread = value)
     }
 
     private fun handleFailure(outcome: PostingOutcome.Failure) {

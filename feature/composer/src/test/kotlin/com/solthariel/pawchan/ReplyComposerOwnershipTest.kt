@@ -10,6 +10,7 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyDraft
 import kotlinx.coroutines.CompletableDeferred
@@ -138,6 +139,7 @@ private class GatedReplyRepository : PostingRepository by FakePostingRepository(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> {
         started = true
         return try {

@@ -40,7 +40,7 @@ data class ReplyComposerState(
         get() =
             (comment.isNotBlank() || attachments.isNotEmpty()) &&
                 comment.length <= (rules?.maxCommentLength ?: MAX_COMMENT_LENGTH) &&
-                rules?.acceptsSelection(attachments.map { it.source }) == true &&
+                preparedSelectionAllowed(attachments, rules) &&
                 !draft.filesLoading &&
                 attachments.all { it.validName } &&
                 captchaSatisfied &&

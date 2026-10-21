@@ -40,20 +40,13 @@ internal fun PinPad(
             Modifier.semantics { contentDescription = "Введено цифр: ${digits.length} из $PIN_LENGTH" },
             style = MaterialTheme.typography.headlineMedium,
         )
-        state.error?.let {
-            Text(
-                it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        if (state.busy) Text("Проверка…", style = MaterialTheme.typography.bodyMedium)
+        PinStatus(state)
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("", "0", "⌫"))
             .forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     row.forEach { digit ->
                         TextButton(
-                            enabled = digit.isNotEmpty() && !state.busy,
+                            enabled = digit.isNotEmpty() && !state.busy && state.ready,
                             modifier =
                                 Modifier
                                     .weight(1f)
@@ -72,4 +65,21 @@ internal fun PinPad(
                 }
             }
     }
+}
+
+@Composable
+private fun PinStatus(state: AppLockState) {
+    Text(
+        when {
+            !state.ready -> "Загрузка…"
+            state.busy -> "Проверка…"
+            else -> state.error.orEmpty()
+        },
+        modifier = Modifier.fillMaxWidth(),
+        color = if (state.busy) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        minLines = 2,
+        maxLines = 2,
+    )
 }

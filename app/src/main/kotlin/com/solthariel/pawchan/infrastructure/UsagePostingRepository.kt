@@ -5,6 +5,7 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.domain.posting.ReplyDraft
@@ -21,8 +22,9 @@ internal class UsagePostingRepository(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> {
-        val outcome = delegate.submitReply(address, draft)
+        val outcome = delegate.submitReply(address, draft, observer)
         if (outcome is PostingOutcome.Success) {
             recordSubmission("$address/${outcome.value.value}", false, draft.attachments)
         }
@@ -32,8 +34,9 @@ internal class UsagePostingRepository(
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<ThreadAddress> {
-        val outcome = delegate.createThread(board, draft)
+        val outcome = delegate.createThread(board, draft, observer)
         if (outcome is PostingOutcome.Success) {
             recordSubmission("${outcome.value}/${outcome.value.thread.value}", true, draft.attachments)
         }

@@ -5,6 +5,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingOptions
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.domain.posting.ReplyDraft
 import kotlinx.serialization.json.buildJsonObject
@@ -62,6 +63,7 @@ internal object PostingRequestFactory {
     fun reply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver = PostingProgressObserver.None,
     ): Request =
         post(
             PostForm(
@@ -73,11 +75,13 @@ internal object PostingRequestFactory {
                 attachments = draft.attachments,
                 author = PostingAuthor(draft.email, draft.options),
             ),
+            observer,
         )
 
     fun newThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver = PostingProgressObserver.None,
     ): Request =
         post(
             PostForm(
@@ -89,9 +93,14 @@ internal object PostingRequestFactory {
                 attachments = draft.attachments,
                 author = PostingAuthor(draft.email, draft.options),
             ),
+            observer,
         )
 
-    private fun post(form: PostForm): Request {
+    private fun post(
+        form: PostForm,
+        observer: PostingProgressObserver,
+    ): Request {
+        val tracker = PostingUploadTracker(form.attachments.map { it.content.size.toLong() }, observer)
         val body =
             MultipartBody
                 .Builder()
@@ -108,14 +117,7 @@ internal object PostingRequestFactory {
                     form.author.options.icon
                         ?.let { addFormDataPart("icon", it.toString()) }
                     if (form.author.options.threadAuthor) addFormDataPart("op_mark", "1")
-                    form.attachments.forEachIndexed { index, file ->
-                        addFormDataPart(
-                            "file[]",
-                            file.fileName,
-                            file.content.toRequestBody(file.mimeType?.toMediaTypeOrNull()),
-                        )
-                        if (file.spoiler) addFormDataPart("file_${index}_nsfw", "1")
-                    }
+                    addAttachments(form.attachments, tracker, observer)
                     form.captchaToken?.let { token ->
                         addFormDataPart("captcha_type", "emoji_captcha")
                         addFormDataPart("emoji_captcha_id", token)
@@ -125,8 +127,27 @@ internal object PostingRequestFactory {
             .Builder()
             .url("$DVACH_ORIGIN/user/posting")
             .header("Accept", "application/json")
-            .post(body)
+            .post(if (observer === PostingProgressObserver.None) body else tracker.request(body))
             .build()
+    }
+
+    private fun MultipartBody.Builder.addAttachments(
+        files: List<ReplyAttachment>,
+        tracker: PostingUploadTracker,
+        observer: PostingProgressObserver,
+    ) {
+        files.forEachIndexed { index, file ->
+            addFormDataPart(
+                "file[]",
+                file.fileName,
+                if (observer === PostingProgressObserver.None) {
+                    file.content.toRequestBody(file.mimeType?.toMediaTypeOrNull())
+                } else {
+                    tracker.file(index, file.content, file.mimeType?.toMediaTypeOrNull())
+                },
+            )
+            if (file.spoiler) addFormDataPart("file_${index}_nsfw", "1")
+        }
     }
 
     private fun jsonGet(url: String): Request =

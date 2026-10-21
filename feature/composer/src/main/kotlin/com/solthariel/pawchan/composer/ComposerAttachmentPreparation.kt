@@ -32,7 +32,7 @@ internal suspend fun prepareComposerAttachments(
                     val prepared =
                         files.map { file ->
                             coroutineContext.ensureActive()
-                            prepareAttachment(file).let {
+                            (file.preparedUpload ?: prepareAttachment(file)).let {
                                 it.copy(spoiler = it.spoiler && rules.features.attachmentSpoilers)
                             }
                         }

@@ -5,6 +5,7 @@ data class ComposerProgressState(
     val captchaSelecting: Boolean = false,
     val submitting: Boolean = false,
     val sent: Boolean = false,
+    val upload: com.solthariel.pawchan.domain.posting.PostingUploadProgress? = null,
 )
 
 data class ComposerFailureState(

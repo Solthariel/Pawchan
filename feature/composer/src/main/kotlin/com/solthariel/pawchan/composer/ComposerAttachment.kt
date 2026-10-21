@@ -14,6 +14,7 @@ data class ComposerAttachment(
     val options: AttachmentEditOptions = AttachmentEditOptions(),
     val id: String = UUID.randomUUID().toString(),
     val dimensions: String? = null,
+    val prepared: ComposerPreparedUpload? = null,
 ) {
     val format: String? = PostingMediaBytes.format(source.content)
     val aspectRatio: Float = composerMediaAspectRatio(dimensions)

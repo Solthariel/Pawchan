@@ -83,7 +83,7 @@ private fun CatalogBottomSurface(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(22.dp),
+            shape = if (bubble) RoundedCornerShape(22.dp) else androidx.compose.ui.graphics.RectangleShape,
             color = MaterialTheme.colorScheme.surface,
             border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         ) {

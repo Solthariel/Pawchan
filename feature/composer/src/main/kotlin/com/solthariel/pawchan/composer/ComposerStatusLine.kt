@@ -3,6 +3,7 @@ package com.solthariel.pawchan.composer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,29 +33,10 @@ internal fun ComposerStatusLine(
     val remaining = rememberCaptchaRemainingSeconds(captcha)
     val expired = remaining == 0L
     val reloadLabel = stringResource(R.string.captcha_retry)
-    val display =
-        composerStatusText(
-            status.progress,
-            status.failure,
-            captcha.satisfied,
-            stringResource(R.string.captcha_solved),
-        )
     // Статус по центру строки: слева пустое место той же ширины, что таймер с кнопкой справа.
     Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Spacer(Modifier.width(STATUS_SIDE_WIDTH))
-        if (!expired && showCaptchaSelection(captcha, status)) {
-            Box(Modifier.weight(1f), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                CaptchaSelectedSteps(captcha.selectedImages, imageLoader, Modifier)
-            }
-        } else {
-            Text(
-                if (expired && !display.failed) stringResource(R.string.captcha_expired) else display.label,
-                Modifier.weight(1f),
-                maxLines = if (display.failed) Int.MAX_VALUE else 2,
-                textAlign = TextAlign.Center,
-                color = if (display.failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        ComposerStatusBody(captcha, status, imageLoader, expired)
         Row(
             Modifier.width(STATUS_SIDE_WIDTH),
             horizontalArrangement = Arrangement.End,
@@ -62,6 +44,41 @@ internal fun ComposerStatusLine(
         ) {
             ComposerStatusControls(remaining, expired, reloadLabel, status, onReload)
         }
+    }
+}
+
+@Composable
+private fun RowScope.ComposerStatusBody(
+    captcha: ComposerCaptchaState,
+    status: ComposerScreenStatus,
+    imageLoader: coil3.ImageLoader,
+    expired: Boolean,
+) {
+    val idle = !status.progress.submitting && !status.progress.sent
+    val captchaIdle = idle && status.uploadBudget?.status == null
+    val display =
+        composerStatusText(
+            status.progress,
+            status.failure,
+            captcha.satisfied,
+            stringResource(R.string.captcha_solved),
+        ).withUploadBudget(status.uploadBudget, status.progress)
+    if (!expired && status.uploadBudget?.status == null && showCaptchaSelection(captcha, status)) {
+        Box(Modifier.weight(1f), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            CaptchaSelectedSteps(captcha.selectedImages, imageLoader, Modifier)
+        }
+    } else {
+        Text(
+            if (expired && !display.failed && captchaIdle) {
+                stringResource(R.string.captcha_expired)
+            } else {
+                display.label
+            },
+            Modifier.weight(1f),
+            maxLines = if (display.failed) Int.MAX_VALUE else 2,
+            textAlign = TextAlign.Center,
+            color = if (display.failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 

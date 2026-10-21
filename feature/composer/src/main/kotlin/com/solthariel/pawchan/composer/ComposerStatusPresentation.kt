@@ -14,7 +14,7 @@ internal fun composerStatusText(
     val failed = failure.error != null || !failure.reason.isNullOrBlank()
     val label =
         when {
-            progress.submitting -> "Отправка…"
+            progress.submitting -> uploadStatusText(progress.upload)
             progress.sent -> "Сообщение отправлено"
             failed -> composerFailureText(failure)
             progress.captchaSelecting -> "Проверка капчи…"
@@ -45,3 +45,15 @@ private fun String?.singleStatusLine(): String? =
         ?.takeIf(String::isNotEmpty)
 
 internal const val COMPOSER_SUCCESS_DISPLAY_MILLIS = 1000L
+
+internal fun ComposerStatusPresentation.withUploadBudget(
+    budget: ComposerUploadBudget?,
+    progress: ComposerProgressState,
+): ComposerStatusPresentation {
+    val message = budget?.status
+    return if (message != null && !progress.submitting && !progress.sent) {
+        ComposerStatusPresentation(message, budget.remaining?.let { it < 0 } == true || budget.problem != null)
+    } else {
+        this
+    }
+}

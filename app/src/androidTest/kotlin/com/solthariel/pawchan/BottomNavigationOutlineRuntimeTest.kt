@@ -105,7 +105,7 @@ class BottomNavigationOutlineRuntimeTest {
         } else {
             assertSurfaceColor(colors.surface, pixels[sideX, middleY])
             assertSurfaceColor(colors.surface, pixels[middleX, bottomY])
-            assertEquals(Color.Magenta, pixels[(12 * density).roundToInt(), 0])
+            assertSurfaceColor(colors.surface, pixels[(12 * density).roundToInt(), 0])
         }
     }
 
@@ -113,7 +113,9 @@ class BottomNavigationOutlineRuntimeTest {
         compose.setContent {
             density = LocalDensity.current.density
             MaterialTheme(colorScheme = if (light) lightColorScheme() else darkColorScheme()) {
-                CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = bubbles.value)) {
+                CompositionLocalProvider(
+                    LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = bubbles.value),
+                ) {
                     Box(
                         Modifier
                             .width(360.dp)

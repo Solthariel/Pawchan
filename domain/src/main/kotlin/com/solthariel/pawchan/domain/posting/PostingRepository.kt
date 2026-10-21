@@ -146,10 +146,12 @@ interface PostingRepository {
     suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver = PostingProgressObserver.None,
     ): PostingOutcome<PostId>
 
     suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver = PostingProgressObserver.None,
     ): PostingOutcome<ThreadAddress>
 }

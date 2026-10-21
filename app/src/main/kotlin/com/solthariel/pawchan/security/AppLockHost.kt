@@ -5,6 +5,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -23,7 +24,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
@@ -73,24 +76,32 @@ private fun LockedScreenDialog(
     ) {
         MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
             Surface(Modifier.fillMaxSize()) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-                ) {
-                    if (state.ready) {
-                        PinPad("Введите PIN-код", state, model::enterPin)
-                    } else {
-                        Text(state.error ?: "Загрузка…")
-                    }
-                    if (state.configuration.biometric && model.fingerprintAvailable) {
-                        TextButton(enabled = !state.busy, onClick = { model.biometric(activity) }) {
-                            Text("Отпечаток пальца")
-                        }
+                PinUnlockContent(state, model.fingerprintAvailable, model::enterPin) { model.biometric(activity) }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun PinUnlockContent(
+    state: AppLockState,
+    fingerprintAvailable: Boolean,
+    onPin: (String) -> Unit,
+    onFingerprint: () -> Unit,
+) {
+    Box(
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).testTag("pin-unlock-content"),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PinPad("Введите PIN-код", state, onPin)
+            Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+                if (state.configuration.biometric && fingerprintAvailable) {
+                    TextButton(enabled = state.ready && !state.busy, onClick = onFingerprint) {
+                        Text("Отпечаток пальца")
                     }
                 }
             }

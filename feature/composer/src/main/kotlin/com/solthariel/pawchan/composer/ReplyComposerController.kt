@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ReplyComposerController internal constructor(
@@ -29,6 +30,20 @@ class ReplyComposerController internal constructor(
     private var job: Job? = null
     private val persistent = drafts != null
 
+    private val uploadPreparation =
+        ComposerUploadPreparation(
+            scope,
+            preparationDispatcher,
+        ) { prepared ->
+            mutableState.update { current ->
+                if (sameUploadSelection(current.draft.attachments, prepared)) {
+                    current.copy(draft = current.draft.copy(attachments = prepared))
+                } else {
+                    current
+                }
+            }
+        }
+
     private val draftSession =
         ComposerDraftSession(
             scope,
@@ -36,7 +51,10 @@ class ReplyComposerController internal constructor(
             ComposerDraftKey(address.board, address.thread),
             ComposerDraftSessionActions(
                 read = { mutableState.value.draft },
-                write = { mutableState.value = mutableState.value.copy(draft = it) },
+                write = {
+                    mutableState.value = mutableState.value.copy(draft = it)
+                    uploadPreparation.update(it.attachments)
+                },
                 fail = {
                     mutableState.value =
                         mutableState.value.copy(
@@ -125,6 +143,7 @@ class ReplyComposerController internal constructor(
         if (persistent && busy) return
         job?.cancel()
         captchaSession.cancel()
+        uploadPreparation.update(emptyList())
         draftSession.close(current.draft) {
             mutableState.value = ReplyComposerState(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
         }
@@ -145,6 +164,7 @@ class ReplyComposerController internal constructor(
                     draft = draft.copy(attachments = draft.attachments.toList()),
                     failure = if (current.rules == null) current.failure else ComposerFailureState(),
                 )
+            uploadPreparation.update(mutableState.value.draft.attachments)
             draftSession.changed(mutableState.value.draft)
         }
     }
@@ -153,6 +173,7 @@ class ReplyComposerController internal constructor(
         val current = mutableState.value
         if (current.visible && !current.submitting && !current.progress.sent) {
             mutableState.value = current.copy(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
+            uploadPreparation.update(emptyList())
             draftSession.clear(mutableState.value.draft)
         }
     }
@@ -179,7 +200,7 @@ class ReplyComposerController internal constructor(
         captchaSession.cancel()
         mutableState.value =
             current.copy(
-                progress = current.progress.copy(submitting = true),
+                progress = current.progress.copy(submitting = true, upload = null),
                 failure = ComposerFailureState(),
             )
         job =
@@ -203,19 +224,21 @@ class ReplyComposerController internal constructor(
                         email = current.draft.email,
                         options = current.draft.options.allowedBy(rules),
                     )
-                when (val outcome = posting.submitReply(address, draft)) {
+                when (
+                    val outcome =
+                        posting.submitReply(
+                            address,
+                            draft,
+                            composerProgressObserver(
+                                coroutineContext[kotlinx.coroutines.Job],
+                                mutableState,
+                            ) { state, upload ->
+                                state.copy(progress = state.progress.copy(upload = upload))
+                            },
+                        )
+                ) {
                     is PostingOutcome.Success -> {
-                        val posted = postedBoardPost(address, outcome.value, draft)
-                        draftSession.sent()
-                        mutableState.value =
-                            current.copy(
-                                progress = ComposerProgressState(sent = true),
-                                failure = ComposerFailureState(),
-                            )
-                        onPosted(posted)
-                        delay(COMPOSER_SUCCESS_DISPLAY_MILLIS)
-                        mutableState.value =
-                            ReplyComposerState(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
+                        completeSubmission(current, draft, outcome.value)
                     }
 
                     is PostingOutcome.Failure -> {
@@ -223,6 +246,25 @@ class ReplyComposerController internal constructor(
                     }
                 }
             }
+    }
+
+    private suspend fun completeSubmission(
+        current: ReplyComposerState,
+        draft: ReplyDraft,
+        value: com.solthariel.pawchan.domain.model.PostId,
+    ) {
+        val posted = postedBoardPost(address, value, draft)
+        uploadPreparation.update(emptyList())
+        draftSession.sent()
+        mutableState.value =
+            current.copy(
+                progress = ComposerProgressState(sent = true),
+                failure = ComposerFailureState(),
+            )
+        onPosted(posted)
+        delay(COMPOSER_SUCCESS_DISPLAY_MILLIS)
+        mutableState.value =
+            ReplyComposerState(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
     }
 
     private fun loadCaptcha(

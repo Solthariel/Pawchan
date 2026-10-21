@@ -15,6 +15,7 @@ import com.solthariel.pawchan.domain.posting.PostingFeatures
 import com.solthariel.pawchan.domain.posting.PostingIdentityRules
 import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
@@ -208,11 +209,13 @@ private class FakeNewThreadPosting(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> = error("Not used")
 
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<ThreadAddress> {
         this.draft = draft
         return PostingOutcome.Success(

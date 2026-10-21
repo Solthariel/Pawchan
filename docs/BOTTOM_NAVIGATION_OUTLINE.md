@@ -1,4 +1,9 @@
-# Bottom navigation outline (pending 0.1.24)
+# Bottom navigation outline (0.1.24 implementation record)
+
+This is the historical 0.1.24 record. In 0.1.25 the plain-mode surface is
+rectangular and opaque beneath the divider; the bubble surface is unchanged.
+See [current upload/unlock and panel fixes](UPLOAD_AND_UNLOCK_STABILITY.md).
+The description and verification numbers below apply to 0.1.24.
 
 This addition changes only the navigation container decoration:
 

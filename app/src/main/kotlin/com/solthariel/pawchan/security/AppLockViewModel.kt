@@ -162,7 +162,7 @@ internal class AppLockViewModel(
             val cipher = store.biometricCipher(recreate = setup)
             val authenticated = authenticateFingerprint(activity, cipher)
             if (authenticated == null) {
-                mutable.value = state.value.copy(error = "Введите PIN-код или повторите вход по отпечатку")
+                mutable.value = state.value.copy(error = "Введите PIN или используйте отпечаток")
             } else {
                 authenticated.doFinal(byteArrayOf(1))
                 if (setup) store.setBiometric(true)

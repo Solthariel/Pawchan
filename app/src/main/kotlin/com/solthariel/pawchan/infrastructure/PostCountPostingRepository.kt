@@ -6,6 +6,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyDraft
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
@@ -23,18 +24,20 @@ internal class PostCountPostingRepository(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> =
         when (val comment = expand(address.board, draft.comment)) {
-            is PostingOutcome.Success -> delegate.submitReply(address, draft.copy(comment = comment.value))
+            is PostingOutcome.Success -> delegate.submitReply(address, draft.copy(comment = comment.value), observer)
             is PostingOutcome.Failure -> comment
         }
 
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<ThreadAddress> =
         when (val comment = expand(board, draft.comment)) {
-            is PostingOutcome.Success -> delegate.createThread(board, draft.copy(comment = comment.value))
+            is PostingOutcome.Success -> delegate.createThread(board, draft.copy(comment = comment.value), observer)
             is PostingOutcome.Failure -> comment
         }
 

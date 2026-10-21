@@ -23,7 +23,7 @@ class PostingRulesDecoderTest {
                 as PostingOutcome.Success
         assertFalse(result.value.subjectEnabled)
         assertEquals(4, result.value.maxFiles)
-        assertEquals(40 * 1024 * 1024, result.value.maxFileBytes)
+        assertEquals(40 * 1024 * 1024, result.value.maxTotalFileBytes)
         assertEquals(500, result.value.maxCommentLength)
         assertTrue("jpeg" in result.value.extensions)
     }

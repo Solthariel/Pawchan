@@ -65,7 +65,8 @@ internal fun ComposerTextEditor(
         ComposerCommentField(
             comment,
             ComposerLimits(
-                maxFileBytes = rules?.maxFileBytes ?: DEFAULT_MAX_FILE_BYTES,
+                maxFileBytes = rules?.maxTotalFileBytes ?: DEFAULT_MAX_FILE_BYTES,
+                remainingUploadBytes = composerUploadBudget(draft.attachments, rules).remaining,
                 maxFiles = rules?.maxFiles ?: DEFAULT_MAX_FILES,
                 maxCommentLength = rules?.maxCommentLength ?: ReplyDraft.MAX_COMMENT_LENGTH,
             ),
@@ -156,13 +157,7 @@ internal fun ComposerCommentField(
         label = { Text(stringResource(R.string.reply_comment)) },
         supportingText = {
             Text(
-                text =
-                    stringResource(
-                        R.string.composer_limits,
-                        formatComposerMegabytes(limits.maxFileBytes),
-                        limits.maxFiles,
-                        limits.maxCommentLength - value.text.length,
-                    ),
+                text = composerLimitsText(limits, value.text.length),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.End,
             )
@@ -176,6 +171,7 @@ internal data class ComposerLimits(
     val maxFileBytes: Int,
     val maxFiles: Int,
     val maxCommentLength: Int,
+    val remainingUploadBytes: Long? = maxFileBytes.toLong(),
 )
 
 internal fun formatComposerMegabytes(bytes: Int): String {

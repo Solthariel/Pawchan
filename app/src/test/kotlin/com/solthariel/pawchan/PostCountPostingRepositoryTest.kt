@@ -26,6 +26,20 @@ class PostCountPostingRepositoryTest {
     private val board = requireNotNull(boardAddress("dvach", "b"))
     private val address = ThreadAddress(board, requireNotNull(ThreadId.parse(42)))
 
+    @Test fun uploadObserverSurvivesRepositoryDecorationForRepliesAndNewThreads() =
+        runBlocking {
+            val delegate = FakePostingRepository()
+            val repository = PostCountPostingRepository(delegate, Settings(), Statistics())
+            val observer =
+                com.solthariel.pawchan.domain.posting
+                    .PostingProgressObserver { }
+            repository.submitReply(address, ReplyDraft("text", null, emptyList()), observer)
+            org.junit.Assert.assertSame(observer, delegate.lastObserver)
+            val file = ReplyAttachment("file.png", "image/png", byteArrayOf(1))
+            repository.createThread(board, NewThreadDraft("title", "text", null, listOf(file)), observer)
+            org.junit.Assert.assertSame(observer, delegate.lastObserver)
+        }
+
     @Test fun sendAndRetryExpandExactlyOnceWithoutMutatingDraft() =
         runBlocking {
             val delegate = FakePostingRepository()

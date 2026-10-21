@@ -6,6 +6,7 @@ import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.domain.posting.ReplyDraft
@@ -29,6 +30,20 @@ class UsagePostingRepositoryTest {
             ReplyAttachment("video.webm", "video/webm", byteArrayOf(2)),
             ReplyAttachment("other.bin", null, byteArrayOf(3)),
         )
+
+    @Test fun uploadObserverSurvivesRepositoryDecorationForRepliesAndNewThreads() =
+        runBlocking {
+            val delegate = FakePostingRepository()
+            val repository = UsagePostingRepository(delegate, RecordingUsage())
+            val observer =
+                com.solthariel.pawchan.domain.posting
+                    .PostingProgressObserver { }
+            repository.submitReply(address, ReplyDraft("text", null, emptyList()), observer)
+            org.junit.Assert.assertSame(observer, delegate.lastObserver)
+            val file = ReplyAttachment("file.png", "image/png", byteArrayOf(1))
+            repository.createThread(board, NewThreadDraft("title", "text", null, listOf(file)), observer)
+            org.junit.Assert.assertSame(observer, delegate.lastObserver)
+        }
 
     @Test fun confirmedReplyCountsPreparedAttachmentsAndPreservesResult() =
         runBlocking {
@@ -72,6 +87,7 @@ class UsagePostingRepositoryTest {
                     override suspend fun submitReply(
                         address: ThreadAddress,
                         draft: ReplyDraft,
+                        observer: PostingProgressObserver,
                     ): PostingOutcome<PostId> = PostingOutcome.Failure(PostingFailure.NetworkUnavailable)
                 }
             val outcome = UsagePostingRepository(delegate, stats).submitReply(address, ReplyDraft("text", null, files))

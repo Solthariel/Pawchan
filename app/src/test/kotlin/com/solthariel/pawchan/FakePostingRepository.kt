@@ -10,6 +10,7 @@ import com.solthariel.pawchan.domain.posting.EmojiCaptchaStep
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingCaptchaState
 import com.solthariel.pawchan.domain.posting.PostingOutcome
+import com.solthariel.pawchan.domain.posting.PostingProgressObserver
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyDraft
@@ -31,6 +32,9 @@ internal class FakePostingRepository(
         ruleLoads++
         return PostingOutcome.Success(rules)
     }
+
+    var lastObserver: PostingProgressObserver? = null
+        private set
 
     var lastDraft: ReplyDraft? = null
         private set
@@ -54,7 +58,9 @@ internal class FakePostingRepository(
     override suspend fun submitReply(
         address: ThreadAddress,
         draft: ReplyDraft,
+        observer: PostingProgressObserver,
     ): PostingOutcome<PostId> {
+        lastObserver = observer
         lastDraft = draft
         return PostingOutcome.Success(requireNotNull(PostId.parse(44L)))
     }
@@ -62,8 +68,9 @@ internal class FakePostingRepository(
     override suspend fun createThread(
         board: BoardAddress,
         draft: NewThreadDraft,
-    ): PostingOutcome<ThreadAddress> =
-        PostingOutcome.Success(
-            ThreadAddress(board, requireNotNull(ThreadId.parse(45L))),
-        )
+        observer: PostingProgressObserver,
+    ): PostingOutcome<ThreadAddress> {
+        lastObserver = observer
+        return PostingOutcome.Success(ThreadAddress(board, requireNotNull(ThreadId.parse(45L))))
+    }
 }

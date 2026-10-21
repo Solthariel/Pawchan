@@ -6,7 +6,6 @@ import com.solthariel.pawchan.domain.posting.PostingFeatures
 import com.solthariel.pawchan.domain.posting.PostingIdentityRules
 import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRules
-import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -36,9 +35,8 @@ internal fun decodePostingRules(
     return PostingOutcome.Success(
         PostingRules(
             maxFiles = if (extensions.isEmpty()) 0 else fileCount.coerceIn(0, PostingRules.MAX_LOCAL_FILES),
-            maxFileBytes =
-                maxBytes?.coerceIn(1, ReplyAttachment.MAX_ATTACHMENT_BYTES.toLong())?.toInt()
-                    ?: defaults.maxFileBytes,
+            maxTotalFileBytes =
+                maxBytes?.coerceIn(1, PostingRules.MAX_TOTAL_BYTES)?.toInt() ?: defaults.maxTotalFileBytes,
             maxCommentLength = commentLimit.coerceIn(1, defaults.maxCommentLength),
             identity =
                 PostingIdentityRules(

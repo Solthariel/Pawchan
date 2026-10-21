@@ -7,6 +7,7 @@ data class PostingRules(
     val maxCommentLength: Int = ReplyDraft.MAX_COMMENT_LENGTH,
     val identity: PostingIdentityRules = PostingIdentityRules(),
     val features: PostingFeatures = PostingFeatures(),
+    val maxTotalFileBytes: Int = DEFAULT_MAX_TOTAL_FILE_BYTES,
     val extensions: Set<String> = setOf("jpg", "jpeg", "png", "gif", "webp", "mp4", "webm"),
 ) {
     val namesEnabled: Boolean get() = identity.namesEnabled
@@ -18,10 +19,13 @@ data class PostingRules(
     init {
         require(maxFiles in 0..MAX_LOCAL_FILES)
         require(maxFileBytes > 0)
+        require(maxTotalFileBytes > 0)
         require(maxCommentLength > 0)
     }
 
-    fun accepts(files: List<ReplyAttachment>): Boolean = files.size <= maxFiles && acceptsSelection(files)
+    fun accepts(files: List<ReplyAttachment>): Boolean =
+        files.size <= maxFiles && acceptsSelection(files) &&
+            files.sumOf { it.content.size.toLong() } <= maxTotalFileBytes
 
     /** Local selection capacity is not the account's posting permission. */
     fun acceptsSelection(files: List<ReplyAttachment>): Boolean =
@@ -33,6 +37,7 @@ data class PostingRules(
             }
 
     companion object {
+        const val DEFAULT_MAX_TOTAL_FILE_BYTES: Int = 40 * 1024 * 1024
         const val MAX_LOCAL_FILES: Int = 8
         const val MAX_TOTAL_BYTES: Long = 64L * 1024 * 1024
     }
