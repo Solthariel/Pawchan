@@ -7,9 +7,9 @@ $javaExecutable =
     } else {
         "java"
     }
-$javaVersionLine = (& $javaExecutable -version 2>&1 | Select-Object -First 1).ToString()
+$javaVersionLine = (& $javaExecutable --version | Select-Object -First 1).ToString()
 $gradleJvmProperty = @()
-if ($javaVersionLine -match '"(?<major>\d+)') {
+if ($javaVersionLine -match '(?<major>\d+)') {
     $javaMajor = [int] $Matches.major
     if ($javaMajor -ge 24) {
         $gradleJvmProperty +=

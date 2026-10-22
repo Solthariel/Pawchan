@@ -20,6 +20,9 @@ internal interface ForumWebLinks {
     /** Страница или файл сайта по веб-ссылке; null — ссылка не принадлежит сайту. */
     fun webLink(uri: URI): ForumWebLink? = threadAddress(uri)?.let { ForumWebLink.Thread(it, null) }
 
+    /** Устойчивый путь оригинала файла; нормализация архивов принадлежит сайту. */
+    fun mediaPath(uri: URI): String? = uri.path?.takeIf { webLink(uri) is ForumWebLink.Media }
+
     /**
      * Ввод в поле «Доска, номер, ссылка»: ссылка, «b 123», «/b/123», «/b/», «b».
      * Голое число — тред на [currentBoard]. Формат ввода принадлежит адаптеру сайта.

@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.os.Handler
 import androidx.core.content.ContextCompat
 
 internal class VideoPlaybackAudio(
@@ -15,6 +16,7 @@ internal class VideoPlaybackAudio(
 ) : AutoCloseable {
     private val manager = context.getSystemService(AudioManager::class.java)
     private var focused = false
+    private var closed = false
     private val request =
         AudioFocusRequest
             .Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -24,20 +26,32 @@ internal class VideoPlaybackAudio(
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
                     .build(),
-            ).setOnAudioFocusChangeListener { change ->
+            ).setOnAudioFocusChangeListener({ change ->
                 when (change) {
-                    AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> session.pause()
-                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> session.engine.volume(VIDEO_DUCK_VOLUME)
-                    AudioManager.AUDIOFOCUS_GAIN -> session.engine.volume(VIDEO_NORMAL_VOLUME)
+                    AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                        focused = false
+                        if (session.sound.value.hasAudio) session.pause()
+                    }
+
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                        session.engine.volume(VIDEO_DUCK_VOLUME)
+                    }
+
+                    AudioManager.AUDIOFOCUS_GAIN -> {
+                        session.engine.volume(VIDEO_NORMAL_VOLUME)
+                    }
                 }
-            }.build()
+            }, Handler(context.mainLooper))
+            .build()
     private val noisy =
         object : BroadcastReceiver() {
             override fun onReceive(
                 context: Context?,
                 intent: Intent?,
             ) {
-                if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) session.pause()
+                if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY && session.sound.value.hasAudio) {
+                    session.pause()
+                }
             }
         }
 
@@ -51,16 +65,21 @@ internal class VideoPlaybackAudio(
     }
 
     fun update(playing: Boolean) {
-        if (playing && !focused) {
+        if (closed) return
+        val audible = playing && session.sound.value.hasAudio
+        if (audible && !focused) {
             focused = manager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
             if (!focused) session.pause()
-        } else if (!playing && focused) {
-            manager.abandonAudioFocusRequest(request)
+        } else if (!audible && focused) {
             focused = false
+            manager.abandonAudioFocusRequest(request)
         }
     }
 
     override fun close() {
+        if (closed) return
+        closed = true
+        focused = false
         context.unregisterReceiver(noisy)
         manager.abandonAudioFocusRequest(request)
     }
@@ -68,3 +87,7 @@ internal class VideoPlaybackAudio(
 
 private const val VIDEO_DUCK_VOLUME = 20
 private const val VIDEO_NORMAL_VOLUME = 100
+
+/** One focus request follows the session through viewer → PiP → viewer. */
+internal fun VideoPlaybackSession.audio(context: Context): VideoPlaybackAudio =
+    audio ?: VideoPlaybackAudio(context.applicationContext, this).also { audio = it }

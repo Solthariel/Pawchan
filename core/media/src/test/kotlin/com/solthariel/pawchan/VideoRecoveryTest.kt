@@ -183,13 +183,76 @@ class VideoRecoveryTest {
                 next.close()
             }
         }
+
+    @Test
+    fun silentSessionIgnoresMuteAndDoesNotChangeRememberedPreference() =
+        runTest {
+            val engine = TestVideoEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, VIDEO_TEST_URL)
+            try {
+                session.start()
+                engine.opened.receive()
+                engine.emit(VideoEvent.PLAYING, VideoPlaybackStatus(playing = true))
+                val before = session.sound.value.muted
+                session.toggleMuted()
+                assertEquals(before, session.sound.value.muted)
+                engine.hasAudio = true
+                engine.emit(VideoEvent.PROGRESS, VideoPlaybackStatus(playing = true))
+                session.toggleMuted()
+                assertEquals(!before, session.sound.value.muted)
+                session.toggleMuted()
+                assertEquals(before, session.sound.value.muted)
+            } finally {
+                session.close()
+            }
+        }
+
+    @Test
+    fun rejectedSpeedDoesNotChangeTheSpeedLabel() =
+        runTest {
+            val engine = TestVideoEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, VIDEO_TEST_URL)
+            try {
+                engine.acceptedSpeed = 1000
+                session.setSpeed(com.solthariel.pawchan.media.video.VideoSpeed.FAST)
+                assertEquals(com.solthariel.pawchan.media.video.VideoSpeed.NORMAL, session.sound.value.speed)
+                engine.acceptedSpeed = null
+                session.setSpeed(com.solthariel.pawchan.media.video.VideoSpeed.FAST)
+                assertEquals(com.solthariel.pawchan.media.video.VideoSpeed.FAST, session.sound.value.speed)
+            } finally {
+                session.close()
+            }
+        }
+
+    @Test
+    fun playDuringLoadingSurvivesOpeningAndFirstReadyEvent() =
+        runTest {
+            val engine = TestVideoEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, VIDEO_TEST_URL)
+            try {
+                session.startAt(0, playing = false)
+                engine.opened.receive()
+                session.togglePlay()
+                engine.emit(VideoEvent.PLAYING, VideoPlaybackStatus(playing = true, seekable = true))
+                assertTrue(session.status.value.playing)
+                assertEquals(1, engine.plays)
+                assertEquals(1, engine.pauses)
+            } finally {
+                session.close()
+            }
+        }
 }
 
 private class TestVideoEngine : VideoEngineBackend {
     val opened = Channel<Boolean>(Channel.UNLIMITED)
     var lastSeek = -1L
     var pauses = 0
-    private var listener: (VideoEvent, VideoPlaybackStatus) -> Unit = { _, _ -> }
+    var plays = 0
+    var acceptedSpeed: Int? = null
+    var hasAudio = false
+    override val metadata: Map<String, String>
+        get() = if (hasAudio) mapOf("audio_format" to "aac") else emptyMap()
+    var listener: (VideoEvent, VideoPlaybackStatus) -> Unit = { _, _ -> }
 
     override fun open(
         source: String,
@@ -198,13 +261,6 @@ private class TestVideoEngine : VideoEngineBackend {
     ) {
         listener = onEvent
         opened.trySend(software)
-    }
-
-    fun emit(
-        type: VideoEvent,
-        snapshot: VideoPlaybackStatus = VideoPlaybackStatus(),
-    ) {
-        listener(type, snapshot)
     }
 
     override fun pause() {
@@ -219,13 +275,15 @@ private class TestVideoEngine : VideoEngineBackend {
 
     override fun detach(view: FrameLayout) = Unit
 
-    override fun play() = Unit
+    override fun play() {
+        plays += 1
+    }
 
     override fun volume(percent: Int) = Unit
 
     override fun muted(value: Boolean) = Unit
 
-    override fun speed(milli: Int) = Unit
+    override fun speed(milli: Int) = acceptedSpeed ?: milli
 
     override fun stop() = Unit
 
@@ -233,3 +291,10 @@ private class TestVideoEngine : VideoEngineBackend {
 }
 
 private const val VIDEO_TEST_URL = "https://example.test/video.mp4"
+
+private fun TestVideoEngine.emit(
+    type: VideoEvent,
+    snapshot: VideoPlaybackStatus = VideoPlaybackStatus(),
+) {
+    listener(type, snapshot)
+}

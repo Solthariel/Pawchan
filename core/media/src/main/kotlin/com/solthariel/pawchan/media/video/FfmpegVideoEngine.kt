@@ -30,41 +30,46 @@ internal class FfmpegVideoEngine(
     override fun play() {
         state.requestedPlaying = true
         state.ended = false
-        state.player?.setPlaying(true)
+        state.player?.controls?.setPlaying(true)
         state.emit(VideoEvent.PLAYING)
     }
 
     override fun pause() {
         state.requestedPlaying = false
-        state.player?.setPlaying(false)
+        state.player?.controls?.setPlaying(false)
         state.emit(VideoEvent.PAUSED)
     }
 
     override fun seekTo(position: Long) {
         state.ended = false
         state.signalNextFrame()
-        state.player?.setPosition(position.coerceAtLeast(0L))
+        state.player?.controls?.setPosition(position.coerceAtLeast(0L))
     }
 
     override fun volume(percent: Int) {
         state.volume = percent.coerceIn(0, VIDEO_VOLUME_MAX_PERCENT)
-        state.player?.setVolume(state.volume, 0)
+        state.player?.controls?.setVolume(state.volume)
     }
 
     override fun muted(value: Boolean) {
         state.muted = value
-        state.player?.setMuted(value)
+        state.player?.controls?.setMuted(value)
     }
 
-    override fun speed(milli: Int) {
-        state.speed = milli
-        state.player?.setPlaybackSpeed(milli)
+    override fun speed(milli: Int): Int {
+        state.speed = state.player?.controls?.setPlaybackSpeed(milli) ?: milli
+        return state.speed
     }
 
     override val posterFrame: android.graphics.Bitmap?
-        get() = state.player?.getVideoViewSnapshot(VIDEO_POSTER_MAX_EDGE)
+        get() = state.player?.video?.snapshot(VIDEO_POSTER_MAX_EDGE)
 
-    override val metadata: Map<String, String> get() = state.player?.metadata.orEmpty()
+    override val metadata: Map<String, String>
+        get() =
+            state.player
+                ?.facts
+                ?.metadata
+                .orEmpty()
 
     override fun stop() = state.stop()
 

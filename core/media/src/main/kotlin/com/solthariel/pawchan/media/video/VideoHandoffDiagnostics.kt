@@ -98,4 +98,10 @@ private fun alphaStep(value: Float): Int = (value * ALPHA_STEPS).roundToInt()
 private const val TAG = "PawchanVideoHandoff"
 private const val ALPHA_STEPS = 10
 private val OUTPUT_EVENTS =
-    setOf(VideoEvent.OPENING, VideoEvent.VIDEO_OUTPUT_PENDING, VideoEvent.VIDEO_OUTPUT, VideoEvent.ERROR)
+    setOf(
+        VideoEvent.OPENING,
+        VideoEvent.VIDEO_OUTPUT_PENDING,
+        VideoEvent.VIDEO_OUTPUT,
+        VideoEvent.ERROR,
+        VideoEvent.INCOMPLETE,
+    )

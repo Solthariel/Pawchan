@@ -46,4 +46,5 @@
     <string name="video_pause">Пауза</string>
     <string name="video_play">Воспроизвести</string>
     <string name="video_loading">Загрузка видео</string>
+    <string name="video_incomplete">Видео закончилось раньше указанной длительности.</string>
 </resources>

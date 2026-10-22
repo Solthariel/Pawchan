@@ -27,9 +27,10 @@ internal class DvachWebLinks(
     override fun threadAddress(uri: URI): ThreadAddress? = (webLink(uri) as? ForumWebLink.Thread)?.thread
 
     override fun webLink(uri: URI): ForumWebLink? {
-        if (!supportedOrigin(uri)) return null
+        if (!uri.supportedDvachOrigin(mirror)) return null
         val parts = uri.path.orEmpty().split('/')
-        return threadLink(parts, uri.fragment) ?: mediaLink(parts) ?: boardLink(parts)
+        val mediaParts = dvachMediaPath(uri)?.split('/') ?: parts
+        return threadLink(parts, uri.fragment) ?: mediaLink(mediaParts) ?: boardLink(parts)
     }
 
     override fun addressInput(
@@ -76,10 +77,8 @@ internal class DvachWebLinks(
         }
     }
 
-    private fun supportedOrigin(uri: URI): Boolean {
-        if (!uri.scheme.equals("https", ignoreCase = true) || uri.userInfo != null) return false
-        return (uri.host?.lowercase() in HOSTS || uri.host == mirror) && uri.port in PORTS
-    }
+    override fun mediaPath(uri: URI): String? =
+        if (uri.supportedDvachOrigin(mirror) && webLink(uri) is ForumWebLink.Media) dvachMediaPath(uri) else null
 
     private fun threadLink(
         parts: List<String>,
@@ -138,6 +137,11 @@ internal class DvachWebLinks(
             .takeIf { BOARD_NAME.matches(it) && it !in SERVICE_PATHS }
             ?.let(BoardId::parse)
             ?.let { BoardAddress(site, it) }
+}
+
+private fun URI.supportedDvachOrigin(mirror: String): Boolean {
+    if (!scheme.equals("https", ignoreCase = true) || userInfo != null) return false
+    return (host?.lowercase() in HOSTS || host.equals(mirror, ignoreCase = true)) && port in PORTS
 }
 
 private fun urlInput(

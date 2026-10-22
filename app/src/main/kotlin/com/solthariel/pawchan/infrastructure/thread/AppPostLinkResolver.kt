@@ -39,6 +39,12 @@ internal class AppPostLinkResolver(
             }
     }
 
+    /** Выбирается адаптер сайта треда, а не глобальное правило для всех форумов. */
+    fun filePath(
+        address: ThreadAddress,
+        url: String,
+    ): String? = parseUri(url)?.let { sites[address.board.site]?.mediaPath(it) }
+
     override fun resolve(
         link: PostLink,
         context: ThreadAddress?,

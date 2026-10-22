@@ -37,7 +37,9 @@ internal fun AppPostLinkHost(
             val repository = binding.loaders.threadRepository?.let { WorkspaceThreadRepository(it, binding.controller) }
             val open: (ThreadAddress, String) -> Unit = { address, url ->
                 scope.launch {
-                    val lookup = repository?.findFilePost(address, url) ?: FilePostLookup.Unavailable
+                    val lookup =
+                        repository?.findFilePost(address, url) { resolver.filePath(address, it) }
+                            ?: FilePostLookup.Unavailable
                     if (lookup == FilePostLookup.Missing) {
                         Toast.makeText(context, R.string.link_file_post_missing, Toast.LENGTH_SHORT).show()
                     }

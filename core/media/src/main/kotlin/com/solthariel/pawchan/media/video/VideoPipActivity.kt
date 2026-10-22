@@ -36,6 +36,21 @@ class VideoPipActivity : ComponentActivity() {
     private var request: VideoPipRequest? = null
     private var container: FrameLayout? = null
     private var entered = false
+    private val privacy =
+        VideoPipPrivacy(
+            allowed = { request?.access?.isAllowed() != false },
+            revoke = {
+                session?.pause()
+                container?.let { view ->
+                    session?.engine?.detach(view)
+                    view.removeAllViews()
+                }
+                rememberPosition()
+                session?.close()
+                session = null
+                finishAndRemoveTask()
+            },
+        )
     private var receiving = false
     private val controls =
         object : BroadcastReceiver() {
@@ -43,6 +58,10 @@ class VideoPipActivity : ComponentActivity() {
                 context: Context?,
                 intent: Intent?,
             ) {
+                if (intent?.action == Intent.ACTION_SCREEN_OFF || !privacy.allowed()) {
+                    privacy.revoke()
+                    return
+                }
                 val player = session ?: return
                 when (intent?.getIntExtra(EXTRA_CONTROL, 0)) {
                     CONTROL_BACK -> player.seekTo(player.status.value.position - SKIP_MS)
@@ -56,7 +75,9 @@ class VideoPipActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val request = VideoPipHandoff.pending
         VideoPipHandoff.pending = null
-        if (request == null) {
+        if (request == null || request.access?.isAllowed() == false) {
+            request?.session?.pause()
+            request?.session?.inPip = false
             finish()
             return
         }
@@ -66,17 +87,20 @@ class VideoPipActivity : ComponentActivity() {
         val player = request.session
         session = player
         this.request = request
-        audio = VideoPlaybackAudio(this, player)
+        audio = player.audio(this)
         player.engine.attach(view)
         player.redrawPaused()
         ContextCompat.registerReceiver(
             this,
             controls,
-            IntentFilter(ACTION_CONTROL),
+            IntentFilter(ACTION_CONTROL).apply { addAction(Intent.ACTION_SCREEN_OFF) },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         receiving = true
         setPictureInPictureParams(pipParams(player.status.value.playing))
+        scope.launch {
+            request.access?.changes?.collect { allowed -> if (!allowed) privacy.revoke() }
+        }
         scope.launch {
             player.status.collect { status ->
                 audio?.update(status.playing)
@@ -95,6 +119,10 @@ class VideoPipActivity : ComponentActivity() {
     }
 
     private fun enterPip() {
+        if (!privacy.allowed()) {
+            privacy.revoke()
+            return
+        }
         val params = session?.let { pipParams(it.status.value.playing) }
         val accepted =
             try {
@@ -139,6 +167,10 @@ class VideoPipActivity : ComponentActivity() {
     }
 
     private fun returnToApp() {
+        if (!privacy.allowed()) {
+            privacy.revoke()
+            return
+        }
         val player = session
         val request = request
         if (player != null && request != null) {
@@ -160,7 +192,6 @@ class VideoPipActivity : ComponentActivity() {
 
     override fun onDestroy() {
         if (receiving) unregisterReceiver(controls)
-        audio?.close()
         session?.close()
         session = null
         scope.cancel()

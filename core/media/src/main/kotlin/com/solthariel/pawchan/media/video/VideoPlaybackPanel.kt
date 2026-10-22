@@ -61,8 +61,9 @@ internal fun VideoPlaybackPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             UiToolbarButton(
-                if (sound.muted) UiIconKind.VOLUME_OFF else UiIconKind.VOLUME_ON,
+                if (!sound.hasAudio || sound.muted) UiIconKind.VOLUME_OFF else UiIconKind.VOLUME_ON,
                 stringResource(if (sound.muted) R.string.video_unmute else R.string.video_mute),
+                enabled = sound.hasAudio,
                 onClick = player::toggleMuted,
             )
             VideoSpeedButton(sound.speed, player::cycleSpeed)
@@ -172,7 +173,7 @@ private fun VideoSeekRow(
                 },
             )
         }
-        VideoTimeLabel(videoTimeLabel(progress.duration))
+        VideoTimeLabel(videoDurationLabel(progress.duration))
     }
 }
 
@@ -186,7 +187,7 @@ private fun RowScope.VideoSeekSlider(
 ) {
     val seekable = progress.duration > 0L && progress.seekable
     Slider(
-        value = position,
+        value = if (seekable) position else 0f,
         onValueChange = onChange,
         onValueChangeFinished = onFinish,
         modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
@@ -229,12 +230,6 @@ private fun VideoTimeLabel(
     )
 }
 
-internal fun videoTimeLabel(milliseconds: Long): String {
-    val seconds = milliseconds.coerceAtLeast(0L) / MILLIS_PER_SECOND
-    val minutes = seconds / SECONDS_PER_MINUTE
-    return "$minutes:${(seconds % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
-}
-
 private val VIDEO_TRACK_HEIGHT = 3.dp
 private val VIDEO_SEEK_ROW_HEIGHT = 28.dp
 private val VIDEO_CONTROLS_HEIGHT = 44.dp
@@ -242,5 +237,3 @@ private val VIDEO_PLAY_BUTTON_SIZE = 44.dp
 private val VIDEO_PLAY_ICON_SIZE = 32.dp
 private val VIDEO_THUMB_SIZE = 12.dp
 private val VIDEO_THUMB_TOUCH = 20.dp
-private const val MILLIS_PER_SECOND = 1000L
-private const val SECONDS_PER_MINUTE = 60L

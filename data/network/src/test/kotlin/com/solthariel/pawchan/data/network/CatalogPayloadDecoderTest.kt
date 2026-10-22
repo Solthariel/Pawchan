@@ -122,5 +122,8 @@ class CatalogPayloadDecoderTest {
         )
     }
 
-    private fun fixture(name: String): String = requireNotNull(javaClass.getResource("/fixtures/$name")).readText()
+    private fun fixture(name: String): String =
+        requireNotNull(javaClass.getResource("/fixtures/$name"))
+            .readText()
+            .replace("\r\n", "\n")
 }

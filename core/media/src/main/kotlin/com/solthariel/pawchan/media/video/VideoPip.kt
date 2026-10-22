@@ -10,10 +10,14 @@ import android.util.Rational
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import com.solthariel.pawchan.domain.model.MediaDimensions
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Что передаёт просмотрщик окну PiP: саму играющую сессию (без переоткрытия и перемотки).
@@ -24,6 +28,7 @@ internal class VideoPipRequest(
     val session: VideoPlaybackSession,
     val dimensions: MediaDimensions?,
     val onShown: () -> Unit,
+    val access: VideoPrivacyAccess? = null,
 )
 
 /** Где продолжить файл после PiP: позиция, игрался ли он и скорость. */
@@ -53,7 +58,14 @@ internal object VideoPipHandoff {
 
     private val main = Handler(Looper.getMainLooper())
     private var parked: VideoPlaybackSession? = null
-    private val expire = Runnable { parked?.close().also { parked = null } }
+    private val expire =
+        Runnable {
+            parked?.let { player ->
+                remember(player.url, VideoPipResume(player.status.value.position, false, player.sound.value.speed))
+                player.close()
+            }
+            parked = null
+        }
 
     /** Развёрнутое окно PiP оставляет сессию просмотрщику; не подхваченная вовремя закрывается. */
     fun park(session: VideoPlaybackSession) {
@@ -96,13 +108,16 @@ internal fun BindVideoPipReturn(
 ) {
     val currentItems by rememberUpdatedState(items)
     val currentSelect by rememberUpdatedState(onSelect)
-    LaunchedEffect(Unit) {
-        VideoPipHandoff.returning.collect { request ->
-            if (request != null && VideoPipHandoff.returning.compareAndSet(request, null) && request.fresh) {
-                val attachment = request.attachment
-                currentSelect(currentItems.firstOrNull { it.originalUrl == attachment.originalUrl } ?: attachment)
+    val access = LocalVideoPrivacyAccess.current
+    LaunchedEffect(access) {
+        combine(VideoPipHandoff.returning, access?.changes ?: flowOf(true)) { request, allowed -> request to allowed }
+            .collect { (request, allowed) ->
+                if (!allowed || access?.isAllowed() == false || request == null) return@collect
+                if (VideoPipHandoff.returning.compareAndSet(request, null) && request.fresh) {
+                    val attachment = request.attachment
+                    currentSelect(currentItems.firstOrNull { it.originalUrl == attachment.originalUrl } ?: attachment)
+                }
             }
-        }
     }
 }
 
@@ -129,3 +144,28 @@ private const val DEFAULT_HEIGHT = 9
 private const val MAX_ASPECT = 2.35f
 private const val ASPECT_SCALE = 1000
 private const val RETURN_EXPIRY_MS = 30_000L
+
+/** The permission is checked both while binding UI and again when the user clicks. */
+@Composable
+internal fun rememberVideoPip(
+    video: MediaAttachmentUi,
+    player: VideoPlaybackSession,
+    onClose: () -> Unit,
+): (() -> Unit)? {
+    val context = LocalContext.current
+    val access = LocalVideoPrivacyAccess.current
+    val pipAllowed = LocalVideoPipAllowed.current
+    val currentClose by rememberUpdatedState(onClose)
+    return remember(video, player, context, pipAllowed, access) {
+        if (pipAllowed && access?.isAllowed() != false && context.canUsePip()) {
+            {
+                if (access?.isAllowed() != false) {
+                    player.inPip = true
+                    context.launchVideoPip(VideoPipRequest(video, player, video.dimensions, { currentClose() }, access))
+                }
+            }
+        } else {
+            null
+        }
+    }
+}

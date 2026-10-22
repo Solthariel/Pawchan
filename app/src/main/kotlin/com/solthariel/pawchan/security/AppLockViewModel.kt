@@ -9,6 +9,8 @@ import com.solthariel.pawchan.domain.security.AppLockDelay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Activity-owned, survives rotation; a new process is always locked. */
@@ -18,6 +20,16 @@ internal class AppLockViewModel(
     private val store = AppLockStore(context.applicationContext)
     private val mutable = MutableStateFlow(AppLockState())
     val state = mutable.asStateFlow()
+    val videoAccess =
+        object : com.solthariel.pawchan.media.video.VideoPrivacyAccess {
+            override val changes = state.map { it.ready && !it.locked }.distinctUntilChanged()
+
+            override fun isAllowed(): Boolean = state.value.ready && !state.value.locked
+        }
+    private val backgroundLock =
+        AppLockBackgroundTimer(viewModelScope) {
+            mutable.value = state.value.copy(locked = true, editor = null, error = null, biometricSetupReady = false)
+        }
     val fingerprintAvailable get() = store.fingerprintAvailable
     private val timing =
         com.solthariel.pawchan.domain.security
@@ -32,9 +44,11 @@ internal class AppLockViewModel(
 
     fun background() {
         timing.background()
+        if (state.value.configuration.enabled) backgroundLock.start(state.value.configuration.delay.millis)
     }
 
     fun foreground() {
+        backgroundLock.cancel()
         val shouldLock = timing.shouldLockOnForeground(state.value.configuration.delay)
         if (state.value.configuration.enabled && shouldLock) {
             mutable.value = state.value.copy(locked = true, editor = null, error = null, biometricSetupReady = false)
@@ -198,5 +212,9 @@ internal class AppLockViewModel(
                 mutable.value = state.value.copy(busy = false)
             }
         }
+    }
+
+    override fun onCleared() {
+        backgroundLock.lock()
     }
 }

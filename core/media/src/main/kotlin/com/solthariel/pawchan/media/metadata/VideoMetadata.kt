@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** Ответ нативного плеера (ключи из player.c getMetadata) → разделы окна. */
+/** Ответ нативного плеера (стабильные ключи контракта метаданных) → разделы окна. */
 internal fun videoMetadata(
     values: Map<String, String>,
     durationMillis: Long,

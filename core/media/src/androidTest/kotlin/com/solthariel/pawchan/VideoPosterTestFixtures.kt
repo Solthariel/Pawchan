@@ -40,7 +40,7 @@ internal class PosterTestEngine(
 
     override fun muted(value: Boolean) = Unit
 
-    override fun speed(milli: Int) = Unit
+    override fun speed(milli: Int) = milli
 
     override fun stop() = Unit
 

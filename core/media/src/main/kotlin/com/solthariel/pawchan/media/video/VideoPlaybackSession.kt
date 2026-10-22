@@ -19,6 +19,8 @@ internal class VideoPlaybackSession(
 ) : VideoPlaybackControls,
     VideoSoundControls by soundControl,
     AutoCloseable {
+    internal var audio: VideoPlaybackAudio? = null
+    val privacy = VideoSessionPrivacy(scope, ::pause)
     private val mutableStatus = MutableStateFlow(VideoPlaybackStatus())
     override val status: StateFlow<VideoPlaybackStatus> = mutableStatus
 
@@ -46,6 +48,7 @@ internal class VideoPlaybackSession(
 
     fun start() {
         if (closed) return
+        soundControl.hasAudio = false
         engine.stop()
         opening?.cancel()
         mutableVideoOutput.value = false
@@ -82,6 +85,8 @@ internal class VideoPlaybackSession(
         snapshot: VideoPlaybackStatus,
     ) {
         if (closed) return
+        soundControl.hasAudio = engine.metadata.containsKey("audio_format")
+        if (type == VideoEvent.INCOMPLETE) requestedPlaying = false
         if (type == VideoEvent.ERROR) {
             recover()
         } else {
@@ -154,11 +159,15 @@ internal class VideoPlaybackSession(
 
     fun pause() {
         requestedPlaying = false
+        audio?.update(false)
         engine.pause()
     }
 
     override fun close() {
         closed = true
+        privacy.close()
+        audio?.close()
+        audio = null
         opening?.cancel()
         engine.close()
         if (ownsScope) scope.cancel()

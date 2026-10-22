@@ -56,6 +56,7 @@ class FfmpegVideoEngineRuntimeTest {
         lateinit var host: FrameLayout
         var initialized = false
         val output = NativeVideoTestOutput(name)
+        val minimumProgress = if (name == "black_h264.mp4") 200L else 1200L
         try {
             showEngine(context) { current, target ->
                 engine = current
@@ -67,9 +68,9 @@ class FfmpegVideoEngineRuntimeTest {
                     output.record(engine, type, status)
                 }
             }
-            compose.waitUntil(15_000L) { output.failed.get() || (output.videoOutput.get() && output.time.get() > 200L) }
+            compose.waitUntil(15_000L) { output.failed.get() || (output.videoOutput.get() && output.time.get() > minimumProgress) }
             assertTrue("Native decoder failed for $name", !output.failed.get())
-            assertTrue("No advancing video output for $name", output.videoOutput.get() && output.time.get() > 200L)
+            assertTrue("No advancing video output for $name", output.videoOutput.get() && output.time.get() > minimumProgress)
             assertTrue("First output snapshot did not match $name", output.firstFrameValid.get())
             compose.runOnIdle {
                 val poster = requireNotNull(engine.posterFrame)
@@ -77,6 +78,7 @@ class FfmpegVideoEngineRuntimeTest {
                 poster.recycle()
                 if (checkDetached) assertOldTextureIgnored(engine, host, output.time.get(), output.rendered)
             }
+            if (name == "h264_aac.mp4") assertSpeedChange(engine, output)
             val seekTarget = (output.duration.get() / 3L).coerceAtMost(1000L)
             val beforeSeek = output.rendered.get()
             compose.runOnIdle {
@@ -92,6 +94,16 @@ class FfmpegVideoEngineRuntimeTest {
             if (initialized) compose.runOnIdle { engine.close() }
             file.delete()
         }
+    }
+
+    private fun assertSpeedChange(
+        engine: FfmpegVideoEngine,
+        output: NativeVideoTestOutput,
+    ) {
+        compose.runOnIdle { assertEquals(1500, engine.speed(1500)) }
+        compose.waitUntil(15_000L) { output.failed.get() || output.time.get() > 2000L }
+        assertTrue("AudioTrack stalled or failed after 1.5x", !output.failed.get() && output.time.get() > 2000L)
+        compose.runOnIdle { assertEquals(1000, engine.speed(1000)) }
     }
 
     private fun showEngine(

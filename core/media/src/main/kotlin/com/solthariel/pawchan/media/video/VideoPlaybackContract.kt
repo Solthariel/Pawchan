@@ -13,6 +13,7 @@ internal enum class VideoEvent {
     VIDEO_OUTPUT,
     VIDEO_OUTPUT_PENDING,
     ERROR,
+    INCOMPLETE,
 }
 
 internal enum class VideoStage { BUFFERING, READY, ERROR }
@@ -52,6 +53,7 @@ private const val MILLI_PER_SPEED = 1000f
 internal data class VideoSoundState(
     val muted: Boolean = false,
     val speed: VideoSpeed = VideoSpeed.NORMAL,
+    val hasAudio: Boolean = false,
 )
 
 /** Выключенный звук запоминается между видео до перезапуска процесса. */
@@ -80,13 +82,19 @@ internal class VideoSound(
 ) : VideoSoundControls {
     private val mutable = MutableStateFlow(VideoSoundState(muted = VideoSoundMemory.muted))
     override val sound: StateFlow<VideoSoundState> = mutable
+    var hasAudio: Boolean
+        get() = sound.value.hasAudio
+        set(value) {
+            mutable.value = sound.value.copy(hasAudio = value)
+        }
 
     fun apply() {
-        engine.speed(sound.value.speed.milli)
+        setSpeed(sound.value.speed)
         engine.muted(sound.value.muted)
     }
 
     override fun toggleMuted() {
+        if (!hasAudio) return
         val muted = !sound.value.muted
         VideoSoundMemory.muted = muted
         mutable.value = sound.value.copy(muted = muted)
@@ -96,8 +104,9 @@ internal class VideoSound(
     override fun cycleSpeed() = setSpeed(sound.value.speed.next())
 
     override fun setSpeed(speed: VideoSpeed) {
-        mutable.value = sound.value.copy(speed = speed)
-        engine.speed(speed.milli)
+        val accepted = engine.speed(speed.milli)
+        val actual = VideoSpeed.entries.firstOrNull { it.milli == accepted } ?: VideoSpeed.NORMAL
+        mutable.value = sound.value.copy(speed = actual)
     }
 }
 
@@ -145,7 +154,7 @@ internal interface VideoEngineBackend : AutoCloseable {
 
     fun muted(value: Boolean)
 
-    fun speed(milli: Int)
+    fun speed(milli: Int): Int
 
     fun stop()
 

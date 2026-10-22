@@ -17,7 +17,7 @@ import okhttp3.ResponseBody;
  * Native code sees only published, actually written ranges of a session-owned file.
  * Cookies, redirects and HTTPS policy remain with the application's OkHttp client.
  */
-public final class ProgressiveSource implements VideoPlayer.RangeCallback, AutoCloseable {
+public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoCloseable {
     public interface Listener {
         void onFile(File file);
         void onError(IOException error);
@@ -35,7 +35,7 @@ public final class ProgressiveSource implements VideoPlayer.RangeCallback, AutoC
     private final AtomicLong rangeGeneration = new AtomicLong();
     private volatile Call primaryCall;
     private volatile Call rangeCall;
-    private volatile VideoPlayer player;
+    private volatile PawPlayback player;
     private volatile File file;
     private volatile long progress;
     private volatile long total = -1;
@@ -55,7 +55,7 @@ public final class ProgressiveSource implements VideoPlayer.RangeCallback, AutoC
     public File getFile() { return file; }
     public long getProgress() { return progress; }
     public boolean isComplete() { return complete; }
-    public void bind(VideoPlayer player) { this.player = player; }
+    public void bind(PawPlayback player) { this.player = player; }
     @Override public void onReadReady() { publishProgress(); }
 
     private void download() {
@@ -95,8 +95,8 @@ public final class ProgressiveSource implements VideoPlayer.RangeCallback, AutoC
         return new Request.Builder().url(url).header("Accept-Encoding", "identity");
     }
     private void publishProgress() {
-        VideoPlayer active = player;
-        if (active != null && !closed) active.setDownloadRange(progress, total);
+        PawPlayback active = player;
+        if (active != null && !closed) active.input.publish(progress, total);
     }
     @Override public void requestPartFromPosition(long start) {
         cancelRange();
@@ -153,8 +153,8 @@ public final class ProgressiveSource implements VideoPlayer.RangeCallback, AutoC
                 output.write(buffer, 0, count);
                 position += count;
                 if (partial) {
-                    VideoPlayer active = player;
-                    if (active != null && !closed) active.setPartRange(start, position);
+                    PawPlayback active = player;
+                    if (active != null && !closed) active.input.publishTail(start, position);
                 } else {
                     progress = position;
                     publishProgress();

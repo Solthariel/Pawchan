@@ -19,9 +19,11 @@ internal fun BindVideoPlaybackLifecycle(
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = LocalContext.current
-    val audio = remember(session) { VideoPlaybackAudio(context, session) }
+    val audio = remember(session) { session.audio(context) }
+    val access = LocalVideoPrivacyAccess.current
     LaunchedEffect(session, audio) { session.status.collect { audio.update(it.playing) } }
-    DisposableEffect(session, lifecycle) {
+    DisposableEffect(session, lifecycle, access) {
+        session.privacy.bind(access)
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_STOP && !session.inPip) session.pause()
@@ -30,16 +32,15 @@ internal fun BindVideoPlaybackLifecycle(
         if (adopted) {
             session.redrawPaused()
         } else if (pooled != null) {
-            session.reattach(pooled && autoPlay)
+            session.reattach(pooled && autoPlay && access?.isAllowed() != false)
         } else {
             // После закрытого окна PiP тот же файл продолжается с позиции, где его закрыли.
             val resume = VideoPipHandoff.takeResume(session.url)
             resume?.let { session.setSpeed(it.speed) }
-            session.startAt(resume?.position ?: 0L, resume?.playing ?: autoPlay)
+            session.startAt(resume?.position ?: 0L, (resume?.playing ?: autoPlay) && access?.isAllowed() != false)
         }
         onDispose {
             lifecycle.removeObserver(observer)
-            audio.close()
             // Сессию, переданную окну PiP, закрывает уже оно; ушли свайпом — сессия ждёт возврата в запасе.
             if (!session.inPip) VideoSessionPool.retain(session)
         }

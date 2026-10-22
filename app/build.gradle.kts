@@ -27,7 +27,7 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
                 .toList()
         check(apks.isNotEmpty()) { "No APK found in ${apkDirectory.get().asFile}" }
         val required =
-            listOf("avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "dav1d", "player", "c++_shared")
+            listOf("avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "dav1d", "pawplayback", "c++_shared")
                 .map { "lib/arm64-v8a/lib$it.so" }
         apks.forEach { apk ->
             val entries =
@@ -38,6 +38,7 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
                         .map { it.name }
                         .toSet()
                 }
+            check("lib/arm64-v8a/libplayer.so" !in entries) { "${apk.name} contains the obsolete player engine" }
             val missing = required.filterNot(entries::contains)
             check(missing.isEmpty()) { "${apk.name} is missing native libraries: $missing" }
         }

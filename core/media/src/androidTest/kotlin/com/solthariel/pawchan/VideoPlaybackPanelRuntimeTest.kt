@@ -8,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -57,6 +59,18 @@ class VideoPlaybackPanelRuntimeTest {
         compose.onNodeWithContentDescription("Воспроизвести").assertIsDisplayed()
         compose.onNodeWithContentDescription("Следующий файл").performClick()
         compose.runOnIdle { assertEquals(1, next) }
+    }
+
+    @Test
+    fun muteIsDisabledForSilentVideoAndEnabledWhenAudioIsPresent() {
+        val player = TestVideoControls()
+        compose.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) { VideoPlaybackPanel(player) }
+        }
+        compose.onNodeWithContentDescription("Выключить звук").assertIsNotEnabled()
+        compose.runOnIdle { player.sound.value = player.sound.value.copy(hasAudio = true) }
+        compose.onNodeWithContentDescription("Выключить звук").assertIsEnabled().performClick()
+        compose.onNodeWithContentDescription("Включить звук").assertIsEnabled()
     }
 }
 

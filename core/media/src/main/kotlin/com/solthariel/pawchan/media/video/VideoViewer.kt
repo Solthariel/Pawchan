@@ -78,20 +78,7 @@ internal fun VideoViewer(
     )
     BindVideoCompletion(player, status)
     BindNextVideoPreload(navigation.nextItem, loaders, ready = status.stage == VideoStage.READY)
-    val pipAllowed = LocalVideoPipAllowed.current
-    val onPip =
-        remember(player, context, pipAllowed) {
-            if (pipAllowed && context.canUsePip()) {
-                {
-                    // Сессия не останавливается: окно PiP переносит её поверхность к себе,
-                    // а просмотрщик закрывается, только когда окно уже показано.
-                    player.inPip = true
-                    context.launchVideoPip(VideoPipRequest(video, player, video.dimensions, onClose))
-                }
-            } else {
-                null
-            }
-        }
+    val onPip = rememberVideoPip(video, player, onClose)
     key(player) {
         VideoSurface(
             player = player,

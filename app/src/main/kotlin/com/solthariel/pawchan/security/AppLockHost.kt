@@ -46,7 +46,8 @@ internal fun AppLockHost(
     }
     CompositionLocalProvider(
         LocalAppLock provides model,
-        com.solthariel.pawchan.media.video.LocalVideoPipAllowed provides !state.configuration.enabled,
+        com.solthariel.pawchan.media.video.LocalVideoPipAllowed provides (state.ready && !state.locked),
+        com.solthariel.pawchan.media.video.LocalVideoPrivacyAccess provides model.videoAccess,
     ) {
         Box(Modifier.fillMaxSize()) {
             // Retain navigation and drafts, but remove locked content from rendering and accessibility.
