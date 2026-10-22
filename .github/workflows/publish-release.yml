@@ -1,5 +1,4 @@
 name: Publish signed release
-run-name: "${{ github.event.head_commit.message || github.workflow }} ? Commit ${{ github.sha }}"
 
 # A release request on master, or a new version tag. Never pull requests.
 on:
