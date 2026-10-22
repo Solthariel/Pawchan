@@ -27,8 +27,12 @@ internal class ClientBackupActions(
         private set
     var exportReady by mutableStateOf(false)
         private set
+    var saved by mutableStateOf<com.solthariel.pawchan.copyfiles.CopyDocument?>(null)
+        private set
     private var exportBytes: ByteArray? = null
     private var protectedBytes: ByteArray? = null
+    val pendingSave: Boolean get() = exportBytes != null
+    val canRetrySave: Boolean get() = pendingSave && !exportReady && !busy
 
     fun prepare(
         sections: Set<BackupSection>,
@@ -51,18 +55,44 @@ internal class ClientBackupActions(
 
     fun save(uri: Uri?) =
         execute {
-            val bytes = exportBytes ?: throw IOException("Подготовьте копию заново")
-            exportBytes = null
             exportReady = false
-            try {
-                if (uri != null) {
-                    service.write(uri, bytes)
-                    message = "Резервная копия сохранена"
-                }
-            } finally {
-                bytes.fill(0)
+            val bytes = exportBytes ?: throw IOException("Подготовьте копию заново")
+            if (uri != null) {
+                service.write(uri, bytes)
+                saved =
+                    com.solthariel.pawchan.copyfiles.CopyDocument(
+                        uri.toString(),
+                        "Резервная копия",
+                        "application/octet-stream",
+                        System.currentTimeMillis(),
+                        bytes.size.toLong(),
+                    )
+                message = "Резервная копия сохранена"
             }
+            bytes.fill(0)
+            exportBytes = null
         }
+
+    fun saveFolder(
+        store: com.solthariel.pawchan.copyfiles.CopyFileStore,
+        tree: String,
+    ) = execute {
+        exportReady = false
+        val bytes = exportBytes ?: throw IOException("Подготовьте копию заново")
+        saved =
+            store.write(
+                tree,
+                com.solthariel.pawchan.copyfiles.CopyFileKind.BACKUP,
+                "Pawchan-backup-${System.currentTimeMillis()}.pawbackup",
+            ) { it.write(bytes) }
+        bytes.fill(0)
+        exportBytes = null
+        message = "Резервная копия сохранена"
+    }
+
+    fun consumeSaved() {
+        saved = null
+    }
 
     fun read(uri: Uri) =
         execute {
@@ -114,6 +144,7 @@ internal class ClientBackupActions(
     }
 
     fun close() {
+        saved = null
         discard()
         exportBytes?.fill(0)
         exportBytes = null

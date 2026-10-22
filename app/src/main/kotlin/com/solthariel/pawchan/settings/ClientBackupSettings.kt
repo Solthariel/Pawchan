@@ -1,7 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
@@ -54,24 +52,13 @@ private fun ClientBackupControls(actions: ClientBackupActions) {
     var choosing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(DEFAULT_BACKUP_SECTIONS) }
-    val save =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
-            onResult = actions::save,
-        )
-    val load =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) actions.read(uri)
-        }
-    LaunchedEffect(actions.exportReady) {
-        if (actions.exportReady) save.launch("Pawchan-backup-${System.currentTimeMillis()}.pawbackup")
-    }
+    val load = backupFileControls(actions)
     LaunchedEffect(actions.preview) { actions.preview?.let { selected = it.backup.sections } }
     BackupActionRows(actions, create = {
         actions.discard()
         selected = DEFAULT_BACKUP_SECTIONS
         choosing = true
-    }, load = { load.launch(arrayOf("*/*")) })
+    }, load = load)
     if (choosing) {
         BackupSelectionDialog(false, selected, { selected = it }, { choosing = false }, {
             choosing = false

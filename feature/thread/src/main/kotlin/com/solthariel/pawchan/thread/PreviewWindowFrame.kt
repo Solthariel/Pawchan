@@ -76,6 +76,7 @@ private fun PreviewCardSurface(
     val active = layer == null || layer.depth == 0
     val swipe = if (active) Modifier.previewSwipeModifier(motion, onClose, layer?.clear ?: onClose) else Modifier
     val viewportHeight = with(LocalDensity.current) { maxHeight.toPx() }
+    val hintColor = MaterialTheme.colorScheme.onSurface
     var measuredHeight by remember { mutableIntStateOf(1) }
     SideEffect {
         if (active) {
@@ -89,7 +90,7 @@ private fun PreviewCardSurface(
             .fillMaxWidth()
             .heightIn(max = maxHeight * PREVIEW_HEIGHT_FRACTION)
             .graphicsLayer {
-                translationY = if (active) motion.offset else 0f
+                translationY = previewLayerShift(motion.offset, layer?.depth ?: 0, layer?.count ?: 1)
             }.then(swipe)
             .onSizeChanged { measuredHeight = it.height }
             .testTag(if (active) "preview-active" else "preview-behind")
@@ -101,6 +102,7 @@ private fun PreviewCardSurface(
         Box(
             Modifier.drawWithContent {
                 drawContent()
+                if (active) drawPreviewPullHint(motion.offset, motion.viewportHeight, hintColor)
                 if (!active) drawRect(Color.Black.copy(alpha = PREVIEW_DIM))
             },
         ) { content() }

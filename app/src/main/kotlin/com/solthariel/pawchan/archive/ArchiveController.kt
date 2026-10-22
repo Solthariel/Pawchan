@@ -33,6 +33,13 @@ internal class ArchiveController(
     private val mutableNotice = MutableStateFlow<String?>(null)
     val busy = mutableBusy.asStateFlow()
     val notice = mutableNotice.asStateFlow()
+    private val mutableSaved = MutableStateFlow<ThreadAddress?>(null)
+    val saved = mutableSaved.asStateFlow()
+
+    fun consumeSaved() {
+        mutableSaved.value = null
+    }
+
     val display =
         workspace.state
             .mapLatest { state ->
@@ -104,6 +111,7 @@ internal class ArchiveController(
         val copy = requireNotNull(state.copies.firstOrNull { it.snapshot.address == address })
         mutableNotice.value = if (copy.archive.includeMedia) "Копия сохранена, файлы загружаются" else "Копия сохранена"
         enqueueMedia()
+        mutableSaved.value = address
     }
 
     fun update(
@@ -156,6 +164,7 @@ internal class ArchiveController(
 
     fun export(
         address: ThreadAddress,
+        onSaved: () -> Unit = {},
         output: () -> OutputStream?,
     ) = operation {
         val copy =
@@ -167,7 +176,21 @@ internal class ArchiveController(
             val stream = output() ?: throw IOException("Не удалось открыть файл для экспорта")
             services.zip.write(copy, stream)
         }
+        onSaved()
         mutableNotice.value = "ZIP сохранён; отсутствующие медиа остаются внешними ссылками"
+    }
+
+    suspend fun writeZip(
+        address: ThreadAddress,
+        output: OutputStream,
+    ) = mutex.withLock {
+        val copy =
+            workspace.repository
+                .load()
+                .copies
+                .firstOrNull { it.snapshot.address == address }
+                ?: throw IOException("Сохранённая копия не найдена")
+        withContext(Dispatchers.IO) { services.zip.write(copy, output) }
     }
 
     suspend fun synchronize() =
@@ -197,6 +220,8 @@ internal class ArchiveController(
                 failure: IOException,
             ) {
                 mutableNotice.value = failure.message
+            } catch (_: SecurityException) {
+                mutableNotice.value = "Доступ к файлу потерян. Выберите другое место сохранения."
             } finally {
                 mutableBusy.value = false
                 workspace.reload()

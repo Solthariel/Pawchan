@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Пункты Архивача: «Сохранить в Архивач» (капча), после отправки — «Восстановить из Архивача» и
- * «Открыть на Архиваче». Нет связи с Архивачем — «Сохранить» и «Восстановить» серые и не нажимаются;
+ * «Открыть на Архиваче». Сетевая проверка не блокирует повторную попытку;
  * «Открыть» отдаёт ссылку браузеру и доступен всегда.
  */
 @Composable
@@ -23,9 +23,9 @@ internal fun ThreadArhivachItems(
     val state = external.state(address)
     val link = state.link
     if (link == null) {
-        ThreadMenuItem("Сохранить в Архивач", enabled = state.available) { tools.openDialog(ThreadDialog.ARHIVACH) }
+        ThreadMenuItem("Сохранить в Архивач") { tools.openDialog(ThreadDialog.ARHIVACH) }
     } else {
-        ThreadMenuItem("Восстановить из Архивача", enabled = state.available && history != null) {
+        ThreadMenuItem("Восстановить из Архивача", enabled = history != null) {
             tools.closeMenu()
             if (history != null) scope.restoreFromArhivach(external, address, link, tools, history)
         }

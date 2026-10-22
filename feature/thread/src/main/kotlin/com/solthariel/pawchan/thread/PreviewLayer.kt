@@ -6,6 +6,7 @@ internal data class PreviewLayer(
     val depth: Int,
     val motion: PreviewSwipeState,
     val clear: () -> Unit,
+    val count: Int = 1,
 )
 
 internal val LocalPreviewLayer = staticCompositionLocalOf<PreviewLayer?> { null }

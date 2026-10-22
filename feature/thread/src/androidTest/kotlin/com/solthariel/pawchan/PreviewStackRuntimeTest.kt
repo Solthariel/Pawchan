@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -17,8 +18,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeDown
-import androidx.compose.ui.test.swipeUp
 import androidx.test.espresso.Espresso
 import com.solthariel.pawchan.domain.model.PostDocument
 import com.solthariel.pawchan.domain.model.PostId
@@ -67,10 +68,10 @@ class PreviewStackRuntimeTest {
     @Test fun upwardSwipePopsOneAndDownwardSwipeClearsTheChain() {
         val targets = showStack(listOf(PostPreviewTarget(null, 2), PostPreviewTarget(null, 3)))
         compose.onNodeWithText("Пост 3", substring = true).assertIsDisplayed()
-        compose.onNodeWithTag("preview-active").performTouchInput { swipeUp(durationMillis = 160) }
+        pullWindow(upwards = true)
         compose.waitForIdle()
         compose.runOnIdle { assertEquals(listOf(PostPreviewTarget(null, 2)), targets.value) }
-        compose.onNodeWithTag("preview-active").performTouchInput { swipeDown(durationMillis = 160) }
+        pullWindow(upwards = false)
         compose.waitForIdle()
         compose.runOnIdle { assertEquals(emptyList<PostPreviewTarget>(), targets.value) }
     }
@@ -142,6 +143,14 @@ class PreviewStackRuntimeTest {
             compose.onNodeWithText("Пост ${3 - it}", substring = true).assertIsDisplayed()
             compose.onNodeWithTag("preview-loading").assertDoesNotExist()
         }
+    }
+
+    private fun pullWindow(upwards: Boolean) {
+        val window = compose.onNodeWithTag("preview-active").fetchSemanticsNode().boundsInRoot
+        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val start = window.center - root.topLeft
+        val end = Offset(start.x, root.height * if (upwards) 0.05f else 0.95f)
+        compose.onRoot().performTouchInput { swipe(start, end, durationMillis = 160) }
     }
 
     private fun showStack(

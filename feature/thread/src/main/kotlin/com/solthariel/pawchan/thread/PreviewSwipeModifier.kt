@@ -27,40 +27,39 @@ internal fun Modifier.previewSwipeModifier(
     val currentClear = rememberUpdatedState(clear)
     val connection =
         remember(state, density) {
-            object : NestedScrollConnection {
-                override fun onPreScroll(
-                    available: Offset,
-                    source: NestedScrollSource,
-                ): Offset =
-                    if (source == NestedScrollSource.UserInput && state.offset != 0f) {
-                        val delta =
-                            if (state.offset * available.y < 0) {
-                                available.y.coerceIn(-kotlin.math.abs(state.offset), kotlin.math.abs(state.offset))
-                            } else {
-                                available.y
-                            }
-                        Offset(0f, state.drag(delta))
-                    } else {
-                        Offset.Zero
-                    }
-
-                override fun onPostScroll(
-                    consumed: Offset,
-                    available: Offset,
-                    source: NestedScrollSource,
-                ): Offset {
-                    if (source != NestedScrollSource.UserInput) return Offset.Zero
-                    return Offset(0f, state.drag(available.y))
-                }
-
-                override suspend fun onPreFling(available: Velocity): Velocity {
-                    if (state.offset == 0f) return Velocity.Zero
-                    state.release(available.y, density, currentPop.value, currentClear.value)
-                    return available
-                }
-            }
+            PreviewSwipeConnection(state, density, { currentPop.value() }, { currentClear.value() })
         }
     return nestedScroll(connection).previewGestureLifecycle(state)
+}
+
+/** Consume raw pointer travel, never the damped window displacement. */
+internal class PreviewSwipeConnection(
+    private val state: PreviewSwipeState,
+    private val density: Float,
+    private val pop: () -> Unit,
+    private val clear: () -> Unit,
+) : NestedScrollConnection {
+    override fun onPreScroll(
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset =
+        if (source == NestedScrollSource.UserInput && state.offset != 0f) {
+            Offset(0f, state.drag(available.y))
+        } else {
+            Offset.Zero
+        }
+
+    override fun onPostScroll(
+        consumed: Offset,
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset = if (source == NestedScrollSource.UserInput) Offset(0f, state.drag(available.y)) else Offset.Zero
+
+    override suspend fun onPreFling(available: Velocity): Velocity {
+        if (state.offset == 0f) return Velocity.Zero
+        state.release(available.y, density, pop, clear)
+        return available
+    }
 }
 
 /** Observe completion without consuming taps, text selection, or list scrolling. */

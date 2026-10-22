@@ -53,6 +53,7 @@ internal fun PostPreviewStack(
                                     depth = entries.lastIndex - entries.indexOf(entry),
                                     motion = motion,
                                     clear = onClear,
+                                    count = entries.size.coerceAtMost(RETAINED_PREVIEW_WINDOWS),
                                 ),
                         ) {
                             PostPreviewDialog(entry.target, local, appearance, bindings(entry.target), resources)

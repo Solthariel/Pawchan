@@ -23,7 +23,7 @@ data class ThreadExternalArchive(
 data class ThreadExternalArchiveState(
     /** Копия на Архиваче, добавленная из приложения; null — тред туда не отправлялся. */
     val link: String? = null,
-    /** false — сайт не открылся при последней проверке: пункты меню серые. */
+    /** Результат последней фоновой проверки, не запрет повторной попытки. */
     val available: Boolean = true,
 )
 

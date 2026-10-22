@@ -27,6 +27,10 @@ class PawchanApplication :
         com.solthariel.pawchan.infrastructure.media
             .DownloadDirectoryPermissions(this, preferences, applicationScope)
     }
+    internal val copyDirectoryStore by lazy {
+        com.solthariel.pawchan.copyfiles
+            .CopyDirectoryStore(contentResolver, downloadPermissions::useDirectory)
+    }
     val preferences by lazy {
         DataStoreSettingsRepository
             .create(this)

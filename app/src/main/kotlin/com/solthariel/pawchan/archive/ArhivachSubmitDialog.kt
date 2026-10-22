@@ -73,23 +73,26 @@ internal fun ArhivachSubmitDialog(
         form.busy = true
         form.message = null
         scope.launch {
-            when (val result = controller.submit(address, form.code)) {
-                is ArchiveSubmission.Accepted -> {
-                    Toast.makeText(context, submittedText(result), Toast.LENGTH_SHORT).show()
-                    onClose()
-                }
+            try {
+                when (val result = controller.submit(address, form.code)) {
+                    is ArchiveSubmission.Accepted -> {
+                        Toast.makeText(context, submittedText(result), Toast.LENGTH_SHORT).show()
+                        onClose()
+                    }
 
-                is ArchiveSubmission.WrongCaptcha -> {
-                    form.message = result.message
-                }
+                    is ArchiveSubmission.WrongCaptcha -> {
+                        form.message = result.message
+                    }
 
-                is ArchiveSubmission.Rejected -> {
-                    form.message = result.message
+                    is ArchiveSubmission.Rejected -> {
+                        form.message = result.message
+                    }
                 }
+                form.code = ""
+                form.reload++
+            } finally {
+                form.busy = false
             }
-            form.code = ""
-            form.reload++
-            form.busy = false
         }
         Unit
     }

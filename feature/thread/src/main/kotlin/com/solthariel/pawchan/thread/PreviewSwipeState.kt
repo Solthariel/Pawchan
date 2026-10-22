@@ -5,25 +5,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.sign
 
 internal enum class PreviewSwipeAction { RESTORE, POP, CLEAR }
-
-/** Distances are dp, so phone density does not change the meaning of a gesture. */
-internal fun previewSwipeAction(
-    distance: Float,
-    height: Float,
-    velocity: Float,
-): PreviewSwipeAction {
-    val threshold = (height * DISMISS_FRACTION).coerceIn(MIN_DISMISS_DISTANCE, MAX_DISMISS_DISTANCE)
-    val fling = abs(distance) >= MIN_FLING_DISTANCE && abs(velocity) >= DISMISS_VELOCITY && distance * velocity > 0
-    return when {
-        abs(distance) < threshold && !fling -> PreviewSwipeAction.RESTORE
-        distance < 0 -> PreviewSwipeAction.POP
-        else -> PreviewSwipeAction.CLEAR
-    }
-}
 
 internal class PreviewSwipeState {
     var offset by mutableFloatStateOf(0f)
@@ -50,8 +36,10 @@ internal class PreviewSwipeState {
 
     fun drag(delta: Float): Float {
         if (settling) return 0f
-        offset += delta
-        return delta
+        val crossingZero = offset * delta < 0f && offset * (offset + delta) <= 0f
+        val consumed = if (crossingZero) -offset else delta
+        offset = if (crossingZero) 0f else offset + consumed
+        return consumed
     }
 
     suspend fun release(
@@ -64,7 +52,12 @@ internal class PreviewSwipeState {
         settling = true
         val action =
             if (released) {
-                previewSwipeAction(offset / density, height / density, velocity / density)
+                previewSwipeAction(
+                    offset / density,
+                    maxOf(height, viewportHeight) / density,
+                    velocity / density,
+                    height / density,
+                )
             } else {
                 PreviewSwipeAction.RESTORE
             }
@@ -76,7 +69,11 @@ internal class PreviewSwipeState {
             }
         var dismissed = false
         try {
-            Animatable(offset).animateTo(destination, tween(SWIPE_DURATION)) { offset = value }
+            if (action == PreviewSwipeAction.RESTORE) {
+                settle(destination, velocity)
+            } else {
+                withTimeoutOrNull(PREVIEW_CLOSE_DELAY) { settle(destination, velocity) }
+            }
             when (action) {
                 PreviewSwipeAction.POP -> {
                     pop()
@@ -97,12 +94,21 @@ internal class PreviewSwipeState {
             settling = false
         }
     }
+
+    private suspend fun settle(
+        destination: Float,
+        velocity: Float,
+    ) {
+        Animatable(offset).animateTo(
+            destination,
+            tween(
+                previewSwipeDuration(destination - offset, velocity, maxOf(height, viewportHeight)),
+                easing = PREVIEW_RESTORE_EASING,
+            ),
+        ) { offset = value }
+    }
 }
 
-private const val DISMISS_FRACTION = 0.28f
-private const val MIN_DISMISS_DISTANCE = 48f
-private const val MAX_DISMISS_DISTANCE = 140f
-private const val MIN_FLING_DISTANCE = 24f
-private const val DISMISS_VELOCITY = 1200f
 private const val EXIT_DISTANCE = 1.5f
-private const val SWIPE_DURATION = 160
+
+private const val PREVIEW_CLOSE_DELAY = 150L
