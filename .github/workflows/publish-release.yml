@@ -1,13 +1,10 @@
 name: Publish signed release
 
-# A release request on master, or a new version tag. Never pull requests.
+# Publication requests are push commits on master only. No manual/tag/PR publication.
 on:
   push:
     branches: [master]
     paths: [update/publishing/release-request.json]
-    tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'Solthariel/Pawchan' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    if: github.repository == 'Solthariel/Pawchan' && github.actor == 'Solthariel' && github.ref == 'refs/heads/master'
     name: Build, verify and publish release
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -29,7 +26,23 @@ jobs:
       PAWCHAN_UPDATE_MANIFEST_URL: https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/data-v1.json
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate publication request
+        id: publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m unittest discover -s update/publishing/tests -v
+          python3 -m unittest discover -s update/publishing/tools/tests -v
+          python3 update/publishing/tools/release_entry.py --check
+
       - name: Check signing secrets
+        if: steps.publication.outputs.mode == 'build'
         env:
           PAWCHAN_KEYSTORE_BASE64: ${{ secrets.PAWCHAN_KEYSTORE_BASE64 }}
           PAWCHAN_KEY_ALIAS: ${{ secrets.PAWCHAN_KEY_ALIAS }}
@@ -43,31 +56,8 @@ jobs:
             fi
           done
 
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Validate publication request
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 -m unittest discover -s update/publishing/tests -v
-          python3 -m unittest discover -s update/publishing/tools/tests -v
-          python3 update/publishing/tools/release_entry.py --check
-
-      - name: Save original release before approved republication
-        if: hashFiles('dist/republish-029/backup/release.json') != ''
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: Pawchan-0.1.29-before-republication-${{ github.run_number }}
-          path: dist/republish-029/backup/
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 0
-
       - name: Set up Java 25
+        if: steps.publication.outputs.mode == 'build'
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -76,6 +66,7 @@ jobs:
           cache-jdk: false
 
       - name: Accept Android SDK licenses
+        if: steps.publication.outputs.mode == 'build'
         run: |
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           test -x "$sdkmanager"
@@ -87,6 +78,7 @@ jobs:
           exit "$result"
 
       - name: Install project SDK, NDK and CMake
+        if: steps.publication.outputs.mode == 'build'
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "platform-tools" \
@@ -96,6 +88,7 @@ jobs:
             "cmake;3.22.1"
 
       - name: Check, package and verify signed APK
+        if: steps.publication.outputs.mode == 'build'
         env:
           PAWCHAN_KEYSTORE_BASE64: ${{ secrets.PAWCHAN_KEYSTORE_BASE64 }}
           PAWCHAN_KEY_ALIAS: ${{ secrets.PAWCHAN_KEY_ALIAS }}
@@ -139,13 +132,6 @@ jobs:
             exit 1
           fi
           (cd dist && sha256sum --check "Pawchan-$version.apk.sha256")
-          if [ -f dist/republish-029/backup/release.json ]; then
-            original=$("$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs \
-              dist/republish-029/backup/Pawchan-0.1.29.apk |
-              sed -nE 's/^(Signer #[0-9]+|V[0-9]+([.][0-9]+)? Signer):? certificate SHA-256 digest: ([[:xdigit:]]{64})[[:space:]]*$/\3/p' |
-              tr '[:upper:]' '[:lower:]' | sort -u)
-            test -n "$original" && test "$original" = "$actual"
-          fi
           {
             echo "## Pawchan $version"
             echo "- LOCAL CHECK and release packaging passed."
@@ -154,13 +140,22 @@ jobs:
             echo "- Device testing remains manual."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload APK and checksum only
+      - name: Prepare flat source archive
+        if: steps.publication.outputs.mode == 'build'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 update/publishing/tools/release_entry.py --assets
+
+      - name: Upload verified release files
+        if: steps.publication.outputs.mode == 'build'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Pawchan-signed-apk-${{ github.run_number }}
+          name: Pawchan-release-files-${{ github.run_number }}
           path: |
             dist/*.apk
             dist/*.apk.sha256
+            dist/*-source.zip
+            dist/*-source.zip.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0

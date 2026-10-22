@@ -19,3 +19,7 @@ dist/
 .env.*
 key.properties
 keystore.properties
+
+# Python release tooling caches
+__pycache__/
+*.py[cod]
