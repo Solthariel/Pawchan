@@ -52,7 +52,7 @@ class ChangelogHistoryRepositoryTest {
 
     @Test fun interruptedDownloadKeepsTheLastGoodCopy() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository = ChangelogHistoryRepository(cache, bundled) { _, _ -> throw IOException("offline") }
             assertNull(repository.refresh())
             assertEquals(listOf(2, 1), repository.local().map { it.code })
@@ -61,7 +61,7 @@ class ChangelogHistoryRepositoryTest {
 
     @Test fun invalidNewBodyCannotPoisonTheSavedValidator() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository = ChangelogHistoryRepository(cache, bundled) { _, _ -> ChangelogDownload("not JSON", "bad") }
             assertNull(repository.refresh())
             assertEquals("tag2", cache.load()?.etag)
@@ -70,7 +70,7 @@ class ChangelogHistoryRepositoryTest {
 
     @Test fun oldResponseCannotRollHistoryBack() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository =
                 ChangelogHistoryRepository(cache, bundled) { _, _ ->
                     ChangelogDownload(historyBody(1), "old")
@@ -94,7 +94,7 @@ class ChangelogHistoryRepositoryTest {
 
     @Test fun incompleteNewHistoryCannotDiscardOlderDownloadedVersions() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository =
                 ChangelogHistoryRepository(cache, bundled) { _, _ ->
                     ChangelogDownload(historyBody(3), "partial")
@@ -106,7 +106,7 @@ class ChangelogHistoryRepositoryTest {
 
     @Test fun unchangedServerFileCannotHideTheNewlyInstalledApkVersion() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository =
                 ChangelogHistoryRepository(cache, { decodeRemoteChangelog(historyBody(3, 2, 1)) }) { _, _ ->
                     ChangelogDownload(null, "tag2")
@@ -116,7 +116,7 @@ class ChangelogHistoryRepositoryTest {
         }
 
     @Test fun cacheFromAnotherFeedIsNotReused() {
-        val cache = savedCache()
+        val cache = savedHistoryCache(folder.root, url)
         assertNotNull(cache.load())
         assertNull(ChangelogCache(File(folder.root, "history.json"), "https://another.org/history.json").load())
     }
@@ -124,13 +124,13 @@ class ChangelogHistoryRepositoryTest {
     @Test(expected = CancellationException::class)
     fun cancellationIsNotTreatedAsANetworkError() =
         runTest {
-            ChangelogHistoryRepository(savedCache(), bundled) { _, _ -> throw CancellationException() }.refresh()
+            ChangelogHistoryRepository(savedHistoryCache(folder.root, url), bundled) { _, _ -> throw CancellationException() }.refresh()
             Unit
         }
 
     @Test fun unchangedResponseCannotSatisfyANewerDiscoveredVersion() =
         runTest {
-            val cache = savedCache()
+            val cache = savedHistoryCache(folder.root, url)
             val repository =
                 ChangelogHistoryRepository(cache, bundled) { tag, minimum ->
                     assertNull(tag)
@@ -141,9 +141,12 @@ class ChangelogHistoryRepositoryTest {
             assertEquals("tag2", cache.load()?.etag)
             assertEquals(listOf(2, 1), repository.local().map { it.code })
         }
-
-    private fun savedCache(): ChangelogCache =
-        ChangelogCache(File(folder.root, "history.json"), url).apply {
-            save(ChangelogDownload(historyBody(2, 1), "tag2"))
-        }
 }
+
+private fun savedHistoryCache(
+    root: File,
+    url: String,
+): ChangelogCache =
+    ChangelogCache(File(root, "history.json"), url).apply {
+        save(ChangelogDownload(historyBody(2, 1), "tag2"))
+    }

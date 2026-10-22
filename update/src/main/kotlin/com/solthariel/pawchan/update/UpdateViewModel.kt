@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 internal class UpdateViewModel(
-    private val client: UpdateClient,
+    private val client: UpdateOperations,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
     val state: StateFlow<UpdateUiState> = mutableState.asStateFlow()
@@ -51,8 +51,10 @@ internal class UpdateViewModel(
     }
 
     fun download(release: UpdatePackage) {
+        val available = state.value as? UpdateUiState.Available ?: return
+        if (available.release !== release) return
+        mutableState.value = UpdateUiState.Downloading(release, 0)
         viewModelScope.launch {
-            mutableState.value = UpdateUiState.Downloading(release, 0)
             mutableState.value =
                 runCatching {
                     client.download(release) { progress ->
