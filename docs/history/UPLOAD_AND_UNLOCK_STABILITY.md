@@ -1,5 +1,9 @@
 # Upload budget, progress and stable unlock (0.1.25)
 
+> Исторический снимок конкретного патча/проверки, не инструкция для текущего выпуска.
+> Числа PASS/FAIL относятся только к указанной в отчёте базе и среде.
+> Старые команды применения/публикации не выполнять; см. [карту действующих документов](../README.md).
+
 Based on published 0.1.24 (`1982b6e`). This is a source overlay, not an APK.
 
 ## Contracts and ownership

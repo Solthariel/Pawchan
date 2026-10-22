@@ -1,96 +1,51 @@
-# Установка Pawchan
+# Установка и подпись
 
-Этот архив содержит исходники, без готового APK. Инструкции сборки в Android Studio
-на Windows — в [README](../README.md).
-Имена APK ниже относятся к результату самостоятельной упаковки.
+## Установка готового APK
 
-## Готовый APK
+Публичный файл называется `Pawchan-VERSION.apk`; точную версию смотрите у выбранного
+релиза. `0.1.0` в старом примере не является текущим номером.
+Поддерживаются Android 11+ (API 30) и ARM64; application ID — `com.solthariel.pawchan`.
 
-Публичный установочный файл называется `Pawchan-0.1.0.apk`. Это minified
-release-сборка с application ID `com.solthariel.pawchan`. Обновление
-через `-r` сохраняет локальные данные только при совпадении ключа подписи; при
-конфликте с собственной сборкой сначала удалите установленное приложение.
-
-Через Android Debug Bridge:
+Откройте APK на телефоне и разрешите установку из выбранного источника либо
+используйте ADB (пример для 0.1.29):
 
 ```text
-adb install Pawchan-0.1.0.apk
+adb install -r Pawchan-0.1.29.apk
 ```
 
-На самом устройстве APK можно открыть из файлового менеджера и один раз разрешить
-установку приложений из этого источника. Поддерживается Android 11 (API 30) и новее.
+Обновление сохраняет данные при совместимой версии и совпадении ключа подписи.
+При конфликте сертификата не удаляйте приложение вслепую: удаление может стереть
+его приватные данные. Сначала подготовьте резервную копию и определите, каким
+ключом подписана установленная сборка. Debug и публичный release обычно подписаны
+разными ключами.
 
-## Ключ release-подписи
+## Исходники
 
-Ключ не хранится в репозитории. Создайте его один раз вне каталога проекта:
+[README](../README.md) — открытие проекта в Android Studio;
+[DEVELOPMENT.md](DEVELOPMENT.md) — среда и проверки. Полный именной исходный ZIP
+содержит проект в корне. Автоматический GitHub Source code ZIP имеет свою папку.
+Исходный архив не содержит подписанного APK, локального SDK и keystore.
 
-```powershell
-New-Item -ItemType Directory -Force "$HOME\.pawchan"
-keytool -genkeypair -v -keystore "$HOME\.pawchan\release.jks" -alias pawchan `
-    -keyalg RSA -keysize 4096 -validity 10000
-```
+## Подпись самостоятельной сборки
 
-Перед упаковкой задайте переменные только в текущей PowerShell-сессии:
+Для обычного Run в Android Studio публичный signing key не нужен. Не создавайте
+новый ключ вместо существующего ключа публичных обновлений. Держите keystore и
+пароли вне репозитория/ZIP; для обновлений используйте прежний сертификат.
 
-```powershell
-$env:PAWCHAN_KEYSTORE = "$HOME\.pawchan\release.jks"
-$env:PAWCHAN_KEY_ALIAS = "pawchan"
-$env:PAWCHAN_STORE_PASSWORD = Read-Host "Store password"
-$env:PAWCHAN_KEY_PASSWORD = Read-Host "Key password"
-$env:PAWCHAN_UPDATE_MANIFEST_URL = "https://HOST/update/publishing/manifest/data-v1.json"
-```
+Локальный `scripts/package-release.ps1` / `.sh` требует:
 
-Не добавляйте keystore и пароли в проект, Git или ZIP батча. Для обновления уже
-установленного APK всегда используйте тот же ключ.
+| Переменная | Назначение |
+|---|---|
+| PAWCHAN_KEYSTORE | Путь к существующему keystore вне проекта |
+| PAWCHAN_KEY_ALIAS | Alias ключа |
+| PAWCHAN_STORE_PASSWORD | Пароль хранилища в текущем окружении |
+| PAWCHAN_KEY_PASSWORD | Пароль ключа в текущем окружении |
+| PAWCHAN_UPDATE_MANIFEST_URL | Абсолютный HTTPS URL ленты |
 
-После упаковки удалите пароли из текущей сессии:
+Скрипт выполняет LOCAL CHECK и подписанную упаковку в dist. Это самостоятельная
+упаковка, не команда публикации в GitHub. После работы удалите секреты из окружения;
+не сохраняйте их в скрипте, Git или истории команд.
 
-```powershell
-Remove-Item Env:PAWCHAN_STORE_PASSWORD
-Remove-Item Env:PAWCHAN_KEY_PASSWORD
-Remove-Item Env:PAWCHAN_UPDATE_MANIFEST_URL
-```
-
-## Самостоятельная сборка пакета
-
-PowerShell:
-
-```powershell
-.\scripts\package-release.ps1
-```
-
-Linux/macOS:
-
-```sh
-./scripts/package-release.sh
-```
-
-Сценарий сначала выполняет полный `local-check`, затем создаёт подписанный,
-minified release APK, обновляет `update/publishing/manifest/data-v1.json` и
-создаёт контрольную сумму APK в каталоге `dist`. Без четырёх переменных подписи
-и `PAWCHAN_UPDATE_MANIFEST_URL` упаковка завершается до сборки. Адрес должен
-быть абсолютным HTTPS URL и встраивается в публичный APK.
-
-## Адрес обновлений
-
-Для локальной сборки адрес может оставаться пустым. Публичная упаковка требует
-его через `PAWCHAN_UPDATE_MANIFEST_URL`. При необходимости адрес можно передать
-Gradle напрямую:
-
-```text
--Ppawchan.updateManifestUrl=https://raw.githubusercontent.com/USER/Pawchan/main/update/publishing/manifest/data-v1.json
-```
-
-Обычная упаковка подготавливает размер и SHA-256, но оставляет `source` и
-`changelog` равными `null`: несуществующие адреса не публикуются. После загрузки
-подписанного APK и русского changelog выполните инструмент в режиме публикации:
-
-```text
-python update/publishing/tools/update_manifest.py dist/Pawchan-0.1.0.apk --publish --source https://HOST/Pawchan-0.1.0.apk --changelog https://HOST/1.txt
-```
-
-Режим `--publish` требует сразу обе абсолютные HTTPS-ссылки.
-После публикации APK становится неизменяемым: повторная упаковка того же
-`versionCode` проходит только при совпадении SHA-256 и размера. Перенос того же
-файла на другой HTTPS-адрес разрешён, а изменённый APK требует нового
-`versionCode`.
+Официальный выпуск использует существующие GitHub Secrets и
+[единый процесс](RELEASE_PROCESS.md). Этот документ не предлагает вторую цепочку
+ручного изменения метаданных, тегов и release assets.

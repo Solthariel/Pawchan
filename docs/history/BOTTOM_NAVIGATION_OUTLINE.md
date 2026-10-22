@@ -1,5 +1,9 @@
 # Bottom navigation outline (0.1.24 implementation record)
 
+> Исторический снимок конкретного патча/проверки, не инструкция для текущего выпуска.
+> Числа PASS/FAIL относятся только к указанной в отчёте базе и среде.
+> Старые команды применения/публикации не выполнять; см. [карту действующих документов](../README.md).
+
 This is the historical 0.1.24 record. In 0.1.25 the plain-mode surface is
 rectangular and opaque beneath the divider; the bubble surface is unchanged.
 See [current upload/unlock and panel fixes](UPLOAD_AND_UNLOCK_STABILITY.md).

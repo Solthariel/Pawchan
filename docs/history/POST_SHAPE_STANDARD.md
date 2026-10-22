@@ -1,5 +1,9 @@
 # Post state geometry (0.1.24)
 
+> Исторический снимок конкретного патча/проверки, не инструкция для текущего выпуска.
+> Числа PASS/FAIL относятся только к указанной в отчёте базе и среде.
+> Старые команды применения/публикации не выполнять; см. [карту действующих документов](../README.md).
+
 ## Ownership and behavior
 
 `core/ui/PostContainerShape.kt` is the shared, immutable shape definition used by

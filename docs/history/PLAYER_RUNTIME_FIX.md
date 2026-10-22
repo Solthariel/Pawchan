@@ -1,5 +1,9 @@
 # Runtime corrections for the 0.1.25 player replacement candidate
 
+> Исторический снимок конкретного патча/проверки, не инструкция для текущего выпуска.
+> Числа PASS/FAIL относятся только к указанной в отчёте базе и среде.
+> Старые команды применения/публикации не выполнять; см. [карту действующих документов](../README.md).
+
 This is a follow-up to the supplied engine replacement, not a new release.
 It does not change version numbers, publish updates, replace FFmpeg binaries or
 include the earlier Windows-only test corrections.

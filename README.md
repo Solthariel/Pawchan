@@ -14,22 +14,12 @@ Gradle использует JDK 25 согласно `gradle/gradle-daemon-jvm.pr
 Для обычной сборки на Windows не нужны Bash, WSL, Ubuntu или Python.
 Не удаляйте `gradle/wrapper` и `video-ffmpeg/native-prebuilt`: они нужны для сборки.
 
-## Проверки
+## Разработка и проверки
 
-Windows:
-
-```powershell
-.\scripts\local-check.ps1
-```
-
-Linux/macOS:
-
-```sh
-./scripts/local-check.sh
-```
-
-Проверка на подключённом ARM64-устройстве: `scripts/device-smoke.ps1` или
-`scripts/device-smoke.sh`. Сборка не заменяет проверку интерфейса на телефоне.
+[Карта документации](docs/README.md) разделяет правила, действующие руководства
+и исторические отчёты. Команды LOCAL CHECK, device smoke и сфокусированной
+проверки находятся в [руководстве разработки](docs/DEVELOPMENT.md).
+Сборка не заменяет проверку интерфейса на телефоне.
 
 ## Версии и изменения
 
@@ -53,6 +43,7 @@ Linux/macOS:
 [Архитектура](docs/ARCHITECTURE.md) · [Проверки качества](docs/QUALITY.md) ·
 [Установка и подпись](docs/INSTALL.md)
 
-Исторические отчёты, логи и описания прошлых исправлений удалены.
+Исторические отчёты и описания прежних патчей отделены в [docs/history](docs/history/README.md).
+Их результаты не подтверждают проверку новых исходников; старые команды не выполняются.
 Папки `.gradle`, `.kotlin`, `.idea`, `build` и `local.properties` создаются локально
 инструментами разработки; в исходный ZIP они не включены.
