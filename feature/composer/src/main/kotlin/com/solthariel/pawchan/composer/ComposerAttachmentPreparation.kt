@@ -36,18 +36,23 @@ internal suspend fun prepareComposerAttachments(
                                 it.copy(spoiler = it.spoiler && rules.features.attachmentSpoilers)
                             }
                         }
-                    require(rules.accepts(prepared)) {
-                        "После обработки превышен лимит файлов или выбран недопустимый формат"
+                    if (rules.accepts(prepared)) {
+                        PostingOutcome.Success(prepared)
+                    } else {
+                        PostingOutcome.Failure(
+                            PostingFailure.Rejected(
+                                "После обработки превышен лимит файлов или выбран недопустимый формат",
+                            ),
+                        )
                     }
-                    PostingOutcome.Success(prepared)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
-                } catch (failure: IllegalArgumentException) {
-                    PostingOutcome.Failure(PostingFailure.Rejected(failure.message))
-                } catch (failure: IllegalStateException) {
-                    PostingOutcome.Failure(PostingFailure.Rejected(failure.message))
-                } catch (failure: IOException) {
-                    PostingOutcome.Failure(PostingFailure.Rejected(failure.message))
+                } catch (_: IllegalArgumentException) {
+                    PostingOutcome.Failure(PostingFailure.Rejected(ATTACHMENT_PROCESSING_ERROR))
+                } catch (_: IllegalStateException) {
+                    PostingOutcome.Failure(PostingFailure.Rejected(ATTACHMENT_PROCESSING_ERROR))
+                } catch (_: IOException) {
+                    PostingOutcome.Failure(PostingFailure.Rejected(ATTACHMENT_PROCESSING_ERROR))
                 }
             }
         }

@@ -33,6 +33,7 @@ internal fun AppLockHost(
     }
     CompositionLocalProvider(
         LocalAppLock provides model,
+        com.solthariel.pawchan.composer.LocalComposerPickerHost provides model.lifecycle.pickerHost,
         com.solthariel.pawchan.media.video.LocalVideoPipAllowed provides (state.ready && !state.locked),
         com.solthariel.pawchan.media.video.LocalVideoPrivacyAccess provides model.videoAccess,
     ) {

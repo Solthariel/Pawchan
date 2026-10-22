@@ -131,7 +131,9 @@ class UpdateTransportTest {
             transport.close()
             assertTrue(runCatching { transport.readText(url) }.exceptionOrNull() is IllegalStateException)
             assertTrue(client.dispatcher.executorService.isShutdown)
-            withContext(Dispatchers.IO) { assertTrue(client.dispatcher.executorService.awaitTermination(5, TimeUnit.SECONDS)) }
+            withContext(Dispatchers.IO) {
+                assertTrue(client.dispatcher.executorService.awaitTermination(5, TimeUnit.SECONDS))
+            }
         }
 
     private suspend fun withTransport(

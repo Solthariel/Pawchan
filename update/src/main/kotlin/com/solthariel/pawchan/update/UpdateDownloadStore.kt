@@ -27,7 +27,12 @@ internal class UpdateDownloadStore(
                 verify(partial, release)
                 currentCoroutineContext().ensureActive()
                 val target = File(directory, "Pawchan-update.apk")
-                Files.move(partial.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                Files.move(
+                    partial.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
                 target
             } finally {
                 partial.delete()

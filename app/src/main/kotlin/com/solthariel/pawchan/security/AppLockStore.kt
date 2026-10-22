@@ -17,6 +17,7 @@ import java.util.Base64
 internal class AppLockStore(
     context: Context,
     namespace: String = "app_lock",
+    private val nowMillis: () -> Long = SystemClock::elapsedRealtime,
 ) {
     private val preferences = context.getSharedPreferences(namespace, Context.MODE_PRIVATE)
     private val crypto = AppLockCrypto(namespace)
@@ -51,24 +52,39 @@ internal class AppLockStore(
 
     suspend fun verify(pin: String): PinVerification =
         withContext(Dispatchers.IO) {
-            val now = SystemClock.elapsedRealtime()
+            val now = nowMillis()
             val deadline = preferences.getLong("retry_at", 0L)
             // A reboot resets elapsedRealtime. Never accept an old deadline greater than the maximum backoff.
-            if (deadline > now && deadline - now <= RETRY_DELAY) return@withContext PinVerification.WAIT
+            if (PinAttemptPolicy.remaining(now, deadline) > 0) return@withContext PinVerification.WAIT
             val salt = decode(requireNotNull(preferences.getString("salt", null)))
             val expected = decode(requireNotNull(preferences.getString("verifier", null)))
             val valid = MessageDigest.isEqual(expected, crypto.verifier(pin, salt))
-            val failures = if (valid) 0 else preferences.getInt("failures", 0) + 1
+            val failures = PinAttemptPolicy.nextFailures(preferences.getInt("failures", 0), valid)
             commit {
-                putInt("failures", if (failures >= MAX_ATTEMPTS) 0 else failures)
-                putLong("retry_at", if (failures >= MAX_ATTEMPTS) now + RETRY_DELAY else 0L)
+                putInt("failures", failures)
+                val retryAt =
+                    if (PinAttemptPolicy.shouldDelay(failures)) nowMillis() + PinAttemptPolicy.DELAY_MILLIS else 0L
+                putLong("retry_at", retryAt)
             }
             if (valid) {
                 PinVerification.VALID
-            } else if (failures >= MAX_ATTEMPTS) {
+            } else if (PinAttemptPolicy.shouldDelay(failures)) {
                 PinVerification.WAIT
             } else {
                 PinVerification.INVALID
+            }
+        }
+
+    suspend fun retryRemainingMillis(): Long =
+        withContext(Dispatchers.IO) {
+            PinAttemptPolicy.remaining(nowMillis(), preferences.getLong("retry_at", 0L))
+        }
+
+    suspend fun resetAttempts() =
+        withContext(Dispatchers.IO) {
+            commit {
+                putInt("failures", 0)
+                putLong("retry_at", 0L)
             }
         }
 
@@ -111,8 +127,6 @@ internal data class LockConfiguration(
 internal enum class PinVerification { VALID, INVALID, WAIT }
 
 internal const val PIN_LENGTH = 4
-private const val MAX_ATTEMPTS = 5
-private const val RETRY_DELAY = 30_000L
 
 private fun encode(bytes: ByteArray): String = Base64.getEncoder().encodeToString(bytes)
 

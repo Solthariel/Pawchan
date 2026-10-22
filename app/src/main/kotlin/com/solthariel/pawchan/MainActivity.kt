@@ -33,16 +33,42 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        appLock.foreground()
+        appLock.lifecycle.foreground()
     }
 
     override fun onStop() {
-        if (!isChangingConfigurations) appLock.background()
+        if (!isChangingConfigurations) appLock.lifecycle.background()
         super.onStop()
+    }
+
+    private val screenOffReceiver =
+        object : android.content.BroadcastReceiver() {
+            override fun onReceive(
+                context: android.content.Context,
+                intent: Intent,
+            ) {
+                if (intent.action == Intent.ACTION_SCREEN_OFF) appLock.lifecycle.screenOff()
+            }
+        }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        appLock.lifecycle.finishForeground()
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(screenOffReceiver)
+        super.onDestroy()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        androidx.core.content.ContextCompat.registerReceiver(
+            this,
+            screenOffReceiver,
+            android.content.IntentFilter(Intent.ACTION_SCREEN_OFF),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         if (savedInstanceState == null) incomingLinks.accept(intent.action, intent.dataString)
         com.solthariel.pawchan.infrastructure
             .NotificationPermissionController(

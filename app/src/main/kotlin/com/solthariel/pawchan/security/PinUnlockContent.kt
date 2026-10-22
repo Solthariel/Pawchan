@@ -15,8 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -37,7 +35,8 @@ internal fun PinUnlockContent(
     onPin: (String) -> Unit,
     onFingerprint: () -> Unit,
 ) {
-    var digits by rememberPinUnlockDigits(state)
+    val input = rememberPinUnlockInput(state)
+    val digits = input.digits
     Box(Modifier.fillMaxSize().background(UNLOCK_BACKGROUND)) {
         Box(
             Modifier
@@ -58,12 +57,7 @@ internal fun PinUnlockContent(
                     digits = digits,
                     state = state,
                     biometricEnabled = state.configuration.biometric && fingerprintAvailable,
-                    onChange = { digits = it },
-                    onConfirm = {
-                        val pin = digits
-                        digits = ""
-                        onPin(pin)
-                    },
+                    onChange = { input.change(it, state.ready && !state.busy && state.retrySeconds == 0, onPin) },
                     onFingerprint = onFingerprint,
                 )
             }
@@ -94,6 +88,7 @@ private fun PinUnlockHeading(
             when {
                 !state.ready -> "Загрузка…"
                 state.busy -> "Проверка…"
+                state.retrySeconds > 0 -> "Повторите через ${state.retrySeconds} с"
                 else -> state.error.orEmpty()
             },
             Modifier.fillMaxWidth(),

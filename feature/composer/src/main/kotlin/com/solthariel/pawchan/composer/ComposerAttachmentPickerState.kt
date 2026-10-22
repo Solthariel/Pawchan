@@ -3,6 +3,7 @@ package com.solthariel.pawchan.composer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +29,8 @@ internal fun rememberComposerAttachmentPicker(
     onChange: (ComposerDraftState) -> Unit,
 ): ComposerAttachmentPickerState {
     val latest = rememberUpdatedState(draft)
+    val pickerHost = LocalComposerPickerHost.current
+    DisposableEffect(pickerHost) { onDispose { pickerHost.cancel() } }
     val defaults = LocalComposerPreferences.current.attachments
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -37,6 +40,7 @@ internal fun rememberComposerAttachmentPicker(
     val unavailable = stringResource(R.string.attachment_rules_unavailable)
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            pickerHost.returned()
             val mayImport = enabled && !draft.filesLoading && canAttachComposerMedia(draft, rules)
             if (uris.isNotEmpty() && rules != null && mayImport) {
                 error = null
@@ -62,9 +66,21 @@ internal fun rememberComposerAttachmentPicker(
     return ComposerAttachmentPickerState(
         onAttach = {
             when {
-                !enabled || draft.filesLoading -> error = busy
-                rules == null -> error = unavailable
-                canAttachComposerMedia(draft, rules) -> launcher.launch(ATTACHMENT_MIME_TYPES)
+                !enabled || draft.filesLoading -> {
+                    error = busy
+                }
+
+                rules == null -> {
+                    error = unavailable
+                }
+
+                canAttachComposerMedia(draft, rules) -> {
+                    launchAttachmentPicker(
+                        pickerHost,
+                        { launcher.launch(ATTACHMENT_MIME_TYPES) },
+                        { error = readFailed },
+                    )
+                }
             }
         },
         error = error,
@@ -72,3 +88,27 @@ internal fun rememberComposerAttachmentPicker(
 }
 
 private val ATTACHMENT_MIME_TYPES = arrayOf("image/*", "video/webm", "video/mp4")
+
+private fun launchAttachmentPicker(
+    host: ComposerPickerHost,
+    launch: () -> Unit,
+    failed: () -> Unit,
+) {
+    host.begin()
+    try {
+        launch()
+    } catch (_: android.content.ActivityNotFoundException) {
+        host.cancel()
+        failed()
+    } catch (_: IllegalStateException) {
+        host.cancel()
+        failed()
+    }
+}
+
+internal fun canAttachComposerMedia(
+    draft: ComposerDraftState,
+    rules: PostingRules?,
+): Boolean = draft.attachments.size < (rules?.maxFiles ?: DEFAULT_POST_FILES)
+
+private const val DEFAULT_POST_FILES = 4

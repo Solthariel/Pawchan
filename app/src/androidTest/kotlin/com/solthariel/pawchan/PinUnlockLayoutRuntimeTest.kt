@@ -64,7 +64,7 @@ class PinUnlockLayoutRuntimeTest {
         compose.onNodeWithText("Проверка…").fetchSemanticsNode()
     }
 
-    @Test fun fingerprintChangesToExplicitConfirmationAndReturnsAfterDelete() {
+    @Test fun fourDigitsSubmitWithoutConfirmationAndDeletingRestoresFingerprint() {
         var confirmed: String? = null
         var fingerprints = 0
         compose.setContent {
@@ -74,20 +74,19 @@ class PinUnlockLayoutRuntimeTest {
         compose.runOnIdle { assertEquals(1, fingerprints) }
         val original = compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithText("1").performClick()
-        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertDoesNotExist()
         compose.onNodeWithContentDescription("Удалить цифру").performClick()
         compose.onNodeWithContentDescription("Отпечаток пальца").assertIsEnabled()
         listOf("1", "2", "3", "4").forEach { compose.onNodeWithText(it).performClick() }
-        compose.runOnIdle { assertEquals(null, confirmed) }
-        assertEquals(original, compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot)
-        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals("1234", confirmed) }
+        assertEquals(original, compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot)
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertDoesNotExist()
     }
 
     @Test fun unavailableBiometricsNeverExposeFingerprintAction() {
         compose.setContent { MaterialTheme { PinUnlockContent(state.value, false, {}, {}) } }
         compose.onNodeWithContentDescription("Отпечаток пальца").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertDoesNotExist()
     }
 
     @Test fun largeFontAndCompactHeightKeepActionsReachable() {

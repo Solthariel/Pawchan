@@ -39,16 +39,24 @@ class AppLockStoreRuntimeTest {
             }
         }
 
-    @Test fun fiveWrongPinsThrottleEvenAfterReopeningTheStore() =
+    @Test fun sixthWrongPinAndEveryLaterFailureWaitEvenAfterReopeningTheStore() =
         runBlocking {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val store = AppLockStore(context, "app_lock_runtime_test")
+            var now = 100_000L
+            val store = AppLockStore(context, "app_lock_runtime_test") { now }
             store.clear()
             try {
                 store.setPin("1840")
-                repeat(4) { assertEquals(PinVerification.INVALID, store.verify("0000")) }
+                repeat(5) { assertEquals(PinVerification.INVALID, store.verify("0000")) }
                 assertEquals(PinVerification.WAIT, store.verify("0000"))
-                assertEquals(PinVerification.WAIT, AppLockStore(context, "app_lock_runtime_test").verify("1840"))
+                val reopened = AppLockStore(context, "app_lock_runtime_test") { now }
+                assertEquals(PinVerification.WAIT, reopened.verify("1840"))
+                assertEquals(10_000L, reopened.retryRemainingMillis())
+                now += 10_000L
+                assertEquals(PinVerification.WAIT, reopened.verify("0000"))
+                now += 10_000L
+                assertEquals(PinVerification.VALID, reopened.verify("1840"))
+                repeat(5) { assertEquals(PinVerification.INVALID, reopened.verify("0000")) }
             } finally {
                 store.clear()
             }

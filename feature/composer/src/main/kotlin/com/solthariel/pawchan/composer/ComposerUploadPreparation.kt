@@ -93,12 +93,12 @@ private fun prepareUploadCache(
             ComposerPreparedUpload(file.source, file.options, prepare(file))
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (failure: IllegalArgumentException) {
-            ComposerPreparedUpload(file.source, file.options, null, failure.message ?: "Не удалось обработать вложение")
-        } catch (failure: IllegalStateException) {
-            ComposerPreparedUpload(file.source, file.options, null, failure.message ?: "Не удалось обработать вложение")
-        } catch (failure: java.io.IOException) {
-            ComposerPreparedUpload(file.source, file.options, null, failure.message ?: "Не удалось обработать вложение")
+        } catch (_: IllegalArgumentException) {
+            ComposerPreparedUpload(file.source, file.options, null, ATTACHMENT_PROCESSING_ERROR)
+        } catch (_: IllegalStateException) {
+            ComposerPreparedUpload(file.source, file.options, null, ATTACHMENT_PROCESSING_ERROR)
+        } catch (_: java.io.IOException) {
+            ComposerPreparedUpload(file.source, file.options, null, ATTACHMENT_PROCESSING_ERROR)
         }
     return file.copy(prepared = cache)
 }

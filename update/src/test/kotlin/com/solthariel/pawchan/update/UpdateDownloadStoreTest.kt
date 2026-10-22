@@ -137,7 +137,9 @@ class UpdateDownloadStoreTest {
             val store = UpdateDownloadStore(directory) { _, _ -> }
             val result =
                 async {
-                    runCatching { store.download(release().apply { length = MAX_APK_BYTES + 1 }) { error("Must not transfer") } }
+                    runCatching {
+                        store.download(release().apply { length = MAX_APK_BYTES + 1 }) { error("Must not transfer") }
+                    }
                 }.await()
             assertTrue(result.exceptionOrNull() is IllegalStateException)
             assertTrue(directory.listFiles().isNullOrEmpty())

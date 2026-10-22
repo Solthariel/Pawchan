@@ -124,7 +124,9 @@ class ChangelogHistoryRepositoryTest {
     @Test(expected = CancellationException::class)
     fun cancellationIsNotTreatedAsANetworkError() =
         runTest {
-            ChangelogHistoryRepository(savedHistoryCache(folder.root, url), bundled) { _, _ -> throw CancellationException() }.refresh()
+            ChangelogHistoryRepository(savedHistoryCache(folder.root, url), bundled) { _, _ ->
+                throw CancellationException()
+            }.refresh()
             Unit
         }
 

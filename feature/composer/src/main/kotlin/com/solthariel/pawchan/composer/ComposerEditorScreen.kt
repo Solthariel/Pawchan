@@ -204,10 +204,3 @@ private fun ComposerScreenHeader(
         if (canAttachComposerMedia(state.draft, state.rules)) ComposerAttachButton(onAttach)
     }
 }
-
-internal fun canAttachComposerMedia(
-    draft: ComposerDraftState,
-    rules: PostingRules?,
-): Boolean = draft.attachments.size < (rules?.maxFiles ?: DEFAULT_POST_FILES)
-
-private const val DEFAULT_POST_FILES = 4

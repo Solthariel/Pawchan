@@ -43,7 +43,7 @@ private fun LockEditorDialog(
         Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
             val title =
                 when (editor.stage) {
-                    PinStage.CURRENT -> "Введите PIN-код"
+                    PinStage.CURRENT, PinStage.BIOMETRIC -> "Введите PIN-код"
                     PinStage.NEW -> "Новый PIN-код"
                     PinStage.CONFIRM -> "Повторите PIN-код"
                 }

@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.security
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,10 +26,9 @@ internal fun PinUnlockKeypad(
     state: AppLockState,
     biometricEnabled: Boolean,
     onChange: (String) -> Unit,
-    onConfirm: () -> Unit,
     onFingerprint: () -> Unit,
 ) {
-    val enabled = state.ready && !state.busy
+    val enabled = state.ready && !state.busy && state.retrySeconds == 0
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9")).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -46,32 +46,25 @@ internal fun PinUnlockKeypad(
             PinUnlockKey("0", enabled && digits.length < PIN_LENGTH, { onChange(digits + "0") }) {
                 Text("0", style = MaterialTheme.typography.headlineMedium)
             }
-            PinUnlockSubmit(digits, state, biometricEnabled, onConfirm, onFingerprint)
+            PinUnlockBiometric(digits, state, biometricEnabled, onFingerprint)
         }
     }
 }
 
 @Composable
-private fun PinUnlockSubmit(
+private fun PinUnlockBiometric(
     digits: String,
     state: AppLockState,
     biometricEnabled: Boolean,
-    onConfirm: () -> Unit,
     onFingerprint: () -> Unit,
 ) {
-    val action = pinUnlockAction(digits, biometricEnabled)
-    val fingerprint = action == PinUnlockAction.FINGERPRINT
-    PinUnlockKey(
-        if (fingerprint) "Отпечаток пальца" else "Подтвердить PIN-код",
-        pinUnlockActionEnabled(digits, action, state),
-        if (fingerprint) onFingerprint else onConfirm,
-        Modifier.testTag("pin-unlock-action"),
-    ) {
-        if (fingerprint) {
+    val modifier = Modifier.size(72.dp).testTag("pin-unlock-action")
+    if (digits.isEmpty() && biometricEnabled) {
+        PinUnlockKey("Отпечаток пальца", state.ready && !state.busy, onFingerprint, modifier) {
             FingerprintGlyph(Modifier.size(30.dp))
-        } else {
-            Text("OK", style = MaterialTheme.typography.titleLarge)
         }
+    } else {
+        Box(modifier)
     }
 }
 

@@ -26,32 +26,21 @@ internal class AppLockViewModel(
 
             override fun isAllowed(): Boolean = state.value.ready && !state.value.locked
         }
-    private val backgroundLock =
-        AppLockBackgroundTimer(viewModelScope) {
-            mutable.value = state.value.copy(locked = true, editor = null, error = null, biometricSetupReady = false)
-        }
     val fingerprintAvailable get() = store.fingerprintAvailable
-    private val timing =
-        com.solthariel.pawchan.domain.security
-            .AppLockTiming(SystemClock::elapsedRealtime)
+    val lifecycle =
+        AppLockLifecycle(viewModelScope, SystemClock::elapsedRealtime, { state.value }) {
+            mutable.value = state.value.copy(locked = true, editor = null, error = null)
+        }
+    private val retry =
+        PinRetryCountdown(viewModelScope, SystemClock::elapsedRealtime) {
+            mutable.value = state.value.copy(retrySeconds = it)
+        }
 
     init {
         operation {
             val config = store.read()
             mutable.value = AppLockState(true, config, config.enabled)
-        }
-    }
-
-    fun background() {
-        timing.background()
-        if (state.value.configuration.enabled) backgroundLock.start(state.value.configuration.delay.millis)
-    }
-
-    fun foreground() {
-        backgroundLock.cancel()
-        val shouldLock = timing.shouldLockOnForeground(state.value.configuration.delay)
-        if (state.value.configuration.enabled && shouldLock) {
-            mutable.value = state.value.copy(locked = true, editor = null, error = null, biometricSetupReady = false)
+            retry.start(store.retryRemainingMillis())
         }
     }
 
@@ -72,12 +61,13 @@ internal class AppLockViewModel(
 
     fun cancelEdit() {
         if (!state.value.busy) {
-            mutable.value = state.value.copy(editor = null, error = null, biometricSetupReady = false)
+            mutable.value = state.value.copy(editor = null, error = null)
         }
     }
 
     fun enterPin(pin: String) {
-        if (pin.length != PIN_LENGTH || pin.any { it !in '0'..'9' } || state.value.busy) return
+        if (state.value.busy || state.value.retrySeconds > 0 || state.value.biometricSetupReady) return
+        if (pin.length != PIN_LENGTH || pin.any { it !in '0'..'9' }) return
         operation {
             val editor = state.value.editor
             if (editor == null || editor.stage == PinStage.CURRENT) {
@@ -125,7 +115,8 @@ internal class AppLockViewModel(
             }
 
             PinVerification.WAIT -> {
-                mutable.value = state.value.copy(error = "Слишком много попыток. Подождите 30 секунд.")
+                retry.start(store.retryRemainingMillis())
+                mutable.value = state.value.copy(error = "Неверный PIN-код")
             }
 
             PinVerification.VALID -> {
@@ -150,7 +141,7 @@ internal class AppLockViewModel(
             }
 
             LockAction.BIOMETRIC_ENABLE -> {
-                mutable.value = state.value.copy(biometricSetupReady = true, error = null)
+                mutable.value = state.value.copy(editor = editor.copy(stage = PinStage.BIOMETRIC), error = null)
             }
 
             LockAction.BIOMETRIC_DISABLE -> {
@@ -179,6 +170,8 @@ internal class AppLockViewModel(
                 mutable.value = state.value.copy(error = "Введите PIN или используйте отпечаток")
             } else {
                 authenticated.doFinal(byteArrayOf(1))
+                store.resetAttempts()
+                retry.cancel()
                 if (setup) store.setBiometric(true)
                 mutable.value =
                     state.value.copy(
@@ -186,15 +179,15 @@ internal class AppLockViewModel(
                         locked = false,
                         editor = null,
                         error = null,
-                        biometricSetupReady = false,
                     )
             }
         }
     }
 
     private fun operation(block: suspend () -> Unit) {
+        if (state.value.busy) return
+        mutable.value = state.value.copy(busy = true)
         viewModelScope.launch {
-            mutable.value = state.value.copy(busy = true)
             try {
                 block()
             } catch (
@@ -215,6 +208,6 @@ internal class AppLockViewModel(
     }
 
     override fun onCleared() {
-        backgroundLock.lock()
+        lifecycle.close()
     }
 }

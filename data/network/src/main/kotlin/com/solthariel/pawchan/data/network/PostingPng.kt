@@ -16,10 +16,10 @@ internal fun editPng(
     var ended = false
     while (position + PNG_CHUNK_OVERHEAD <= content.size && !ended) {
         val length = ByteBuffer.wrap(content, position, PNG_LENGTH_BYTES).int
-        require(length >= 0 && length <= content.size - position - PNG_CHUNK_OVERHEAD)
+        require(length >= 0 && length <= content.size - position - PNG_CHUNK_OVERHEAD) { "Повреждена структура PNG" }
         val type = String(content, position + PNG_LENGTH_BYTES, PNG_TYPE_BYTES, Charsets.US_ASCII)
         if (type == "IEND") {
-            require(length == 0)
+            require(length == 0) { "Повреждён завершающий блок PNG" }
             nonce?.let { output.write(pngChunk("npAD", it)) }
             ended = true
         }
@@ -28,7 +28,9 @@ internal fun editPng(
         }
         position += length + PNG_CHUNK_OVERHEAD
     }
-    require(ended && position == content.size)
+    require(ended) { "В PNG отсутствует завершающий блок" }
+    // Decoders accept trailers after IEND; strip them with metadata, preserve them for hash-only edits.
+    if (!removeMetadata && position < content.size) output.write(content, position, content.size - position)
     return output.toByteArray()
 }
 
