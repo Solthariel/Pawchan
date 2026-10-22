@@ -44,7 +44,7 @@ internal fun BoardsDirectoryList(
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
-                    start = 12.dp,
+                    start = BOARD_LIST_START,
                     top = 0.dp,
                     end = FAST_SCROLL_CONTENT_INSET,
                     bottom = CATALOG_BOTTOM_BAR_HEIGHT + BOARDS_BOTTOM_CONTENT_GAP,
@@ -107,7 +107,7 @@ private fun BoardCategoryHeader(
                 .fillMaxSize()
                 .clip(RoundedCornerShape(14.dp))
                 .clickable(enabled = row.enabled) { onExpandedChange(row.categoryKey, !row.expanded) }
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(horizontal = BOARD_ROW_INSET, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(20.dp)) {

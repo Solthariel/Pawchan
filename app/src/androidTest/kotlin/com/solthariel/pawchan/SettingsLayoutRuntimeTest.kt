@@ -130,7 +130,7 @@ class SettingsLayoutRuntimeTest {
             MaterialTheme {
                 Column {
                     SettingsItemRow(SettingsItem.Action("Обычная строка", null, onClick = {}))
-                    ChangelogSettings()
+                    ChangelogSettings(rememberBundledTestChangelogHistory())
                 }
             }
         }

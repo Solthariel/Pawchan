@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +40,10 @@ internal fun BoardDirectoryRow(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (!row.position.first) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = BOARD_SEPARATOR_HEIGHT)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = BOARD_ROW_INSET),
+                    thickness = BOARD_SEPARATOR_HEIGHT,
+                )
             }
             BoardRowContent(row, actions)
         }
@@ -58,20 +62,21 @@ private fun BoardRowContent(
                 .alpha(if (row.unavailable) UNAVAILABLE_BOARD_ALPHA else 1f)
                 .clip(RoundedCornerShape(20.dp))
                 .clickable { actions.onBoardSelected(row.entry.address.board) }
-                .padding(start = 16.dp, top = 10.dp, bottom = 10.dp),
+                .padding(start = BOARD_ROW_INSET, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = row.codeLabel,
+            modifier = Modifier.width(BOARD_CODE_WIDTH),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = row.entry.title,
-            modifier = Modifier.weight(1f).padding(start = 16.dp),
+            modifier = Modifier.weight(1f).padding(start = BOARD_TITLE_GAP),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyLarge,

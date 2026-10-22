@@ -22,19 +22,22 @@ class ServiceDnsPreferencesTest {
 
         assertEquals(ServiceDns(DnsProvider.CUSTOM, "https://vocaroo.example/dns-query"), settings.vocaroo)
         assertEquals(ServiceDns(), settings.arhivach)
+        assertEquals(ServiceDns(), settings.github)
     }
 
     @Test
-    fun bothProfilesRoundTripIndependently() {
+    fun allProfilesRoundTripIndependently() {
         val profiles =
             ServiceDnsPreferences(
                 vocaroo = ServiceDns(DnsProvider.XBOX),
+                github = ServiceDns(DnsProvider.GEOHIDE),
                 arhivach = ServiceDns(DnsProvider.CUSTOM, "https://archive.example/dns-query"),
             )
         val settings = AppSettings(behavior = AppBehavior(dns = profiles))
         val stored = mutablePreferencesOf().apply { write(settings) }
 
         assertEquals(settings, stored.toAppSettings())
+        assertEquals("GEOHIDE", stored[stringPreferencesKey("app_github_dns")])
         assertEquals("XBOX", stored[stringPreferencesKey("app_vocaroo_dns")])
         assertEquals("CUSTOM", stored[stringPreferencesKey("app_arhivach_dns")])
     }
@@ -44,16 +47,18 @@ class ServiceDnsPreferencesTest {
         val stored =
             mutablePreferencesOf(
                 stringPreferencesKey("app_arhivach_dns") to "UNKNOWN",
+                stringPreferencesKey("app_github_dns") to "UNKNOWN",
                 stringPreferencesKey("app_vocaroo_dns") to "COMSS",
             )
         val profiles = stored.toAppSettings().behavior.dns
 
         assertEquals(DnsProvider.SYSTEM, profiles.arhivach.provider)
+        assertEquals(DnsProvider.SYSTEM, profiles.github.provider)
         assertEquals(DnsProvider.COMSS, profiles.vocaroo.provider)
     }
 
     @Test
-    fun backupSchemaIncludesBothIndependentProfiles() {
+    fun backupSchemaIncludesAllIndependentProfiles() {
         val original =
             mutablePreferencesOf().apply {
                 write(
@@ -63,6 +68,7 @@ class ServiceDnsPreferencesTest {
                                 dns =
                                     ServiceDnsPreferences(
                                         arhivach = ServiceDns(DnsProvider.CUSTOM, "https://archive.example/dns-query"),
+                                        github = ServiceDns(DnsProvider.CUSTOM, "https://github.example/dns-query"),
                                     ),
                             ),
                     ),
@@ -73,6 +79,8 @@ class ServiceDnsPreferencesTest {
         writePortableValues(restored, validatePortablePreferences(values))
 
         assertEquals("CUSTOM", values["app_arhivach_dns"])
+        assertEquals("CUSTOM", values["app_github_dns"])
+        assertEquals("https://github.example/dns-query", values["app_github_dns_url"])
         assertEquals("https://archive.example/dns-query", values["app_arhivach_dns_url"])
         assertEquals(original.toAppSettings(), restored.toAppSettings())
     }

@@ -30,7 +30,7 @@ class ChangelogHistoryRuntimeTest {
 
     @Test
     fun bundledHistoryShowsInstalledVersionAndCanScrollToFirstRelease() {
-        compose.setContent { MaterialTheme { ChangelogSettings() } }
+        compose.setContent { MaterialTheme { ChangelogSettings(rememberBundledTestChangelogHistory()) } }
         compose.onNodeWithText("Список изменений").performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
             compose.onAllNodesWithText(BuildConfig.VERSION_NAME).fetchSemanticsNodes().isNotEmpty()

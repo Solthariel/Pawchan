@@ -3,14 +3,21 @@ package com.solthariel.pawchan
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.security.AppLockState
 import com.solthariel.pawchan.security.LockConfiguration
@@ -53,8 +60,51 @@ class PinUnlockLayoutRuntimeTest {
         show()
         compose.onNodeWithText("Неверный PIN-код").assertDoesNotExist()
         compose.onNodeWithText("1").assertIsNotEnabled()
-        compose.onNodeWithText("Отпечаток пальца").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Отпечаток пальца").assertIsNotEnabled()
         compose.onNodeWithText("Проверка…").fetchSemanticsNode()
+    }
+
+    @Test fun fingerprintChangesToExplicitConfirmationAndReturnsAfterDelete() {
+        var confirmed: String? = null
+        var fingerprints = 0
+        compose.setContent {
+            MaterialTheme { PinUnlockContent(state.value, true, { confirmed = it }, { fingerprints++ }) }
+        }
+        compose.onNodeWithContentDescription("Отпечаток пальца").performClick()
+        compose.runOnIdle { assertEquals(1, fingerprints) }
+        val original = compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithText("1").performClick()
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Удалить цифру").performClick()
+        compose.onNodeWithContentDescription("Отпечаток пальца").assertIsEnabled()
+        listOf("1", "2", "3", "4").forEach { compose.onNodeWithText(it).performClick() }
+        compose.runOnIdle { assertEquals(null, confirmed) }
+        assertEquals(original, compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot)
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals("1234", confirmed) }
+    }
+
+    @Test fun unavailableBiometricsNeverExposeFingerprintAction() {
+        compose.setContent { MaterialTheme { PinUnlockContent(state.value, false, {}, {}) } }
+        compose.onNodeWithContentDescription("Отпечаток пальца").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Подтвердить PIN-код").assertIsNotEnabled()
+    }
+
+    @Test fun largeFontAndCompactHeightKeepActionsReachable() {
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                MaterialTheme {
+                    Box(Modifier.size(360.dp, 320.dp).testTag("unlock-area")) {
+                        PinUnlockContent(state.value, true, {}, {})
+                    }
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("Отпечаток пальца").performScrollTo().assertIsDisplayed()
+        val area = compose.onNodeWithTag("unlock-area").fetchSemanticsNode().boundsInRoot
+        val action = compose.onNodeWithTag("pin-unlock-action").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue(action.left >= area.left && action.right <= area.right)
     }
 
     private fun show() {
@@ -73,6 +123,6 @@ class PinUnlockLayoutRuntimeTest {
             compose.onNodeWithContentDescription("Введено цифр: 0 из 4"),
             compose.onNodeWithText("1"),
             compose.onNodeWithText("0"),
-            compose.onNodeWithText("Отпечаток пальца"),
+            compose.onNodeWithContentDescription("Отпечаток пальца"),
         ).map { it.fetchSemanticsNode().boundsInRoot }
 }

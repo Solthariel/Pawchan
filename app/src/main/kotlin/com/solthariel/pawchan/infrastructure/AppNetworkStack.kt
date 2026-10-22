@@ -32,6 +32,7 @@ internal class AppNetworkStack private constructor(
     val mediaLoaders: MediaLoaders,
     private val cacheDirectory: File,
     val mirror: com.solthariel.pawchan.data.network.MirrorRoutingInterceptor,
+    val github: GithubNetwork,
 ) : AutoCloseable {
     var clearCacheOnExit: Boolean = false
     val boardDetailsRepository: BoardDetailsRepository
@@ -80,6 +81,9 @@ internal class AppNetworkStack private constructor(
             settings: com.solthariel.pawchan.domain.settings.AppSettingsRepository,
             cacheMb: Int = StoragePreferences.DEFAULT_MB,
             mirrorHost: String = "2ch.su",
+            githubDns: com.solthariel.pawchan.domain.settings.ServiceDns =
+                com.solthariel.pawchan.domain.settings
+                    .ServiceDns(),
         ): AppNetworkStack {
             val cookies = AndroidCookieJar().apply { selectOrigin(mirrorHost) }
             val totalBytes =
@@ -112,6 +116,7 @@ internal class AppNetworkStack private constructor(
                 )
             return AppNetworkStack(
                 httpClient = httpClient,
+                github = GithubNetwork(httpClient, githubDns),
                 mirror = mirror,
                 cacheDirectory = context.cacheDir,
                 contentClient = contentClient,

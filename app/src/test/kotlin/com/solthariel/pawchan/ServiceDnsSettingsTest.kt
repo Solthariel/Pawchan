@@ -7,12 +7,36 @@ import com.solthariel.pawchan.domain.settings.ServiceDns
 import com.solthariel.pawchan.domain.settings.ServiceDnsPreferences
 import com.solthariel.pawchan.settings.SettingsItem
 import com.solthariel.pawchan.settings.arhivachDnsItems
+import com.solthariel.pawchan.settings.githubDnsItems
 import com.solthariel.pawchan.settings.vocarooDnsItems
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ServiceDnsSettingsTest {
+    @Test
+    fun githubChoicePreservesForumAndOtherServicePreferences() {
+        val before = AppSettings()
+        var settings = before
+        val choice = githubDnsItems(settings) { settings = it(settings) }.single() as SettingsItem.Choice
+        assertEquals("DNS для GitHub", choice.title)
+        choice.onSelect(DnsProvider.GEOHIDE.ordinal)
+
+        assertEquals(DnsProvider.GEOHIDE, settings.behavior.dns.github.provider)
+        assertEquals(before.behavior.client, settings.behavior.client)
+        assertEquals(before.behavior.dns.arhivach, settings.behavior.dns.arhivach)
+        assertEquals(before.behavior.dns.vocaroo, settings.behavior.dns.vocaroo)
+    }
+
+    @Test
+    fun customGithubProfileHasIndependentUrlEditor() {
+        val settings =
+            AppSettings(behavior = AppBehavior(dns = ServiceDnsPreferences(github = ServiceDns(DnsProvider.CUSTOM))))
+        assertEquals("Адрес DoH для GitHub", githubDnsItems(settings) {}.last().title)
+        assertEquals(1, arhivachDnsItems(settings) {}.size)
+        assertEquals(1, vocarooDnsItems(settings) {}.size)
+    }
+
     @Test
     fun arhivachChoiceChangesOnlyArhivachProfile() {
         var settings = AppSettings()

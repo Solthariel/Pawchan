@@ -22,9 +22,10 @@ public fun rememberUpdatePanel(
     configuration: UpdateConfiguration,
     checkRequest: UpdateCheckRequest? = null,
     onUpdateAvailable: (Long) -> Unit = {},
+    dns: okhttp3.Dns = okhttp3.Dns.SYSTEM,
 ): UpdatePanelController {
     val context = LocalContext.current
-    val factory = remember(context, configuration) { UpdateViewModel.factory(context, configuration) }
+    val factory = remember(context, configuration, dns) { UpdateViewModel.factory(context, configuration, dns) }
     val model: UpdateViewModel =
         viewModel(
             key = "update-${configuration.currentVersionCode}-${configuration.manifestUrl}",

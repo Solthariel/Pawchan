@@ -71,6 +71,7 @@ class AppSettingsStoreTest {
                             dns =
                                 ServiceDnsPreferences(
                                     vocaroo = ServiceDns(DnsProvider.XBOX),
+                                    github = ServiceDns(DnsProvider.CUSTOM, "https://github.example/dns-query"),
                                     arhivach = ServiceDns(DnsProvider.CUSTOM, "https://archive.example/dns-query"),
                                 ),
                             updateSavedCopies = false,

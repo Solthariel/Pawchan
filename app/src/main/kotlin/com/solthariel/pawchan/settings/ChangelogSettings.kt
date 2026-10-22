@@ -27,9 +27,10 @@ internal fun ChangelogSettings(history: ChangelogHistoryController = rememberCha
 internal fun rememberChangelogHistory(): ChangelogHistoryController {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    return remember(context, scope) {
+    val network = com.solthariel.pawchan.infrastructure.LocalGithubNetwork.current
+    return remember(context, scope, network) {
         val url = historyUrl(BuildConfig.UPDATE_MANIFEST_URL)
-        val http = ChangelogHttp()
+        val http = ChangelogHttp(network.historyClient)
         val repository =
             ChangelogHistoryRepository(
                 cache = url?.let { ChangelogCache(File(context.filesDir, "changelog/history-v1.json"), it) },

@@ -38,6 +38,14 @@ internal fun arhivachDnsItems(
         update { it.copy(behavior = it.behavior.copy(dns = it.behavior.dns.copy(arhivach = dns))) }
     }
 
+internal fun githubDnsItems(
+    app: AppSettings,
+    update: ((AppSettings) -> AppSettings) -> Unit,
+): List<SettingsItem> =
+    serviceDnsItems("GitHub", app.behavior.dns.github) { dns ->
+        update { it.copy(behavior = it.behavior.copy(dns = it.behavior.dns.copy(github = dns))) }
+    }
+
 private fun serviceDnsItems(
     service: String,
     dns: ServiceDns,

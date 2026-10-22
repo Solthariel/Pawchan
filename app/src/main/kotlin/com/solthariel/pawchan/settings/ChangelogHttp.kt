@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.coroutines.executeAsync
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 internal data class ChangelogDownload(
     val body: String?,
@@ -21,7 +20,7 @@ internal fun historyUrl(manifest: String): String? =
 
 /** Only text from the same HTTPS update host; no release assets or extra authentication. */
 internal class ChangelogHttp(
-    private val client: OkHttpClient = historyHttpClient,
+    private val client: OkHttpClient,
 ) {
     suspend fun download(
         url: String,
@@ -50,16 +49,8 @@ internal class ChangelogHttp(
     }
 }
 
-private const val HISTORY_TIMEOUT_SECONDS = 15L
 private const val HTTP_NOT_MODIFIED = 304
 private const val MAX_ETAG_LENGTH = 512
-
-private val historyHttpClient =
-    OkHttpClient
-        .Builder()
-        .callTimeout(HISTORY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .followSslRedirects(false)
-        .build()
 
 private fun historyRequestUrl(
     url: String,

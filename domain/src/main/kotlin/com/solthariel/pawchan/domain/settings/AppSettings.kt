@@ -68,4 +68,5 @@ interface AppSettingsRepository {
 data class ServiceDnsPreferences(
     val vocaroo: ServiceDns = ServiceDns(),
     val arhivach: ServiceDns = ServiceDns(),
+    val github: ServiceDns = ServiceDns(),
 )

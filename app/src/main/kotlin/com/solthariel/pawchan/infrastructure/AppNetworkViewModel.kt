@@ -19,11 +19,14 @@ internal class AppNetworkViewModel private constructor(
             settings: com.solthariel.pawchan.domain.settings.AppSettingsRepository,
             cacheMb: Int = com.solthariel.pawchan.domain.settings.StoragePreferences.DEFAULT_MB,
             mirrorHost: String = "2ch.su",
+            githubDns: com.solthariel.pawchan.domain.settings.ServiceDns =
+                com.solthariel.pawchan.domain.settings
+                    .ServiceDns(),
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     AppNetworkViewModel(
-                        AppNetworkStack.create(context.applicationContext, settings, cacheMb, mirrorHost),
+                        AppNetworkStack.create(context.applicationContext, settings, cacheMb, mirrorHost, githubDns),
                     )
                 }
             }

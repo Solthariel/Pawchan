@@ -46,7 +46,7 @@ internal fun isArhivachHost(host: String): Boolean {
 internal fun OkHttpClient.withArhivachDns(settings: ServiceDns): OkHttpClient =
     newBuilder().dns(ArhivachDnsSelector(this).apply { update(settings) }).build()
 
-private fun createDohResolver(
+internal fun createDohResolver(
     bootstrap: OkHttpClient,
     endpoint: DohEndpoint,
 ): Dns {

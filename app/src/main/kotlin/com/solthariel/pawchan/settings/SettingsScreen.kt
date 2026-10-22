@@ -52,7 +52,13 @@ internal fun SettingsScreen(
     val history = rememberChangelogHistory()
     val aboutEntry = remember(section) { if (section == SettingsSection.ABOUT) UpdateCheckRequest() else null }
     LaunchedEffect(aboutEntry) { aboutEntry?.let(history::enter) }
-    val updates = rememberUpdatePanel(releaseUpdateConfiguration(), aboutEntry, history::updateFound)
+    val updates =
+        rememberUpdatePanel(
+            releaseUpdateConfiguration(),
+            aboutEntry,
+            history::updateFound,
+            dns = com.solthariel.pawchan.infrastructure.LocalGithubNetwork.current.dns,
+        )
     val environment =
         rememberSettingsEnvironment { UpdatePanel(updates) }
             .copy(changelog = { ChangelogSettings(history) })

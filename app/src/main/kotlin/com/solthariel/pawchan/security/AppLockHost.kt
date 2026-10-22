@@ -1,32 +1,19 @@
 package com.solthariel.pawchan.security
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
@@ -75,36 +62,10 @@ private fun LockedScreenDialog(
                 decorFitsSystemWindows = false,
             ),
     ) {
-        MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+        PinUnlockWindow()
+        MaterialTheme(colorScheme = darkColorScheme()) {
             Surface(Modifier.fillMaxSize()) {
                 PinUnlockContent(state, model.fingerprintAvailable, model::enterPin) { model.biometric(activity) }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun PinUnlockContent(
-    state: AppLockState,
-    fingerprintAvailable: Boolean,
-    onPin: (String) -> Unit,
-    onFingerprint: () -> Unit,
-) {
-    Box(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            Modifier.verticalScroll(rememberScrollState()).testTag("pin-unlock-content"),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            PinPad("Введите PIN-код", state, onPin)
-            Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
-                if (state.configuration.biometric && fingerprintAvailable) {
-                    TextButton(enabled = state.ready && !state.busy, onClick = onFingerprint) {
-                        Text("Отпечаток пальца")
-                    }
-                }
             }
         }
     }

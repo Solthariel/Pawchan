@@ -17,7 +17,10 @@ import com.solthariel.pawchan.workspace.WorkspaceController
 internal fun PreviewTestWorkspace(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val network = remember(context) { AppNetworkStack.create(context, (context.applicationContext as PawchanApplication).preferences) }
+    val network =
+        remember(context) {
+            AppNetworkStack.create(context, (context.applicationContext as PawchanApplication).preferences)
+        }
     val storage = remember(context) { RoomStorage.create(context) }
     val directory =
         remember(context) {
@@ -31,7 +34,10 @@ internal fun PreviewTestWorkspace(content: @Composable () -> Unit) {
             directory.deleteRecursively()
         }
     }
-    CompositionLocalProvider(LocalWorkspace provides WorkspaceBinding(controller, network.mediaLoaders, {}, storage.library)) {
+    CompositionLocalProvider(
+        com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides network.github,
+        LocalWorkspace provides WorkspaceBinding(controller, network.mediaLoaders, {}, storage.library),
+    ) {
         content()
     }
 }

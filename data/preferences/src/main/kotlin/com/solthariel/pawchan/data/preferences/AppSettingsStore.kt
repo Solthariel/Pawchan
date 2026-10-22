@@ -77,6 +77,8 @@ internal fun MutablePreferences.write(settings: AppSettings) {
     this[COLLAPSE_LINES] = settings.collapseLines
     this[VIDEO_MUTED] = settings.behavior.videoStartMuted
     this[UPDATE_COPIES] = settings.behavior.updateSavedCopies
+    this[GITHUB_DNS] = settings.behavior.dns.github.provider.name
+    this[GITHUB_DNS_URL] = settings.behavior.dns.github.customUrl
     this[ARHIVACH_DNS] = settings.behavior.dns.arhivach.provider.name
     this[ARHIVACH_DNS_URL] = settings.behavior.dns.arhivach.customUrl
     this[VOCAROO_DNS] = settings.behavior.dns.vocaroo.provider.name
@@ -97,6 +99,8 @@ private val VOCAROO_DNS = stringPreferencesKey("app_vocaroo_dns")
 private val VOCAROO_DNS_URL = stringPreferencesKey("app_vocaroo_dns_url")
 private val SHOW_HIDDEN_THREADS = booleanPreferencesKey("app_show_hidden_threads")
 
+private val GITHUB_DNS = stringPreferencesKey("app_github_dns")
+private val GITHUB_DNS_URL = stringPreferencesKey("app_github_dns_url")
 private val ARHIVACH_DNS = stringPreferencesKey("app_arhivach_dns")
 private val ARHIVACH_DNS_URL = stringPreferencesKey("app_arhivach_dns_url")
 
@@ -104,6 +108,7 @@ private fun Preferences.readServiceDns(defaults: ServiceDnsPreferences): Service
     ServiceDnsPreferences(
         vocaroo = readDnsProfile(VOCAROO_DNS, VOCAROO_DNS_URL, defaults.vocaroo),
         arhivach = readDnsProfile(ARHIVACH_DNS, ARHIVACH_DNS_URL, defaults.arhivach),
+        github = readDnsProfile(GITHUB_DNS, GITHUB_DNS_URL, defaults.github),
     )
 
 private fun Preferences.readDnsProfile(

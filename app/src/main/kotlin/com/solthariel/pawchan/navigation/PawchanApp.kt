@@ -71,6 +71,7 @@ private fun LoadedPawchanApp(
                     repository,
                     initial.behavior.client.storage.cacheMb,
                     initial.behavior.client.mirror,
+                    initial.behavior.dns.github,
                 ),
         )
     val storage: AppStorageViewModel =
@@ -86,7 +87,7 @@ private fun LoadedPawchanApp(
     BindWorkspaceLifecycle(storage.workspace)
     BindArchiveNotices(archives)
 
-    AppSessionSurface(appSettings, storage, dependencies, archives, settings)
+    AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
 }
 
 @Composable
@@ -96,6 +97,7 @@ private fun AppSessionSurface(
     dependencies: AppDependencies,
     archives: ArchiveController,
     settings: SettingsViewModel,
+    github: com.solthariel.pawchan.infrastructure.GithubNetwork,
 ) {
     val theme by settings.theme.collectAsStateWithLifecycle()
     val home by settings.homeBoard.collectAsStateWithLifecycle()
@@ -109,6 +111,7 @@ private fun AppSessionSurface(
                 if (workspaceReady) {
                     home?.let { loaded ->
                         CompositionLocalProvider(
+                            com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
                             com.solthariel.pawchan.infrastructure.sites.LocalForumMirror provides
                                 appSettings.behavior.client.mirror,
                             LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
@@ -159,6 +162,7 @@ private fun BindAppSettingsEffects(
     androidx.compose.runtime.SideEffect { stack.selectMirror(appSettings.behavior.client.mirror) }
     val context = LocalContext.current
     androidx.compose.runtime.SideEffect {
+        stack.github.update(appSettings.behavior.dns.github)
         stack.clearCacheOnExit = appSettings.behavior.client.media.clearCacheOnExit
         loaders.mediaDownloadQueue.preferences = appSettings.behavior.client.downloads
     }

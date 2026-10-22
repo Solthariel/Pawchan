@@ -175,6 +175,7 @@ private fun networkGroups(
     listOf(
         SettingsGroup("Vocaroo", vocarooDnsItems(app, update)),
         SettingsGroup("Архивач", arhivachDnsItems(app, update)),
+        SettingsGroup("GitHub: обновления и список изменений", githubDnsItems(app, update)),
     )
 
 private fun aboutGroups(environment: SettingsEnvironment): List<SettingsGroup> =
