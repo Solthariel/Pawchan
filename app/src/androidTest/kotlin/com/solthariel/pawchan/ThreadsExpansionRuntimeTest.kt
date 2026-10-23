@@ -9,7 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
-import com.solthariel.pawchan.catalog.CatalogBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.defaultThreadAddress
 import com.solthariel.pawchan.threads.ThreadRowUi
 import com.solthariel.pawchan.threads.ThreadsLinkActions
@@ -36,7 +36,7 @@ class ThreadsExpansionRuntimeTest {
                 ThreadsScreen(
                     ThreadsScreenInput(emptyList(), rows, emptyList(), null, emptySet(), 0, false),
                     actions(),
-                    CatalogBottomActions({}, {}, {}, {}),
+                    AppBottomActions({}, {}, {}, {}),
                 )
             }
         }

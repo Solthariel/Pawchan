@@ -17,13 +17,16 @@ import com.solthariel.pawchan.core.ui.RefreshFailureNotice
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
-import com.solthariel.pawchan.ui.CATALOG_REFRESH_BOTTOM_INSET
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
+import com.solthariel.pawchan.ui.APP_REFRESH_BOTTOM_INSET
 
 @Composable
 internal fun CatalogScreen(
     presentation: CatalogPresentation,
     actions: CatalogActions,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     menu: CatalogMenuBindings,
 ) {
     val filtered = presentation.state as? CatalogUiState.Content
@@ -77,12 +80,12 @@ private fun CatalogWorkspace(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     actions: CatalogScreenActions,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     menu: CatalogMenuBindings,
 ) {
-    CatalogNavigationWorkspace(
+    AppNavigationWorkspace(
         actions = bottomActions,
-        selected = CatalogBottomDestination.CATALOG,
+        selected = AppBottomDestination.CATALOG,
     ) {
         CatalogThreadsPane(presentation, searchQuery, onSearchQueryChange, actions, menu)
     }
@@ -138,7 +141,7 @@ private fun CatalogBody(
     BidirectionalPullRefreshBox(
         refreshing = refreshing,
         onRefresh = actions.catalog.onRefresh,
-        options = PullRefreshOptions(allowBottom = true, bottomInset = CATALOG_REFRESH_BOTTOM_INSET),
+        options = PullRefreshOptions(allowBottom = true, bottomInset = APP_REFRESH_BOTTOM_INSET),
         modifier = modifier,
     ) {
         when (val state = presentation.state) {

@@ -12,9 +12,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Rule
@@ -76,11 +76,11 @@ class TabReselectionRuntimeTest {
                 controller = rememberNavController()
                 NavHost(controller, startDestination = AppRoute.catalog(defaultBoardAddress())) {
                     composable(AppRoute.CATALOG, arguments = boardArguments()) { Page("Каталог", null) }
-                    composable(AppRoute.LIBRARY) { Page("Корень тредов", CatalogBottomDestination.THREADS) }
-                    composable(AppRoute.HISTORY) { Page("История", CatalogBottomDestination.THREADS) }
-                    composable(AppRoute.COPIES) { Page("Сохранённые копии", CatalogBottomDestination.THREADS) }
-                    composable(AppRoute.SETTINGS) { Page("Корень настроек", CatalogBottomDestination.SETTINGS) }
-                    composable(AppRoute.BOARDS) { Page("Доски", CatalogBottomDestination.BOARDS) }
+                    composable(AppRoute.LIBRARY) { Page("Корень тредов", AppBottomDestination.THREADS) }
+                    composable(AppRoute.HISTORY) { Page("История", AppBottomDestination.THREADS) }
+                    composable(AppRoute.COPIES) { Page("Сохранённые копии", AppBottomDestination.THREADS) }
+                    composable(AppRoute.SETTINGS) { Page("Корень настроек", AppBottomDestination.SETTINGS) }
+                    composable(AppRoute.BOARDS) { Page("Доски", AppBottomDestination.BOARDS) }
                 }
             }
         }
@@ -90,11 +90,11 @@ class TabReselectionRuntimeTest {
     @Composable
     private fun Page(
         title: String,
-        selected: CatalogBottomDestination?,
+        selected: AppBottomDestination?,
     ) {
-        CatalogNavigationWorkspace(
+        AppNavigationWorkspace(
             actions =
-                CatalogBottomActions(
+                AppBottomActions(
                     onBoardsClick = { controller.navigateTab(AppRoute.BOARDS) },
                     onCatalogClick = { controller.navigateCatalogBase() },
                     onLibraryClick = { controller.navigateTab(AppRoute.LIBRARY) },

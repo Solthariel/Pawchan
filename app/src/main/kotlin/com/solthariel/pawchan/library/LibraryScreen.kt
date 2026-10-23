@@ -10,22 +10,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.rememberMediaSaveActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceMediaViewer
 
 /** «Сохранённые копии» — открываются из «Тредов». */
 @Composable
 internal fun SavedCopiesScreen(
     onBack: () -> Unit,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
-    CatalogNavigationWorkspace(
+    AppNavigationWorkspace(
         actions = bottomActions,
-        selected = CatalogBottomDestination.THREADS,
+        selected = AppBottomDestination.THREADS,
     ) {
         SavedCopiesBody(onBack)
     }

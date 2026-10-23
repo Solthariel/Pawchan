@@ -9,7 +9,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.catalog.CatalogRoute
 import com.solthariel.pawchan.domain.filter.ContentFilterStatisticsRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
@@ -17,6 +16,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.infrastructure.ChallengeScreen
 import com.solthariel.pawchan.library.SavedCopiesScreen
 import com.solthariel.pawchan.library.archiveDestination
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.settings.CacheNotice
 import com.solthariel.pawchan.settings.SettingsActions
 import com.solthariel.pawchan.settings.SettingsScreen
@@ -26,7 +26,7 @@ internal fun NavGraphBuilder.appDestinations(
     navController: NavController,
     dependencies: AppDependencies,
     settings: SettingsViewModel,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     currentBoard: () -> BoardAddress?,
     currentThread: () -> ThreadAddress?,
 ) {
@@ -45,7 +45,7 @@ internal fun NavGraphBuilder.appDestinations(
 private fun NavGraphBuilder.catalogDestination(
     navController: NavController,
     dependencies: AppDependencies,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     composable(
         route = AppRoute.CATALOG,
@@ -72,7 +72,7 @@ private fun NavGraphBuilder.catalogDestination(
 private fun NavGraphBuilder.boardsDestination(
     navController: NavController,
     dependencies: AppDependencies,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     currentBoard: () -> BoardAddress?,
 ) {
     composable(AppRoute.BOARDS) {
@@ -88,7 +88,7 @@ private fun NavGraphBuilder.boardsDestination(
 private fun NavGraphBuilder.settingsDestination(
     navController: NavController,
     settings: SettingsViewModel,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     filterStatistics: ContentFilterStatisticsRepository?,
 ) {
     composable(AppRoute.SETTINGS) {
@@ -116,7 +116,7 @@ private fun NavGraphBuilder.settingsDestination(
 private fun NavGraphBuilder.libraryDestination(
     navController: NavController,
     dependencies: AppDependencies,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     currentThread: () -> ThreadAddress?,
 ) {
     composable(AppRoute.LIBRARY) {
@@ -136,7 +136,7 @@ private fun NavGraphBuilder.libraryDestination(
 private fun NavGraphBuilder.historyDestinations(
     navController: NavController,
     dependencies: AppDependencies,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     composable(AppRoute.HISTORY) {
         HistoryRoute(
@@ -173,7 +173,7 @@ private fun NavGraphBuilder.newThreadDestination(
 private fun NavGraphBuilder.threadDestination(
     navController: NavController,
     dependencies: AppDependencies,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     composable(
         route = AppRoute.THREAD,

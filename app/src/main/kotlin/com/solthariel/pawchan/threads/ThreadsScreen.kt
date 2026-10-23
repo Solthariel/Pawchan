@@ -17,13 +17,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.catalog.CatalogIconButton
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 
 internal data class ThreadsScreenInput(
     val pages: List<ThreadRowUi>,
@@ -62,7 +62,7 @@ internal data class ThreadsLinkActions(
 internal fun ThreadsScreen(
     input: ThreadsScreenInput,
     actions: ThreadsScreenActions,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     limits: com.solthariel.pawchan.domain.settings.NavigationPreferences =
         com.solthariel.pawchan.domain.settings
             .NavigationPreferences(),
@@ -85,14 +85,14 @@ internal fun ThreadsScreen(
     val counterWidth = rememberThreadCounterWidth(listOf(input.favorites.orEmpty(), input.replies))
     val unread = input.replies.sumOf { it.counter.count }
     LaunchedEffect(unread > 0) { if (unread > 0) sections.expand(ThreadsSection.REPLIES) }
-    CatalogNavigationWorkspace(actions = bottomActions, selected = CatalogBottomDestination.THREADS) {
+    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS) {
         Column(Modifier.fillMaxSize()) {
             ThreadsToolbar(input.refreshing, query, { query = it }, actions, input.pages.isNotEmpty()) {
                 displaySettings = true
             }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = CATALOG_BOTTOM_BAR_HEIGHT + 8.dp),
+                contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp),
             ) {
                 val list =
                     ThreadsListContext(

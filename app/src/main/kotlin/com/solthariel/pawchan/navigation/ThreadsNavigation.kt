@@ -8,7 +8,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
@@ -16,6 +15,7 @@ import com.solthariel.pawchan.domain.workspace.withRepliesDismissed
 import com.solthariel.pawchan.library.HistoryScreen
 import com.solthariel.pawchan.library.LibraryUiState
 import com.solthariel.pawchan.library.LibraryViewModel
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.threads.ThreadCounter
 import com.solthariel.pawchan.threads.ThreadRowUi
 import com.solthariel.pawchan.threads.ThreadsLinkActions
@@ -46,7 +46,7 @@ internal data class ThreadsNavigation(
 internal fun ThreadsRoute(
     dependencies: AppDependencies,
     navigation: ThreadsNavigation,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     val library = rememberLibraryModel(dependencies)
     val libraryState by library.state.collectAsStateWithLifecycle()
@@ -156,7 +156,7 @@ internal fun HistoryRoute(
     dependencies: AppDependencies,
     onBack: () -> Unit,
     onThreadClick: (ThreadAddress) -> Unit,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     val library = rememberLibraryModel(dependencies)
     val state by library.state.collectAsStateWithLifecycle()

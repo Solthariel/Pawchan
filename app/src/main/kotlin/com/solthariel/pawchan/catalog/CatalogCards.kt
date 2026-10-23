@@ -47,6 +47,7 @@ import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.navigation.saveableKey
 
 @Composable
@@ -67,7 +68,7 @@ internal fun CatalogContent(
             modifier = Modifier.fillMaxSize().clipToBounds(),
             contentPadding =
                 PaddingValues(
-                    bottom = CATALOG_BOTTOM_BAR_HEIGHT + CATALOG_CARD_GAP,
+                    bottom = APP_BOTTOM_BAR_HEIGHT + CATALOG_CARD_GAP,
                 ),
             verticalArrangement = Arrangement.spacedBy(if (bubble) CATALOG_CARD_GAP else 0.dp),
         ) {

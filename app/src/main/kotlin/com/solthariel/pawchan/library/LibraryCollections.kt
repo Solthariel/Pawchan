@@ -17,12 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.archive.ArchiveCopyUi
-import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.navigation.saveableKey
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceBinding
@@ -71,7 +71,7 @@ internal fun SavedCopiesList(
                 PaddingValues(
                     start = 8.dp,
                     end = FAST_SCROLL_CONTENT_INSET,
-                    bottom = CATALOG_BOTTOM_BAR_HEIGHT + 8.dp,
+                    bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp,
                 ),
             verticalArrangement = Arrangement.spacedBy(if (bubble) 8.dp else 0.dp),
         ) {

@@ -26,13 +26,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -69,7 +69,7 @@ class CatalogNavigationWorkspaceRuntimeTest {
         val background = pixels[0, row]
         val left = (0 until pixels.width).first { pixels[it, row] != background }
         val right = (pixels.width - 1 downTo 0).first { pixels[it, row] != background }
-        val expectedInset = barHeightPx * EXPECTED_INSET_DP / CATALOG_BOTTOM_BAR_HEIGHT.value
+        val expectedInset = barHeightPx * EXPECTED_INSET_DP / APP_BOTTOM_BAR_HEIGHT.value
         assertEquals(expectedInset, left.toFloat(), 1f)
         assertEquals(expectedInset, (pixels.width - 1 - right).toFloat(), 1f)
     }
@@ -133,9 +133,9 @@ class CatalogNavigationWorkspaceRuntimeTest {
         compose.setContent {
             MaterialTheme {
                 CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = true)) {
-                    CatalogNavigationWorkspace(
-                        actions = CatalogBottomActions({}, {}, { libraryClicks++ }, {}),
-                        selected = CatalogBottomDestination.CATALOG,
+                    AppNavigationWorkspace(
+                        actions = AppBottomActions({}, {}, { libraryClicks++ }, {}),
+                        selected = AppBottomDestination.CATALOG,
                     ) {
                         WorkspaceContent()
                     }
@@ -148,14 +148,14 @@ class CatalogNavigationWorkspaceRuntimeTest {
     @Composable
     private fun WorkspaceContent() {
         state = rememberLazyListState()
-        barHeightPx = with(LocalDensity.current) { CATALOG_BOTTOM_BAR_HEIGHT.toPx() }
+        barHeightPx = with(LocalDensity.current) { APP_BOTTOM_BAR_HEIGHT.toPx() }
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxWidth().height(40.dp))
             Box(modifier = Modifier.weight(1f).fillMaxWidth().testTag(BODY_TAG)) {
                 LazyColumn(
                     state = state,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = CATALOG_BOTTOM_BAR_HEIGHT + 6.dp),
+                    contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     workspaceRows()

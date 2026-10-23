@@ -23,12 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomBar
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
 import com.solthariel.pawchan.domain.statistics.hasLegacyUsage
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomBar
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -37,7 +37,7 @@ import java.time.LocalDate
 internal fun UsageStatisticsScreen(
     stats: UsageStatisticsRepository?,
     onBack: () -> Unit,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     val repository =
         com.solthariel.pawchan.workspace.LocalWorkspace.current
@@ -86,7 +86,7 @@ internal fun UsageStatisticsScreen(
         } else {
             Text("Не удалось прочитать или сохранить статистику", Modifier.weight(1f).padding(20.dp))
         }
-        CatalogBottomBar(bottomActions, CatalogBottomDestination.SETTINGS)
+        AppBottomBar(bottomActions, AppBottomDestination.SETTINGS)
     }
     if (confirm) {
         UsageResetDialog({ confirm = false }) {

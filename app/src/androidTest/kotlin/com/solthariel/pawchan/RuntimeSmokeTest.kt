@@ -13,7 +13,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import coil3.ImageLoader
 import com.solthariel.pawchan.catalog.CatalogActions
-import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.catalog.CatalogContentActions
 import com.solthariel.pawchan.catalog.CatalogNavigationActions
 import com.solthariel.pawchan.catalog.CatalogPresentation
@@ -43,6 +42,7 @@ import com.solthariel.pawchan.library.HistoryScreen
 import com.solthariel.pawchan.library.LibraryEntryUi
 import com.solthariel.pawchan.library.LibraryUiState
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import com.solthariel.pawchan.navigation.threadAddress
 import com.solthariel.pawchan.ui.PawchanTheme
@@ -353,8 +353,8 @@ class RuntimeSmokeTest {
             navigation = CatalogNavigationActions({}, {}, {}, {}),
         )
 
-    private fun bottomActions(): CatalogBottomActions =
-        CatalogBottomActions(
+    private fun bottomActions(): AppBottomActions =
+        AppBottomActions(
             onBoardsClick = {},
             onCatalogClick = {},
             onLibraryClick = {},

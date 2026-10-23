@@ -20,6 +20,7 @@ import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.navigation.AppDependencies
 import com.solthariel.pawchan.navigation.CatalogContentRoute
 import com.solthariel.pawchan.navigation.CatalogNavigation
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 
 @Composable
 internal fun CatalogRoute(
@@ -27,7 +28,7 @@ internal fun CatalogRoute(
     dependencies: AppDependencies,
     navigation: CatalogNavigation,
     challengeRetryToken: Long,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     var visible by rememberSaveable(board) { mutableStateOf(false) }
     var handledCreatedThread by rememberSaveable(board) { mutableStateOf<Long?>(null) }

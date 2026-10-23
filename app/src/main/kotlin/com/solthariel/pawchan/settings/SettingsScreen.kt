@@ -29,12 +29,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.R
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomBar
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.domain.settings.ThemePreference
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomBar
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.update.UpdateCheckRequest
 import com.solthariel.pawchan.update.UpdateConfiguration
 import com.solthariel.pawchan.update.UpdatePanel
@@ -45,7 +45,7 @@ import com.solthariel.pawchan.update.rememberUpdatePanel
 internal fun SettingsScreen(
     state: SettingsUiState,
     actions: SettingsActions,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     var section by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -94,9 +94,9 @@ internal fun SettingsScreen(
             }
         }
         // Settings sections are local UI state, not NavController destinations.
-        CatalogBottomBar(
+        AppBottomBar(
             actions = bottomActions.copy(onSettingsClick = { openSection(null) }),
-            selected = CatalogBottomDestination.SETTINGS,
+            selected = AppBottomDestination.SETTINGS,
         )
     }
 }

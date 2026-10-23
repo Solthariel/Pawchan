@@ -26,13 +26,13 @@ import com.solthariel.pawchan.boards.BoardsListUi
 import com.solthariel.pawchan.boards.BoardsUiState
 import com.solthariel.pawchan.boards.boardListDimensions
 import com.solthariel.pawchan.boards.prepareBoardsList
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -133,9 +133,9 @@ class BoardsScrollbarRuntimeTest {
                 source.prepareBoardsList(query, "Избранное", dimensions, density)
             }
         state = rememberLazyListState()
-        CatalogNavigationWorkspace(
-            actions = CatalogBottomActions({}, {}, {}, {}),
-            selected = CatalogBottomDestination.BOARDS,
+        AppNavigationWorkspace(
+            actions = AppBottomActions({}, {}, {}, {}),
+            selected = AppBottomDestination.BOARDS,
         ) {
             BoardsDirectoryList(
                 content = content,

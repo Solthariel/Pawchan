@@ -9,8 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.composer.BindComposerDraftLifecycle
 import com.solthariel.pawchan.composer.ComposerFieldActions
 import com.solthariel.pawchan.composer.ReplyActions
@@ -20,6 +18,8 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.infrastructure.thread.AppThreadPostStorage
 import com.solthariel.pawchan.infrastructure.thread.AppThreadWorkspaceEvents
 import com.solthariel.pawchan.infrastructure.thread.rememberAppThreadScreenHost
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.thread.ThreadFeatureActions
 import com.solthariel.pawchan.thread.ThreadFeatureScreen
 import com.solthariel.pawchan.thread.ThreadPersistence
@@ -36,10 +36,10 @@ internal fun ThreadRoute(
     onBack: () -> Unit,
     onChallenge: (String) -> Unit,
     challengeRetryToken: Long,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
 ) {
     // Та же обёртка, что в каталоге: панель плавает поверх ленты, посты уходят под неё.
-    CatalogNavigationWorkspace(actions = bottomActions, selected = null, hideWithKeyboard = true) {
+    AppNavigationWorkspace(actions = bottomActions, selected = null, hideWithKeyboard = true) {
         ThreadRouteContent(address, dependencies, onBack, onChallenge, challengeRetryToken)
     }
 }

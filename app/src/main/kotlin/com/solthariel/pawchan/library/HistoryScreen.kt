@@ -24,12 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.navigation.saveableKey
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,7 +41,7 @@ internal fun HistoryScreen(
     state: LibraryUiState,
     onBack: () -> Unit,
     onThreadClick: (ThreadAddress) -> Unit,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     onHistoryCleared: () -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf<String?>(null) }
@@ -52,7 +52,7 @@ internal fun HistoryScreen(
                 ?.filter { it.lastVisitedAtEpochMillis > 0 && it.matches(query.orEmpty().trim()) }
                 ?.sortedByDescending { it.lastVisitedAtEpochMillis }
         }
-    CatalogNavigationWorkspace(actions = bottomActions, selected = CatalogBottomDestination.THREADS) {
+    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS) {
         Column(Modifier.fillMaxSize()) {
             LibraryToolbar(
                 LibraryToolbarState("История", entries?.size, query, false),
@@ -84,7 +84,7 @@ private fun HistoryList(
         LazyColumn(
             state = list,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = CATALOG_BOTTOM_BAR_HEIGHT + 8.dp),
+            contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp),
         ) {
             items(entries, key = { it.address.saveableKey }, contentType = { "history-row" }) { entry ->
                 Row(

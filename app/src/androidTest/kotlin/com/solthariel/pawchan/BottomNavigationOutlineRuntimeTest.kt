@@ -2,7 +2,10 @@ package com.solthariel.pawchan
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -21,11 +24,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomBar
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomBar
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -93,6 +97,8 @@ class BottomNavigationOutlineRuntimeTest {
         bubbles.value = bubble
         show(light)
         val colors = if (light) lightColorScheme() else darkColorScheme()
+        val bar = compose.onNodeWithTag("navigation-bar").fetchSemanticsNode().boundsInRoot
+        assertEquals(APP_BOTTOM_BAR_HEIGHT.value * density, bar.height, 1f)
         val pixels = compose.onNodeWithTag("navigation-outline").captureToImage().toPixelMap()
         val middleX = pixels.width / 2
         val sideX = (10 * density).roundToInt()
@@ -120,12 +126,16 @@ class BottomNavigationOutlineRuntimeTest {
                         Modifier
                             .width(360.dp)
                             .height(80.dp)
+                            // This fixture checks the panel drawing, not system-bar padding.
+                            // Consume the real device inset so it cannot shrink the 36dp surface.
+                            .consumeWindowInsets(WindowInsets.navigationBars)
                             .background(Color.Magenta)
                             .testTag("navigation-outline"),
                     ) {
-                        CatalogBottomBar(
-                            CatalogBottomActions({ clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }),
-                            CatalogBottomDestination.CATALOG,
+                        AppBottomBar(
+                            AppBottomActions({ clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }),
+                            AppBottomDestination.CATALOG,
+                            modifier = Modifier.testTag("navigation-bar"),
                         )
                     }
                 }

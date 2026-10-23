@@ -26,9 +26,6 @@ import com.solthariel.pawchan.boards.BoardsAddressTarget
 import com.solthariel.pawchan.boards.BoardsScreen
 import com.solthariel.pawchan.boards.BoardsViewModel
 import com.solthariel.pawchan.catalog.BoardsActions
-import com.solthariel.pawchan.catalog.CatalogBottomActions
-import com.solthariel.pawchan.catalog.CatalogBottomDestination
-import com.solthariel.pawchan.catalog.CatalogNavigationWorkspace
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
@@ -44,6 +41,9 @@ import com.solthariel.pawchan.infrastructure.sites.ForumWebLink
 import com.solthariel.pawchan.infrastructure.sites.LocalForumMirror
 import com.solthariel.pawchan.infrastructure.sites.appForumWebLinks
 import com.solthariel.pawchan.infrastructure.thread.AppPostLinkResolver
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.openThread
 import kotlinx.coroutines.flow.map
@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.map
 internal fun BoardsRoute(
     dependencies: AppDependencies,
     onBoardSelected: (BoardAddress) -> Unit,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     currentBoard: () -> BoardAddress? = { null },
 ) {
     val mirror = LocalForumMirror.current
@@ -90,9 +90,9 @@ internal fun BoardsRoute(
         }
     val viewModel: BoardsViewModel = viewModel(factory = factory)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    CatalogNavigationWorkspace(
+    AppNavigationWorkspace(
         actions = bottomActions,
-        selected = CatalogBottomDestination.BOARDS,
+        selected = AppBottomDestination.BOARDS,
     ) {
         BoardsScreen(
             state = state,

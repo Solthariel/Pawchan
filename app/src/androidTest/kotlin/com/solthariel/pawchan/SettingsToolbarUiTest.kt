@@ -15,7 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CatalogBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.settings.SettingsActions
 import com.solthariel.pawchan.settings.SettingsScreen
 import com.solthariel.pawchan.settings.SettingsUiState
@@ -93,7 +93,7 @@ class SettingsToolbarUiTest {
                         SettingsScreen(
                             SettingsUiState(),
                             SettingsActions({}, {}, {}),
-                            CatalogBottomActions({}, {}, {}, {}),
+                            AppBottomActions({}, {}, {}, {}),
                         )
                     }
                 }

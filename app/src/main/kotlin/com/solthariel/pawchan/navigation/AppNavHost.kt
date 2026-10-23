@@ -21,7 +21,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
@@ -33,6 +32,7 @@ import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
 import com.solthariel.pawchan.infrastructure.thread.AppPostLinkHost
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.settings.SettingsViewModel
 import com.solthariel.pawchan.thread.ThreadPostVoteHost
 import com.solthariel.pawchan.workspace.BindWorkspaceReplyChecks
@@ -151,8 +151,8 @@ private fun rememberLastThreadRoute(navController: androidx.navigation.NavHostCo
 private fun bottomActions(
     navController: androidx.navigation.NavHostController,
     motion: AppNavigationMotion,
-): CatalogBottomActions =
-    CatalogBottomActions(
+): AppBottomActions =
+    AppBottomActions(
         onBoardsClick = { motion.tab(navController) { navController.navigateTab(AppRoute.BOARDS) } },
         onCatalogClick = { motion.tab(navController) { navController.navigateCatalogBase() } },
         onLibraryClick = { motion.tab(navController) { navController.navigateTab(AppRoute.LIBRARY) } },

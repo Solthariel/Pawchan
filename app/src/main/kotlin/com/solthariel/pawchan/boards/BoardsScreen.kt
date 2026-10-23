@@ -27,7 +27,7 @@ import com.solthariel.pawchan.core.ui.LoadErrorPane
 import com.solthariel.pawchan.core.ui.PullRefreshOptions
 import com.solthariel.pawchan.domain.boards.resolveBoardSearch
 import com.solthariel.pawchan.domain.model.BoardId
-import com.solthariel.pawchan.ui.CATALOG_REFRESH_BOTTOM_INSET
+import com.solthariel.pawchan.ui.APP_REFRESH_BOTTOM_INSET
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -133,7 +133,7 @@ private fun ColumnScope.BoardsRefreshContent(
     BidirectionalPullRefreshBox(
         refreshing = refreshing,
         onRefresh = actions.onRetry,
-        options = PullRefreshOptions(allowBottom = true, bottomInset = CATALOG_REFRESH_BOTTOM_INSET),
+        options = PullRefreshOptions(allowBottom = true, bottomInset = APP_REFRESH_BOTTOM_INSET),
         modifier = Modifier.weight(1f),
     ) {
         when (state) {

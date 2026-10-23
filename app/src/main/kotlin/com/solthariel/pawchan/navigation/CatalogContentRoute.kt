@@ -11,7 +11,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.solthariel.pawchan.catalog.BindCatalogAgeUpdates
 import com.solthariel.pawchan.catalog.CatalogActions
-import com.solthariel.pawchan.catalog.CatalogBottomActions
 import com.solthariel.pawchan.catalog.CatalogContentActions
 import com.solthariel.pawchan.catalog.CatalogNavigationActions
 import com.solthariel.pawchan.catalog.CatalogPresentation
@@ -30,6 +29,7 @@ import com.solthariel.pawchan.media.MediaMenuRequest
 import com.solthariel.pawchan.media.MediaSaveActions
 import com.solthariel.pawchan.media.postMediaSelection
 import com.solthariel.pawchan.media.rememberMediaSaveActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import kotlinx.coroutines.flow.map
 
@@ -39,7 +39,7 @@ internal fun CatalogContentRoute(
     dependencies: AppDependencies,
     navigation: CatalogNavigation,
     challengeRetryToken: Long,
-    bottomActions: CatalogBottomActions,
+    bottomActions: AppBottomActions,
     onMediaVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     val boardLookup = rememberCatalogBoardLookup(board, dependencies, navigation.onBoardSelected)

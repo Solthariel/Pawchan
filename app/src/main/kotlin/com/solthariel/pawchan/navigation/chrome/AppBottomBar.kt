@@ -1,4 +1,4 @@
-package com.solthariel.pawchan.catalog
+package com.solthariel.pawchan.navigation.chrome
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,19 +34,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.settings.labelResource
-import com.solthariel.pawchan.threads.unreadReplies
-import com.solthariel.pawchan.workspace.LocalWorkspace
 
 @Composable
-internal fun CatalogBottomBar(
-    actions: CatalogBottomActions,
-    selected: CatalogBottomDestination?,
+internal fun AppBottomBar(
+    actions: AppBottomActions,
+    selected: AppBottomDestination?,
     modifier: Modifier = Modifier,
     edgeScrollbar: Boolean = false,
 ) {
@@ -58,10 +54,10 @@ internal fun CatalogBottomBar(
                     .align(Alignment.BottomCenter)
                     .padding(end = if (edgeScrollbar) FAST_SCROLL_BAR_WIDTH else 0.dp)
                     .fillMaxWidth()
-                    .height(CATALOG_BOTTOM_BAR_HEIGHT / 2)
+                    .height(APP_BOTTOM_BAR_HEIGHT / 2)
                     .background(MaterialTheme.colorScheme.background),
         )
-        CatalogBottomSurface(
+        AppBottomSurface(
             selected = selected,
             actions = actions,
         )
@@ -69,9 +65,9 @@ internal fun CatalogBottomBar(
 }
 
 @Composable
-private fun CatalogBottomSurface(
-    selected: CatalogBottomDestination?,
-    actions: CatalogBottomActions,
+private fun AppBottomSurface(
+    selected: AppBottomDestination?,
+    actions: AppBottomActions,
 ) {
     val bubble = LocalPostDisplayPreferences.current.bubblePosts
     Box(
@@ -79,7 +75,7 @@ private fun CatalogBottomSurface(
             Modifier
                 .padding(horizontal = FAST_SCROLL_CONTENT_INSET)
                 .fillMaxWidth()
-                .height(CATALOG_BOTTOM_BAR_HEIGHT),
+                .height(APP_BOTTOM_BAR_HEIGHT),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -87,31 +83,31 @@ private fun CatalogBottomSurface(
             color = MaterialTheme.colorScheme.surface,
             border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
         ) {
-            val unread = rememberUnreadRepliesBadge()
+            val unread = rememberAppUnreadRepliesBadge()
             Row(modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp)) {
-                CatalogBottomItem(
+                AppBottomItem(
                     R.string.catalog,
                     R.drawable.ic_nav_catalog,
-                    selected == CatalogBottomDestination.CATALOG,
+                    selected == AppBottomDestination.CATALOG,
                     actions.onCatalogClick,
                 )
-                CatalogBottomItem(
+                AppBottomItem(
                     R.string.threads_hub,
                     R.drawable.ic_nav_threads,
-                    selected == CatalogBottomDestination.THREADS,
+                    selected == AppBottomDestination.THREADS,
                     actions.onLibraryClick,
                     unread,
                 )
-                CatalogBottomItem(
+                AppBottomItem(
                     R.string.boards,
                     R.drawable.ic_nav_boards,
-                    selected == CatalogBottomDestination.BOARDS,
+                    selected == AppBottomDestination.BOARDS,
                     actions.onBoardsClick,
                 )
-                CatalogBottomItem(
+                AppBottomItem(
                     R.string.settings_short,
                     R.drawable.ic_nav_settings,
-                    selected == CatalogBottomDestination.SETTINGS,
+                    selected == AppBottomDestination.SETTINGS,
                     actions.onSettingsClick,
                 )
             }
@@ -125,27 +121,15 @@ private fun CatalogBottomSurface(
     }
 }
 
-/** Бейдж «Тредов» — только непрочитанные ответы вам. */
 @Composable
-private fun rememberUnreadRepliesBadge(): Int {
-    val state =
-        LocalWorkspace.current
-            ?.controller
-            ?.state
-            ?.collectAsStateWithLifecycle()
-            ?.value ?: return 0
-    return remember(state.posts, state.replies, state.marks.dismissedReplies) { unreadReplies(state) }
-}
-
-@Composable
-private fun RowScope.CatalogBottomItem(
+private fun RowScope.AppBottomItem(
     labelResource: Int,
     iconResource: Int,
     selected: Boolean,
     onClick: () -> Unit,
     badge: Int = 0,
 ) {
-    val colors = catalogBottomColors(selected)
+    val colors = appBottomColors(selected)
     val label = stringResource(labelResource)
     Box(
         modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -168,38 +152,38 @@ private fun RowScope.CatalogBottomItem(
                 tint = colors.content,
                 modifier = Modifier.size(24.dp),
             )
-            if (badge > 0) CatalogBottomBadge(badge)
+            if (badge > 0) AppBottomBadge(badge)
         }
     }
 }
 
 @Composable
-private fun catalogBottomColors(selected: Boolean): CatalogBottomColors =
+private fun appBottomColors(selected: Boolean): AppBottomColors =
     if (selected) {
-        CatalogBottomColors(
+        AppBottomColors(
             content = MaterialTheme.colorScheme.onSecondaryContainer,
             container = MaterialTheme.colorScheme.secondaryContainer,
         )
     } else {
-        CatalogBottomColors(
+        AppBottomColors(
             content = MaterialTheme.colorScheme.onSurfaceVariant,
             container = Color.Transparent,
         )
     }
 
-private data class CatalogBottomColors(
+private data class AppBottomColors(
     val content: Color,
     val container: Color,
 )
 
-internal data class CatalogBottomActions(
+internal data class AppBottomActions(
     val onBoardsClick: () -> Unit,
     val onCatalogClick: () -> Unit,
     val onLibraryClick: () -> Unit,
     val onSettingsClick: () -> Unit,
 )
 
-internal enum class CatalogBottomDestination {
+internal enum class AppBottomDestination {
     BOARDS,
     CATALOG,
     THREADS,
@@ -207,7 +191,7 @@ internal enum class CatalogBottomDestination {
 }
 
 @Composable
-private fun BoxScope.CatalogBottomBadge(count: Int) {
+private fun BoxScope.AppBottomBadge(count: Int) {
     Box(
         Modifier
             .align(Alignment.Center)
@@ -230,4 +214,4 @@ private fun BoxScope.CatalogBottomBadge(count: Int) {
 
 private const val BADGE_LIMIT = 99
 
-internal val CATALOG_BOTTOM_BAR_HEIGHT = 36.dp
+internal val APP_BOTTOM_BAR_HEIGHT = 36.dp

@@ -25,10 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
-import com.solthariel.pawchan.catalog.CATALOG_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
+import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 
 @Composable
 internal fun BoardsDirectoryList(
@@ -47,7 +47,7 @@ internal fun BoardsDirectoryList(
                     start = BOARD_LIST_START,
                     top = 0.dp,
                     end = FAST_SCROLL_CONTENT_INSET,
-                    bottom = CATALOG_BOTTOM_BAR_HEIGHT + BOARDS_BOTTOM_CONTENT_GAP,
+                    bottom = APP_BOTTOM_BAR_HEIGHT + BOARDS_BOTTOM_CONTENT_GAP,
                 ),
         ) {
             items(content.rows, key = { it.key }, contentType = { it.contentType }) { row ->

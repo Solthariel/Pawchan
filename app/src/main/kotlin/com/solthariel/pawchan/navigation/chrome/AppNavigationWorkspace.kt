@@ -1,4 +1,4 @@
-package com.solthariel.pawchan.catalog
+package com.solthariel.pawchan.navigation.chrome
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,9 +22,9 @@ import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun CatalogNavigationWorkspace(
-    actions: CatalogBottomActions,
-    selected: CatalogBottomDestination?,
+internal fun AppNavigationWorkspace(
+    actions: AppBottomActions,
+    selected: AppBottomDestination?,
     modifier: Modifier = Modifier,
     hideWithKeyboard: Boolean = false,
     content: @Composable () -> Unit,
@@ -37,11 +37,11 @@ internal fun CatalogNavigationWorkspace(
                 .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
     ) {
-        CompositionLocalProvider(LocalBottomOverlayInset provides if (barVisible) CATALOG_BOTTOM_BAR_HEIGHT else 0.dp) {
+        CompositionLocalProvider(LocalBottomOverlayInset provides if (barVisible) APP_BOTTOM_BAR_HEIGHT else 0.dp) {
             content()
         }
         if (barVisible) {
-            CatalogBottomBar(
+            AppBottomBar(
                 actions = actions,
                 selected = selected,
                 modifier = Modifier.align(Alignment.BottomCenter),
