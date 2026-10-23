@@ -14,6 +14,7 @@ class EntryTest(PublicationFixture):
         with patch.object(entry.feed, 'publish') as publish:
             entry.perform(argparse.Namespace(check=False, assets=False), {'phase': 'preflight'})
             publish.assert_called_once()
+        self.assertFalse(any(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls))
         self.assertFalse(any(c[:3] in (('gh', 'release', 'create'), ('gh', 'release', 'upload')) for c in self.calls))
 
     def test_complete_publication_reports_noop_and_does_not_push_feed(self):

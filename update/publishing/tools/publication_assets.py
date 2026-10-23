@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import urllib.error
 import urllib.request
+import uuid
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -19,9 +20,13 @@ def run(*args, cwd=None):
 
 
 def api(path):
-    request = urllib.request.Request(f'https://api.github.com/repos/{REPO}/{path}', headers={
+    # A fresh read is required after creating tags/drafts; do not reuse a cached 404/list.
+    separator = '&' if '?' in path else '?'
+    url = f'https://api.github.com/repos/{REPO}/{path}{separator}pawchan_read={uuid.uuid4().hex}'
+    request = urllib.request.Request(url, headers={
         'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
-        'Accept': 'application/vnd.github+json', 'User-Agent': 'Pawchan-publication'})
+        'Accept': 'application/vnd.github+json', 'User-Agent': 'Pawchan-publication',
+        'Cache-Control': 'no-cache, no-store', 'X-GitHub-Api-Version': '2022-11-28'})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.load(response)

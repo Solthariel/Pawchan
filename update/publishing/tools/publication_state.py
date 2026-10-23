@@ -42,9 +42,11 @@ def same_source(root, commit, head=None):
         raise ValueError('Application/release source differs from the tag; prepare a new version')
 
 
-def inspect(root):
+def inspect(root, release_id=None):
     context = read_context(root)
-    release = assets.find_release(context['tag'])
+    release = assets.find_release(context['tag']) if release_id is None else assets.api('releases/' + str(release_id))
+    if release is not None and release_id is not None and release.get('id') != release_id:
+        raise ValueError('Created release ID changed; no upload or promotion')
     reference = assets.api('git/ref/tags/' + context['tag'])
     context['source_commit'] = reference['object']['sha'] if reference else os.environ['GITHUB_SHA']
     if not release:

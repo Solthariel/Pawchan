@@ -7,11 +7,12 @@ from publication_fixture import PublicationFixture, assets, state
 class TagTest(PublicationFixture):
     def test_tag_is_persisted_at_current_commit_before_draft(self):
         self.publish()
-        create = next(i for i, c in enumerate(self.calls) if c[:3] == ('gh', 'release', 'create'))
+        create = next(i for i, c in enumerate(self.calls) if c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases'))
         tag = next(i for i, c in enumerate(self.calls) if c[:4] == ('gh', 'api', '--method', 'POST'))
         self.assertLess(tag, create)
         self.assertEqual(self.sha, self.refs[self.tag]['object']['sha'])
-        self.assertIn('--verify-tag', self.calls[create])
+        self.assertIn('tag_name=' + self.tag, self.calls[create])
+        self.assertIn('target_commitish=' + self.sha, self.calls[create])
 
     def test_persisted_tag_can_resume_after_request_revision_commit(self):
         old = 'b' * 40

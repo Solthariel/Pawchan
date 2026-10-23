@@ -106,13 +106,13 @@ class PublicationFixture(unittest.TestCase):
             return ('Solthariel <339961350+Solthariel@users.noreply.github.com>\n'
                     'Solthariel <339961350+Solthariel@users.noreply.github.com>')
         if args[:3] == ('gh', 'auth', 'setup-git'): return ''
-        if args[:4] == ('gh', 'api', '--method', 'POST'):
+        if args[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/git/refs'):
             self.refs[self.tag] = {'object': {'type': 'commit', 'sha': self.sha}}
             return ''
-        if args[:3] == ('gh', 'release', 'create'):
+        if args[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases'):
             self.draft()
-            self.releases[self.tag]['target_commitish'] = args[args.index('--target') + 1]
-            return ''
+            self.releases[self.tag]['target_commitish'] = next(a.split('=', 1)[1] for a in args if a.startswith('target_commitish='))
+            return json.dumps(self.releases[self.tag])
         if args[:3] == ('gh', 'release', 'download'):
             return self.download(args)
         if args[:3] == ('gh', 'release', 'upload'):

@@ -17,13 +17,13 @@ class DraftLookupTest(PublicationFixture):
 
     def test_new_draft_hidden_by_tag_lookup_is_uploaded_and_promoted(self):
         self.assertFalse(self.publish()['draft'])
-        self.assertEqual(1, sum(c[:3] == ('gh', 'release', 'create') for c in self.calls))
+        self.assertEqual(1, sum(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls))
 
     def test_existing_hidden_draft_is_resumed_without_duplicate_creation(self):
         self.draft()
         self.refs[self.tag] = {'object': {'type': 'commit', 'sha': self.sha}}
         self.assertFalse(self.publish()['draft'])
-        self.assertFalse(any(c[:3] == ('gh', 'release', 'create') for c in self.calls))
+        self.assertFalse(any(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls))
 
     def test_lookup_checks_later_pages(self):
         self.draft()
@@ -59,20 +59,46 @@ class DraftLookupTest(PublicationFixture):
         with patch.object(assets, 'api', side_effect=lambda path: None if path.startswith('releases?') else real_api(path)):
             with self.assertRaisesRegex(ValueError, 'release list'):
                 self.publish()
-        self.assertFalse(any(c[:3] == ('gh', 'release', 'create') for c in self.calls))
+        self.assertFalse(any(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls))
 
-    def test_created_draft_not_yet_visible_fails_cleanly_without_upload(self):
+    def test_created_draft_uses_id_even_when_tag_and_list_omit_it(self):
         real_api = self.api
         with patch.object(assets, 'api', side_effect=lambda path: [] if path.startswith('releases?') else real_api(path)):
-            with self.assertRaisesRegex(ValueError, 'Created draft was not confirmed'):
+            self.assertFalse(self.publish()['draft'])
+        self.assertEqual(1, self.creations())
+
+    def creations(self):
+        return sum(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls)
+
+    def test_created_id_becomes_visible_on_third_read(self):
+        real_api = self.api
+        reads = []
+
+        def delayed(path):
+            if path == 'releases/2':
+                reads.append(path)
+                if len(reads) < 3:
+                    return None
+            return real_api(path)
+
+        with patch.object(assets, 'api', side_effect=delayed), patch.object(delivery.time, 'sleep') as sleep:
+            self.assertFalse(self.publish()['draft'])
+        self.assertEqual(2, sleep.call_count)
+        self.assertEqual(1, self.creations())
+
+    def test_created_id_never_visible_stops_without_upload_then_resumes(self):
+        real_api = self.api
+        with patch.object(assets, 'api', side_effect=lambda path: None if path == 'releases/2' else real_api(path)), patch.object(delivery.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError, 'ID 2 is not readable after 4 checks'):
                 self.publish()
-        self.assertTrue(self.releases[self.tag]['draft'])
+        self.assertEqual(3, sleep.call_count)
         self.assertFalse(any(c[:3] in (('gh', 'release', 'upload'), ('gh', 'release', 'edit')) for c in self.calls))
         self.assertFalse(self.publish()['draft'])
-        self.assertEqual(1, sum(c[:3] == ('gh', 'release', 'create') for c in self.calls))
+        self.assertEqual(1, self.creations())
 
     def test_draft_disappearing_after_upload_does_not_get_promoted(self):
         real_api = self.api
+        self.draft()
         with patch.object(assets, 'api', side_effect=lambda path: None if path == 'releases/2' else real_api(path)):
             with self.assertRaisesRegex(ValueError, 'Draft changed during upload'):
                 self.publish()

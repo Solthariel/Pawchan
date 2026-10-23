@@ -1,7 +1,9 @@
 """Resume compatible drafts; upload missing files only; promote only verified assets."""
+import json
 import os
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import publication_assets as assets
@@ -23,12 +25,7 @@ def publish(root, context):
         if assets.api('git/ref/tags/' + context['tag']) is None:
             assets.run('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/git/refs',
                        '-f', 'ref=refs/tags/' + context['tag'], '-f', 'sha=' + os.environ['GITHUB_SHA'])
-        assets.run('gh', 'release', 'create', context['tag'], '--repo', assets.REPO,
-                   '--verify-tag', '--target', context['source_commit'], '--title', 'Pawchan ' + context['latest']['name'],
-                   '--notes-file', f"update/publishing/changelogs/ru/{context['latest']['code']}.txt", '--draft')
-        checked, mode, release = state.inspect(root)
-        if checked != context or mode != 'build' or release is None or not release['draft']:
-            raise ValueError('Created draft was not confirmed; inspect GitHub and retry without deleting it')
+        release = create_draft(root, context)
     upload_missing(root, context, release)
     try:
         assets.run('gh', 'release', 'edit', context['tag'], '--repo', assets.REPO, '--draft=false', '--latest')
@@ -63,3 +60,34 @@ def upload_missing(root, context, release):
         check = assets.download(updated, Path(value))
         assets.verify_files(check, context['latest']['name'])
         assets.compare_files(root / 'dist', check, expected)
+
+
+def create_draft(root, context):
+    # Use the REST creation response, not a tag/list lookup that can omit a new draft.
+    response = assets.run('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases',
+                          '-f', 'tag_name=' + context['tag'],
+                          '-f', 'target_commitish=' + context['source_commit'],
+                          '-f', 'name=Pawchan ' + context['latest']['name'],
+                          '-f', 'body=' + context['notes'], '-F', 'draft=true')
+    created = json.loads(response)
+    if not isinstance(created, dict) or type(created.get('id')) is not int or created['id'] <= 0:
+        raise ValueError('Draft creation returned no valid ID; inspect GitHub before retrying')
+    if (created.get('tag_name'), created.get('draft'), created.get('target_commitish')) != (
+            context['tag'], True, context['source_commit']):
+        raise ValueError('Draft creation response identity differs; no upload or promotion')
+    return confirm_draft(root, context, created['id'])
+
+
+def confirm_draft(root, context, release_id):
+    for attempt in range(4):
+        checked, mode, release = state.inspect(root, release_id=release_id)
+        if checked != context:
+            raise ValueError('Created draft context changed; no upload or promotion')
+        if release is not None:
+            if mode != 'build' or not release['draft']:
+                raise ValueError('Created release is not the expected draft; no upload or promotion')
+            return release
+        if attempt < 3:
+            time.sleep(2)
+    raise ValueError(f'Created draft ID {release_id} is not readable after 4 checks; '
+                     'retry the existing publication without deleting it')

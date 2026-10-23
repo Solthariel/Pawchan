@@ -18,7 +18,7 @@ class DeliveryTest(PublicationFixture):
         saved = dict(self.blobs[self.tag])
         self.publish()
         for n, b in saved.items(): self.assertEqual(b, self.blobs[self.tag][n])
-        self.assertEqual(1, sum(c[:3] == ('gh', 'release', 'create') for c in self.calls))
+        self.assertEqual(1, sum(c[:5] == ('gh', 'api', '--method', 'POST', f'repos/{assets.REPO}/releases') for c in self.calls))
 
     def test_different_existing_draft_bytes_are_rejected(self):
         self.draft(assets.names('0.1.1')[:1])
