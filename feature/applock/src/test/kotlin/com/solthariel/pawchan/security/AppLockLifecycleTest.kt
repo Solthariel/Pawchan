@@ -25,11 +25,11 @@ class AppLockLifecycleTest {
             var locks = 0
             val owner = AppLockLifecycle(backgroundScope, { testScheduler.currentTime }, { unlocked }) { locks++ }
             repeat(2) {
-                owner.pickerHost.begin()
+                owner.externalSelection.begin()
                 owner.background()
                 runCurrent()
                 advanceTimeBy(1_000)
-                owner.pickerHost.returned()
+                owner.externalSelection.returned()
                 owner.foreground()
                 owner.finishForeground()
                 assertEquals(0, locks)
@@ -43,7 +43,7 @@ class AppLockLifecycleTest {
             owner.background()
             assertEquals(1, locks)
             owner.foreground()
-            owner.pickerHost.begin()
+            owner.externalSelection.begin()
             owner.background()
             owner.foreground()
             owner.finishForeground()
@@ -54,12 +54,12 @@ class AppLockLifecycleTest {
         runTest {
             var locks = 0
             val owner = AppLockLifecycle(backgroundScope, { testScheduler.currentTime }, { unlocked }) { locks++ }
-            owner.pickerHost.begin()
+            owner.externalSelection.begin()
             owner.background()
             owner.screenOff()
             assertEquals(1, locks)
-            owner.pickerHost.returned()
-            owner.pickerHost.begin()
+            owner.externalSelection.returned()
+            owner.externalSelection.begin()
             owner.background()
             runCurrent()
             advanceTimeBy(PICKER_LEASE_MILLIS)
@@ -72,10 +72,38 @@ class AppLockLifecycleTest {
         runTest {
             var locks = 0
             val owner = AppLockLifecycle(backgroundScope, { testScheduler.currentTime }, { unlocked }) { locks++ }
-            owner.pickerHost.begin()
-            owner.pickerHost.returned()
+            owner.externalSelection.begin()
+            owner.externalSelection.returned()
             owner.finishForeground()
             owner.background()
             assertEquals(1, locks)
+        }
+
+    @Test fun lockedAndUnreadySessionsCannotBeginAnExternalSelectionLease() =
+        runTest {
+            for (state in listOf(unlocked.copy(locked = true), unlocked.copy(ready = false))) {
+                var locks = 0
+                val owner = AppLockLifecycle(backgroundScope, { testScheduler.currentTime }, { state }) { locks++ }
+                owner.externalSelection.begin()
+                owner.background()
+                owner.externalSelection.returned()
+                owner.foreground()
+                owner.finishForeground()
+                assertEquals(2, locks)
+                owner.close()
+            }
+        }
+
+    @Test fun cancelledExternalSelectionCannotGrantAnException() =
+        runTest {
+            var locks = 0
+            val owner = AppLockLifecycle(backgroundScope, { testScheduler.currentTime }, { unlocked }) { locks++ }
+            owner.externalSelection.begin()
+            owner.externalSelection.cancel()
+            owner.background()
+            owner.foreground()
+            owner.finishForeground()
+            assertEquals(2, locks)
+            owner.close()
         }
 }

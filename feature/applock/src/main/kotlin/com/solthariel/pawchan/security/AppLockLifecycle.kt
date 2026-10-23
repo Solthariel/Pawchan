@@ -1,11 +1,10 @@
 package com.solthariel.pawchan.security
 
-import com.solthariel.pawchan.composer.ComposerPickerHost
 import com.solthariel.pawchan.domain.security.AppLockTiming
 import kotlinx.coroutines.CoroutineScope
 
 /** Retained activity owner: only a matching picker result can exempt one round trip. */
-internal class AppLockLifecycle(
+class AppLockLifecycle internal constructor(
     scope: CoroutineScope,
     nowMillis: () -> Long,
     private val state: () -> AppLockState,
@@ -14,8 +13,8 @@ internal class AppLockLifecycle(
     private val timing = AppLockTiming(nowMillis)
     private val picker = PickerLockGate(nowMillis)
     private val timer = AppLockBackgroundTimer(scope, onLock)
-    val pickerHost =
-        object : ComposerPickerHost {
+    val externalSelection: AppLockExternalSelection =
+        object : AppLockExternalSelection {
             override fun begin() {
                 if (state().ready && !state().locked) picker.begin()
             }
@@ -54,7 +53,7 @@ internal class AppLockLifecycle(
         if (state().configuration.enabled) timer.lock()
     }
 
-    fun close() {
+    internal fun close() {
         picker.revoke()
         timer.lock()
     }

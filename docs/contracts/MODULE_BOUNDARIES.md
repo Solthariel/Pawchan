@@ -184,3 +184,12 @@
 - Visual OP/sage glyphs не удаляют текстовые metadata из copy/export/search;
   имена не чистятся substring replace. Accepted captcha steps могут заменять
   idle label, но не ошибки/loading/sending/solved status или protocol/token.
+
+- `:feature:applock` владеет Activity ViewModel (AppLockSession), PIN/editor input,
+  biometric prompt, отдельным preferences/Keystore и lifecycle lease внешнего выбора.
+  Разрешены только domain и core UI; app/composer/media/data не импортируются,
+  включая fully-qualified обходы. App связывает AppLockExternalSelection с composer
+  и privacy decision с media, но не создаёт второй state owner/scope/таймер.
+  SettingsItemRow остаётся в app: feature предоставляет immutable projection без PIN
+  и callbacks, а не AppLockState/LockEditor/Storage. Перенос не меняет package/URI,
+  preferences keys, Keystore namespace, задержки и отмену активной проверки.

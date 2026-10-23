@@ -310,6 +310,7 @@ dependencies {
     implementation(project(":data:maintenance"))
     implementation(project(":feature:composer"))
     implementation(project(":feature:thread"))
+    implementation(project(":feature:applock"))
     implementation(project(":core:media"))
     implementation(project(":core:ui"))
     implementation(project(":domain"))

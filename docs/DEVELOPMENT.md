@@ -36,7 +36,7 @@ Linux/macOS:
 ```
 
 Скрипт запускает connectedDebugAndroidTest для app, data/database, core/ui,
-core/media, feature/composer и feature/thread. Наличие compiled AndroidTest APK
+core/media, feature/composer, feature/thread и feature/applock. Наличие compiled AndroidTest APK
 не означает исполнение тестов на устройстве. Целевые ручные сценарии выбираются
 по изменённой подсистеме, замеры — по [протоколу performance](contracts/PERFORMANCE.md).
 

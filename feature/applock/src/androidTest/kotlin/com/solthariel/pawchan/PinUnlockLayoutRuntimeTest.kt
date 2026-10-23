@@ -1,9 +1,12 @@
 package com.solthariel.pawchan
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -23,11 +26,14 @@ import com.solthariel.pawchan.security.AppLockState
 import com.solthariel.pawchan.security.LockConfiguration
 import com.solthariel.pawchan.security.PinUnlockContent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class PinUnlockLayoutRuntimeTest {
     @get:Rule val compose = createComposeRule()
+    private lateinit var safeDrawingInsets: WindowInsets
+    private lateinit var testDensity: Density
     private val state =
         mutableStateOf(
             AppLockState(
@@ -44,15 +50,15 @@ class PinUnlockLayoutRuntimeTest {
             state.value.copy(error = "Введите PIN или используйте отпечаток"),
             state.value.copy(busy = true, error = "Неверный PIN-код"),
             state.value.copy(ready = false),
+            state.value.copy(pinInput = state.value.pinInput.copy(retrySeconds = 30)),
+            state.value.copy(pinInput = state.value.pinInput.copy(retrySeconds = 1)),
             state.value,
         ).forEach { next ->
             compose.runOnIdle { state.value = next }
             compose.waitForIdle()
             assertEquals(before, bounds())
         }
-        val area = compose.onNodeWithTag("unlock-area").fetchSemanticsNode().boundsInRoot
-        val content = compose.onNodeWithTag("pin-unlock-content").fetchSemanticsNode().boundsInRoot
-        assertEquals(area.center.y, content.center.y, 1f)
+        assertCenteredInsideSafeDrawing()
     }
 
     @Test fun verificationReplacesErrorAndDisablesInputRatherThanAddingAnotherRow() {
@@ -108,11 +114,30 @@ class PinUnlockLayoutRuntimeTest {
 
     private fun show() {
         compose.setContent {
+            val insets = WindowInsets.safeDrawing
+            val density = LocalDensity.current
+            SideEffect {
+                safeDrawingInsets = insets
+                testDensity = density
+            }
             MaterialTheme {
                 Box(Modifier.size(360.dp, 720.dp).testTag("unlock-area")) {
                     PinUnlockContent(state.value, true, {}, {})
                 }
             }
+        }
+    }
+
+    private fun assertCenteredInsideSafeDrawing() {
+        val area = compose.onNodeWithTag("unlock-area").fetchSemanticsNode().boundsInRoot
+        val content = compose.onNodeWithTag("pin-unlock-content").fetchSemanticsNode().boundsInRoot
+        compose.runOnIdle {
+            // Read after layout: system insets can update between composition and layout.
+            val safeTop = area.top + safeDrawingInsets.getTop(testDensity)
+            val safeBottom = area.bottom - safeDrawingInsets.getBottom(testDensity)
+            assertEquals("PIN center must respect system bars", (safeTop + safeBottom) / 2f, content.center.y, 1f)
+            assertTrue("PIN content overlaps the top system inset", content.top >= safeTop)
+            assertTrue("PIN content overlaps the bottom system inset", content.bottom <= safeBottom)
         }
     }
 

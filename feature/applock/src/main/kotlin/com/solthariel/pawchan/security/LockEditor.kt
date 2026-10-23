@@ -1,6 +1,6 @@
 package com.solthariel.pawchan.security
 
-internal enum class LockAction { ENABLE, CHANGE, DISABLE, BIOMETRIC_ENABLE, BIOMETRIC_DISABLE }
+enum class LockAction { ENABLE, CHANGE, DISABLE, BIOMETRIC_ENABLE, BIOMETRIC_DISABLE }
 
 internal enum class PinStage { CURRENT, NEW, CONFIRM, BIOMETRIC }
 

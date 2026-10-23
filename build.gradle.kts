@@ -239,15 +239,29 @@ abstract class VerifySourcePolicy : DefaultTask() {
             }
 
     private fun findComposerBoundaryViolations(root: File): List<String> {
-        val allowed = listOf("composer", "domain", "core.ui", "media", "feature.composer", "data.network")
+        val composerAllowed = listOf("composer", "domain", "core.ui", "media", "feature.composer", "data.network")
+        val lockAllowed = listOf("security", "domain", "core.ui", "feature.applock")
+        val projectReference = Regex("com\\.solthariel\\.pawchan\\.[A-Za-z0-9_.]+")
         return policyFiles.files
-            .filter { it.extension == "kt" && it.relativeTo(root).invariantSeparatorsPath.startsWith("feature/composer/src/main/") }
-            .flatMap { source ->
+            .filter { source ->
+                val path = source.relativeTo(root).invariantSeparatorsPath
+                source.extension == "kt" &&
+                    (path.startsWith("feature/composer/src/main/") || path.startsWith("feature/applock/src/main/"))
+            }.flatMap { source ->
+                val lock = source.relativeTo(root).invariantSeparatorsPath.startsWith("feature/applock/")
+                val allowed = if (lock) lockAllowed else composerAllowed
                 source.readLines().mapIndexedNotNull { index, line ->
-                    val dependency = line.trim().removePrefix("import ")
-                    val projectImport = line.trim().startsWith("import com.solthariel.pawchan.")
-                    if (projectImport && allowed.none { dependency.startsWith("com.solthariel.pawchan.$it.") }) {
-                        "${source.relativeTo(root)}:${index + 1}:forbidden-composer-host-import"
+                    val references = projectReference.findAll(line).map { it.value }
+                    val foreign =
+                        references.any { dependency ->
+                            allowed.none {
+                                dependency == "com.solthariel.pawchan.$it" || dependency.startsWith("com.solthariel.pawchan.$it.")
+                            }
+                        }
+                    val checked = lock || line.trim().startsWith("import ")
+                    if (checked && foreign) {
+                        val owner = if (lock) "applock" else "composer"
+                        "${source.relativeTo(root)}:${index + 1}:forbidden-$owner-host-import"
                     } else {
                         null
                     }

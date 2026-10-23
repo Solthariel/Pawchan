@@ -16,15 +16,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppDialog
 
 @Composable
-internal fun AppLockSettings() {
+fun AppLockSettingsHost(
+    content: @Composable (
+        state: AppLockSettingsState,
+        fingerprintAvailable: Boolean,
+        onDelay: (com.solthariel.pawchan.domain.security.AppLockDelay) -> Unit,
+        onEdit: (LockAction) -> Unit,
+    ) -> Unit,
+) {
     val model = LocalAppLock.current ?: return
     val state by model.state.collectAsStateWithLifecycle()
     val activity = LocalActivity.current ?: return
-    AppLockSettingsContent(
-        state,
+    content(
+        state.settingsProjection(),
         model.fingerprintAvailable,
-        onDelay = model::setDelay,
-        onEdit = model::edit,
+        model::setDelay,
+        model::edit,
     )
     LaunchedEffect(state.biometricSetupReady) {
         if (state.biometricSetupReady) model.biometric(activity, setup = true)
@@ -34,7 +41,7 @@ internal fun AppLockSettings() {
 
 @Composable
 private fun LockEditorDialog(
-    model: AppLockViewModel,
+    model: AppLockSession,
     state: AppLockState,
     activity: Activity,
 ) {

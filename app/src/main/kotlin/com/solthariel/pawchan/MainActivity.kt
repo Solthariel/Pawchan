@@ -22,11 +22,11 @@ class MainActivity : ComponentActivity() {
         incomingLinks.accept(intent.action, intent.dataString)
     }
 
-    private val appLock: com.solthariel.pawchan.security.AppLockViewModel by viewModels {
+    private val appLock: com.solthariel.pawchan.security.AppLockSession by viewModels {
         androidx.lifecycle.viewmodel.viewModelFactory {
             initializer {
                 com.solthariel.pawchan.security
-                    .AppLockViewModel(applicationContext)
+                    .AppLockSession(applicationContext)
             }
         }
     }

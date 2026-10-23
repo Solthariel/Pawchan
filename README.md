@@ -36,6 +36,7 @@ Gradle использует JDK 25 согласно `gradle/gradle-daemon-jvm.pr
 - `data` — сеть, база данных, настройки и черновики.
 - `core/ui`, `core/media` — общие элементы интерфейса и медиапросмотр.
 - `feature/thread`, `feature/composer` — тред и отправка сообщений.
+- `feature/applock` — Activity-owned PIN/биометрия и privacy screen; app связывает настройки, composer и media.
 - `video-ffmpeg` — видеоплеер и native-зависимости.
 - `update` — обновления приложения.
 - `scripts` — сборка и проверки.

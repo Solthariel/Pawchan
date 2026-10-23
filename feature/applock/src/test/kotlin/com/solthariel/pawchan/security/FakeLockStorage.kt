@@ -52,13 +52,13 @@ internal class FakeLockStorage(
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 internal fun withLockModel(
     enabled: Boolean = false,
-    block: suspend (AppLockViewModel, FakeLockStorage) -> Unit,
+    block: suspend (AppLockSession, FakeLockStorage) -> Unit,
 ) = runTest {
     Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
     val owner = ViewModelStore()
     try {
         val store = FakeLockStorage(enabled)
-        val model = AppLockViewModel(store) { testScheduler.currentTime }
+        val model = AppLockSession(store) { testScheduler.currentTime }
         owner.put("lock", model)
         block(model, store)
     } finally {

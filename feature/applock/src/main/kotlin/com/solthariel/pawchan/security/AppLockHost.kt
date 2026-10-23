@@ -19,13 +19,13 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-internal val LocalAppLock = staticCompositionLocalOf<AppLockViewModel?> { null }
+internal val LocalAppLock = staticCompositionLocalOf<AppLockSession?> { null }
 
 @Composable
-internal fun AppLockHost(
+fun AppLockScreenHost(
     activity: Activity,
-    model: AppLockViewModel,
-    content: @Composable () -> Unit,
+    model: AppLockSession,
+    content: @Composable (accessAllowed: Boolean) -> Unit,
 ) {
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.ready, state.locked, state.configuration.biometric) {
@@ -33,14 +33,11 @@ internal fun AppLockHost(
     }
     CompositionLocalProvider(
         LocalAppLock provides model,
-        com.solthariel.pawchan.composer.LocalComposerPickerHost provides model.lifecycle.pickerHost,
-        com.solthariel.pawchan.media.video.LocalVideoPipAllowed provides (state.ready && !state.locked),
-        com.solthariel.pawchan.media.video.LocalVideoPrivacyAccess provides model.videoAccess,
     ) {
         Box(Modifier.fillMaxSize()) {
             // Retain navigation and drafts, but remove locked content from rendering and accessibility.
             val hidden = !state.ready || state.locked
-            Box(if (hidden) Modifier.alpha(0f).clearAndSetSemantics { } else Modifier) { content() }
+            Box(if (hidden) Modifier.alpha(0f).clearAndSetSemantics { } else Modifier) { content(!hidden) }
             if (hidden) LockedScreenDialog(activity, model, state)
         }
     }
@@ -49,7 +46,7 @@ internal fun AppLockHost(
 @Composable
 private fun LockedScreenDialog(
     activity: Activity,
-    model: AppLockViewModel,
+    model: AppLockSession,
     state: AppLockState,
 ) {
     Dialog(

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.solthariel.pawchan.domain.security.AppLockDelay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -15,7 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Activity-owned, survives rotation; a new process is always locked. */
-internal class AppLockViewModel(
+class AppLockSession internal constructor(
     private val store: AppLockStorage,
     nowMillis: () -> Long = SystemClock::elapsedRealtime,
 ) : ViewModel() {
@@ -23,15 +24,13 @@ internal class AppLockViewModel(
 
     private var activeOperation: Job? = null
     private val mutable = MutableStateFlow(AppLockState())
-    val state = mutable.asStateFlow()
-    val videoAccess =
-        object : com.solthariel.pawchan.media.video.VideoPrivacyAccess {
-            override val changes = state.map { it.ready && !it.locked }.distinctUntilChanged()
+    internal val state = mutable.asStateFlow()
+    val accessChanges: Flow<Boolean> = state.map { it.ready && !it.locked }.distinctUntilChanged()
 
-            override fun isAllowed(): Boolean = state.value.ready && !state.value.locked
-        }
-    val fingerprintAvailable get() = store.fingerprintAvailable
-    val lifecycle =
+    fun isAccessAllowed(): Boolean = state.value.ready && !state.value.locked
+
+    internal val fingerprintAvailable get() = store.fingerprintAvailable
+    val lifecycle: AppLockLifecycle =
         AppLockLifecycle(viewModelScope, nowMillis, { state.value }, ::lock)
     private val retry =
         PinRetryCountdown(viewModelScope, nowMillis) {
@@ -46,13 +45,13 @@ internal class AppLockViewModel(
         }
     }
 
-    fun edit(action: LockAction) {
+    internal fun edit(action: LockAction) {
         if (!state.value.canEdit) return
         val stage = if (action == LockAction.ENABLE) PinStage.NEW else PinStage.CURRENT
         mutable.value = state.value.copy(editor = LockEditor(action, stage), error = null)
     }
 
-    fun setDelay(delay: AppLockDelay) {
+    internal fun setDelay(delay: AppLockDelay) {
         val current = state.value
         if (!current.canEdit || !current.configuration.enabled) return
         operation {
@@ -61,13 +60,13 @@ internal class AppLockViewModel(
         }
     }
 
-    fun cancelEdit() {
+    internal fun cancelEdit() {
         if (!state.value.busy) {
             mutable.value = state.value.copy(editor = null, error = null)
         }
     }
 
-    fun enterPin(pin: String) {
+    internal fun enterPin(pin: String) {
         if (state.value.busy || state.value.retrySeconds > 0 || state.value.biometricSetupReady) return
         if (pin.length != PIN_LENGTH || pin.any { it !in '0'..'9' }) return
         operation {
@@ -157,7 +156,7 @@ internal class AppLockViewModel(
         }
     }
 
-    fun biometric(
+    internal fun biometric(
         activity: Activity,
         setup: Boolean = false,
     ) {

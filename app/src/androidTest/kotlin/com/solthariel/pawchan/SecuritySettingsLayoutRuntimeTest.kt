@@ -14,9 +14,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.solthariel.pawchan.domain.security.AppLockDelay
 import com.solthariel.pawchan.security.AppLockSettingsContent
-import com.solthariel.pawchan.security.AppLockState
+import com.solthariel.pawchan.security.AppLockSettingsState
 import com.solthariel.pawchan.security.LockAction
-import com.solthariel.pawchan.security.LockConfiguration
 import com.solthariel.pawchan.security.label
 import com.solthariel.pawchan.settings.SettingsItem
 import com.solthariel.pawchan.settings.SettingsItemRow
@@ -33,7 +32,7 @@ class SecuritySettingsLayoutRuntimeTest {
             MaterialTheme {
                 Column {
                     SettingsItemRow(SettingsItem.Toggle("Обычная настройка", "Описание", false) {})
-                    AppLockSettingsContent(AppLockState(), false) { action = it }
+                    AppLockSettingsContent(AppLockSettingsState(), false) { action = it }
                 }
             }
         }
@@ -51,7 +50,7 @@ class SecuritySettingsLayoutRuntimeTest {
         compose.setContent {
             MaterialTheme {
                 AppLockSettingsContent(
-                    AppLockState(ready = true, configuration = LockConfiguration(true, true)),
+                    AppLockSettingsState(enabled = true, biometric = true),
                     true,
                 ) { action = it }
             }
@@ -63,15 +62,14 @@ class SecuritySettingsLayoutRuntimeTest {
     }
 
     @Test fun delayChoiceOffersAndAppliesAllSevenIntervals() {
-        val state = mutableStateOf(AppLockState(ready = true, configuration = LockConfiguration(true)))
+        val state = mutableStateOf(AppLockSettingsState(enabled = true))
         compose.setContent {
             MaterialTheme {
                 AppLockSettingsContent(
                     state.value,
                     false,
                     onDelay = { delay ->
-                        val configuration = state.value.configuration.copy(delay = delay)
-                        state.value = state.value.copy(configuration = configuration)
+                        state.value = state.value.copy(delay = delay)
                     },
                     onEdit = {},
                 )
@@ -80,7 +78,7 @@ class SecuritySettingsLayoutRuntimeTest {
         AppLockDelay.entries.forEach { delay ->
             compose.onNodeWithText("Блокировать после выхода").performClick()
             compose.onNode(hasText(delay.label) and hasAnyAncestor(isDialog())).performScrollTo().performClick()
-            compose.runOnIdle { assertEquals(delay, state.value.configuration.delay) }
+            compose.runOnIdle { assertEquals(delay, state.value.delay) }
         }
     }
 }

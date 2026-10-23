@@ -14,7 +14,7 @@ import com.solthariel.pawchan.settings.SettingsItemRow
 
 @Composable
 internal fun AppLockSettingsContent(
-    state: AppLockState,
+    state: AppLockSettingsState,
     fingerprintAvailable: Boolean,
     onDelay: (AppLockDelay) -> Unit = {},
     onEdit: (LockAction) -> Unit,
@@ -23,18 +23,19 @@ internal fun AppLockSettingsContent(
         SettingsItemRow(
             SettingsItem.Toggle(
                 "Блокировка приложения",
-                if (state.configuration.enabled) {
+                if (state.enabled) {
                     "Запрашивать PIN-код при открытии приложения"
                 } else {
                     "Четырёхзначный PIN-код для Pawchan"
                 },
-                state.configuration.enabled,
+                state.enabled,
             ) { onEdit(if (it) LockAction.ENABLE else LockAction.DISABLE) },
         )
-        if (state.configuration.enabled) LockEnabledControls(state, fingerprintAvailable, onDelay, onEdit)
-        if (state.editor == null && state.error != null) {
+        if (state.enabled) LockEnabledControls(state, fingerprintAvailable, onDelay, onEdit)
+        val error = state.error
+        if (!state.editing && error != null) {
             Text(
-                state.error,
+                error,
                 Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
@@ -51,7 +52,7 @@ internal fun AppLockSettingsContent(
 
 @Composable
 private fun LockEnabledControls(
-    state: AppLockState,
+    state: AppLockSettingsState,
     fingerprintAvailable: Boolean,
     onDelay: (AppLockDelay) -> Unit = {},
     onEdit: (LockAction) -> Unit,
@@ -61,18 +62,18 @@ private fun LockEnabledControls(
         SettingsItem.Choice(
             "Блокировать после выхода",
             AppLockDelay.entries.map { it.label },
-            AppLockDelay.entries.indexOf(state.configuration.delay),
+            AppLockDelay.entries.indexOf(state.delay),
         ) { onDelay(AppLockDelay.entries[it]) },
     )
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
     SettingsItemRow(SettingsItem.Action("Изменить PIN-код", null, onClick = { onEdit(LockAction.CHANGE) }))
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-    if (fingerprintAvailable || state.configuration.biometric) {
+    if (fingerprintAvailable || state.biometric) {
         SettingsItemRow(
             SettingsItem.Toggle(
                 "Вход по отпечатку",
                 "Использовать вместо PIN-кода",
-                state.configuration.biometric,
+                state.biometric,
             ) { onEdit(if (it) LockAction.BIOMETRIC_ENABLE else LockAction.BIOMETRIC_DISABLE) },
         )
     } else {

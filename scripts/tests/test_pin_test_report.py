@@ -20,12 +20,17 @@ class PinReportTest(unittest.TestCase):
 
     def write_report(self, counts=None, issue='', timestamp=200):
         counts = counts or REPORT.EXPECTED
-        cases = ''.join(f'<testcase classname="{name}" name="case{i}">{issue}</testcase>'
-                        for name, count in counts.items() for i in range(count))
-        path = self.reports / 'TEST-device.xml'
-        path.write_text('<testsuite>' + cases + '</testsuite>', encoding='utf-8')
-        os.utime(path, (timestamp, timestamp))
-        return path
+        paths = []
+        for name, count in counts.items():
+            cases = ''.join(f'<testcase classname="{name}" name="case{i}">{issue}</testcase>'
+                            for i in range(count))
+            directory = self.root / REPORT.REPORT_MODULES[name] / 'build/outputs/androidTest-results/connected/debug'
+            directory.mkdir(parents=True, exist_ok=True)
+            path = directory / 'TEST-device.xml'
+            path.write_text('<testsuite>' + cases + '</testsuite>', encoding='utf-8')
+            os.utime(path, (timestamp, timestamp))
+            paths.append(path)
+        return paths[0]
 
     def test_seven_complete_tests_pass(self):
         self.write_report()
@@ -70,6 +75,8 @@ class PinReportTest(unittest.TestCase):
     def test_separate_runs_with_same_output_filename_both_verify(self):
         for name, count in REPORT.EXPECTED.items():
             with self.subTest(class_name=name):
+                for old in self.root.rglob('TEST-*.xml'):
+                    old.unlink()
                 self.write_report({name: count})
                 self.assertEqual({name: count}, REPORT.verify(self.root, 100, name))
                 with self.assertRaises(ValueError):
@@ -88,6 +95,22 @@ class PinReportTest(unittest.TestCase):
         self.write_report({name: 5}, issue='<failure/>')
         with self.assertRaises(ValueError):
             REPORT.verify(self.root, 100, name)
+
+    def test_old_app_xml_cannot_replace_moved_feature_tests(self):
+        name = 'com.solthariel.pawchan.PinEditorInputRuntimeTest'
+        path = self.write_report({name: 5})
+        old = self.reports / 'TEST-old-pin.xml'
+        old.write_bytes(path.read_bytes())
+        os.utime(old, (200, 200))
+        path.unlink()
+        with self.assertRaisesRegex(ValueError, 'wrong module'):
+            REPORT.verify(self.root, 100, name)
+
+    def test_all_applock_classes_use_their_actual_module_reports(self):
+        for name, count in REPORT.KNOWN_TESTS.items():
+            with self.subTest(class_name=name):
+                self.write_report({name: count})
+                self.assertEqual({name: count}, REPORT.verify(self.root, 100, name))
 
 
 if __name__ == '__main__':

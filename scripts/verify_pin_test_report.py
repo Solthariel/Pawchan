@@ -8,15 +8,31 @@ EXPECTED = {
     'com.solthariel.pawchan.PinEditorInputRuntimeTest': 5,
 }
 
+KNOWN_TESTS = {
+    **EXPECTED,
+    'com.solthariel.pawchan.PinUnlockLayoutRuntimeTest': 5,
+    'com.solthariel.pawchan.AppLockStoreRuntimeTest': 3,
+    'com.solthariel.pawchan.SecuritySettingsLayoutRuntimeTest': 3,
+}
+REPORT_MODULES = {
+    'com.solthariel.pawchan.DebugPackageIsolationRuntimeTest': 'app',
+    'com.solthariel.pawchan.PinEditorInputRuntimeTest': 'feature/applock',
+    'com.solthariel.pawchan.PinUnlockLayoutRuntimeTest': 'feature/applock',
+    'com.solthariel.pawchan.AppLockStoreRuntimeTest': 'feature/applock',
+    'com.solthariel.pawchan.SecuritySettingsLayoutRuntimeTest': 'app',
+}
+
 
 def verify(root, since, class_name=None):
-    if class_name is not None and class_name not in EXPECTED:
+    if class_name is not None and class_name not in KNOWN_TESTS:
         raise ValueError("Unknown test class: " + class_name)
-    expected = {class_name: EXPECTED[class_name]} if class_name else EXPECTED
-    reports = root / 'app/build/outputs/androidTest-results/connected/debug'
+    expected = {class_name: KNOWN_TESTS[class_name]} if class_name else EXPECTED
+    report_roots = {name: root / module / 'build/outputs/androidTest-results/connected/debug'
+                    for name, module in REPORT_MODULES.items()}
+    reports = {p for directory in report_roots.values() for p in directory.rglob('TEST-*.xml')}
     seen = set()
     counts = {name: 0 for name in expected}
-    for report in reports.rglob('TEST-*.xml'):
+    for report in sorted(reports):
         if report.stat().st_mtime < since:
             continue
         tree = ET.parse(report)
@@ -35,6 +51,8 @@ def verify(root, since, class_name=None):
             name = case.get('classname')
             if name not in expected:
                 continue
+            if not report.is_relative_to(report_roots[name]):
+                raise ValueError('Test result belongs to the wrong module: ' + name)
             identity = (name, case.get('name'))
             if not identity[1] or identity in seen:
                 raise ValueError('Missing/duplicate test identity: ' + str(identity))
@@ -49,7 +67,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--since', type=int, required=True)
-    parser.add_argument('--class', dest='class_name', choices=tuple(EXPECTED))
+    parser.add_argument('--class', dest='class_name', choices=tuple(KNOWN_TESTS))
     args = parser.parse_args()
     try:
         for name, count in verify(args.root, args.since, args.class_name).items():

@@ -2,11 +2,28 @@
 
 ## Где смотреть
 
-- [app/security](../../app/src/main/kotlin/com/solthariel/pawchan/security) —
-  AppLockLifecycle, AppLockViewModel, PickerLockGate и PinAttemptPolicy.
+- [feature/applock](../../feature/applock/src/main/kotlin/com/solthariel/pawchan/security) —
+  AppLockSession, AppLockLifecycle, PIN/editor UI, хранилище, Keystore и системная биометрия.
+- [app/security](../../app/src/main/kotlin/com/solthariel/pawchan/security) — строки настроек,
+  AppLockIntegration, ComposerLockBinding и LockVideoAccess; адаптеры не владеют состоянием.
 - [composer](../../feature/composer/src/main/kotlin/com/solthariel/pawchan/composer) —
-  получает только ComposerPickerHost, не app ViewModel или workspace.
-- Граница остаётся app-owned; эта карта не выделяет новый Gradle-модуль.
+  получает только ComposerPickerHost. App связывает его с AppLockExternalSelection.
+- Production project dependencies `:feature:applock` — только domain и core UI.
+  Платформенное хранилище остаётся частью возможности блокировки, не объявляется чистым domain.
+
+## Граница и сохранённые данные
+
+AppLockSession сам является Activity ViewModel, не обёрткой над вторым владельцем.
+Activity хранит его в прежнем ViewModelStore. App получает lifecycle, текущий Boolean
+privacy-допуск и Flow его изменений; private state/editor/storage не публикуются.
+Настройки получают только AppLockSettingsState и callbacks. Projection не содержит
+первый PIN редактора. App предоставляет прежние SettingsItemRow; отступы и действия
+не заменяются новой реализацией. Внешний выбор не создаёт новый scope или таймер.
+
+Имя preferences `app_lock`, его ключи, namespace Keystore, криптография и package
+приложения не изменены. Manifest-пermission USE_BIOMETRIC приходит из feature AAR.
+Тесты internal реализации перенесены вместе с ней, без friend access из app.
+SecuritySettingsLayoutRuntimeTest остаётся app-тестом реальных строк настроек.
 
 ## Текущий контракт
 
@@ -36,7 +53,7 @@
 
 ## Системный выбор медиа
 
-`MainActivity` передаёт события retained `AppLockLifecycle`; тот владеет таймером
+`MainActivity` передаёт события retained `AppLockSession.lifecycle`; тот владеет таймером
 блокировки и одноразовым `PickerLockGate`. В composer передаётся только узкий
 `ComposerPickerHost` через app-owned binding. Feature не импортирует app и не
 получает ViewModel, repository или workspace storage.
@@ -71,5 +88,19 @@ JVM-регрессии: `PinEditorFlowTest`, `PinOperationCancellationTest`,
 Биометрия и реальные lifecycle/insets требуют Android-проверок.
 
 [История изменения](../history/LOCK_COMPOSER_PATCH.md) содержит результаты той
-поставки; они не подтверждают текущий прогон. Общие ограничения —
+поставки; они не подтверждают текущий прогон. Команды после переноса (устройство подключено):
+
+```powershell
+.\scripts\local-check.ps1
+.\scripts\check-applock-device.ps1
+```
+
+Второй скрипт отдельно запускает пять классов (18 тестов), проверяет module owner,
+свежесть XML, отсутствие failures/errors/skips и точное число результатов.
+Реальная регистрация отпечатка и системные picker/Home/screen-off остаются ручными
+проверками после автоматического набора. История результатов не переносится в PASS.
+
+check-pin-input проверяет свежие XML по реальному module owner, не принимает старый
+PIN-отчёт из app вместо feature. Runtime и биометрия здесь не считаются выполненными
+только по компиляции. Общие ограничения —
 [AGENTS.md](../../AGENTS.md), команды — [DEVELOPMENT.md](../DEVELOPMENT.md).

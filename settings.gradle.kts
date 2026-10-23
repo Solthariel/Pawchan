@@ -35,3 +35,5 @@ include(":core:media")
 include(":feature:composer")
 
 include(":feature:thread")
+
+include(":feature:applock")

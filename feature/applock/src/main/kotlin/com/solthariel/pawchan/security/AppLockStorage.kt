@@ -3,7 +3,7 @@ package com.solthariel.pawchan.security
 import com.solthariel.pawchan.domain.security.AppLockDelay
 import javax.crypto.Cipher
 
-/** App-owned storage boundary; the ViewModel does not own Android preferences or Keystore. */
+/** Feature-owned platform storage boundary; the session does not own Android preferences or Keystore. */
 internal interface AppLockStorage {
     val fingerprintAvailable: Boolean
 
