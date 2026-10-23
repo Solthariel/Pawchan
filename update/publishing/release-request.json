@@ -1,10 +1,5 @@
 {
-  "version": "0.1.29",
-  "code": 30,
-  "revision": 5,
-  "republish_029": {
-    "release_id": 420811273,
-    "tag_commit": "aeab2264ead1cff79014928a1c3b7866ebca282d",
-    "apk_sha256": "10f45fc7bc12b96de2a3638889331206ecf0d8438f4d4aa24716d6e93c19933b"
-  }
+  "version": "0.1.30",
+  "code": 31,
+  "revision": 1
 }
