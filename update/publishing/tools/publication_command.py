@@ -8,6 +8,8 @@ import subprocess
 
 from bump_version import next_version, prepare_release
 from release_notes_format import explicit_sections, validate_notes
+from release_sequence import identity, read_history
+import publication_resume as resume
 
 ROOT = Path(__file__).resolve().parents[3]
 NAME = 'Solthariel'
@@ -20,29 +22,41 @@ def environment():
                  GIT_AUTHOR_EMAIL=EMAIL, GIT_COMMITTER_EMAIL=EMAIL)
     value.pop('GIT_AUTHOR_DATE', None)
     value.pop('GIT_COMMITTER_DATE', None)
+    for key in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR'):
+        value.pop(key, None)
     return value
 
 
 def git(*args):
-    return subprocess.check_output(('git', *args), cwd=ROOT, text=True, env=environment()).strip()
+    return subprocess.check_output(('git', *args), cwd=ROOT, text=True, encoding='utf-8', env=environment()).strip()
 
 
-def preflight(notes):
+def repository():
+    if not (ROOT / '.git').exists():
+        raise ValueError('No .git at the selected project root. Use the Git working folder, not a ZIP folder; do not add safe.directory for a drive.')
+    top = Path(git('rev-parse', '--show-toplevel')).resolve()
+    if os.path.normcase(str(top)) != os.path.normcase(str(ROOT.resolve())):
+        raise ValueError('Git root differs from selected project; refusing parent repository')
     if git('branch', '--show-current') != 'master':
         raise ValueError('Release requires the master branch')
     url = git('remote', 'get-url', 'origin').removesuffix('.git').rstrip('/')
     if url not in ('https://github.com/Solthariel/Pawchan', 'git@github.com:Solthariel/Pawchan'):
         raise ValueError('Unexpected origin; refusing push')
+
+
+def preflight(notes, continuing=False):
+    repository()
+    if continuing:
+        git('fetch', 'origin', 'master')
+        return
     if git('status', '--porcelain', '--untracked-files=no'):
-        raise ValueError('Commit tracked changes before requesting a release')
+        raise ValueError('Tracked changes exist. If release metadata was already prepared, use Publish-Release.ps1 -Resume; otherwise review and commit source changes.')
     others = git('ls-files', '--others', '--exclude-standard', '-z').split('\0')
     if any(n and (ROOT / n).resolve() != notes for n in others):
         raise ValueError('Untracked source/files exist; review and commit them first')
     git('fetch', 'origin', 'master')
     subprocess.run(('git', 'merge-base', '--is-ancestor', 'origin/master', 'HEAD'),
                    cwd=ROOT, check=True, env=environment())
-    git('config', '--local', 'user.name', NAME)
-    git('config', '--local', 'user.email', EMAIL)
 
 
 def plan(change, notes, retry):
@@ -50,6 +64,9 @@ def plan(change, notes, retry):
     latest = json.loads(metadata.read_text(encoding='utf-8'))['versions'][-1]
     if retry:
         return latest['name'], latest['code'], 'Retry existing publication; never replace a public APK'
+    versions = json.loads(metadata.read_text(encoding='utf-8'))['versions']
+    if [identity(v) for v in versions] != [identity(v) for v in read_history(ROOT)]:
+        raise ValueError('A release is already prepared. Use Publish-Release.ps1 -Resume; do not bump again.')
     text = validate_notes(explicit_sections(notes.read_text(encoding='utf-8').strip()))
     print(text)
     return next_version(latest['name'], change), latest['code'] + 1, 'Prepare a NEW release'
@@ -61,7 +78,7 @@ def prepare(change, notes, retry):
         data = json.loads(request.read_text(encoding='utf-8'))
         # Old one-time flags are not authorities in the general publication pipeline.
         data = {'version': data['version'], 'code': data['code'], 'revision': data['revision'] + 1}
-        request.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+        request.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8', newline='\n')
         return data['version'], [request.relative_to(ROOT).as_posix()]
     name, code = prepare_release(ROOT, change, notes.read_text(encoding='utf-8'), date.today())
     return name, ['update/publishing/versions.json', 'update/publishing/manifest/data-v1.json',
@@ -88,11 +105,34 @@ def main():
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument('--change', choices=('patch', 'minor', 'major'))
     modes.add_argument('--retry', action='store_true')
+    modes.add_argument('--resume', action='store_true')
     parser.add_argument('--notes', type=Path)
     args = parser.parse_args()
     if args.change and not args.notes:
         parser.error('--notes is required for a new release')
     notes = args.notes.resolve() if args.notes else None
+    if args.resume:
+        preflight(None, continuing=True)
+        pending = resume.inspect(ROOT, git)
+        print(pending['action'])
+        if pending['mode'] == 'noop':
+            return
+        print(f"Version: {pending['name']}; code: {pending['code']}\nAuthor: {NAME} <{EMAIL}>\nBranch: master")
+        if input('Type YES to resume this same release: ').strip() != 'YES':
+            print('Cancelled; release files not changed.')
+            return
+        if resume.inspect(ROOT, git) != pending:
+            raise ValueError('Pending release changed during confirmation; nothing resumed')
+        if pending['mode'] == 'prepared':
+            resume.normalize(ROOT, pending['paths'])
+            commit_and_push(pending['name'], pending['paths'], False)
+        else:
+            expected = f'{NAME} <{EMAIL}>'
+            if any(git('show', '-s', '--format=' + fmt) != expected for fmt in ('%an <%ae>', '%cn <%ce>')):
+                raise ValueError('Unexpected author/committer; no push performed')
+            subprocess.run(('git', 'push', 'origin', 'HEAD:master'), cwd=ROOT, env=environment(), check=True)
+            print('Existing request pushed. Wait for Publish signed release; publication is not yet confirmed.')
+        return
     preflight(notes)
     name, code, action = plan(args.change, notes, args.retry)
     print(f'{action}\nVersion: {name}; code: {code}\nAuthor: {NAME} <{EMAIL}>\nBranch: master')

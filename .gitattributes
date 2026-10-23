@@ -1,3 +1,8 @@
 
 # Native bundle hashes require byte-exact checkout on every platform.
 video-ffmpeg/native-prebuilt/external/**/*.h text eol=lf
+
+# Release generators and checkout must preserve LF on Windows as well.
+update/publishing/**/*.json text eol=lf
+update/publishing/changelogs/**/*.txt text eol=lf
+app/src/main/assets/settings-changelog.txt text eol=lf

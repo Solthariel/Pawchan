@@ -29,19 +29,19 @@ class CurrentReleaseTest(unittest.TestCase):
 
     def test_all_registered_release_notes_have_explicit_headings(self):
         directory = Path(__file__).resolve().parents[1]
-        versions = json.loads((directory / "versions.json").read_text())["versions"]
+        versions = json.loads((directory / "versions.json").read_text(encoding="utf-8"))["versions"]
         for version in versions:
             with self.subTest(version=version["name"]):
-                text = (directory / f"changelogs/ru/{version['code']}.txt").read_text()
+                text = (directory / f"changelogs/ru/{version['code']}.txt").read_text(encoding="utf-8")
                 self.assertEqual(text, validate_notes(text))
 
     def test_corrected_0120_notes_match_the_published_history_and_text_feed(self):
         root = Path(__file__).resolve().parents[3]
-        notes = (root / "update/publishing/changelogs/ru/21.txt").read_text()
-        history = json.loads((root / "update/feed/history-v1.json").read_text())["releases"]
+        notes = (root / "update/publishing/changelogs/ru/21.txt").read_text(encoding="utf-8")
+        history = json.loads((root / "update/feed/history-v1.json").read_text(encoding="utf-8"))["releases"]
         published = next(v for v in history if v["code"] == 21 and v["name"] == "0.1.20")
         self.assertEqual(notes, published["notes"])
-        self.assertEqual(notes, (root / "update/feed/changelogs/21.txt").read_text())
+        self.assertEqual(notes, (root / "update/feed/changelogs/21.txt").read_text(encoding="utf-8"))
         self.assertIn("\n\nИзменения\n\n", notes)
 
 

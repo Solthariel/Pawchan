@@ -68,12 +68,12 @@ def prepare_release(project, change, notes, release_date):
     versions.append({"code": code, "name": name, "date": release_date.strftime("%d.%m.%Y")})
     text = f"Версия {name}\n\n{notes.strip()}\n"
     # All validation precedes writes; never change an older release's notes or package.
-    changelog.write_text(text, encoding="utf-8")
-    (project / "app/src/main/assets/settings-changelog.txt").write_text(text, encoding="utf-8")
-    versions_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    changelog.write_text(text, encoding="utf-8", newline="\n")
+    (project / "app/src/main/assets/settings-changelog.txt").write_text(text, encoding="utf-8", newline="\n")
+    versions_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     (publishing / "release-request.json").write_text(
-        json.dumps({"version": name, "code": code, "revision": 1}, indent=2) + "\n", encoding="utf-8")
+        json.dumps({"version": name, "code": code, "revision": 1}, indent=2) + "\n", encoding="utf-8", newline="\n")
     return name, code
 
 

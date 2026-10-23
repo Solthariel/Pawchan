@@ -30,14 +30,14 @@ class VersioningTest(unittest.TestCase):
         (publishing / "manifest").mkdir(parents=True)
         (publishing / "changelogs/ru").mkdir(parents=True)
         (root / "app/src/main/assets").mkdir(parents=True)
-        (publishing / "versions.json").write_text(json.dumps({"versions": [{"code": 1, "name": "0.1.0", "date": "01.10.2026"}]}))
+        (publishing / "versions.json").write_text(json.dumps({"versions": [{"code": 1, "name": "0.1.0", "date": "01.10.2026"}]}), encoding="utf-8")
         package = {"version_code": 1, "version_name": "0.1.0", "min_sdk": 30, "length": 123,
                    "source": "https://example.test/old.apk", "changelog": "https://example.test/1.txt", "sha256sum": "original"}
-        (publishing / "manifest/data-v1.json").write_text(json.dumps({"applications": [{"name": "client", "packages": [package]}]}))
+        (publishing / "manifest/data-v1.json").write_text(json.dumps({"applications": [{"name": "client", "packages": [package]}]}), encoding="utf-8")
         feed = root / "update/feed"
         feed.mkdir(parents=True)
         (feed / "history-v1.json").write_text(json.dumps({"schema": 1, "releases": [
-            {"code": 1, "name": "0.1.0", "date": "01.10.2026", "notes": "old"}]}))
+            {"code": 1, "name": "0.1.0", "date": "01.10.2026", "notes": "old"}]}), encoding="utf-8")
         return publishing, package
 
     def test_new_release_keeps_published_package_and_uses_next_ordinal(self):
@@ -45,23 +45,23 @@ class VersioningTest(unittest.TestCase):
             root = Path(folder)
             publishing, old_package = self.fixture(root)
             self.assertEqual(("0.2.0", 2), bump.prepare_release(root, "minor", "* Новая функция", date(2026, 10, 18)))
-            history = json.loads((publishing / "versions.json").read_text())["versions"]
+            history = json.loads((publishing / "versions.json").read_text(encoding="utf-8"))["versions"]
             self.assertEqual({"code": 2, "name": "0.2.0", "date": "18.10.2026"}, history[-1])
-            packages = json.loads((publishing / "manifest/data-v1.json").read_text())["applications"][0]["packages"]
+            packages = json.loads((publishing / "manifest/data-v1.json").read_text(encoding="utf-8"))["applications"][0]["packages"]
             self.assertEqual(old_package, packages[0])
             for field in ("source", "changelog", "sha256sum"):
                 self.assertIsNone(packages[1][field])
             self.assertEqual(0, packages[1]["length"])
-            self.assertEqual((publishing / "changelogs/ru/2.txt").read_text(), (root / "app/src/main/assets/settings-changelog.txt").read_text())
+            self.assertEqual((publishing / "changelogs/ru/2.txt").read_text(encoding="utf-8"), (root / "app/src/main/assets/settings-changelog.txt").read_text(encoding="utf-8"))
 
     def test_heading_is_written_explicitly_for_both_phone_assets_and_github_notes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             publishing, _ = self.fixture(root)
             bump.prepare_release(root, "patch", "• Один\n• Два", date.today())
-            text = (publishing / "changelogs/ru/2.txt").read_text()
+            text = (publishing / "changelogs/ru/2.txt").read_text(encoding="utf-8")
             self.assertEqual("Версия 0.1.1\n\nИзменения\n\n• Один\n• Два\n", text)
-            self.assertEqual(text, (root / "app/src/main/assets/settings-changelog.txt").read_text())
+            self.assertEqual(text, (root / "app/src/main/assets/settings-changelog.txt").read_text(encoding="utf-8"))
 
     def test_unstructured_notes_cannot_create_an_empty_history_entry(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -78,7 +78,7 @@ class VersioningTest(unittest.TestCase):
             root = Path(folder)
             publishing, _ = self.fixture(root)
             bump.prepare_release(root, "patch", "* Fix", date.today())
-            request = json.loads((publishing / "release-request.json").read_text())
+            request = json.loads((publishing / "release-request.json").read_text(encoding="utf-8"))
             self.assertEqual({"version": "0.1.1", "code": 2, "revision": 1}, request)
             before = (publishing / "versions.json").read_bytes()
             with self.assertRaises(ValueError):
@@ -101,9 +101,9 @@ class VersioningTest(unittest.TestCase):
             root = Path(folder)
             publishing, _ = self.fixture(root)
             manifest_path = publishing / "manifest/data-v1.json"
-            manifest = json.loads(manifest_path.read_text())
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest["applications"][0]["packages"][0]["version_code"] = 7
-            manifest_path.write_text(json.dumps(manifest))
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaises(ValueError):
                 bump.prepare_release(root, "patch", "* Fix", date.today())
             self.assertFalse((publishing / "changelogs/ru/2.txt").exists())
