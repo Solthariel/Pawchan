@@ -325,6 +325,16 @@
           "source": null,
           "changelog": null,
           "sha256sum": null
+        },
+        {
+          "title": "Pawchan 0.1.32",
+          "version_name": "0.1.32",
+          "version_code": 33,
+          "min_sdk": 30,
+          "length": 0,
+          "source": null,
+          "changelog": null,
+          "sha256sum": null
         }
       ]
     }
