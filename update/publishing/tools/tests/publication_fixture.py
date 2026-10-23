@@ -46,7 +46,7 @@ class PublicationFixture(unittest.TestCase):
             {'version_code': 1, 'version_name': '0.1.0', 'source': 'https://old.invalid', 'sha256sum': 'old', 'length': 3}]}]})
         p = self.root / 'update/publishing/changelogs/ru/2.txt'
         p.parent.mkdir(parents=True)
-        p.write_text(self.notes)
+        p.write_text(self.notes, encoding='utf-8')
         self.create_files()
         self.patches = [patch.object(assets, 'ROOT', self.root), patch.object(assets, 'api', self.api),
                         patch.object(assets, 'run', self.gh_run), patch.dict(os.environ, {
@@ -86,7 +86,14 @@ class PublicationFixture(unittest.TestCase):
     def api(self, path):
         if path == 'branches/master': return {'commit': {'sha': self.sha}}
         if path == 'releases/latest': return copy.deepcopy(self.public)
-        if path.startswith('releases/tags/'): return copy.deepcopy(self.releases.get(path.split('/')[-1]))
+        if path.startswith('releases/tags/'):
+            release = self.releases.get(path.split('/')[-1])
+            return copy.deepcopy(release) if release and not release['draft'] else None
+        if path.startswith('releases?per_page=100&page='):
+            page = int(path.split('page=')[-1])
+            return copy.deepcopy(list(self.releases.values())[(page - 1) * 100:page * 100])
+        if path.startswith('releases/') and path.split('/')[-1].isdigit():
+            return copy.deepcopy(next((r for r in self.releases.values() if r['id'] == int(path.split('/')[-1])), None))
         if path.startswith('git/ref/tags/'): return copy.deepcopy(self.refs.get(path.split('/')[-1]))
         raise AssertionError(path)
 
@@ -139,7 +146,7 @@ class PublicationFixture(unittest.TestCase):
         self.metadata('update/feed/history-v1.json', history)
         path = self.root / 'update/feed/changelogs/2.txt'
         path.parent.mkdir(exist_ok=True)
-        path.write_text(self.notes)
+        path.write_text(self.notes, encoding='utf-8')
 
     def download(self, args):
         directory = Path(args[args.index('--dir') + 1])

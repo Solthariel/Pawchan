@@ -44,7 +44,7 @@ def same_source(root, commit, head=None):
 
 def inspect(root):
     context = read_context(root)
-    release = assets.api('releases/tags/' + context['tag'])
+    release = assets.find_release(context['tag'])
     reference = assets.api('git/ref/tags/' + context['tag'])
     context['source_commit'] = reference['object']['sha'] if reference else os.environ['GITHUB_SHA']
     if not release:

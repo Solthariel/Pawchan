@@ -31,6 +31,30 @@ def api(path):
         raise
 
 
+def find_release(tag):
+    """Tag lookup may omit drafts: search authenticated release pages before creating one."""
+    release = api('releases/tags/' + tag)
+    if release is not None:
+        if not isinstance(release, dict) or release.get('tag_name') != tag:
+            raise ValueError('Unexpected release response')
+        return release
+    matches = []
+    for page in range(1, 101):
+        batch = api(f'releases?per_page=100&page={page}')
+        if not isinstance(batch, list) or len(batch) > 100:
+            raise ValueError('Cannot safely inspect authenticated release list')
+        for item in batch:
+            if not isinstance(item, dict):
+                raise ValueError('Invalid release list entry')
+            if item.get('tag_name') == tag:
+                matches.append(item)
+        if len(matches) > 1:
+            raise ValueError('Multiple releases share the requested tag; explicit review required')
+        if len(batch) < 100:
+            return matches[0] if matches else None
+    raise ValueError('Release pagination limit reached; no automatic creation')
+
+
 def names(version):
     return (f'Pawchan-{version}.apk', f'Pawchan-{version}.apk.sha256',
             f'Pawchan-{version}-source.zip', f'Pawchan-{version}-source.zip.sha256')

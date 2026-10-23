@@ -26,16 +26,18 @@ def publish(root, context):
         assets.run('gh', 'release', 'create', context['tag'], '--repo', assets.REPO,
                    '--verify-tag', '--target', context['source_commit'], '--title', 'Pawchan ' + context['latest']['name'],
                    '--notes-file', f"update/publishing/changelogs/ru/{context['latest']['code']}.txt", '--draft')
-        _, _, release = state.inspect(root)
+        checked, mode, release = state.inspect(root)
+        if checked != context or mode != 'build' or release is None or not release['draft']:
+            raise ValueError('Created draft was not confirmed; inspect GitHub and retry without deleting it')
     upload_missing(root, context, release)
     try:
         assets.run('gh', 'release', 'edit', context['tag'], '--repo', assets.REPO, '--draft=false', '--latest')
     except (OSError, subprocess.CalledProcessError):
         # A timeout may occur after the server promoted the verified draft.
-        if (assets.api('releases/tags/' + context['tag']) or {}).get('draft', True):
+        if (assets.api('releases/' + str(release['id'])) or {}).get('draft', True):
             raise
-    result = assets.api('releases/tags/' + context['tag'])
-    if not result or result['draft'] or result['id'] != release['id']:
+    result = assets.api('releases/' + str(release['id']))
+    if not result or result['draft'] or result['id'] != release['id'] or result['tag_name'] != context['tag']:
         raise ValueError('Public release was not confirmed')
     return result
 
@@ -52,7 +54,7 @@ def upload_missing(root, context, release):
     missing = sorted(expected - existing)
     if missing:
         assets.run('gh', 'release', 'upload', context['tag'], *[str(root / 'dist' / n) for n in missing], '--repo', assets.REPO)
-    updated = assets.api('releases/tags/' + context['tag'])
+    updated = assets.api('releases/' + str(release['id']))
     if not updated or updated['id'] != release['id'] or not updated['draft']:
         raise ValueError('Draft changed during upload')
     if {a['name'] for a in updated['assets']} != expected:
