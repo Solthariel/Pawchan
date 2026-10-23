@@ -1,0 +1,3 @@
+
+# Native bundle hashes require byte-exact checkout on every platform.
+video-ffmpeg/native-prebuilt/external/**/*.h text eol=lf

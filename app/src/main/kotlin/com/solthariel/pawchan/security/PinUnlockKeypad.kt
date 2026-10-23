@@ -25,7 +25,7 @@ internal fun PinUnlockKeypad(
     digits: String,
     state: AppLockState,
     biometricEnabled: Boolean,
-    onChange: (String) -> Unit,
+    onKey: (String) -> Unit,
     onFingerprint: () -> Unit,
 ) {
     val enabled = state.ready && !state.busy && state.retrySeconds == 0
@@ -33,17 +33,17 @@ internal fun PinUnlockKeypad(
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9")).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 row.forEach { digit ->
-                    PinUnlockKey(digit, enabled && digits.length < PIN_LENGTH, { onChange(digits + digit) }) {
+                    PinUnlockKey(digit, enabled && digits.length < PIN_LENGTH, { onKey(digit) }) {
                         Text(digit, style = MaterialTheme.typography.headlineMedium)
                     }
                 }
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            PinUnlockKey("Удалить цифру", enabled && digits.isNotEmpty(), { onChange(digits.dropLast(1)) }) {
+            PinUnlockKey("Удалить цифру", enabled && digits.isNotEmpty(), { onKey("⌫") }) {
                 PinDeleteGlyph(Modifier.size(24.dp))
             }
-            PinUnlockKey("0", enabled && digits.length < PIN_LENGTH, { onChange(digits + "0") }) {
+            PinUnlockKey("0", enabled && digits.length < PIN_LENGTH, { onKey("0") }) {
                 Text("0", style = MaterialTheme.typography.headlineMedium)
             }
             PinUnlockBiometric(digits, state, biometricEnabled, onFingerprint)

@@ -57,7 +57,7 @@ internal fun PinUnlockContent(
                     digits = digits,
                     state = state,
                     biometricEnabled = state.configuration.biometric && fingerprintAvailable,
-                    onChange = { input.change(it, state.ready && !state.busy && state.retrySeconds == 0, onPin) },
+                    onKey = { input.press(it, state.ready && !state.busy && state.retrySeconds == 0, onPin) },
                     onFingerprint = onFingerprint,
                 )
             }

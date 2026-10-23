@@ -18,17 +18,17 @@ internal class AppLockStore(
     context: Context,
     namespace: String = "app_lock",
     private val nowMillis: () -> Long = SystemClock::elapsedRealtime,
-) {
+) : AppLockStorage {
     private val preferences = context.getSharedPreferences(namespace, Context.MODE_PRIVATE)
     private val crypto = AppLockCrypto(namespace)
     private val biometricManager = context.getSystemService(BiometricManager::class.java)
     private val fingerprintHardware = context.packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
-    val fingerprintAvailable get() =
+    override val fingerprintAvailable get() =
         fingerprintHardware &&
             biometricManager?.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
             BiometricManager.BIOMETRIC_SUCCESS
 
-    suspend fun read(): LockConfiguration =
+    override suspend fun read(): LockConfiguration =
         withContext(Dispatchers.IO) {
             LockConfiguration(
                 preferences.contains("verifier"),
@@ -37,7 +37,7 @@ internal class AppLockStore(
             )
         }
 
-    suspend fun setPin(pin: String) =
+    override suspend fun setPin(pin: String) =
         withContext(Dispatchers.IO) {
             require(pin.length == PIN_LENGTH && pin.all { it in '0'..'9' })
             val salt = ByteArray(PIN_SALT_BYTES).also(SecureRandom()::nextBytes)
@@ -50,7 +50,7 @@ internal class AppLockStore(
             }
         }
 
-    suspend fun verify(pin: String): PinVerification =
+    override suspend fun verify(pin: String): PinVerification =
         withContext(Dispatchers.IO) {
             val now = nowMillis()
             val deadline = preferences.getLong("retry_at", 0L)
@@ -75,12 +75,12 @@ internal class AppLockStore(
             }
         }
 
-    suspend fun retryRemainingMillis(): Long =
+    override suspend fun retryRemainingMillis(): Long =
         withContext(Dispatchers.IO) {
             PinAttemptPolicy.remaining(nowMillis(), preferences.getLong("retry_at", 0L))
         }
 
-    suspend fun resetAttempts() =
+    override suspend fun resetAttempts() =
         withContext(Dispatchers.IO) {
             commit {
                 putInt("failures", 0)
@@ -88,17 +88,17 @@ internal class AppLockStore(
             }
         }
 
-    suspend fun setBiometric(enabled: Boolean) =
+    override suspend fun setBiometric(enabled: Boolean) =
         withContext(Dispatchers.IO) {
             commit { putBoolean("biometric", enabled) }
         }
 
-    suspend fun setDelay(delay: AppLockDelay) =
+    override suspend fun setDelay(delay: AppLockDelay) =
         withContext(Dispatchers.IO) {
             commit { putLong("lock_delay_millis", delay.millis) }
         }
 
-    suspend fun clear() =
+    override suspend fun clear() =
         withContext(Dispatchers.IO) {
             commit { clear() }
             crypto.clearBiometricKey()
@@ -112,7 +112,7 @@ internal class AppLockStore(
         }
     }
 
-    suspend fun biometricCipher(recreate: Boolean = false) =
+    override suspend fun biometricCipher(recreate: Boolean) =
         withContext(Dispatchers.IO) {
             crypto.biometricCipher(recreate)
         }

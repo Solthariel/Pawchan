@@ -10,7 +10,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 /** Ephemeral input: never saved, and discarded when the lock screen leaves the foreground. */
 @Composable
 internal fun rememberPinUnlockInput(state: AppLockState): PinUnlockInput {
-    val digits = remember(state.busy, state.error, state.ready, state.retrySeconds > 0) { PinUnlockInput() }
+    val digits =
+        remember(
+            state.pinInputEpoch,
+            state.editor?.stage,
+            state.busy,
+            state.error,
+            state.ready,
+            state.retrySeconds > 0,
+        ) {
+            PinUnlockInput()
+        }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, digits) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) digits.clear() }

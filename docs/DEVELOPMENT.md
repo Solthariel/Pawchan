@@ -40,6 +40,28 @@ core/media, feature/composer и feature/thread. Наличие compiled AndroidT
 не означает исполнение тестов на устройстве. Целевые ручные сценарии выбираются
 по изменённой подсистеме, замеры — по [протоколу performance](contracts/PERFORMANCE.md).
 
+## Изоляция приложения при device-тестах
+
+Debug устанавливается как **Pawchan Debug**: `com.solthariel.pawchan.debug`,
+тестовый APK — `com.solthariel.pawchan.debug.test`. Release сохраняет прежний
+`com.solthariel.pawchan` и обновляет установленный Pawchan с прежним ключом подписи.
+У debug отдельные настройки, БД, файлы и PIN; данные release туда не переносятся.
+
+Перед установкой debug или connectedDebugAndroidTest задача
+`:app:verifyDebugPackageIsolation` проверяет реальные merged-манифесты: оба
+package, instrumentation target и authorities провайдеров. Если они пересекаются
+с release, выполнение останавливается до установки тестовым раннером.
+Нельзя обходить эту задачу через `-x`, вручную менять applicationId или запускать
+старые AndroidTest APK с прежним target. Local `assembleRelease` с debug-подписью
+по-прежнему НЕ предназначен для установки поверх официального релиза.
+
+На основном телефоне не запускайте `adb uninstall com.solthariel.pawchan` и не
+удаляйте обычный Pawchan ради тестов. Для первого прогона новой изоляции предпочтительно
+тестовое устройство. Отдельный package защищает данные release, но тестовый раннер
+может очищать или удалять сам **Pawchan Debug**. Для каждого прогона проверяйте
+XML-отчёт: нужные классы, число тестов, failures/errors/skipped — одной строки
+BUILD SUCCESSFUL недостаточно.
+
 ## Быстрая обратная связь
 
 Для треда на Windows есть `scripts/check-thread.ps1`: KtLint, thread unit tests

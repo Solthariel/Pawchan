@@ -1,6 +1,7 @@
 import com.android.build.api.artifact.SingleArtifact
 import groovy.json.JsonSlurper
 import java.util.zip.ZipFile
+import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
     alias(libs.plugins.android.application)
@@ -27,8 +28,17 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
                 .toList()
         check(apks.isNotEmpty()) { "No APK found in ${apkDirectory.get().asFile}" }
         val required =
-            listOf("avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "dav1d", "pawplayback", "c++_shared")
-                .map { "lib/arm64-v8a/lib$it.so" }
+            listOf(
+                "avutil",
+                "swresample",
+                "swscale",
+                "avcodec",
+                "avformat",
+                "avfilter",
+                "dav1d",
+                "pawplayback",
+                "c++_shared",
+            ).map { "lib/arm64-v8a/lib$it.so" }
         apks.forEach { apk ->
             val entries =
                 ZipFile(apk).use { zip ->
@@ -43,6 +53,53 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
             check(missing.isEmpty()) { "${apk.name} is missing native libraries: $missing" }
         }
         report.get().asFile.writeText(apks.joinToString("\n") { it.name })
+    }
+}
+
+/** Refuses device installation unless both merged manifests target only the isolated debug package. */
+abstract class VerifyDebugPackageIsolation : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val appManifest: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val testManifest: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        val app = readManifest(appManifest.get().asFile)
+        val test = readManifest(testManifest.get().asFile)
+        val debugPackage = "com.solthariel.pawchan.debug"
+        val androidNamespace = "http://schemas.android.com/apk/res/android"
+        check(app.documentElement.getAttribute("package") == debugPackage) { "Unsafe debug application package" }
+        check(test.documentElement.getAttribute("package") == "$debugPackage.test") { "Unsafe test package" }
+        val runners = test.getElementsByTagName("instrumentation")
+        check(runners.length == 1) { "Expected exactly one instrumentation runner" }
+        val runner = runners.item(0) as org.w3c.dom.Element
+        check(runner.getAttributeNS(androidNamespace, "targetPackage") == debugPackage) {
+            "Unsafe instrumentation target"
+        }
+        val providers = app.getElementsByTagName("provider")
+        val authorities =
+            (0 until providers.length).map { index ->
+                (providers.item(index) as org.w3c.dom.Element).getAttributeNS(androidNamespace, "authorities")
+            }
+        check("$debugPackage.media" in authorities && "$debugPackage.androidx-startup" in authorities) {
+            "Debug providers must use isolated authorities"
+        }
+        val releaseAuthorities = setOf("com.solthariel.pawchan.media", "com.solthariel.pawchan.androidx-startup")
+        check(authorities.none(releaseAuthorities::contains)) {
+            "Debug providers collide with the release application"
+        }
+        logger.lifecycle("DEBUG PACKAGE ISOLATION: PASS ($debugPackage; $debugPackage.test)")
+    }
+
+    private fun readManifest(file: java.io.File): org.w3c.dom.Document {
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.isNamespaceAware = true
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        return factory.newDocumentBuilder().parse(file)
     }
 }
 
@@ -155,6 +212,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -222,6 +283,18 @@ val prepareChangelogHistory =
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(prepareChangelogHistory) { it.assetsDirectory }
+        if (variant.buildType == "debug") {
+            val test = checkNotNull(variant.androidTest) { "Debug instrumentation must be available" }
+            val isolation =
+                tasks.register<VerifyDebugPackageIsolation>("verifyDebugPackageIsolation") {
+                    appManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+                    testManifest.set(test.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+                }
+            tasks
+                .matching {
+                    it.name in setOf("connectedDebugAndroidTest", "installDebug", "installDebugAndroidTest")
+                }.configureEach { dependsOn(isolation) }
+        }
         val name = variant.name.replaceFirstChar(Char::uppercaseChar)
         val verify =
             tasks.register<VerifyApkNativeLibraries>("verify${name}ApkNativeLibraries") {

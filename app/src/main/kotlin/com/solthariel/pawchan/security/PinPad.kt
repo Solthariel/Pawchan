@@ -50,10 +50,7 @@ internal fun PinPad(
                                     .weight(1f)
                                     .heightIn(min = 64.dp)
                                     .semantics { if (digit == "⌫") contentDescription = "Удалить цифру" },
-                            onClick = {
-                                val value = if (digit == "⌫") digits.dropLast(1) else (digits + digit).take(PIN_LENGTH)
-                                input.change(value, enabled, submit)
-                            },
+                            onClick = { input.press(digit, enabled, submit) },
                         ) { Text(digit, style = MaterialTheme.typography.headlineSmall) }
                     }
                 }

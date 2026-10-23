@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.solthariel.pawchan.domain.security.AppLockDelay
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -15,9 +16,12 @@ import kotlinx.coroutines.launch
 
 /** Activity-owned, survives rotation; a new process is always locked. */
 internal class AppLockViewModel(
-    context: Context,
+    private val store: AppLockStorage,
+    nowMillis: () -> Long = SystemClock::elapsedRealtime,
 ) : ViewModel() {
-    private val store = AppLockStore(context.applicationContext)
+    constructor(context: Context) : this(AppLockStore(context.applicationContext))
+
+    private var activeOperation: Job? = null
     private val mutable = MutableStateFlow(AppLockState())
     val state = mutable.asStateFlow()
     val videoAccess =
@@ -28,18 +32,16 @@ internal class AppLockViewModel(
         }
     val fingerprintAvailable get() = store.fingerprintAvailable
     val lifecycle =
-        AppLockLifecycle(viewModelScope, SystemClock::elapsedRealtime, { state.value }) {
-            mutable.value = state.value.copy(locked = true, editor = null, error = null)
-        }
+        AppLockLifecycle(viewModelScope, nowMillis, { state.value }, ::lock)
     private val retry =
-        PinRetryCountdown(viewModelScope, SystemClock::elapsedRealtime) {
-            mutable.value = state.value.copy(retrySeconds = it)
+        PinRetryCountdown(viewModelScope, nowMillis) {
+            mutable.value = state.value.copy(pinInput = state.value.pinInput.copy(retrySeconds = it))
         }
 
     init {
         operation {
             val config = store.read()
-            mutable.value = AppLockState(true, config, config.enabled)
+            mutable.value = state.value.copy(ready = true, configuration = config, locked = config.enabled)
             retry.start(store.retryRemainingMillis())
         }
     }
@@ -186,25 +188,42 @@ internal class AppLockViewModel(
 
     private fun operation(block: suspend () -> Unit) {
         if (state.value.busy) return
-        mutable.value = state.value.copy(busy = true)
-        viewModelScope.launch {
-            try {
-                block()
-            } catch (
-                cancelled: CancellationException,
-            ) {
-                throw cancelled
-            } catch (
-                _: Exception,
-            ) {
-                mutable.value =
-                    state.value.copy(
-                        error = "Не удалось прочитать или сохранить настройки блокировки. Повторите попытку.",
-                    )
-            } finally {
-                mutable.value = state.value.copy(busy = false)
+        val epoch = state.value.pinInputEpoch + 1
+        mutable.value = state.value.copy(busy = true, pinInput = state.value.pinInput.copy(epoch = epoch))
+        activeOperation =
+            viewModelScope.launch {
+                try {
+                    block()
+                } catch (
+                    cancelled: CancellationException,
+                ) {
+                    throw cancelled
+                } catch (
+                    _: Exception,
+                ) {
+                    if (state.value.pinInputEpoch == epoch) {
+                        mutable.value =
+                            state.value.copy(
+                                error = "Не удалось прочитать или сохранить настройки блокировки. Повторите попытку.",
+                            )
+                    }
+                } finally {
+                    if (state.value.pinInputEpoch == epoch) mutable.value = state.value.copy(busy = false)
+                }
             }
-        }
+    }
+
+    private fun lock() {
+        mutable.value =
+            state.value.copy(
+                locked = true,
+                busy = false,
+                editor = null,
+                error = null,
+                pinInput = state.value.pinInput.copy(epoch = state.value.pinInputEpoch + 1),
+            )
+        activeOperation?.cancel()
+        activeOperation = null
     }
 
     override fun onCleared() {
