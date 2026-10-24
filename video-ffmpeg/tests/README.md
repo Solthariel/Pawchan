@@ -76,3 +76,11 @@ g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
 `host/NativeDecodeHostTest.java` additionally verifies the decoder-name metadata
 field returned by the real native engine, alongside UTF-8 and display rotation.
 These host tests are separate from Gradle Android unit tests.
+
+
+## Инструмент пересборки зависимостей
+
+Его Kotlin/JVM-тесты находятся в `tools/native-build/src/test`. Команды,
+область проверки и отличие от реальной NDK-сборки описаны в
+[руководстве разработки](../../docs/DEVELOPMENT.md#пересборка-ffmpegdav1d-и-тесты-её-инструментов).
+Существующие проверки runtime-плеера выше не заменяются этим набором.

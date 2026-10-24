@@ -572,9 +572,16 @@ tasks.register<VerifySourcePolicy>("verifySourcePolicy") {
     rootDirectory.set(layout.projectDirectory)
 }
 
+tasks.register("nativeBuildToolCheck") {
+    group = "verification"
+    description = "Runs isolated native-build Kotlin tests, KtLint and Detekt without an Android SDK."
+    dependsOn(gradle.includedBuild("pawchan-native-build").task(":check"))
+}
+
 tasks.register("qualityCheck") {
     group = "verification"
     description = "Runs checks for every production module."
+    dependsOn("nativeBuildToolCheck")
     dependsOn(productionProjects.map { "${it.path}:check" })
     dependsOn(productionProjects.map { "${it.path}:detekt" })
     dependsOn("ktlintCheck")

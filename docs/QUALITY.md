@@ -12,6 +12,7 @@
 | verifySourcePolicy | Подавления/baseline, перечисленные запрещённые конструкции, imports и отдельные feature/host границы | Все транзитивные вызовы, thread safety, реальную отмену HTTP и плавность |
 | verifyReleaseMetadata | Согласованность реестра версий, bundled changelog и рабочего manifest | Что APK уже опубликован или подписан нужным ключом |
 | Unit tests | Поведение в проверенных случаях, ошибки/отмену при соответствующих assertions | Поведение настоящего Android по одному fake/harness |
+| nativeBuildToolCheck | Подготовку/кеш исходников, ошибки, рецепты, целостность bundle, жизненный цикл JVM-процессов; KtLint и Detekt инструмента | Настоящую NDK-компиляцию, Android loader, воспроизведение или независимость происхождения кода |
 | device-smoke | Instrumented tests выбранных модулей в Android runtime | Полное покрытие устройства, работу внешнего сервиса или performance PASS |
 
 ## Одна точка запуска
