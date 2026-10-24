@@ -26,13 +26,14 @@ class GuardTest(PublicationFixture):
                 with self.assertRaises(ValueError): assets.verify_zip(path)
 
     def test_wrong_apk_sidecar_is_rejected(self):
-        (self.root / 'dist' / assets.names('0.1.1')[1]).write_text('wrong')
+        (self.root / 'dist' / assets.historical_names('0.1.1')[1]).write_text('wrong')
         with self.assertRaises(ValueError): self.publish()
         self.assertEqual({}, self.releases)
 
-    def test_wrong_source_sidecar_is_rejected(self):
-        (self.root / 'dist' / assets.names('0.1.1')[3]).write_text('wrong')
-        with self.assertRaises(ValueError): self.publish()
+    def test_missing_local_apk_sidecar_is_rejected(self):
+        (self.root / 'dist' / assets.historical_names('0.1.1')[1]).unlink()
+        with self.assertRaises(OSError): self.publish()
+        self.assertEqual({}, self.releases)
 
     def test_request_version_disagreement_is_rejected(self):
         self.metadata('update/publishing/release-request.json', {'code': 3, 'version': '0.1.2'})
@@ -48,18 +49,20 @@ class GuardTest(PublicationFixture):
         self.metadata('update/publishing/release-request.json', {'code': 3, 'version': '0.1.2'})
         with self.assertRaises(ValueError): state.inspect(self.root)
 
-    def test_legacy_public_apk_only_format_remains_read_only(self):
+    def test_historical_four_asset_release_remains_read_only(self):
         self.complete()
-        for name in assets.names('0.1.1')[2:]: self.blobs[self.tag].pop(name)
+        for name in assets.historical_names('0.1.1')[1:]:
+            self.blobs[self.tag][name] = (self.root / 'dist' / name).read_bytes()
         self.refresh()
         context, mode, release = state.inspect(self.root)
         with tempfile.TemporaryDirectory() as d:
             self.assertTrue(state.verify_public(self.root, context, release, Path(d)))
         self.assertEqual('verify', mode)
 
-    def test_new_releases_require_named_source_archive(self):
+    def test_historical_extra_assets_are_rejected_for_new_versions(self):
         self.complete()
-        for name in assets.names('0.1.1')[2:]: self.blobs[self.tag].pop(name)
+        for name in assets.historical_names('0.1.1')[1:]:
+            self.blobs[self.tag][name] = (self.root / 'dist' / name).read_bytes()
         self.refresh(); context, _, release = state.inspect(self.root)
         with patch.object(assets, 'LEGACY_LAST_CODE', 0), tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError): state.verify_public(self.root, context, release, Path(d))

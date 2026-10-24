@@ -11,8 +11,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
 REPO = 'Solthariel/Pawchan'
-# Published versions through code 30 predate the mandatory named source asset.
-LEGACY_LAST_CODE = 30
+# Versions through 0.1.33 (code 34) may retain old public attachments.
+LEGACY_LAST_CODE = 34
 
 
 def run(*args, cwd=None):
@@ -61,6 +61,10 @@ def find_release(tag):
 
 
 def names(version):
+    return (f'Pawchan-{version}.apk',)
+
+
+def historical_names(version):
     return (f'Pawchan-{version}.apk', f'Pawchan-{version}.apk.sha256',
             f'Pawchan-{version}-source.zip', f'Pawchan-{version}-source.zip.sha256')
 
@@ -86,25 +90,23 @@ def verify_zip(path):
 
 
 def verify_files(directory, version):
-    apk, apk_sha, source, source_sha = names(version)
-    for binary, sidecar in ((apk, apk_sha), (source, source_sha)):
-        path = directory / binary
-        if not path.is_file() or path.stat().st_size == 0:
-            raise ValueError('Missing or empty artifact: ' + binary)
-        if (directory / sidecar).read_text(encoding='ascii').strip() != checksum(path) + '  ' + binary:
-            raise ValueError('Checksum differs: ' + binary)
-    verify_zip(directory / source)
-    return checksum(directory / apk), (directory / apk).stat().st_size
+    apk = names(version)[0]
+    path = directory / apk
+    if not path.is_file() or path.stat().st_size == 0:
+        raise ValueError('Missing or empty artifact: ' + apk)
+    digest = checksum(path)
+    sidecar = directory / (apk + '.sha256')
+    if sidecar.exists() and sidecar.read_text(encoding='ascii').strip() != digest + '  ' + apk:
+        raise ValueError('Checksum differs: ' + apk)
+    return digest, path.stat().st_size
 
 
-def prepare_source(root, version, commit):
-    directory = root / 'dist'
-    directory.mkdir(exist_ok=True)
-    source = directory / names(version)[2]
-    run('git', 'archive', '--format=zip', '--output=' + str(source), commit, cwd=root)
-    verify_zip(source)
-    source.with_name(source.name + '.sha256').write_text(checksum(source) + '  ' + source.name + '\n', encoding='ascii')
-    verify_files(directory, version)
+def verify_build(directory, version):
+    digest, length = verify_files(directory, version)
+    apk = names(version)[0]
+    if (directory / (apk + '.sha256')).read_text(encoding='ascii').strip() != digest + '  ' + apk:
+        raise ValueError('Local APK checksum differs')
+    return digest, length
 
 
 def download(release, directory):
@@ -121,9 +123,11 @@ def compare_files(local, remote, entries):
 
 
 def verify_legacy(directory, version):
-    apk, sidecar = names(version)[:2]
-    path = directory / apk
-    digest = checksum(path)
-    if path.stat().st_size == 0 or (directory / sidecar).read_text(encoding='ascii').strip() != digest + '  ' + apk:
-        raise ValueError('Historical APK checksum differs')
-    return digest, path.stat().st_size
+    apk, apk_sha, source, source_sha = historical_names(version)
+    digest, length = verify_build(directory, version)
+    source_path = directory / source
+    if source_path.exists():
+        if (directory / source_sha).read_text(encoding='ascii').strip() != checksum(source_path) + '  ' + source:
+            raise ValueError('Historical source checksum differs')
+        verify_zip(source_path)
+    return digest, length

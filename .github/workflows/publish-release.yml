@@ -140,7 +140,7 @@ jobs:
             echo "- Device testing remains manual."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Prepare flat source archive
+      - name: Verify APK publication asset
         if: steps.publication.outputs.mode == 'build'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -153,9 +153,6 @@ jobs:
           name: Pawchan-release-files-${{ github.run_number }}
           path: |
             dist/*.apk
-            dist/*.apk.sha256
-            dist/*-source.zip
-            dist/*-source.zip.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0

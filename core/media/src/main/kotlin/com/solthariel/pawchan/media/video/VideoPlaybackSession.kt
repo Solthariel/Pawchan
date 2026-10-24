@@ -32,6 +32,7 @@ internal class VideoPlaybackSession(
     private var pendingSeek: Long? = null
     private var requestedPlaying = true
     private var closed = false
+    private var generation = 0
 
     /** The PiP window holds this session: the viewer must not pause, close or re-attach it. */
     @Volatile var inPip = false
@@ -48,9 +49,10 @@ internal class VideoPlaybackSession(
 
     fun start() {
         if (closed) return
+        val token = ++generation
+        opening?.cancel()
         soundControl.hasAudio = false
         engine.stop()
-        opening?.cancel()
         mutableVideoOutput.value = false
         mutableStatus.value =
             status.value.copy(
@@ -63,21 +65,30 @@ internal class VideoPlaybackSession(
         opening =
             scope.launch {
                 try {
-                    open(url)
+                    if (!closed && token == generation) open(url, token)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: IOException) {
-                    mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
+                    if (!closed && token == generation) {
+                        mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
+                    }
                 } catch (_: IllegalArgumentException) {
-                    mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
+                    if (!closed && token == generation) {
+                        mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
+                    }
                 }
             }
     }
 
-    private fun open(source: String) {
+    private fun open(
+        source: String,
+        token: Int,
+    ) {
         soundControl.apply()
-        engine.open(source, attempt.software, ::onEvent)
-        if (!requestedPlaying) engine.pause()
+        engine.open(source, attempt.software) { type, snapshot ->
+            if (!closed && token == generation) onEvent(type, snapshot)
+        }
+        if (!closed && token == generation && !requestedPlaying) engine.pause()
     }
 
     private fun onEvent(
@@ -86,7 +97,7 @@ internal class VideoPlaybackSession(
     ) {
         if (closed) return
         soundControl.hasAudio = engine.metadata.containsKey("audio_format")
-        if (type == VideoEvent.INCOMPLETE) requestedPlaying = false
+        if (type == VideoEvent.INCOMPLETE || type == VideoEvent.ENDED) requestedPlaying = false
         if (type == VideoEvent.ERROR) {
             recover()
         } else {
@@ -104,7 +115,7 @@ internal class VideoPlaybackSession(
             if (snapshot.seekable) {
                 pendingSeek?.let {
                     pendingSeek = null
-                    engine.seekTo(it)
+                    engine.seekTo(it.coerceIn(0L, snapshot.duration.coerceAtLeast(0L)))
                 }
             }
             if (type == VideoEvent.PLAYING && !requestedPlaying) engine.pause()
@@ -114,6 +125,8 @@ internal class VideoPlaybackSession(
     private fun recover() {
         val next = attempt.afterFailure()
         if (next == null) {
+            generation += 1
+            opening?.cancel()
             engine.stop()
             mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
         } else {
@@ -124,20 +137,22 @@ internal class VideoPlaybackSession(
     }
 
     override fun retry() {
-        pendingSeek = status.value.position
+        if (closed) return
+        pendingSeek = pendingSeek ?: status.value.position
         start()
     }
 
     override fun setSoftware(enabled: Boolean) {
-        if (enabled != attempt.software) {
-            pendingSeek = status.value.position
+        if (!closed && enabled != attempt.software) {
+            pendingSeek = pendingSeek ?: status.value.position
             attempt = attempt.copy(software = enabled)
             start()
         }
     }
 
     override fun togglePlay() {
-        requestedPlaying = !status.value.playing
+        if (closed) return
+        requestedPlaying = status.value.stage == VideoStage.ERROR || status.value.ended || !requestedPlaying
         if (requestedPlaying) {
             if (status.value.stage == VideoStage.ERROR) {
                 retry()
@@ -154,17 +169,27 @@ internal class VideoPlaybackSession(
     }
 
     override fun seekTo(position: Long) {
-        if (status.value.seekable) engine.seekTo(position.coerceIn(0L, status.value.duration))
+        if (closed) return
+        val target = position.coerceAtLeast(0L)
+        if (status.value.seekable) {
+            pendingSeek = null
+            engine.seekTo(target.coerceAtMost(status.value.duration.coerceAtLeast(0L)))
+        } else {
+            pendingSeek = target
+        }
     }
 
     fun pause() {
+        if (closed) return
         requestedPlaying = false
         audio?.update(false)
         engine.pause()
     }
 
     override fun close() {
+        if (closed) return
         closed = true
+        generation += 1
         privacy.close()
         audio?.close()
         audio = null

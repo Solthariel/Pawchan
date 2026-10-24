@@ -73,7 +73,9 @@ def inspect(root, release_id=None):
 def verify_public(root, context, release, directory):
     expected = set(assets.names(context['latest']['name']))
     actual = {a['name'] for a in release['assets']}
-    legacy = context['complete'] and context['latest']['code'] <= assets.LEGACY_LAST_CODE and actual == set(assets.names(context['latest']['name'])[:2])
+    historical = assets.historical_names(context['latest']['name'])
+    legacy = (context['complete'] and context['latest']['code'] <= assets.LEGACY_LAST_CODE
+              and actual in (set(historical[:2]), set(historical)))
     if not legacy and actual != expected or len(actual) != len(release['assets']):
         raise ValueError('Public release assets are incomplete or unexpected')
     assets.download(release, directory)

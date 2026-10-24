@@ -12,7 +12,7 @@ import publication_state as state
 
 def publish(root, context):
     directory = root / 'dist'
-    assets.verify_files(directory, context['latest']['name'])
+    assets.verify_build(directory, context['latest']['name'])
     current, mode, release = state.inspect(root)
     if mode != 'build':
         return release

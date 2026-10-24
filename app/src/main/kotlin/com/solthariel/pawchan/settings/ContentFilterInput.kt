@@ -77,5 +77,5 @@ internal fun filterWordsAreSimple(values: List<String>): Boolean =
 
 internal fun filterInputText(rule: ContentFilterRule): String =
     rule.values.joinToString(
-        if (rule.mode == ContentFilterMode.ALL_WORDS && filterWordsAreSimple(rule.values)) ", " else "\n",
+        if (rule.mode == ContentFilterMode.ALL_WORDS && filterWordsAreSimple(rule.values)) " " else "\n",
     )

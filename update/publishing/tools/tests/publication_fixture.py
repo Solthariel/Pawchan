@@ -64,7 +64,7 @@ class PublicationFixture(unittest.TestCase):
 
     def create_files(self):
         d = self.root / 'dist'; d.mkdir()
-        apk, apk_sha, source, source_sha = assets.names('0.1.1')
+        apk, apk_sha, source, source_sha = assets.historical_names('0.1.1')
         (d / apk).write_bytes(b'real-test-apk-bytes')
         with zipfile.ZipFile(d / source, 'w') as z:
             for name in ('gradlew.bat', 'settings.gradle.kts', 'app/build.gradle.kts'):

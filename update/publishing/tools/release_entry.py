@@ -62,8 +62,7 @@ def perform(args, progress):
     if args.assets:
         if mode != 'build':
             raise ValueError('Assets may be prepared only for a pending build')
-        commit = release['target_commitish'] if release else context['source_commit']
-        assets.prepare_source(assets.ROOT, context['latest']['name'], commit)
+        assets.verify_build(assets.ROOT / 'dist', context['latest']['name'])
         return
     if mode != 'build':
         progress['phase'] = 'public artifact verification'

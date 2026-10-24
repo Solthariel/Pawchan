@@ -47,7 +47,7 @@ class DeliveryTest(PublicationFixture):
         self.assertEqual(first['id'], again['id'])
         self.assertFalse(any(c[:2] == ('gh', 'release') for c in self.calls))
 
-    def test_all_uploaded_checksums_and_source_are_verified(self):
+    def test_uploaded_apk_is_verified_against_local_bytes(self):
         self.publish()
         context, mode, release = state.inspect(self.root)
         self.assertEqual('recover', mode)
