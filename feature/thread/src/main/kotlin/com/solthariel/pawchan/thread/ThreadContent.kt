@@ -31,7 +31,6 @@ internal fun ThreadContent(
     val loading = rememberThumbnailLoading(bindings.loader, list)
     val fresh = rememberThreadFreshPosts(content, list)
     val scope = rememberCoroutineScope()
-    val smooth = rememberThreadSmoothScroll()
     val reference: (Long) -> Unit = { id ->
         bindings.tools.previews = bindings.tools.previews + PostPreviewTarget(null, id)
     }
@@ -76,7 +75,7 @@ internal fun ThreadContent(
             modifier = Modifier.align(Alignment.CenterEnd),
         )
         ThreadRefreshNoticeBar(fresh) { id ->
-            content.presentation.postPositions[id]?.let { index -> scope.launch { smooth.scrollTo(list, index) } }
+            content.presentation.postPositions[id]?.let { index -> scope.launch { list.scrollToThreadPost(index) } }
         }
     }
 }
