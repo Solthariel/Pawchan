@@ -54,3 +54,25 @@ ffmpeg -f lavfi -i testsrc2=size=96x64:rate=30:duration=80 \
 Compile with `frames.cpp`, `decoder.cpp`, C++17 and host FFmpeg headers/libraries
 (avformat, avcodec, swresample, avutil). Run `frames_test /absolute/short-audio.mp4`.
 AddressSanitizer/UndefinedBehaviorSanitizer can be enabled on this standalone test.
+
+## Decoder registry regression
+
+`decoder_registry_test.cpp` compiles the production `decoder.cpp` against test
+implementations of FFmpeg's registry/context API and the bundled FFmpeg headers.
+It verifies the five previously supported video codecs, encoder/wrapper/type
+filtering, forced software, missing hardware, failed hardware fallback, resource
+release, optional audio and timestamp behavior. It does not exercise real
+Android MediaCodec hardware. Example from the project root, with a C++17 compiler:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
+  -Ivideo-ffmpeg/src/main/cpp \
+  -Ivideo-ffmpeg/native-prebuilt/external/ffmpeg/include/arm64-v8a \
+  video-ffmpeg/src/main/cpp/decoder.cpp video-ffmpeg/tests/decoder_registry_test.cpp \
+  -o decoder-registry-test
+./decoder-registry-test
+```
+
+`host/NativeDecodeHostTest.java` additionally verifies the decoder-name metadata
+field returned by the real native engine, alongside UTF-8 and display rotation.
+These host tests are separate from Gradle Android unit tests.

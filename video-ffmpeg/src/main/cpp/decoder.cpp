@@ -1,22 +1,22 @@
 #include "decoder.hpp"
+#include <cstring>
 namespace paw {
-static const char* hardwareName(AVCodecID codec) {
-    switch (codec) {
-        case AV_CODEC_ID_H264: return "h264_mediacodec";
-        case AV_CODEC_ID_HEVC: return "hevc_mediacodec";
-        case AV_CODEC_ID_VP8: return "vp8_mediacodec";
-        case AV_CODEC_ID_VP9: return "vp9_mediacodec";
-        case AV_CODEC_ID_AV1: return "av1_mediacodec";
-        default: return nullptr;
+static const AVCodec* hardwareDecoder(AVCodecID id) {
+    void* cursor = nullptr;
+    while (const AVCodec* candidate = av_codec_iterate(&cursor)) {
+        if (candidate->id == id && candidate->type == AVMEDIA_TYPE_VIDEO && av_codec_is_decoder(candidate) &&
+                candidate->wrapper_name && std::strcmp(candidate->wrapper_name, "mediacodec") == 0) {
+            return candidate;
+        }
     }
+    return nullptr;
 }
 Decoder::~Decoder() { avcodec_free_context(&context); }
 bool Decoder::open(AVFormatContext* format, AVMediaType type, bool software) {
     stream = av_find_best_stream(format, type, -1, -1, nullptr, 0);
     if (stream < 0) return type == AVMEDIA_TYPE_AUDIO;
     AVStream* input = format->streams[stream]; timeBase = input->time_base;
-    const char* hardware = type == AVMEDIA_TYPE_VIDEO && !software ? hardwareName(input->codecpar->codec_id) : nullptr;
-    const AVCodec* codec = hardware ? avcodec_find_decoder_by_name(hardware) : nullptr;
+    const AVCodec* codec = type == AVMEDIA_TYPE_VIDEO && !software ? hardwareDecoder(input->codecpar->codec_id) : nullptr;
     for (int attempt = 0; attempt < 2; ++attempt) {
         if (!codec) codec = avcodec_find_decoder(input->codecpar->codec_id);
         if (!codec) return false;

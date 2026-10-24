@@ -173,7 +173,7 @@ std::vector<std::string> Engine::metadata() const {
     std::vector<std::string> values{
         "width", std::to_string(width_.load()), "height", std::to_string(height_.load()),
         "video_format", avcodec_get_name(video->codec_id), "frame_rate", std::to_string(av_q2d(rate)),
-        "video_decoder_backend", video->codec->name};
+        "decoder_name", video->codec->name};
     if (sound_.context) {
         values.insert(values.end(), {"audio_format", avcodec_get_name(sound_.context->codec_id),
             "channels", std::to_string(sound_.context->ch_layout.nb_channels),

@@ -7,7 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** Ответ нативного плеера (стабильные ключи контракта метаданных) → разделы окна. */
 internal fun videoMetadata(
     values: Map<String, String>,
     durationMillis: Long,
@@ -29,7 +28,7 @@ internal fun videoMetadata(
                 row("Кодек", videoCodec)
                 row("Разрешение", resolution)
                 row("Частота кадров", fps)
-                row("Декодер", values["video_decoder_backend"])
+                row("Декодер", values["decoder_name"])
             },
             metadataSection("Аудио") {
                 row("Кодек", audioCodec)

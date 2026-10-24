@@ -2,42 +2,63 @@ package com.solthariel.pawchan.composer
 
 import com.solthariel.pawchan.domain.posting.EmojiCaptchaOption
 
-/** Pure presentation transform. The server number belongs to this response, never to a slot. */
 internal fun stableCaptchaKeyboard(
     previous: List<EmojiCaptchaOption?>,
     incoming: List<EmojiCaptchaOption>,
 ): List<EmojiCaptchaOption?> {
-    val remaining =
-        previous
-            .withIndex()
-            .filter { it.value != null }
-            .groupBy { CaptchaImageKey(requireNotNull(it.value).image) }
-            .mapValues { ArrayDeque(it.value) }
-    val slots = MutableList<EmojiCaptchaOption?>(maxOf(previous.size, incoming.size)) { null }
-    val additions = mutableListOf<EmojiCaptchaOption>()
-    for (option in incoming) {
-        val old = remaining[CaptchaImageKey(option.image)]?.removeFirstOrNull()
-        if (old == null) {
-            additions += option
-        } else {
-            slots[old.index] = option.copy(image = requireNotNull(old.value).image)
+    val existing = previous.mapIndexedNotNull { index, option -> option?.let { IndexedValue(index, it) } }
+    val orderedPrevious = existing.sortedWith(::compareCaptchaOptions)
+    val orderedIncoming = incoming.withIndex().sortedWith(::compareCaptchaOptions)
+    val result = MutableList<EmojiCaptchaOption?>(maxOf(previous.size, incoming.size)) { null }
+    val assigned = BooleanArray(incoming.size)
+    var oldPosition = 0
+    var newPosition = 0
+    while (oldPosition < orderedPrevious.size && newPosition < orderedIncoming.size) {
+        val old = orderedPrevious[oldPosition]
+        val fresh = orderedIncoming[newPosition]
+        val comparison = compareCaptchaBytes(old.value.image, fresh.value.image)
+        when {
+            comparison < 0 -> {
+                oldPosition++
+            }
+
+            comparison > 0 -> {
+                newPosition++
+            }
+
+            else -> {
+                result[old.index] = fresh.value.copy(image = old.value.image)
+                assigned[fresh.index] = true
+                oldPosition++
+                newPosition++
+            }
         }
     }
-    var free = 0
-    for (option in additions) {
-        while (slots[free] != null) free++
-        slots[free] = option
+    var vacancy = 0
+    incoming.forEachIndexed { index, option ->
+        if (!assigned[index]) {
+            while (result[vacancy] != null) vacancy++
+            result[vacancy] = option
+        }
     }
-    return slots.toList()
+    return result.toList()
 }
 
-/** Hashing only accelerates lookup: collisions are always checked against the actual bytes. */
-private class CaptchaImageKey(
-    private val bytes: ByteArray,
-) {
-    private val hash = bytes.contentHashCode()
+private fun compareCaptchaOptions(
+    left: IndexedValue<EmojiCaptchaOption>,
+    right: IndexedValue<EmojiCaptchaOption>,
+): Int {
+    val imageOrder = compareCaptchaBytes(left.value.image, right.value.image)
+    return if (imageOrder == 0) left.index.compareTo(right.index) else imageOrder
+}
 
-    override fun hashCode(): Int = hash
-
-    override fun equals(other: Any?): Boolean = other is CaptchaImageKey && bytes.contentEquals(other.bytes)
+private fun compareCaptchaBytes(
+    left: ByteArray,
+    right: ByteArray,
+): Int {
+    for (index in 0 until minOf(left.size, right.size)) {
+        val difference = left[index].compareTo(right[index])
+        if (difference != 0) return difference
+    }
+    return left.size.compareTo(right.size)
 }

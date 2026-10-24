@@ -22,6 +22,7 @@ public final class NativeDecodeHostTest {
             java.util.Map<String,String> metadata = new java.util.HashMap<>();
             for (int i = 0; i + 1 < values.length; i += 2) metadata.put(values[i], values[i+1]);
             assertEquals("Привет 🐾", metadata.get("title"));
+            assertEquals("h264", metadata.get("decoder_name"));
             assertEquals("64", metadata.get("width")); assertEquals("96", metadata.get("height"));
         }
     }
