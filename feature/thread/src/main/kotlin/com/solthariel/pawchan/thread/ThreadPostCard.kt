@@ -52,7 +52,7 @@ internal fun ThreadPostCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                // Удалённый пост целиком полупрозрачный, как в Dashchan.
+                // Удалённый пост целиком полупрозрачный.
                 .alpha(if (post.metadata.changes.deleted) DELETED_ALPHA else 1f)
                 .semantics { selected = options.selected },
         shape = shape,
@@ -159,7 +159,7 @@ private fun ThreadPostBody(
     val tag = post.metadata.display.tag
     if (subject == null && tag == null && post.document.plainText.isBlank()) return
     Column {
-        // Тег треда — строкой над темой, как в Dashchan, но спокойнее: чуть крупнее текста, обычный вес.
+        // Тег треда — строкой над темой: чуть крупнее текста, обычный вес.
         tag?.let {
             Text(
                 "/$it/",
@@ -233,7 +233,7 @@ private fun ThreadPostBottomBar(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
-        // Как в Dashchan: кнопки стоят рядом слева, последняя занимает остаток строки.
+        // кнопки стоят рядом слева, последняя занимает остаток строки.
         options.replyLabel?.let { label ->
             PostRepliesFooter(
                 label,

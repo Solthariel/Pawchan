@@ -77,7 +77,7 @@ internal fun ImageViewer(
             motion = motion,
             onRetry = refresh,
         )
-        // Как в Dashchan: при скрытых панелях «Обновить» появляется в самом меню.
+        // при скрытых панелях «Обновить» появляется в самом меню.
         val metadata = remember(context, imageLoader, request) { imageMetadataSource(context, imageLoader, url) }
         val menu = { anchored: Boolean ->
             val hidden = !motion.controlsVisible

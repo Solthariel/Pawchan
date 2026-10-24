@@ -7,7 +7,7 @@ interface CachedThreadRepository : ThreadRepository {
     suspend fun cachedThread(address: ThreadAddress): ThreadSnapshot?
 
     /**
-     * Копию треда можно показать при повторном открытии без запроса в сеть (как в Dashchan):
+     * Копию треда можно показать при повторном открытии без запроса в сеть:
      * тред уже читался в этой сессии. Новые посты всё равно подгрузит наблюдатель или «Обновить».
      */
     suspend fun isCachedThreadCurrent(address: ThreadAddress): Boolean = false

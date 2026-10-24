@@ -155,7 +155,7 @@ internal fun GalleryGrid(
                             } else {
                                 actions.open
                             }
-                        // Долгое нажатие — меню файла, как в Dashchan; в режиме выделения тоже выделяет.
+                        // Долгое нажатие — меню файла; в режиме выделения тоже выделяет.
                         val onLongClick: ((MediaAttachmentUi) -> Unit)? =
                             if (session.selecting) onClick else actions.menu
                         GalleryCell(

@@ -68,7 +68,7 @@ data class PostContent(
     val details: PostDetails = PostDetails(),
 )
 
-/** Сведения сайта о посте вне текста: точное время, трипкод, email и бан (как значки поста в Dashchan). */
+/** Сведения сайта о посте вне текста: точное время, трипкод, email и бан (значки состояния поста). */
 data class PostDetails(
     /** Unix-время в секундах; null — сайт не прислал, тогда показывается строка даты сайта. */
     val timestamp: Long? = null,

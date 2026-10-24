@@ -81,7 +81,7 @@ internal fun ComposerTextEditor(
             val edit = applyCommentMarkup(selection, markup)
             comment = TextFieldValue(edit.text, TextRange(edit.selectionStart, edit.selectionEnd))
             actions.onChange(draft.copy(comment = edit.text))
-            // Как в Dashchan: после кнопки разметки курсор уже между тегами — сразу печатаем.
+            // после кнопки разметки курсор уже между тегами — сразу печатаем.
             commentFocus.requestFocus()
             keyboard?.show()
         }

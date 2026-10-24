@@ -65,7 +65,7 @@ class ThreadsHubModelTest {
     }
 
     @Test
-    fun counterLabelsFollowDashchan() {
+    fun counterLabelsReflectCountAndDeletion() {
         assertEquals("5", ThreadCounter(5).label)
         assertEquals("×", ThreadCounter(5, deleted = true).label)
         assertEquals("×", ThreadCounter(deleted = true).label)
@@ -75,7 +75,7 @@ class ThreadsHubModelTest {
     }
 
     @Test
-    fun rowCellShowsZeroLikeDashchanWatcher() {
+    fun rowCellShowsZeroAndHidesCountWhileRunning() {
         assertEquals("0", ThreadCounter().cellLabel)
         assertEquals("", ThreadCounter(running = true).cellLabel)
         assertEquals("7", ThreadCounter(7).cellLabel)

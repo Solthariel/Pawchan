@@ -16,7 +16,7 @@ internal data class ThreadPostDisplay(
     val header: AnnotatedString = AnnotatedString(""),
     val badges: List<PostBadge> = emptyList(),
     val subject: String? = null,
-    /** Значки состояния в порядке Dashchan: OP, sage, email, закреплён, закрыт, цикличный, бан. */
+    /** Порядок значков состояния: OP, sage, email, закреплён, закрыт, цикличный, бан. */
     val markers: List<PostStateMarker> = emptyList(),
     val byline: ThreadPostByline = ThreadPostByline(),
     /** Тег треда у ОП-поста, без слэшей. */
@@ -66,7 +66,7 @@ internal fun preparePostDisplay(
     val details = post.content.details
     val opener = post.address.post.value == post.address.thread.thread.value
     val op = metadata.originalPoster || opener
-    // 2ch подставляет в тему начало текста, если автор её не написал: такую тему не повторяем (как Dashchan).
+    // 2ch подставляет в тему начало текста, если автор её не написал: такую тему не повторяем.
     val subject = visiblePostSubject(metadata.subject, post.content.document.plainText)
     val author = metadata.name?.takeUnless(::isDefaultAnonymousName)
     val flags = opening?.flags?.takeIf { opener }

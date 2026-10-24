@@ -19,7 +19,7 @@ import com.solthariel.pawchan.domain.model.PostTextRun
 import com.solthariel.pawchan.domain.model.ThreadAddress
 
 /**
- * Суффикс ссылки на пост, как LinkSuffixSpan в Dashchan: «OP» — ссылка на ОП-пост,
+ * Суффикс ссылки на пост: «OP» — ссылка на ОП-пост,
  * «DT» — ссылка в другой тред. Исходный текст (« (OP)», « →») не меняется: копирование,
  * поиск и экспорт видят его как есть, а на экране маркер рисуется поверх прозрачных символов.
  */

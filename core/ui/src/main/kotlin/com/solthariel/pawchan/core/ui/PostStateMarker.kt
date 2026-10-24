@@ -23,7 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Значки состояния поста в порядке Dashchan (PostState); «мой пост» показывается полосой карточки. */
+/** Значки состояния поста в порядке отображения; «мой пост» показывается полосой карточки. */
 enum class PostStateMarker(
     val icon: UiIconKind,
     @param:StringRes val label: Int,

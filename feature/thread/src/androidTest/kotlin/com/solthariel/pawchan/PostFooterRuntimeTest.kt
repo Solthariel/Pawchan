@@ -42,7 +42,7 @@ class PostFooterRuntimeTest {
                 .onNodeWithText("Раскрыть")
                 .fetchSemanticsNode()
                 .boundsInRoot.width
-        // «Раскрыть» стоит сразу за ответами и занимает остаток строки, как в Dashchan.
+        // «Раскрыть» стоит сразу за ответами и занимает остаток строки.
         assertTrue(expand > replies)
         compose.onNodeWithText("Раскрыть").performClick()
         compose.onNodeWithText("Раскрыть").assertDoesNotExist()

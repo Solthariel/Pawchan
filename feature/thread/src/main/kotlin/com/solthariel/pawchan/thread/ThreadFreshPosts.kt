@@ -4,7 +4,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.solthariel.pawchan.core.ui.russianPlural
 
-/** Что изменилось после обновления треда: как плашка Dashchan «10 новых постов · Показать». */
+/** Число новых постов и ответов после обновления треда. */
 internal data class ThreadRefreshNotice(
     val newPosts: Int,
     val replies: Int,

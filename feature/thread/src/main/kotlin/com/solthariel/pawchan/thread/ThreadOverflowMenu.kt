@@ -70,7 +70,7 @@ private fun ThreadSearchFlagItems(tools: ThreadToolsState) {
     }
 }
 
-/** «Содержимое ›», как в Dashchan: перезагрузка, стирание и очистка истории треда, скрытые посты. */
+/** «Содержимое ›»: перезагрузка, стирание и очистка истории треда, скрытые посты. */
 @Composable
 private fun ThreadContentsItems(
     tools: ThreadToolsState,

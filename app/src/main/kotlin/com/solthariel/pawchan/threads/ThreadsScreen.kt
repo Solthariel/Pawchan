@@ -104,7 +104,7 @@ internal fun ThreadsScreen(
                         limits,
                         { menu = it },
                     )
-                // Как в Dashchan: крестик в заголовке «Страниц» закрывает все страницы сразу, без вопроса.
+                // крестик в заголовке «Страниц» закрывает все страницы сразу, без вопроса.
                 threadsSection(ThreadsSection.PAGES, visibleInput.pages, list, actions.pages.closeAll)
                 threadsSection(ThreadsSection.FAVORITES, visibleInput.favorites, list)
                 threadsSection(ThreadsSection.REPLIES, visibleInput.replies, list)

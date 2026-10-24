@@ -14,7 +14,7 @@ internal data class ThreadActions(
     val history: ThreadHistoryActions? = null,
 )
 
-/** Пункты «Содержимое ›» меню треда, работающие с историей (как в Dashchan). */
+/** Пункты «Содержимое ›» меню треда, работающие с историей. */
 internal data class ThreadHistoryActions(
     val clearOld: () -> Unit,
     val clearDeleted: () -> Unit,

@@ -38,7 +38,7 @@ internal data class VideoPipResume(
     val speed: VideoSpeed,
 )
 
-/** Развёрнутое окно PiP: просмотрщик снова открывается на этом файле (как в Dashchan_2). */
+/** Развёрнутое окно PiP: просмотрщик снова открывается на этом файле. */
 internal data class VideoPipReturn(
     val attachment: MediaAttachmentUi,
     val atMillis: Long = SystemClock.elapsedRealtime(),

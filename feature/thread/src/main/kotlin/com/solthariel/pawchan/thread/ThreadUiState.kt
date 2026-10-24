@@ -240,7 +240,7 @@ private fun DomainFailure.toThreadErrorState(): ThreadUiState.Error =
         challengeUrl = (this as? DomainFailure.ProtectionChallenge)?.verificationUrl?.value,
     )
 
-/** Порядковые номера как в Dashchan: живые посты нумеруются подряд, удалённые получают 0 и показываются как «X». */
+/** Порядковые номера: живые посты нумеруются подряд, удалённые получают 0 и показываются как «X». */
 private fun ThreadSnapshot.liveOrdinals(): List<Int> {
     var next = 0
     return posts.map { post -> if (post.address.post in deletedPosts) 0 else ++next }

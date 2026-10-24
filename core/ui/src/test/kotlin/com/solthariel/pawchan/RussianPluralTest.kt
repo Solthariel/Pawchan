@@ -8,7 +8,7 @@ class RussianPluralTest {
     private fun replies(count: Int) = russianPlural(count, "ответ", "ответа", "ответов")
 
     @Test
-    fun declinesByLastDigitsLikeDashchan() {
+    fun declinesRepliesByLastDigits() {
         assertEquals("1 ответ", replies(1))
         assertEquals("2 ответа", replies(2))
         assertEquals("5 ответов", replies(5))

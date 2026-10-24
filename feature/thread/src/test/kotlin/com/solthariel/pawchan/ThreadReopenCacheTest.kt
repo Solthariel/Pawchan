@@ -29,7 +29,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
 
-/** Повторное открытие треда, прочитанного в этой сессии, обходится без сети (как в Dashchan). */
+/** Повторное открытие треда, прочитанного в этой сессии, обходится без сети. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ThreadReopenCacheTest {
     private val address = defaultThreadAddress(100)

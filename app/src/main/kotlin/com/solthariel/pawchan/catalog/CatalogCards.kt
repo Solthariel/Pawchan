@@ -163,7 +163,7 @@ private fun CatalogPreview(
                 .clip(RoundedCornerShape(10.dp))
                 .combinedClickable(
                     onClick = { media.open(attachments) },
-                    // Как в Dashchan: меню файла, который виден на миниатюре (первого).
+                    // меню файла, который виден на миниатюре (первого).
                     onLongClick = { attachments.firstOrNull()?.let(media.longPress) },
                 ),
         contentAlignment = Alignment.Center,

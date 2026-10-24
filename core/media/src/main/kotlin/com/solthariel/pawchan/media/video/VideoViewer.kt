@@ -126,7 +126,7 @@ private fun VideoSurface(
     ) {
         MediaBackdrop(motion)
         MediaNeighborPages(navigation, actions.imageLoader, motion)
-        // Как в Dashchan: при скрытых панелях «Обновить» появляется в самом меню.
+        // при скрытых панелях «Обновить» появляется в самом меню.
         val metadata = remember(player, video.byteSize) { videoMetadataSource(player, video.byteSize) }
         val menu = { anchored: Boolean ->
             val hidden = !motion.controlsVisible

@@ -4,7 +4,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 
 /**
- * Локальная история просмотренных тредов, как база постов Dashchan: пост, пропавший из ответа
+ * Локальная история просмотренных тредов: пост, пропавший из ответа
  * сервера, остаётся удалённым, пока его не уберут вручную.
  */
 interface ThreadHistoryRepository {

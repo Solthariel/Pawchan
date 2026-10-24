@@ -64,7 +64,7 @@ class BoardPost(
     val address: PostAddress,
     val content: PostContent,
     attachments: List<MediaAttachment>,
-    /** Поста уже нет на сервере, но он сохранён локально (как в Dashchan). */
+    /** Поста уже нет на сервере, но он сохранён локально. */
     val deleted: Boolean = false,
 ) {
     val attachments: List<MediaAttachment> = attachments.toList()

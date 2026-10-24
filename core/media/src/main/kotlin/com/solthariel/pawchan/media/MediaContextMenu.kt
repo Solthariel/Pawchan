@@ -50,7 +50,7 @@ enum class ImageSearchEngine {
     YANDEX,
 }
 
-/** Откуда открыто меню файла: набор пунктов зависит от места, как в Dashchan. */
+/** Откуда открыто меню файла: набор пунктов зависит от места. */
 enum class MediaMenuPlace {
     /** Миниатюра в посте: загрузка и ссылка. */
     THUMBNAIL,
@@ -71,7 +71,7 @@ data class MediaViewerMenu(
     val onSoftwareDecoder: () -> Unit = {},
     /** null — сведения о файле недоступны. */
     val metadata: MediaMetadataSource? = null,
-    /** Открыто кнопкой ⋮: меню всплывает у кнопки и показывает сводку метаданных, как в Dashchan. */
+    /** Открыто кнопкой ⋮: меню всплывает у кнопки и показывает сводку метаданных. */
     val anchored: Boolean = false,
 )
 
@@ -93,7 +93,7 @@ data class MediaMenuActions(
     val onOpenThread: (() -> Unit)? = null,
 )
 
-/** Пункты меню в порядке Dashchan для данного места. */
+/** Пункты меню для выбранного места открытия. */
 internal enum class MediaMenuItem(
     @param:StringRes val label: Int,
 ) {
@@ -196,7 +196,7 @@ private fun CenteredMediaMenu(
     }
 }
 
-/** Всплывающее меню у ⋮ в правом верхнем углу, без затемнения — как overflow в Dashchan. */
+/** Всплывающее меню у ⋮ в правом верхнем углу, без затемнения — в виде меню действий. */
 @Composable
 private fun AnchoredMediaMenu(
     onClose: () -> Unit,

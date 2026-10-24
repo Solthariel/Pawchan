@@ -60,7 +60,7 @@ internal class WorkspaceThreadRepository(
     }
 
     /**
-     * Ответ сервера сливается с историей треда: пропавшие посты остаются удалёнными (как в Dashchan).
+     * Ответ сервера сливается с историей треда: пропавшие посты остаются удалёнными.
      * Без сети показывается сохранённая копия или история.
      */
     override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> {
