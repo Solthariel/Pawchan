@@ -355,6 +355,16 @@
           "source": "https://github.com/Solthariel/Pawchan/releases/download/v0.1.34/Pawchan-0.1.34.apk",
           "changelog": "https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/changelogs/35.txt",
           "sha256sum": "4ce7144657f3dcfd682e6802d9f5349788ce2f29f9bcc231d36acc90bc9eb942"
+        },
+        {
+          "title": "Pawchan 0.1.35",
+          "version_name": "0.1.35",
+          "version_code": 36,
+          "min_sdk": 30,
+          "length": 32182071,
+          "source": "https://github.com/Solthariel/Pawchan/releases/download/v0.1.35/Pawchan-0.1.35.apk",
+          "changelog": "https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/changelogs/36.txt",
+          "sha256sum": "c607fd2e9cb87ec1cbe00d71103c986ad7fc15b1092952a917c7d544825a4bc3"
         }
       ]
     }
