@@ -34,6 +34,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
                 <data android:scheme="http" />
+                <data android:host="2ch.hk" />
                 <data android:host="2ch.su" />
                 <data android:host="2ch.life" />
                 <data android:host="2ch.org" />

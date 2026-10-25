@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.navigation
 
+import com.solthariel.pawchan.infrastructure.sites.DVACH_LINK_HOSTS
 import com.solthariel.pawchan.infrastructure.sites.DvachWebLinks
 import com.solthariel.pawchan.infrastructure.sites.ForumWebLink
 import java.net.URI
@@ -31,7 +32,7 @@ private fun incomingUri(url: String): URI? =
 private fun incomingWebLink(uri: URI): ForumWebLink? {
     val defaultPort = if (uri.scheme.equals("http", true)) HTTP_PORT else HTTPS_PORT
     val portAllowed = uri.port == -1 || uri.port == defaultPort
-    if (uri.host?.lowercase() !in INCOMING_LINK_HOSTS || !portAllowed) return null
+    if (uri.host?.lowercase() !in DVACH_LINK_HOSTS || !portAllowed) return null
     val https = URI("https", null, uri.host.lowercase(), -1, uri.path, uri.query, uri.fragment)
     return DvachWebLinks().webLink(https)
 }
@@ -46,5 +47,3 @@ private fun incomingNotificationLink(uri: URI): ForumWebLink? {
 
 private const val HTTP_PORT = 80
 private const val HTTPS_PORT = 443
-
-private val INCOMING_LINK_HOSTS = setOf("2ch.su", "2ch.org", "2ch.life")

@@ -7,7 +7,7 @@ import org.junit.Test
 
 class IncomingForumLinkTest {
     @Test fun allKnownMirrorsAcceptHttpAndHttpsThreadLinks() {
-        listOf("2ch.su", "2ch.org", "2ch.life").forEach { host ->
+        listOf("2ch.hk", "2ch.su", "2ch.org", "2ch.life").forEach { host ->
             listOf("https", "http").forEach { scheme ->
                 assertEquals(
                     ForumWebLink.Thread(defaultThreadAddress(123L), 456L),
@@ -64,7 +64,6 @@ class IncomingForumLinkTest {
             "file:///b/res/123.html",
             "intent://2ch.su/b/res/123.html",
             "https://invalid host/b/",
-            "https://2ch.hk/b/res/123.html",
             "https://2ch.pm/b/res/123.html",
         ).forEach { assertNull(it, incomingForumLink(it)) }
     }

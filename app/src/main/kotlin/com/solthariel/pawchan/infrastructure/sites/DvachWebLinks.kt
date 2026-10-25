@@ -141,14 +141,14 @@ internal class DvachWebLinks(
 
 private fun URI.supportedDvachOrigin(mirror: String): Boolean {
     if (!scheme.equals("https", ignoreCase = true) || userInfo != null) return false
-    return (host?.lowercase() in HOSTS || host.equals(mirror, ignoreCase = true)) && port in PORTS
+    return (host?.lowercase() in DVACH_LINK_HOSTS || host.equals(mirror, ignoreCase = true)) && port in PORTS
 }
 
 private fun urlInput(
     text: String,
     mirror: String,
 ): URI? {
-    val recognized = (HOSTS + mirror).any { text.startsWith("$it/", true) || text.equals(it, true) }
+    val recognized = (DVACH_LINK_HOSTS + mirror).any { text.startsWith("$it/", true) || text.equals(it, true) }
     val withScheme =
         when {
             text.startsWith("https://", ignoreCase = true) || text.startsWith("http://", ignoreCase = true) -> {
@@ -170,8 +170,6 @@ private fun urlInput(
     }
 }
 
-/** Зеркала 2ch, которые отвечают как один и тот же сайт. */
-private val HOSTS = setOf("2ch.hk", "2ch.life", "2ch.su", "2ch.org")
 private val PORTS = setOf(-1, HTTPS_PORT)
 private val SERVICE_PATHS = setOf("api", "static", "makaba", "user", "stickers", "images", "banners", "sitemap")
 private val BOARD_NAME = Regex("[a-z0-9]{1,16}")
