@@ -55,7 +55,8 @@ class VideoPosterHandoffRuntimeTest {
                 val player = current.value
                 val output by rememberVideoOutput(player)
                 val alpha by rememberVideoPosterAlpha(output, player)
-                SideEffect { records += output to alpha }
+                val record = output to alpha
+                SideEffect { records += record }
             }
             compose.mainClock.advanceTimeBy(FADE_SETTLE_MS)
             compose.runOnIdle {
@@ -85,7 +86,8 @@ class VideoPosterHandoffRuntimeTest {
         compose.setContent {
             val output by rememberVideoOutput(player)
             val alpha by rememberVideoPosterAlpha(output, player)
-            SideEffect { records += output to alpha }
+            val record = output to alpha
+            SideEffect { records += record }
         }
     }
 }

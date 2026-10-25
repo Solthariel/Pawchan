@@ -1,0 +1,15 @@
+{
+  "protocol": "PAW_ALIGNMENT_RESEARCH_V1",
+  "orders": ["CandidateFirst", "BaselineFirst", "BaselineFirst", "CandidateFirst"],
+  "iterationsPerVariant": 5,
+  "warmupActionsPerIteration": 2,
+  "measuredActionsPerIteration": 10,
+  "cooldownSecondsPerVariant": 60,
+  "primary": "Mean viewport subtree measure calls per long-error action, aggregated per independent pair",
+  "minimumCallDelta": 0.1,
+  "secondaryDurationRelativeDelta": 0.2,
+  "secondaryDurationAbsoluteNs": 500000,
+  "maximumPairBatteryTemperatureSpreadC": 2,
+  "maximumThermalStatus": 1,
+  "decisionRule": "Count signal only if candidate-baseline >=0.1 calls/action in every one of four pairs; duration signal separately only if >=20% and >=0.5ms/action in every pair. Otherwise inconsistent or not supported within sensitivity. No statistical/causal guarantee, no performance PASS. No automatic extra runs."
+}

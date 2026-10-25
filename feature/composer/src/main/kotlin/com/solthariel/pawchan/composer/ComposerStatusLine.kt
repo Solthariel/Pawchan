@@ -38,7 +38,8 @@ internal fun ComposerStatusLine(
         Spacer(Modifier.width(STATUS_SIDE_WIDTH))
         ComposerStatusBody(captcha, status, imageLoader, expired)
         Row(
-            Modifier.width(STATUS_SIDE_WIDTH),
+            // A multiline failure must not push the reload button below the visible viewport.
+            Modifier.width(STATUS_SIDE_WIDTH).align(androidx.compose.ui.Alignment.Top),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {

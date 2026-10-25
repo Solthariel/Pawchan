@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.navigation.defaultBoardAddress
@@ -33,7 +34,13 @@ class ContentFilterLayoutRuntimeTest {
         val words = compose.onNodeWithText("Все слова").fetchSemanticsNode().boundsInRoot
         assertEquals(phrase.top, words.top, 1f)
         compose.onNodeWithText("Условие пусто").assertDoesNotExist()
+        val condition = compose.onNodeWithContentDescription("Условие")
+        condition.performClick()
         compose.onNodeWithText("Введите фразу целиком").assertExists()
+        compose.onNodeWithText("Все слова").performClick()
+        condition.performClick()
+        compose.onNodeWithText("Слова через пробел или запятую. Порядок не важен").assertExists()
+        compose.onNodeWithText("Условие пусто").assertDoesNotExist()
     }
 
     @Test fun probeHeightDoesNotCollapseBetweenRuleChanges() {

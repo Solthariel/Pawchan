@@ -7,10 +7,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -39,16 +41,23 @@ class ThreadChromeUiTest {
             val scope = rememberCoroutineScope()
             val tools = remember { ThreadToolsState(scope) }
             ThreadTestTheme(ThemePreference.DARK) {
-                Box(Modifier.width(360.dp).statusBarsPadding()) {
+                Box(Modifier.width(360.dp).statusBarsPadding().testTag("toolbar-fixture")) {
                     ThreadToolbar(testContent(), ThreadActions({}, {}, {}, {}), tools) {}
                 }
             }
         }
-        val descriptions = listOf("Назад", "В избранное", "Написать", "Поиск", "Обновить", "Меню треда")
-        val expectedCenters = listOf(30f, 66f, 222f, 258f, 294f, 330f)
+        val descriptions = listOf("Назад", "Добавить тред в избранное", "Галерея", "Написать", "Поиск", "Обновить", "Меню треда")
+        val toolbar = compose.onNodeWithTag("toolbar-fixture").fetchSemanticsNode().boundsInRoot
+        val inset = with(compose.density) { 12.dp.roundToPx() }
+        val slot = with(compose.density) { 36.dp.roundToPx() }
+        // Compose rounds each measured slot, not the sum of dp coordinates.
+        val expectedCenters =
+            List(3) { toolbar.left + inset + slot * (it + 0.5f) } +
+                List(4) { toolbar.right - inset - slot * (3.5f - it) }
         descriptions.forEachIndexed { index, description ->
             val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
-            assertEquals(expectedCenters[index] * compose.density.density, bounds.center.x, 1f)
+            assertEquals(slot.toFloat(), bounds.width, 0f)
+            assertEquals(expectedCenters[index], bounds.center.x, 1f)
         }
         saveThreadChromeScreenshot("toolbar")
     }
@@ -68,7 +77,7 @@ class ThreadChromeUiTest {
                     }
                 }
             ThreadTestTheme(ThemePreference.DARK) {
-                Box(Modifier.width(360.dp).statusBarsPadding()) {
+                Box(Modifier.width(360.dp).statusBarsPadding().testTag("toolbar-fixture")) {
                     ThreadTopBar(
                         testContent(),
                         ThreadActions({}, {}, {}, {}),

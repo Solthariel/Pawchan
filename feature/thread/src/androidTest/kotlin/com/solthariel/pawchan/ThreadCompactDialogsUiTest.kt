@@ -117,11 +117,11 @@ class ThreadCompactDialogsUiTest {
                 }
             }
         }
-        compose.onAllNodesWithTag("post-list-divider").assertCountEquals(0)
+        compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(0)
         compose.runOnIdle { posts.value = listOf(first, second) }
-        compose.onAllNodesWithTag("post-list-divider").assertCountEquals(1)
+        compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(1)
         compose.runOnIdle { bubbles.value = true }
-        compose.onAllNodesWithTag("post-list-divider").assertCountEquals(0)
+        compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(0)
     }
 
     @Test

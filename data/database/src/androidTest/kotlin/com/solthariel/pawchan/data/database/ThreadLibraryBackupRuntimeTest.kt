@@ -13,7 +13,8 @@ import org.junit.runner.RunWith
 class ThreadLibraryBackupRuntimeTest {
     @Test fun favoritesReplacementPreservesHistoryAndRemovesOldFavorites() =
         runBlocking {
-            database().use { db ->
+            val db = database()
+            try {
                 val backup = db.threadLibraryBackupDao()
                 db.threadLibraryDao().recordVisit(entity(42L, true, 100L))
                 backup.replace(listOf(entity(43L, true, 0L)), favorites = true, history = false)
@@ -23,12 +24,15 @@ class ThreadLibraryBackupRuntimeTest {
                 assertEquals(true, entries.getValue(43L).favorite)
                 backup.replace(emptyList(), favorites = true, history = false)
                 assertEquals(listOf(42L), backup.loadAll().map { it.threadId })
+            } finally {
+                db.close()
             }
         }
 
     @Test fun historyReplacementPreservesFavoritesAndReplacesDates() =
         runBlocking {
-            database().use { db ->
+            val db = database()
+            try {
                 val backup = db.threadLibraryBackupDao()
                 db.threadLibraryDao().recordVisit(entity(42L, true, 500L))
                 backup.replace(listOf(entity(42L, false, 100L)), favorites = false, history = true)
@@ -38,16 +42,21 @@ class ThreadLibraryBackupRuntimeTest {
                 backup.replace(emptyList(), favorites = false, history = true)
                 assertTrue(backup.loadAll().single().favorite)
                 assertEquals(0L, backup.loadAll().single().lastVisitedAtEpochMillis)
+            } finally {
+                db.close()
             }
         }
 
     @Test fun fullExportIsNotLimitedByPresentationQuery() =
         runBlocking {
-            database().use { db ->
+            val db = database()
+            try {
                 val backup = db.threadLibraryBackupDao()
                 backup.replace((1L..750L).map { entity(it, false, it) }, favorites = true, history = true)
                 assertEquals(500, db.threadLibraryDao().loadEntries(500).size)
                 assertEquals(750, backup.loadAll().size)
+            } finally {
+                db.close()
             }
         }
 

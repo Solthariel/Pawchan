@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/performance_data_extraction_rules"
+        android:fullBackupContent="@xml/performance_backup_rules"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:label="Pawchan composer performance"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+</manifest>

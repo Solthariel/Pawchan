@@ -40,7 +40,7 @@ class ThreadToolbarUiTest {
                 ThreadToolbar(state, ThreadActions({}, {}, {}, {}), tools) {}
             }
         }
-        for (description in listOf("Назад", "В избранное", "Поиск", "Написать", "Обновить", "Меню треда")) {
+        for (description in listOf("Назад", "Добавить тред в избранное", "Галерея", "Поиск", "Написать", "Обновить", "Меню треда")) {
             compose.onNodeWithContentDescription(description).assertIsDisplayed()
         }
         compose.onNodeWithText("Название").assertDoesNotExist()
@@ -49,7 +49,7 @@ class ThreadToolbarUiTest {
             "Расширенный поиск",
             "Выделить",
             "Внешний вид",
-            "Архивировать (HTML)",
+            "Сохранить копию…",
         )) {
             compose.onNodeWithText(label).assertIsDisplayed()
         }
@@ -62,7 +62,7 @@ class ThreadToolbarUiTest {
         compose.onNodeWithText("Сообщений с файлами").assertDoesNotExist()
         compose.onNodeWithText("Вложений-ссылок").assertDoesNotExist()
         compose.onNodeWithText("Поиск").assertDoesNotExist()
-        compose.onNodeWithText("В избранное").assertDoesNotExist()
+        compose.onNodeWithText("Добавить тред в избранное").assertDoesNotExist()
         compose.onNodeWithText("Расширенный поиск").performClick()
         compose.onNodeWithText("Мои посты").assertIsDisplayed()
         compose.onNodeWithText("С вложениями").assertIsDisplayed()

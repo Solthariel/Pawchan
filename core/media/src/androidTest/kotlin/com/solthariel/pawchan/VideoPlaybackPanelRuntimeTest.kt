@@ -37,7 +37,8 @@ class VideoPlaybackPanelRuntimeTest {
                 Box(Modifier.fillMaxSize()) { VideoPlaybackPanel(player) }
             }
         }
-        compose.onAllNodesWithText("0:00").assertCountEquals(2)
+        compose.onAllNodesWithText("0:00").assertCountEquals(1)
+        compose.onAllNodesWithText("—:—").assertCountEquals(1)
         compose.onNodeWithContentDescription("Воспроизвести").assertIsDisplayed()
         compose.onNodeWithContentDescription("Воспроизвести").performClick()
         compose.onNodeWithContentDescription("Пауза").assertIsDisplayed()
@@ -55,7 +56,8 @@ class VideoPlaybackPanelRuntimeTest {
             }
         }
         compose.runOnIdle { player.status.value = player.status.value.copy(stage = VideoStage.ERROR) }
-        compose.onAllNodesWithText("0:00").assertCountEquals(2)
+        compose.onAllNodesWithText("0:00").assertCountEquals(1)
+        compose.onAllNodesWithText("—:—").assertCountEquals(1)
         compose.onNodeWithContentDescription("Воспроизвести").assertIsDisplayed()
         compose.onNodeWithContentDescription("Следующий файл").performClick()
         compose.runOnIdle { assertEquals(1, next) }

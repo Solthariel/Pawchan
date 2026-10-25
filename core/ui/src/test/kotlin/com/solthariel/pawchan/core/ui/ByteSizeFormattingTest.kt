@@ -33,6 +33,12 @@ class ByteSizeFormattingTest {
     }
 
     @Test
+    fun decimalMegabytesAreNotMebibytes() {
+        assertEquals("2.0 МБ", formatByteSizeForUi(2_000_000L))
+        assertEquals("2.1 МБ", formatByteSizeForUi(2L * 1024 * 1024))
+    }
+
+    @Test
     fun labelsNeverContainTheBinaryUnitLetter() {
         for (size in listOf(1_000L, 1_000_000L, 1_000_000_000L, 1_000_000_000_000L)) {
             assertFalse(formatByteSizeForUi(size).contains('и', ignoreCase = true))

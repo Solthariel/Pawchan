@@ -4,13 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.filter.ContentFilterBoardStatistics
 import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
@@ -23,7 +22,7 @@ internal fun ContentFilterStatisticsBody(
     statistics: ContentFilterStatistics,
     resetFailed: Boolean,
 ) {
-    Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (statistics.available) {
             FilterStatisticsSummary(statistics)
             statistics.boards.forEach { board -> FilterStatisticsBoard(board) }
@@ -80,7 +79,7 @@ private fun FilterStatisticsGroup(
         if (title != null) Text(title, style = MaterialTheme.typography.titleSmall)
         rows.forEach { row ->
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

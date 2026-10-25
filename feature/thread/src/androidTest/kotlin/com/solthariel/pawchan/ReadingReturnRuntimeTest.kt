@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -128,6 +129,8 @@ class ReadingReturnRuntimeTest {
         }
         compose.runOnIdle {
             assertEquals(69, memory.list.firstVisibleItemIndex)
+            assertEquals(70L, content.posts[memory.list.firstVisibleItemIndex].id)
+            assertEquals(0, memory.list.firstVisibleItemScrollOffset)
             assertNull(session.pending)
         }
     }
@@ -154,11 +157,11 @@ class ReadingReturnRuntimeTest {
                 BindThreadPendingPost(memory, content, content.address, session) { requests++ }
                 BindThreadReadingReturn(memory, content, content.address, session)
                 LazyColumn(Modifier.fillMaxSize().testTag("return-list"), state = memory.list) {
-                    items(80) { index ->
+                    items(content.posts, key = { it.id }) { post ->
                         Text(
-                            "Post $index",
+                            "Post ${post.id}",
                             Modifier.fillMaxWidth().height(48.dp).readingReturnMarker(
-                                index + 1L == memory.tools.readingReturn?.postId,
+                                post.id == memory.tools.readingReturn?.postId,
                             ),
                         )
                     }
@@ -172,7 +175,7 @@ class ReadingReturnRuntimeTest {
     private fun testContent(): ThreadUiState.Content {
         val address = defaultThreadAddress(1)
         val posts =
-            (1L..80L).map { id ->
+            (1L..120L).map { id ->
                 BoardPost(
                     PostAddress(address, requireNotNull(PostId.parse(id))),
                     PostContent(PostDocument.plain("Post $id"), PostMetadata(null, null, false)),

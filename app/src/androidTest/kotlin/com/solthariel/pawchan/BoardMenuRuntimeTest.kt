@@ -88,7 +88,7 @@ class BoardMenuRuntimeTest {
         compose.onNodeWithTag("boards-search").performTextInput("biz po")
         compose.onNodeWithTag("boards-search").performImeAction()
         compose.runOnIdle { assertEquals(null, selected) }
-        compose.onNodeWithText("Введите код доски, например biz или /biz/.").assertIsDisplayed()
+        compose.onNodeWithText("Не удалось распознать доску или ссылку").assertIsDisplayed()
     }
 
     private fun showMenu(menu: CatalogMenuBindings) {

@@ -7,11 +7,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -114,11 +118,14 @@ class ContentFilterToolbarUiTest {
         }
         compose.onNodeWithContentDescription("Поиск правил").performClick()
         compose.onNodeWithContentDescription("Найти правило").performTextInput("хлеб")
+        compose.onNodeWithContentDescription("Найти правило").assertTextEquals("хлеб")
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("голова").fetchSemanticsNodes().isEmpty() &&
-                compose.onAllNodesWithText("хлеб").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodes(hasText("хлеб") and !hasSetTextAction()).fetchSemanticsNodes().size == 1
         }
-        compose.onNodeWithText("хлеб").assertIsDisplayed()
+        val result = hasText("хлеб") and !hasSetTextAction()
+        compose.onAllNodes(result).assertCountEquals(1)
+        compose.onNode(result).assertIsDisplayed()
         compose.onNodeWithContentDescription("Поиск правил").assertDoesNotExist()
         compose.onNodeWithContentDescription("Закрыть поиск").performClick()
         compose.onNodeWithContentDescription("Найти правило").assertDoesNotExist()

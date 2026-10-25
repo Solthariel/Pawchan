@@ -63,7 +63,7 @@ class PreviewPullRuntimeTest {
 
     @Test fun scrollingInsideLongRepliesDoesNotTranslateOrCloseTheWindow() {
         show(50)
-        compose.onNodeWithTag("pull-test-list").performTouchInput {
+        compose.onNodeWithTag("pull-test-list", useUnmergedTree = true).performTouchInput {
             swipe(center, center - Offset(0f, 150f * density), durationMillis = 400)
         }
         compose.waitForIdle()

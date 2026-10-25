@@ -3,6 +3,7 @@ package com.solthariel.pawchan.core.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,8 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
 import kotlin.math.roundToInt
 
 @Composable
@@ -46,12 +45,10 @@ fun UiRefreshButton(
 }
 
 private suspend fun rotateWhileRefreshing(rotation: Animatable<Float, AnimationVector1D>) {
-    while (currentCoroutineContext().isActive) {
-        rotation.animateTo(
-            targetValue = rotation.value + FULL_ROTATION_DEGREES,
-            animationSpec = tween(REFRESH_ROTATION_DURATION_MS, easing = LinearEasing),
-        )
-    }
+    rotation.animateTo(
+        targetValue = rotation.value + FULL_ROTATION_DEGREES,
+        animationSpec = infiniteRepeatable(tween(REFRESH_ROTATION_DURATION_MS, easing = LinearEasing)),
+    )
 }
 
 private suspend fun settleRefreshRotation(rotation: Animatable<Float, AnimationVector1D>) {

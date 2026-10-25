@@ -26,7 +26,7 @@ internal class CatalogSearchState(
     private val keyboard: SoftwareKeyboardController?,
 ) {
     val focusRequester = FocusRequester()
-    internal var query = ""
+    internal var query by mutableStateOf("")
     internal var onQueryChange: (String) -> Unit = {}
 
     /** Пользователь работал с поиском на этом экране; после возврата из треда — снова false. */

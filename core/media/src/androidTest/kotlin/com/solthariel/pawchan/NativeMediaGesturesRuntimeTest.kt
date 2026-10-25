@@ -1,5 +1,6 @@
 package com.solthariel.pawchan
 
+import android.view.ViewConfiguration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -13,7 +14,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
@@ -39,7 +39,15 @@ class NativeMediaGesturesRuntimeTest {
         fixture()
         compose.onNodeWithTag("canvas").performTouchInput { click(center) }
         compose.waitUntil(2000) { !motion.controlsVisible }
-        compose.onNodeWithTag("canvas").performTouchInput { longClick(center) }
+        compose.runOnIdle { assertEquals(false, menu) }
+        // GestureDetector's long press is a real Handler timeout, not Compose's animation clock.
+        // Keep the pointer down until the native callback; synthetic longClick sends UP too soon.
+        compose.onNodeWithTag("canvas").performTouchInput { down(center) }
+        try {
+            compose.waitUntil(ViewConfiguration.getLongPressTimeout().toLong() + 1000) { menu }
+        } finally {
+            compose.onNodeWithTag("canvas").performTouchInput { up() }
+        }
         compose.runOnIdle {
             assertTrue(menu)
             assertTrue(!motion.controlsVisible)

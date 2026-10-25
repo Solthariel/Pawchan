@@ -8,7 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import coil3.ImageLoader
 import com.solthariel.pawchan.composer.ComposerAttachment
 import com.solthariel.pawchan.composer.ComposerAttachmentViewer
@@ -21,6 +23,7 @@ class ComposerAttachmentVisualUiTest {
 
     @Test
     fun attachmentEditorHasSummaryAndRemoveWithoutConfirmation() {
+        var removed = 0
         val bytes = Base64.decode(PREVIEW_PNG, Base64.DEFAULT)
         val file = ComposerAttachment(ReplyAttachment("пример.png", "image/png", bytes), dimensions = "1×1")
         compose.setContent {
@@ -28,16 +31,19 @@ class ComposerAttachmentVisualUiTest {
             val loader = remember { ImageLoader(context) }
             DisposableEffect(loader) { onDispose { loader.shutdown() } }
             MaterialTheme(colorScheme = darkColorScheme()) {
-                ComposerAttachmentViewer(file, loader, true, {}, {}, {})
+                ComposerAttachmentViewer(file, loader, true, {}, {}, { removed++ })
             }
         }
         compose.onNodeWithText("Спойлер").assertIsDisplayed()
-        compose.onNodeWithText("Переименовать").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Переименовать").assertIsDisplayed()
         compose.onNodeWithText("Удалить вложение").assertIsDisplayed()
         compose.onNodeWithText("Применить").assertDoesNotExist()
         compose.onNodeWithText("ОК").assertDoesNotExist()
         compose.onNodeWithText("Отмена").assertDoesNotExist()
         saveComposerChromeScreenshot("attachment-editor-compact-autosave")
+        compose.onNodeWithText("Удалить вложение").performClick()
+        compose.runOnIdle { org.junit.Assert.assertEquals(1, removed) }
+        compose.onNodeWithText("Удалить вложение?").assertDoesNotExist()
     }
 }
 

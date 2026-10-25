@@ -71,7 +71,12 @@ class MediaGalleryReturnUiTest {
                 }
             }
             compose.onNode(hasScrollAction()).performScrollToIndex(5)
-            val anchor = session.list.firstVisibleItemIndex to session.list.firstVisibleItemScrollOffset
+            compose.waitForIdle()
+            var anchor = -1 to -1
+            compose.runOnIdle {
+                anchor = session.list.firstVisibleItemIndex to session.list.firstVisibleItemScrollOffset
+                assertTrue("Fixture must really scroll before opening media", anchor.first > 0)
+            }
             compose.onNode(hasScrollAction()).performTouchInput { click(Offset(40f, 40f)) }
             compose.runOnIdle {
                 assertEquals(1, opened)

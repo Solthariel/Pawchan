@@ -33,6 +33,8 @@ include(":core:ui")
 include(":core:media")
 
 include(":feature:composer")
+include(":performance:target")
+include(":performance:macrobenchmark")
 
 include(":feature:thread")
 

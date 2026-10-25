@@ -26,6 +26,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildTypes {
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+        }
+    }
+
     buildFeatures {
         compose = true
     }

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -64,13 +65,13 @@ class ContentFilterStatisticsUiTest {
                     hasAnyAncestor(isDialog()),
                 useUnmergedTree = true,
             ).assertCountEquals(1)
-        compose.onNodeWithText("Всего срабатываний: 12").assertIsDisplayed()
-        compose.onAllNodesWithText("ОП-посты: 3").assertCountEquals(2)
-        compose.onAllNodesWithText("Ответы: 9").assertCountEquals(2)
-        compose.onNodeWithText("Досок: 1").assertIsDisplayed()
-        compose.onNodeWithText("Правил со срабатываниями: 1").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("dvach /b/").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Срабатываний: 12").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Всего срабатываний") and hasText("12")).assertIsDisplayed()
+        compose.onAllNodes(hasText("ОП-посты") and hasText("3")).assertCountEquals(2)
+        compose.onAllNodes(hasText("Ответы") and hasText("9")).assertCountEquals(2)
+        compose.onNode(hasText("Досок") and hasText("1")).assertIsDisplayed()
+        compose.onNode(hasText("Правил со срабатываниями") and hasText("1")).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Двач /b/").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Срабатываний") and hasText("12")).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("ОП-посты: 3; ответы: 9").assertDoesNotExist()
         compose.onNodeWithText("Сбросить").performClick()
         compose.onNodeWithText("Сбросить статистику?").assertIsDisplayed()

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -32,6 +33,7 @@ class SettingsToolbarUiTest {
         compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
         compose.onNodeWithContentDescription("Поиск настроек").performClick()
         compose.onNodeWithContentDescription("Поиск настроек").performTextInput("зеркало")
+        compose.onNodeWithContentDescription("Поиск настроек").assertTextEquals("зеркало")
         compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
         compose.onNodeWithText("Медиа").assertDoesNotExist()
         compose.onNodeWithContentDescription("Закрыть поиск").performClick()
@@ -77,6 +79,7 @@ class SettingsToolbarUiTest {
         compose.onNodeWithText("Интерфейс").performClick()
         compose.onNodeWithContentDescription("Поиск настроек").performClick()
         compose.onNodeWithContentDescription("Поиск настроек").performTextInput("зеркало")
+        compose.onNodeWithContentDescription("Поиск настроек").assertTextEquals("зеркало")
         compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
         compose.onNodeWithContentDescription("Настройки").performClick()
         compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)

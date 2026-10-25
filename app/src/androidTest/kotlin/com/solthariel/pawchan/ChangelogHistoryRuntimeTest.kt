@@ -27,15 +27,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ChangelogHistoryRuntimeTest {
     @get:Rule val compose = createComposeRule()
+    private val installedVersionName = BuildConfig.VERSION_NAME.removeSuffix("-debug")
 
     @Test
     fun bundledHistoryShowsInstalledVersionAndCanScrollToFirstRelease() {
         compose.setContent { MaterialTheme { ChangelogSettings(rememberBundledTestChangelogHistory()) } }
         compose.onNodeWithText("Список изменений").performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
-            compose.onAllNodesWithText(BuildConfig.VERSION_NAME).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(installedVersionName).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText(BuildConfig.VERSION_NAME).assertIsDisplayed()
+        compose.onNodeWithText(installedVersionName).assertIsDisplayed()
         compose.onAllNodesWithText("Установлена").assertCountEquals(1)
         assertInstalledReleaseMetadataIsInline()
         compose.onNodeWithTag("changelog-list").performScrollToNode(hasText("0.1.0"))
@@ -57,7 +58,7 @@ class ChangelogHistoryRuntimeTest {
             val scope = rememberCoroutineScope()
             history =
                 remember {
-                    val bundled = historyJson(installed, BuildConfig.VERSION_NAME)
+                    val bundled = historyJson(installed, installedVersionName)
                     val repository =
                         ChangelogHistoryRepository(null, { decodeRemoteChangelog(bundled) }) { _, _ ->
                             calls.incrementAndGet()
@@ -79,7 +80,7 @@ class ChangelogHistoryRuntimeTest {
         compose.waitUntil(timeoutMillis = 10_000) { calls.get() == 1 }
         compose.onNodeWithText("Список изменений").performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
-            compose.onAllNodesWithText(BuildConfig.VERSION_NAME).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(installedVersionName).fetchSemanticsNodes().isNotEmpty()
         }
         compose.runOnIdle {
             assertTrue("Opening must reuse the entry request", calls.get() == 1)

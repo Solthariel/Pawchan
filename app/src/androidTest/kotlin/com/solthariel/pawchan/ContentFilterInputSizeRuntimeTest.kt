@@ -67,16 +67,29 @@ class ContentFilterInputSizeRuntimeTest {
     }
 
     @Test fun emptyProbeUsesOneLineInsteadOfThreeEmptyLines() {
+        var text by mutableStateOf("")
         compose.setContent {
-            MaterialTheme { Column(Modifier.width(240.dp)) { FilterLineInput("Проверяемый текст", "", {}) } }
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                MaterialTheme {
+                    Column(Modifier.width(240.dp)) {
+                        FilterLineInput("Проверяемый текст", text, { text = it })
+                    }
+                }
+            }
         }
-        val height =
-            compose
-                .onNodeWithContentDescription("Проверяемый текст")
-                .fetchSemanticsNode()
-                .boundsInRoot.height
-        val limit = with(compose.density) { 56.dp.toPx() }
-        assertTrue(height < limit)
+        val field = compose.onNodeWithContentDescription("Проверяемый текст")
+        val height = field.fetchSemanticsNode().boundsInRoot.height
+        val minimum = with(compose.density) { 56.dp.toPx() }
+        val maximum = with(compose.density) { 72.dp.toPx() }
+        assertTrue("Empty probe must have the standard one-line field height", height in minimum..maximum)
+        val layouts = mutableListOf<TextLayoutResult>()
+        field.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertEquals(1, layouts.single().lineCount)
+        field.performTextReplacement("первая\nвторая")
+        assertTrue("Real line breaks must grow the field", field.fetchSemanticsNode().boundsInRoot.height > height)
+        field.performTextReplacement("")
+        assertEquals(height, field.fetchSemanticsNode().boundsInRoot.height, 1f)
     }
 
     private fun firstBaseline(): Float {

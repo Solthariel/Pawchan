@@ -34,7 +34,7 @@ class CatalogCompactMetadataUiTest {
                 CatalogThreadContentUi(null, CatalogThreadTextUi("ОП"), null, null, false),
                 emptyList(),
                 CatalogThreadFlagsUi(false, false, false),
-                CatalogThreadStatisticsUi(17, 2, 2L * 1024 * 1024, true),
+                CatalogThreadStatisticsUi(17, 2, 2_000_000L, true),
                 age = CatalogThreadAgeUi(1_800_000_000L, "5 мин назад"),
             )
         compose.setContent {

@@ -87,7 +87,7 @@ class ContentFilterEditorUiTest {
         compose.setContent {
             MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}, onDelete = {}) }
         }
-        compose.onNodeWithText("Удалить").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Удалить правило").assertIsDisplayed()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
         compose.onNodeWithContentDescription("Действия с правилом").assertDoesNotExist()
@@ -120,7 +120,7 @@ class ContentFilterEditorUiTest {
                 .isNotEmpty()
         }
         compose.onNodeWithText("удаляемое правило").performClick()
-        compose.onNodeWithText("Удалить").performClick()
+        compose.onNodeWithContentDescription("Удалить правило").performClick()
         compose.runOnIdle {
             assertTrue(
                 state

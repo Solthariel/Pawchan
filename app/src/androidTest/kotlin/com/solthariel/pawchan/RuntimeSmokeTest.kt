@@ -3,6 +3,7 @@ package com.solthariel.pawchan
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -176,9 +177,10 @@ class RuntimeSmokeTest {
             compose.onAllNodesWithText("Ответ").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Ответ").assertIsDisplayed()
-        compose.onNodeWithText("№43").assertIsDisplayed()
-        compose.onNodeWithText("Автообновление выключено").assertIsDisplayed()
-        compose.onNodeWithText("Следить").assertIsDisplayed()
+        compose.onNodeWithText("#43").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Добавить тред в избранное").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithContentDescription("Написать").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithContentDescription("Обновить").assertIsDisplayed().assertIsEnabled()
     }
 
     @Test

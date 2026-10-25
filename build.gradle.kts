@@ -431,6 +431,7 @@ abstract class VerifySourcePolicy : DefaultTask() {
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.test) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -481,7 +482,10 @@ configure(productionProjects) {
         mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
         args(
             "--input",
-            "$projectDir/src/main,$projectDir/src/test",
+            listOf("src/main", "src/test", "src/benchmark")
+                .map { file(it) }
+                .filter { it.isDirectory }
+                .joinToString(",") { it.absolutePath },
             "--config",
             rootProject.file("detekt.yml"),
             "--build-upon-default-config",

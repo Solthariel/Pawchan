@@ -49,15 +49,16 @@ class ComposerInlineStatusUiTest {
 
     @Test
     fun longReasonWrapsWithoutTruncationAndKeepsReloadAtRight() {
+        var reloaded = 0
         val failure = mutableStateOf(ComposerFailureState())
-        val reason = "Файл слишком большой: " + "подробная причина ".repeat(30)
+        val reason = ("Файл слишком большой: " + "подробная причина ".repeat(30)).trimEnd()
         compose.setContent {
             MaterialTheme {
                 Box(Modifier.width(240.dp).verticalScroll(rememberScrollState())) {
                     ComposerStatusLine(
                         ComposerCaptchaState(),
                         ComposerScreenStatus(ComposerProgressState(), failure.value, false),
-                        {},
+                        { reloaded++ },
                         loader,
                     )
                 }
@@ -73,10 +74,16 @@ class ComposerInlineStatusUiTest {
         assertTrue(layouts.single().lineCount > 1)
         for (line in 0 until layouts.single().lineCount) assertFalse(layouts.single().isLineEllipsized(line))
         assertFalse(status.fetchSemanticsNode().config.contains(SemanticsActions.OnClick))
+        reload.assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(1, reloaded) }
+        assertEquals(before.top, reload.fetchSemanticsNode().boundsInRoot.top)
         assertEquals(before.left, reload.fetchSemanticsNode().boundsInRoot.left)
         assertEquals(before.right, reload.fetchSemanticsNode().boundsInRoot.right)
         compose.onNodeWithText("Закрыть").assertDoesNotExist()
         compose.onNodeWithText("Ошибка — нажмите для подробностей").assertDoesNotExist()
+        compose.runOnIdle { failure.value = ComposerFailureState() }
+        reload.assertIsDisplayed()
+        assertEquals(before, reload.fetchSemanticsNode().boundsInRoot)
     }
 
     @Test

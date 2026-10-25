@@ -1,5 +1,6 @@
 package com.solthariel.pawchan
 
+import android.accessibilityservice.AccessibilityService
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -12,13 +13,13 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
-import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.solthariel.pawchan.composer.AttachmentOptionsPanel
 import com.solthariel.pawchan.composer.ComposerAttachment
@@ -42,7 +43,7 @@ class ComposerReencodingUiTest {
         assertTrue(resetBounds.right <= applyBounds.left || resetBounds.bottom <= applyBounds.top)
         changeQuality(85f)
         compose.runOnIdle { assertNull(file.value.options.reencoding) }
-        Espresso.pressBack()
+        closeSettingsWithSystemBack()
         compose.runOnIdle { assertNull(file.value.options.reencoding) }
         openSettings()
         changeQuality(85f)
@@ -97,7 +98,7 @@ class ComposerReencodingUiTest {
         compose.onNodeWithContentDescription("Ввести качество JPEG").assertIsDisplayed()
         compose.onNodeWithText("1×").assertIsSelected()
         changeQuality(55f)
-        Espresso.pressBack()
+        closeSettingsWithSystemBack()
         compose.onNodeWithContentDescription("Перекодировать изображение").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Выключено"),
         )
@@ -151,6 +152,21 @@ class ComposerReencodingUiTest {
             }
         }
         return file
+    }
+
+    private fun closeSettingsWithSystemBack() {
+        compose.onNodeWithText("Настройки перекодирования").assertIsDisplayed()
+        compose.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        // Back belongs to the foreground dialog, not Espresso's default Activity root matcher.
+        assertTrue(
+            "System Back must be accepted",
+            instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK),
+        )
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("Настройки перекодирования").fetchSemanticsNodes().isEmpty()
+        }
     }
 
     private fun openSettings() {

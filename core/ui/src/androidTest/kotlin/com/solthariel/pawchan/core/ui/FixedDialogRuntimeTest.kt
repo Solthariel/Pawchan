@@ -57,7 +57,7 @@ class FixedDialogRuntimeTest {
             )
             val ime =
                 WindowInsets
-                    .Builder()
+                    .Builder(requireNotNull(parentView.rootWindowInsets))
                     .setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 900))
                     .setVisible(WindowInsets.Type.ime(), true)
                     .build()
