@@ -31,19 +31,26 @@ internal fun ComposerStatusLine(
     imageLoader: coil3.ImageLoader,
 ) {
     val remaining = rememberCaptchaRemainingSeconds(captcha)
+    val cooldown = rememberDeadlineRemainingSeconds(status.failure.retryDeadlineElapsedMillis)
     val expired = remaining == 0L
     val reloadLabel = stringResource(R.string.captcha_retry)
     // Статус по центру строки: слева пустое место той же ширины, что таймер с кнопкой справа.
     Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Spacer(Modifier.width(STATUS_SIDE_WIDTH))
-        ComposerStatusBody(captcha, status, imageLoader, expired)
+        ComposerStatusBody(captcha, status, imageLoader, expired, cooldown)
         Row(
             // A multiline failure must not push the reload button below the visible viewport.
             Modifier.width(STATUS_SIDE_WIDTH).align(androidx.compose.ui.Alignment.Top),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            ComposerStatusControls(remaining, expired, reloadLabel, status, onReload)
+            ComposerStatusControls(
+                remaining,
+                expired,
+                reloadLabel,
+                status,
+                if ((cooldown ?: 0L) > 0L) null else onReload,
+            )
         }
     }
 }
@@ -54,6 +61,7 @@ private fun RowScope.ComposerStatusBody(
     status: ComposerScreenStatus,
     imageLoader: coil3.ImageLoader,
     expired: Boolean,
+    cooldown: Long?,
 ) {
     val idle = !status.progress.submitting && !status.progress.sent
     val captchaIdle = idle && status.uploadBudget?.status == null
@@ -63,7 +71,11 @@ private fun RowScope.ComposerStatusBody(
             status.failure,
             captcha.satisfied,
             stringResource(R.string.captcha_solved),
-        ).withUploadBudget(status.uploadBudget, status.progress)
+            cooldown,
+        ).withUploadBudget(
+            status.uploadBudget.takeUnless { status.failure.retryDeadlineElapsedMillis != null },
+            status.progress,
+        )
     if (!expired && status.uploadBudget?.status == null && showCaptchaSelection(captcha, status)) {
         Box(Modifier.weight(1f), contentAlignment = androidx.compose.ui.Alignment.Center) {
             CaptchaSelectedSteps(captcha.selectedImages, imageLoader, Modifier)
@@ -89,7 +101,7 @@ private fun ComposerStatusControls(
     expired: Boolean,
     reloadLabel: String,
     status: ComposerScreenStatus,
-    onReload: () -> Unit,
+    onReload: (() -> Unit)?,
 ) {
     if (remaining != null) {
         Text(
@@ -101,11 +113,11 @@ private fun ComposerStatusControls(
         )
     }
     IconButton(
-        onClick = onReload,
+        onClick = { onReload?.invoke() },
         modifier = Modifier.size(48.dp).semantics { contentDescription = reloadLabel },
         enabled =
             !status.progress.submitting && !status.progress.sent &&
-                !status.progress.captchaLoading && !status.progress.captchaSelecting,
+                !status.progress.captchaLoading && !status.progress.captchaSelecting && onReload != null,
     ) {
         UiIcon(UiIconKind.REFRESH, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
     }

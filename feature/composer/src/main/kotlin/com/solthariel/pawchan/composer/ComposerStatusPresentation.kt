@@ -10,17 +10,46 @@ internal fun composerStatusText(
     failure: ComposerFailureState,
     captchaSatisfied: Boolean,
     captchaSolvedLabel: String = "Капча решена",
+    cooldownSeconds: Long? = null,
 ): ComposerStatusPresentation {
     val failed = failure.error != null || !failure.reason.isNullOrBlank()
     val label =
         when {
-            progress.submitting -> uploadStatusText(progress.upload)
-            progress.sent -> "Сообщение отправлено"
-            failed -> composerFailureText(failure)
-            progress.captchaSelecting -> "Проверка капчи…"
-            progress.captchaLoading -> "Загрузка капчи…"
-            captchaSatisfied -> captchaSolvedLabel
-            else -> "Решите капчу"
+            progress.submitting -> {
+                uploadStatusText(progress.upload)
+            }
+
+            progress.sent -> {
+                "Сообщение отправлено"
+            }
+
+            failure.retryDeadlineElapsedMillis != null -> {
+                when (cooldownSeconds) {
+                    null -> "Сервер ограничил запросы"
+                    0L -> "Ожидание завершено. Можно повторить загрузку капчи"
+                    else -> "Сервер ограничил запросы. Повторить через $cooldownSeconds с"
+                }
+            }
+
+            failed -> {
+                composerFailureText(failure)
+            }
+
+            progress.captchaSelecting -> {
+                "Проверка капчи…"
+            }
+
+            progress.captchaLoading -> {
+                "Загрузка капчи…"
+            }
+
+            captchaSatisfied -> {
+                captchaSolvedLabel
+            }
+
+            else -> {
+                "Решите капчу"
+            }
         }
     return ComposerStatusPresentation(label, failed && !progress.submitting && !progress.sent)
 }

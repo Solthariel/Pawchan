@@ -11,6 +11,7 @@ data class ComposerProgressState(
 data class ComposerFailureState(
     val error: ReplyError? = null,
     val reason: String? = null,
+    val retryDeadlineElapsedMillis: Long? = null,
 )
 
 enum class ReplyError {

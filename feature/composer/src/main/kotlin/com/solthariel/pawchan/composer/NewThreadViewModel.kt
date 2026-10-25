@@ -84,6 +84,7 @@ class NewThreadViewModel internal constructor(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(NewThreadUiState())
     private var job: Job? = null
+    private val rateLimit = ComposerRateLimit()
     private var active = false
     private var openedBefore = false
 
@@ -187,7 +188,9 @@ class NewThreadViewModel internal constructor(
             mutableState.value =
                 current.copy(
                     draft = draft.copy(attachments = draft.attachments.toList()),
-                    failure = if (current.rules == null) current.failure else ComposerFailureState(),
+                    failure =
+                        rateLimit.activeFailure()
+                            ?: if (current.rules == null) current.failure else ComposerFailureState(),
                 )
             uploadPreparation.update(mutableState.value.draft.attachments)
             draftSession.changed(mutableState.value.draft)
@@ -197,7 +200,11 @@ class NewThreadViewModel internal constructor(
     fun clearAll() {
         val current = mutableState.value
         if (!current.submitting && !current.progress.sent) {
-            mutableState.value = current.copy(draft = ComposerDraftState(resetId = current.draft.resetId + 1))
+            mutableState.value =
+                current.copy(
+                    draft = ComposerDraftState(resetId = current.draft.resetId + 1),
+                    failure = rateLimit.activeFailure() ?: ComposerFailureState(),
+                )
             uploadPreparation.update(emptyList())
             draftSession.clear(mutableState.value.draft)
         }
@@ -207,12 +214,17 @@ class NewThreadViewModel internal constructor(
         private set
 
     fun reloadCaptcha() {
+        rateLimit.activeFailure()?.let {
+            mutableState.value = mutableState.value.copy(progress = ComposerProgressState(), failure = it)
+            return
+        }
         if (mutableState.value.progress.sent || mutableState.value.submitting) return
         job?.cancel()
         captchaSession.load()
     }
 
     fun selectEmoji(number: Int) {
+        if (rateLimit.activeFailure() != null) return
         val current = mutableState.value
         if (current.progress.sent || current.submitting) return
         job?.cancel()
@@ -220,6 +232,7 @@ class NewThreadViewModel internal constructor(
     }
 
     fun submit(hidden: Set<com.solthariel.pawchan.domain.settings.ComposerField> = emptySet()) {
+        if (rateLimit.activeFailure() != null) return
         val current = mutableState.value.let { it.copy(draft = it.draft.withVisibleFields(hidden)) }
         val rules = current.rules
         if (!current.canSubmit || rules == null) {
@@ -297,11 +310,10 @@ class NewThreadViewModel internal constructor(
     }
 
     private fun handleFailure(outcome: PostingOutcome.Failure) {
-        val (error, reason) = outcome.reason.toReplyError()
         mutableState.value =
             mutableState.value.copy(
                 progress = ComposerProgressState(),
-                failure = ComposerFailureState(error, reason),
+                failure = rateLimit.failure(outcome.reason),
             )
     }
 

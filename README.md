@@ -9,11 +9,6 @@ Android-клиент 2ch. Полный проект для Android Studio; го�
    NDK **29.0.14206865** и CMake **3.22.1**, если IDE запросит их.
 3. Запустите приложение кнопкой Run. Поддерживаются Android 11 и новее, **arm64-v8a**.
 
-Gradle использует JDK 25 согласно `gradle/gradle-daemon-jvm.properties`.
-Готовые FFmpeg **8.1.3** и dav1d **1.5.4** включены в `video-ffmpeg/native-prebuilt`.
-Для обычной сборки на Windows не нужны Bash, WSL, Ubuntu или Python.
-Не удаляйте `gradle/wrapper` и `video-ffmpeg/native-prebuilt`: они нужны для сборки.
-
 ## Разработка и проверки
 
 [Карта документации](docs/README.md) разделяет правила, действующие руководства

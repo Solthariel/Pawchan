@@ -38,7 +38,7 @@ class ServerBackoffInterceptorTest {
             policy.rateLimited("2ch.su", "120", null)
             val requests = AtomicInteger()
             val outcome = executeDomainRequest(client(policy, requests), request()) { "decoded" }
-            assertEquals(DomainOutcome.Failure(DomainFailure.HttpStatus(429)), outcome)
+            assertEquals(DomainOutcome.Failure(DomainFailure.HttpStatus(429, 120_000L)), outcome)
             assertEquals(0, requests.get())
         }
 
@@ -49,7 +49,7 @@ class ServerBackoffInterceptorTest {
             val requests = AtomicInteger()
             val post = request().newBuilder().post("comment".toRequestBody()).build()
             val outcome = executePostingRequest(client(policy, requests), post) { PostingOutcome.Success("decoded") }
-            assertEquals(PostingOutcome.Failure(PostingFailure.HttpStatus(429)), outcome)
+            assertEquals(PostingOutcome.Failure(PostingFailure.HttpStatus(429, 120_000L)), outcome)
             assertEquals(1, requests.get())
         }
 

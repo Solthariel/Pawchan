@@ -17,6 +17,7 @@ sealed interface DomainFailure {
 
     data class HttpStatus(
         val status: Int,
+        val retryAfterMillis: Long? = null,
     ) : DomainFailure
 
     data class ProtectionChallenge(

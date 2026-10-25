@@ -16,11 +16,18 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import javax.net.ssl.SSLException
 
-internal enum class HttpTransportFailure {
-    TIMEOUT,
-    SECURE_CONNECTION,
-    NETWORK,
-    RATE_LIMITED,
+internal data class HttpTransportFailure(
+    val kind: Kind,
+    val retryAfterMillis: Long? = null,
+) {
+    enum class Kind { TIMEOUT, SECURE_CONNECTION, NETWORK, RATE_LIMITED }
+
+    companion object {
+        val TIMEOUT = HttpTransportFailure(Kind.TIMEOUT)
+        val SECURE_CONNECTION = HttpTransportFailure(Kind.SECURE_CONNECTION)
+        val NETWORK = HttpTransportFailure(Kind.NETWORK)
+        val RATE_LIMITED = HttpTransportFailure(Kind.RATE_LIMITED)
+    }
 }
 
 internal suspend fun <T> Call.Factory.executeHttpCall(
@@ -34,8 +41,8 @@ internal suspend fun <T> Call.Factory.executeHttpCall(
             newCall(request).executeAsync().use(handleResponse)
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (_: ServerCoolingDownException) {
-            onTransportFailure(HttpTransportFailure.RATE_LIMITED)
+        } catch (cooldown: ServerCoolingDownException) {
+            onTransportFailure(HttpTransportFailure.RATE_LIMITED.copy(retryAfterMillis = cooldown.retryAfterMillis))
         } catch (_: SocketTimeoutException) {
             onTransportFailure(HttpTransportFailure.TIMEOUT)
         } catch (_: SSLException) {
@@ -53,7 +60,9 @@ internal suspend fun <T> executeDomainRequest(
     callFactory.executeHttpCall(
         request = request,
         onTransportFailure = HttpTransportFailure::toDomainOutcome,
-        handleResponse = { response -> response.toDomainOutcome(decode) },
+        handleResponse = { response ->
+            response.toDomainOutcome(callFactory.serverBackoff()?.remainingMillis(request.url.host), decode)
+        },
     )
 
 internal suspend fun <T> executePostingRequest(
@@ -64,16 +73,21 @@ internal suspend fun <T> executePostingRequest(
     callFactory.executeHttpCall(
         request = request,
         onTransportFailure = HttpTransportFailure::toPostingOutcome,
-        handleResponse = { response -> response.toPostingOutcome(decode) },
+        handleResponse = { response ->
+            response.toPostingOutcome(callFactory.serverBackoff()?.remainingMillis(request.url.host), decode)
+        },
     )
 
-internal fun <T> Response.toDomainOutcome(decode: (String) -> T?): DomainOutcome<T> {
+internal fun <T> Response.toDomainOutcome(
+    cooldownMillis: Long? = null,
+    decode: (String) -> T?,
+): DomainOutcome<T> {
     val payload = body.string()
     val challenge = ProtectionChallengeDetector.detect(this, payload)
     return when {
         code == NOT_FOUND_STATUS || code == GONE_STATUS -> DomainOutcome.Failure(DomainFailure.NotFound)
         challenge != null -> DomainOutcome.Failure(challenge)
-        !isSuccessful -> DomainOutcome.Failure(DomainFailure.HttpStatus(code))
+        !isSuccessful -> DomainOutcome.Failure(DomainFailure.HttpStatus(code, responseCooldownMillis(cooldownMillis)))
         else -> decodeDomainPayload(payload, decode)
     }
 }
@@ -89,9 +103,12 @@ private fun <T> decodeDomainPayload(
         DomainOutcome.Failure(DomainFailure.InvalidResponse)
     }
 
-internal fun <T> Response.toPostingOutcome(decode: (String) -> PostingOutcome<T>): PostingOutcome<T> {
+internal fun <T> Response.toPostingOutcome(
+    cooldownMillis: Long? = null,
+    decode: (String) -> PostingOutcome<T>,
+): PostingOutcome<T> {
     if (!isSuccessful) {
-        return PostingOutcome.Failure(PostingFailure.HttpStatus(code))
+        return PostingOutcome.Failure(PostingFailure.HttpStatus(code, responseCooldownMillis(cooldownMillis)))
     }
     return try {
         decode(body.string())
@@ -102,23 +119,31 @@ internal fun <T> Response.toPostingOutcome(decode: (String) -> PostingOutcome<T>
 
 internal fun <T> HttpTransportFailure.toDomainOutcome(): DomainOutcome<T> =
     DomainOutcome.Failure(
-        when (this) {
-            HttpTransportFailure.TIMEOUT -> DomainFailure.NetworkTimeout
-            HttpTransportFailure.SECURE_CONNECTION -> DomainFailure.SecureConnectionFailed
-            HttpTransportFailure.NETWORK -> DomainFailure.NetworkUnavailable
-            HttpTransportFailure.RATE_LIMITED -> DomainFailure.HttpStatus(RATE_LIMITED_STATUS)
+        when (kind) {
+            HttpTransportFailure.Kind.TIMEOUT -> DomainFailure.NetworkTimeout
+            HttpTransportFailure.Kind.SECURE_CONNECTION -> DomainFailure.SecureConnectionFailed
+            HttpTransportFailure.Kind.NETWORK -> DomainFailure.NetworkUnavailable
+            HttpTransportFailure.Kind.RATE_LIMITED -> DomainFailure.HttpStatus(RATE_LIMITED_STATUS, retryAfterMillis)
         },
     )
 
 private fun <T> HttpTransportFailure.toPostingOutcome(): PostingOutcome<T> =
     PostingOutcome.Failure(
-        when (this) {
-            HttpTransportFailure.TIMEOUT -> PostingFailure.NetworkTimeout
-            HttpTransportFailure.SECURE_CONNECTION -> PostingFailure.SecureConnectionFailed
-            HttpTransportFailure.NETWORK -> PostingFailure.NetworkUnavailable
-            HttpTransportFailure.RATE_LIMITED -> PostingFailure.HttpStatus(RATE_LIMITED_STATUS)
+        when (kind) {
+            HttpTransportFailure.Kind.TIMEOUT -> PostingFailure.NetworkTimeout
+            HttpTransportFailure.Kind.SECURE_CONNECTION -> PostingFailure.SecureConnectionFailed
+            HttpTransportFailure.Kind.NETWORK -> PostingFailure.NetworkUnavailable
+            HttpTransportFailure.Kind.RATE_LIMITED -> PostingFailure.HttpStatus(RATE_LIMITED_STATUS, retryAfterMillis)
         },
     )
 
 private const val NOT_FOUND_STATUS = 404
 private const val GONE_STATUS = 410
+
+private fun Response.responseCooldownMillis(knownRemaining: Long?): Long? =
+    if (code == RATE_LIMITED_STATUS) {
+        knownRemaining?.takeIf { it > 0L }
+            ?: retryAfterMillis(header("Retry-After"), header("Date"), System.currentTimeMillis())
+    } else {
+        null
+    }

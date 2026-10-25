@@ -113,6 +113,7 @@ sealed interface PostingFailure {
 
     data class HttpStatus(
         val status: Int,
+        val retryAfterMillis: Long? = null,
     ) : PostingFailure
 
     data class Rejected(

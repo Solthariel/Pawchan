@@ -21,15 +21,20 @@ internal fun captchaTimerLabel(seconds: Long): String =
     "${seconds / SECONDS_PER_MINUTE}:${(seconds % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 
 @Composable
-internal fun rememberCaptchaRemainingSeconds(captcha: ComposerCaptchaState): Long? {
+internal fun rememberCaptchaRemainingSeconds(captcha: ComposerCaptchaState): Long? =
+    rememberDeadlineRemainingSeconds(captcha.deadlineElapsedMillis)
+
+@Composable
+internal fun rememberDeadlineRemainingSeconds(deadline: Long?): Long? {
     val owner = LocalLifecycleOwner.current
-    val deadline = captcha.deadlineElapsedMillis
-    var seconds by remember(deadline) { mutableStateOf(captcha.remainingSeconds(SystemClock.elapsedRealtime())) }
+    var seconds by remember(deadline) {
+        mutableStateOf(deadline?.let { cooldownRemainingSeconds(it, SystemClock.elapsedRealtime()) })
+    }
     LaunchedEffect(deadline, owner) {
         if (deadline == null) return@LaunchedEffect
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             do {
-                seconds = captcha.remainingSeconds(SystemClock.elapsedRealtime())
+                seconds = cooldownRemainingSeconds(deadline, SystemClock.elapsedRealtime())
                 delay(MILLIS_PER_SECOND)
             } while ((seconds ?: 0L) > 0L)
         }

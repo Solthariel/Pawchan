@@ -2,7 +2,6 @@ package com.solthariel.pawchan.composer
 
 import com.solthariel.pawchan.domain.posting.EmojiCaptchaChallenge
 import com.solthariel.pawchan.domain.posting.EmojiCaptchaOption
-import com.solthariel.pawchan.domain.posting.PostingFailure
 import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.PostingRules
 
@@ -75,15 +74,3 @@ data class ComposerCaptchaState(
     val deadlineElapsedMillis: Long? = null,
     val keyboard: List<EmojiCaptchaOption?> = challenge?.options.orEmpty(),
 )
-
-internal fun PostingFailure.toReplyError(): Pair<ReplyError, String?> =
-    when (this) {
-        PostingFailure.NetworkUnavailable -> ReplyError.NETWORK to null
-        PostingFailure.NetworkTimeout -> ReplyError.TIMEOUT to null
-        PostingFailure.SecureConnectionFailed -> ReplyError.SECURE_CONNECTION to null
-        PostingFailure.InvalidResponse -> ReplyError.INVALID_RESPONSE to null
-        PostingFailure.CaptchaRejected -> ReplyError.CAPTCHA to null
-        PostingFailure.ThreadClosed -> ReplyError.THREAD_CLOSED to null
-        is PostingFailure.HttpStatus -> ReplyError.SERVER to null
-        is PostingFailure.Rejected -> ReplyError.REJECTED to reason
-    }
