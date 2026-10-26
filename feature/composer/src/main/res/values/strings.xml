@@ -75,4 +75,5 @@
     <string name="attachment_position">Вложение %1$d из %2$d</string>
     <string name="attachment_move_before">Переместить раньше</string>
     <string name="attachment_move_after">Переместить позже</string>
+    <string name="reply_error_unconfirmed">Отправка не подтверждена. Проверьте, появилось ли сообщение, перед повторной попыткой.</string>
 </resources>

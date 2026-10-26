@@ -53,6 +53,7 @@ val ReplyError.messageResource: Int
             ReplyError.NETWORK -> R.string.error_network
             ReplyError.TIMEOUT -> R.string.error_timeout
             ReplyError.SECURE_CONNECTION -> R.string.error_secure_connection
+            ReplyError.SUBMISSION_UNCONFIRMED -> R.string.reply_error_unconfirmed
             ReplyError.INVALID_RESPONSE -> R.string.error_invalid_response
             ReplyError.CAPTCHA -> R.string.reply_error_captcha
             ReplyError.THREAD_CLOSED -> R.string.thread_closed

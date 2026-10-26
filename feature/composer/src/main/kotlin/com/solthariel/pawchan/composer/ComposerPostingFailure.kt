@@ -16,6 +16,10 @@ internal fun PostingFailure.toReplyError(): Pair<ReplyError, String?> =
             ReplyError.SECURE_CONNECTION to null
         }
 
+        PostingFailure.SubmissionUnconfirmed -> {
+            ReplyError.SUBMISSION_UNCONFIRMED to null
+        }
+
         PostingFailure.InvalidResponse -> {
             ReplyError.INVALID_RESPONSE to null
         }

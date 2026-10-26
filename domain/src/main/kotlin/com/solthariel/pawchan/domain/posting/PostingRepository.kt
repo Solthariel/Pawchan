@@ -105,6 +105,9 @@ sealed interface PostingFailure {
 
     data object SecureConnectionFailed : PostingFailure
 
+    /** The server may have accepted the submission; do not silently repeat it. */
+    data object SubmissionUnconfirmed : PostingFailure
+
     data object InvalidResponse : PostingFailure
 
     data object CaptchaRejected : PostingFailure

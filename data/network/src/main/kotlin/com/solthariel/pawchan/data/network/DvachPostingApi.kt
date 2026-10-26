@@ -59,7 +59,11 @@ class DvachPostingApi private constructor(
         if (!address.board.isDvachSource()) {
             unsupportedDvachPosting()
         } else {
-            execute(PostingRequestFactory.reply(address, draft, observer), decoder::decodeReply)
+            executeSubmissionRequest(
+                callFactory,
+                PostingRequestFactory.reply(address, draft, observer),
+                decoder::decodeReply,
+            )
         }
 
     override suspend fun createThread(
@@ -70,7 +74,7 @@ class DvachPostingApi private constructor(
         if (!board.isDvachSource()) {
             unsupportedDvachPosting()
         } else {
-            execute(PostingRequestFactory.newThread(board, draft, observer)) { payload ->
+            executeSubmissionRequest(callFactory, PostingRequestFactory.newThread(board, draft, observer)) { payload ->
                 decoder.decodeNewThread(board, payload)
             }
         }

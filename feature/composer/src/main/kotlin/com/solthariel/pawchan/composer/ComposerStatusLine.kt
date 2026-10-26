@@ -30,6 +30,7 @@ internal fun ComposerStatusLine(
     onReload: () -> Unit,
     imageLoader: coil3.ImageLoader,
 ) {
+    val confirmedReload = confirmedCaptchaReload(status.failure, onReload)
     val remaining = rememberCaptchaRemainingSeconds(captcha)
     val cooldown = rememberDeadlineRemainingSeconds(status.failure.retryDeadlineElapsedMillis)
     val expired = remaining == 0L
@@ -49,7 +50,7 @@ internal fun ComposerStatusLine(
                 expired,
                 reloadLabel,
                 status,
-                if ((cooldown ?: 0L) > 0L) null else onReload,
+                if ((cooldown ?: 0L) > 0L) null else confirmedReload,
             )
         }
     }
@@ -73,7 +74,10 @@ private fun RowScope.ComposerStatusBody(
             stringResource(R.string.captcha_solved),
             cooldown,
         ).withUploadBudget(
-            status.uploadBudget.takeUnless { status.failure.retryDeadlineElapsedMillis != null },
+            status.uploadBudget.takeUnless {
+                status.failure.retryDeadlineElapsedMillis != null ||
+                    status.failure.error == ReplyError.SUBMISSION_UNCONFIRMED
+            },
             status.progress,
         )
     if (!expired && status.uploadBudget?.status == null && showCaptchaSelection(captcha, status)) {

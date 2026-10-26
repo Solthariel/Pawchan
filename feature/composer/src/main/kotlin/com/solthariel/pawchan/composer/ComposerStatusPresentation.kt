@@ -60,6 +60,7 @@ private fun composerFailureText(failure: ComposerFailureState): String =
         ReplyError.NETWORK -> "Нет соединения с 2ch"
         ReplyError.TIMEOUT -> "Сервер не отвечает"
         ReplyError.SECURE_CONNECTION -> "Нет защищённого соединения"
+        ReplyError.SUBMISSION_UNCONFIRMED -> SUBMISSION_UNCONFIRMED_TEXT
         ReplyError.INVALID_RESPONSE -> "Некорректный ответ 2ch"
         ReplyError.THREAD_CLOSED -> "Тред закрыт"
         ReplyError.SERVER -> failure.reason.singleStatusLine() ?: "Сбой сервера 2ch"

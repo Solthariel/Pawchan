@@ -29,6 +29,7 @@ class ReplyComposerController internal constructor(
     private val mutableState = MutableStateFlow(ReplyComposerState())
     private var job: Job? = null
     private val rateLimit = ComposerRateLimit()
+    private val submission = ComposerSubmissionGuard()
     private val persistent = drafts != null
 
     private val uploadPreparation =
@@ -104,7 +105,12 @@ class ReplyComposerController internal constructor(
                     progress = ComposerProgressState(captchaLoading = true),
                 )
             draftSession.restore()
-            reloadCaptcha()
+            val pending = submission.activeFailure()
+            if (pending != null) {
+                mutableState.value = mutableState.value.copy(progress = ComposerProgressState(), failure = pending)
+            } else {
+                reloadCaptcha()
+            }
         }
         if (insertion != null) {
             val resetId = mutableState.value.draft.resetId
@@ -165,6 +171,7 @@ class ReplyComposerController internal constructor(
                     draft = draft.copy(attachments = draft.attachments.toList()),
                     failure =
                         rateLimit.activeFailure()
+                            ?: submission.activeFailure()
                             ?: if (current.rules == null) current.failure else ComposerFailureState(),
                 )
             uploadPreparation.update(mutableState.value.draft.attachments)
@@ -178,7 +185,7 @@ class ReplyComposerController internal constructor(
             mutableState.value =
                 current.copy(
                     draft = ComposerDraftState(resetId = current.draft.resetId + 1),
-                    failure = rateLimit.activeFailure() ?: ComposerFailureState(),
+                    failure = rateLimit.activeFailure() ?: submission.activeFailure() ?: ComposerFailureState(),
                 )
             uploadPreparation.update(emptyList())
             draftSession.clear(mutableState.value.draft)
@@ -191,11 +198,12 @@ class ReplyComposerController internal constructor(
             return
         }
         if (mutableState.value.progress.sent || mutableState.value.submitting) return
+        submission.acknowledge()
         loadCaptcha(error = null, reason = null)
     }
 
     fun selectEmoji(number: Int) {
-        if (rateLimit.activeFailure() != null) return
+        if (rateLimit.activeFailure() != null || submission.activeFailure() != null) return
         val current = mutableState.value
         if (current.progress.sent || current.submitting) return
         job?.cancel()
@@ -203,7 +211,7 @@ class ReplyComposerController internal constructor(
     }
 
     fun submit(hidden: Set<com.solthariel.pawchan.domain.settings.ComposerField> = emptySet()) {
-        if (rateLimit.activeFailure() != null) return
+        if (rateLimit.activeFailure() != null || submission.activeFailure() != null) return
         val current = mutableState.value.let { it.copy(draft = it.draft.withVisibleFields(hidden)) }
         val rules = current.rules
         if (!current.canSubmit || rules == null) {
@@ -290,11 +298,12 @@ class ReplyComposerController internal constructor(
     }
 
     private fun handleFailure(outcome: PostingOutcome.Failure) {
+        submission.record(outcome.reason)
         val (error, reason) = outcome.reason.toReplyError()
         mutableState.value =
             mutableState.value.copy(
                 progress = ComposerProgressState(),
-                failure = rateLimit.failure(outcome.reason),
+                failure = submission.activeFailure() ?: rateLimit.failure(outcome.reason),
             )
         if (error == ReplyError.CAPTCHA) {
             loadCaptcha(error, reason)
