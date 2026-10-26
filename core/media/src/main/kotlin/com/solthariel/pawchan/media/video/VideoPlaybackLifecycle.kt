@@ -21,12 +21,27 @@ internal fun BindVideoPlaybackLifecycle(
     val context = LocalContext.current
     val audio = remember(session) { session.audio(context) }
     val access = LocalVideoPrivacyAccess.current
+    val picker = com.solthariel.pawchan.media.LocalMediaPickerPlayback.current
+    BindVideoPickerReturn(session, access)
     LaunchedEffect(session, audio) { session.status.collect { audio.update(it.playing) } }
-    DisposableEffect(session, lifecycle, access) {
+    DisposableEffect(session, lifecycle, access, picker) {
         session.privacy.bind(access)
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP && !session.inPip) session.pause()
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        picker?.stopped()
+                        if (!session.inPip) session.pause()
+                    }
+
+                    Lifecycle.Event.ON_RESUME -> {
+                        picker?.returned()
+                    }
+
+                    else -> {
+                        Unit
+                    }
+                }
             }
         lifecycle.addObserver(observer)
         if (adopted) {

@@ -64,7 +64,8 @@ internal class CatalogPayloadDecoder(
                             thread.createdAtEpochSeconds,
                         )
                     },
-                boardSpeed = dto.extractBoardSpeed(),
+                boardSpeed = dto.extractBoardSpeed() ?: 0,
+                boardSpeedAvailable = dto.extractBoardSpeed() != null,
             )
         } else {
             null

@@ -22,14 +22,18 @@ class FastScrollGesture {
         private set
     private var grabOffset = 0f
 
+    internal var grabbedThumb = false
+        private set
+
     internal fun begin(
         pointerY: Float,
         currentProgress: Float,
         thumbHeight: Float,
     ) {
         val top = (trackHeight - thumbHeight).coerceAtLeast(0f) * currentProgress
+        grabbedThumb = pointerY in top..(top + thumbHeight)
         grabOffset =
-            if (pointerY in top..(top + thumbHeight)) {
+            if (grabbedThumb) {
                 pointerY - top
             } else {
                 thumbHeight / 2f
@@ -66,7 +70,7 @@ internal fun Modifier.fastScrollInput(
             gesture.begin(down.position.y, progress.value, thumbHeight)
             down.consume()
             try {
-                onProgress(gesture.progress)
+                if (!gesture.grabbedThumb) onProgress(gesture.progress)
                 drag(down.id) { change ->
                     gesture.move(change.position.y, thumbHeight)
                     change.consume()

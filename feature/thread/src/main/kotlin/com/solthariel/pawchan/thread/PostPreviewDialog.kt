@@ -81,6 +81,9 @@ internal fun PostPreviewWindow(
                         target.address?.let { address -> { open(address, target.postId) } }
                     }
                 Column {
+                    if (target.replies) {
+                        Text("Ответы на №${target.postId}", Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
                     Box(Modifier.weight(1f, fill = false)) {
                         PreviewContent(state, presentation, bindings, onRetry, onMenu, target.replies)
                     }

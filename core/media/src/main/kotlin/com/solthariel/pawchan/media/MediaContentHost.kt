@@ -61,6 +61,7 @@ fun MediaContentHost(
                 MediaRotationScope {
                     CompositionLocalProvider(
                         LocalMediaChromeState provides chrome,
+                        LocalMediaPickerPlayback provides mediaSave.pickerPlayback,
                         LocalViewerAutoPlay provides session.autoPlay,
                         LocalVideoPosterStore provides posters,
                     ) {
@@ -116,6 +117,9 @@ private fun MediaViewerWindow(
         content()
     }
 }
+
+internal val LocalMediaPickerPlayback =
+    androidx.compose.runtime.staticCompositionLocalOf<MediaPickerPlayback?> { null }
 
 private const val MEDIA_CONTENT_STATE_KEY = "media-underlying-content"
 

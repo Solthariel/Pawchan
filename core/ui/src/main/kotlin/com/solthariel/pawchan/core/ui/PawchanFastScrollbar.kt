@@ -133,7 +133,6 @@ private fun rememberFastScrollProgress(
                 itemScrollProgress(
                     state.firstVisibleItemIndex,
                     geometry.value.totalItems,
-                    state.fullyVisibleItems(),
                     state.canScrollBackward,
                     state.canScrollForward,
                 )

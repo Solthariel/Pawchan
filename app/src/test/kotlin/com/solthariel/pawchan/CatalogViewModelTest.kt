@@ -205,7 +205,7 @@ class CatalogViewModelTest {
                 val repository =
                     FakeCatalogRepository(
                         success(boardSpeed = 136),
-                        success(boardSpeed = 0),
+                        success(boardSpeed = 0, boardSpeedAvailable = false),
                     )
                 val viewModel = CatalogViewModel(repository)
                 advanceUntilIdle()
@@ -215,6 +215,48 @@ class CatalogViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(136, (viewModel.state.value as CatalogUiState.Content).boardSpeed)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun refreshAcceptsReportedZeroInsteadOfKeepingCachedSpeed() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val repository = FakeCatalogRepository(success(boardSpeed = 136), success(boardSpeed = 0))
+                val viewModel = CatalogViewModel(repository)
+                advanceUntilIdle()
+                assertEquals(136, (viewModel.state.value as CatalogUiState.Content).boardSpeed)
+
+                viewModel.refresh()
+                advanceUntilIdle()
+
+                assertEquals(0, (viewModel.state.value as CatalogUiState.Content).boardSpeed)
+                assertEquals(2, repository.requests)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun refreshReplacesCachedSpeedWithLatestReportedValue() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val repository = FakeCatalogRepository(success(boardSpeed = 136), success(boardSpeed = 148))
+                val viewModel = CatalogViewModel(repository)
+                advanceUntilIdle()
+                assertEquals(136, (viewModel.state.value as CatalogUiState.Content).boardSpeed)
+
+                viewModel.refresh()
+                advanceUntilIdle()
+
+                assertEquals(148, (viewModel.state.value as CatalogUiState.Content).boardSpeed)
+                assertEquals(2, repository.requests)
             } finally {
                 Dispatchers.resetMain()
             }
@@ -272,6 +314,7 @@ class CatalogViewModelTest {
         subject: String = "Тестовый тред",
         comment: String = "OP",
         boardSpeed: Int = 0,
+        boardSpeedAvailable: Boolean = true,
     ): DomainOutcome<CatalogSnapshot> {
         val board =
             BoardAddress(
@@ -296,6 +339,7 @@ class CatalogViewModelTest {
                 board = BoardDescriptor(board, "Бред", worksafe = false),
                 threads = listOf(thread),
                 boardSpeed = boardSpeed,
+                boardSpeedAvailable = boardSpeedAvailable,
             ),
         )
     }

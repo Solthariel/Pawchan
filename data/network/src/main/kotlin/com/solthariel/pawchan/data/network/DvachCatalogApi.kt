@@ -21,20 +21,19 @@ class DvachCatalogApi private constructor(
                 CatalogRequestFactory.create(board.board),
                 decoder::decode,
             )
-        return if (catalog is DomainOutcome.Success && catalog.value.boardSpeed <= 0) {
+        return if (catalog is DomainOutcome.Success && !catalog.value.boardSpeedAvailable) {
             catalog.withFallbackSpeed(loadBoardPageSpeed(board))
         } else {
             catalog
         }
     }
 
-    private suspend fun loadBoardPageSpeed(board: BoardAddress): Int {
-        val boards = directory.loadBoards(forceRefresh = false)
+    private suspend fun loadBoardPageSpeed(board: BoardAddress): Int? {
+        val boards = directory.loadBoards(forceRefresh = true)
         return (boards as? DomainOutcome.Success)
             ?.value
             ?.firstOrNull { entry -> entry.address == board }
             ?.postsPerHour
-            ?: 0
     }
 
     companion object {
@@ -53,13 +52,14 @@ class DvachCatalogApi private constructor(
     }
 }
 
-private fun DomainOutcome.Success<CatalogSnapshot>.withFallbackSpeed(boardSpeed: Int): DomainOutcome<CatalogSnapshot> =
-    if (boardSpeed > 0) {
+private fun DomainOutcome.Success<CatalogSnapshot>.withFallbackSpeed(boardSpeed: Int?): DomainOutcome<CatalogSnapshot> =
+    if (boardSpeed != null && boardSpeed >= 0) {
         DomainOutcome.Success(
             CatalogSnapshot(
                 board = value.board,
                 threads = value.threads,
                 boardSpeed = boardSpeed,
+                boardSpeedAvailable = true,
             ),
         )
     } else {

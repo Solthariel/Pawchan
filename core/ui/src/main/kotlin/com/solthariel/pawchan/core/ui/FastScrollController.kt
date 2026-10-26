@@ -26,7 +26,7 @@ internal class FastScrollController(
         endJob = null
         val target =
             if (mode == FastScrollMode.ITEMS) {
-                itemScrollTarget(progress, geometry.totalItems, state.fullyVisibleItems())
+                itemScrollTarget(progress, geometry.totalItems)
             } else {
                 geometry.target(progress)
             }

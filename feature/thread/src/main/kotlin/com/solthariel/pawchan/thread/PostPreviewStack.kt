@@ -16,7 +16,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 
-/** Only three live window trees/models; older levels retain lightweight saveable UI state. */
+/** Only five live window trees/models; older levels retain lightweight saveable UI state. */
 @Composable
 internal fun PostPreviewStack(
     targets: List<PostPreviewTarget>,

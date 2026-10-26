@@ -8,8 +8,20 @@ internal data class ThreadReplyGroup(
     val label: String = russianPlural(posts.size, "ответ", "ответа", "ответов")
 }
 
-internal fun prepareThreadReplyIndex(posts: List<ThreadPostUi>): Map<Long, ThreadReplyGroup> =
+internal fun prepareThreadReplyIndex(
+    posts: List<ThreadPostUi>,
+    address: com.solthariel.pawchan.domain.model.ThreadAddress? = null,
+): Map<Long, ThreadReplyGroup> =
     posts
         .flatMap { post -> post.referencedPostIds.map { referenced -> referenced to post } }
         .groupBy(keySelector = Pair<Long, ThreadPostUi>::first, valueTransform = Pair<Long, ThreadPostUi>::second)
-        .mapValues { (_, replies) -> ThreadReplyGroup(replies) }
+        .mapValues { (source, replies) ->
+            val context = address?.let { ReplyReferenceContext(it, source) }
+            ThreadReplyGroup(
+                if (context == null) {
+                    replies
+                } else {
+                    replies.map { it.copy(richText = it.richText.withReplyContext(context)) }
+                },
+            )
+        }

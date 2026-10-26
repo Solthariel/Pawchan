@@ -18,8 +18,14 @@ import com.solthariel.pawchan.thread.vocaroo.isVocarooLink
 internal class RichPostTextUi private constructor(
     private val runs: List<PostTextRun>,
     val initialText: AnnotatedString,
+    private val replyContext: ReplyReferenceContext? = null,
 ) {
-    fun reveal(revealedSpoilers: Set<Int>): AnnotatedString = render(runs, revealedSpoilers)
+    fun reveal(revealedSpoilers: Set<Int>): AnnotatedString =
+        render(runs, revealedSpoilers)
+            .highlightReplyReference(replyContext)
+
+    fun withReplyContext(context: ReplyReferenceContext): RichPostTextUi =
+        RichPostTextUi(runs, initialText.highlightReplyReference(context), context)
 
     companion object {
         fun create(document: PostDocument): RichPostTextUi {

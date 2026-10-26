@@ -17,10 +17,10 @@ internal data class ContentFilterInputPresentation(
 internal fun filterConditionPresentation(mode: String): ContentFilterInputPresentation =
     ContentFilterInputPresentation(
         hint =
-            if (mode == ContentFilterMode.ALL_WORDS.name) {
-                FILTER_CONDITION_HINTS[1]
-            } else {
-                FILTER_CONDITION_HINTS[0]
+            when (mode) {
+                ContentFilterMode.ALL_WORDS.name -> FILTER_CONDITION_HINTS[1]
+                ContentFilterMode.REGEX.name -> "Вставьте регулярное выражение"
+                else -> FILTER_CONDITION_HINTS[0]
             },
         error = null,
     )

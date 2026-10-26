@@ -93,6 +93,25 @@ class PreviewStackRuntimeTest {
         compose.onNodeWithText("Пост 4", substring = true).assertIsDisplayed()
     }
 
+    @Test fun deepChainKeepsFiveLiveWindowsAndRestoresEvictedScrollPosition() {
+        val targets = showStack(listOf(PostPreviewTarget(null, 1, replies = true)))
+        compose
+            .onNode(
+                hasTestTag("preview-list") and hasAnyAncestor(hasTestTag("preview-active")),
+                useUnmergedTree = true,
+            ).performScrollToNode(hasText("Пост 30", substring = true))
+        val before = compose.onNodeWithText("Пост 30", substring = true).fetchSemanticsNode().boundsInRoot
+        compose.runOnIdle { targets.value += (2L..15L).map { PostPreviewTarget(null, it) } }
+        compose.waitForIdle()
+        compose.onAllNodes(hasTestTag("preview-active"), useUnmergedTree = true).assertCountEquals(1)
+        compose.onAllNodes(hasTestTag("preview-behind"), useUnmergedTree = true).assertCountEquals(4)
+        repeat(14) {
+            Espresso.pressBack()
+            compose.waitForIdle()
+        }
+        assertEquals(before, compose.onNodeWithText("Пост 30", substring = true).fetchSemanticsNode().boundsInRoot)
+    }
+
     @Test fun singleShortPostDoesNotExpandToScreenHeight() {
         showStack(listOf(PostPreviewTarget(null, 2)))
         val window = compose.onNodeWithTag("preview-active").fetchSemanticsNode().boundsInRoot

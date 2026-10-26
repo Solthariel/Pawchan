@@ -53,7 +53,7 @@ internal fun ThreadUiState.Content.withPostNavigation(): ThreadUiState.Content {
                     ThreadPostNavigation(
                         scrollMarkers = prepareThreadScrollMarkers(posts),
                         mediaGroups = visible.associate { it.id to it.attachments.viewerItems() },
-                        replyIndex = prepareThreadReplyIndex(posts),
+                        replyIndex = prepareThreadReplyIndex(posts, address),
                         postPositions = posts.mapIndexed { index, post -> post.id to index }.toMap(),
                     ),
             ),

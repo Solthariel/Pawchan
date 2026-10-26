@@ -63,7 +63,7 @@ class ContentFilterModeRoundTripRuntimeTest {
                 condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf(text)),
             )
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithText("Все слова").performScrollTo().performClick()
+        compose.onNodeWithText("Регулярное выражение").performScrollTo().performClick()
         compose.onNodeWithText("Точная фраза").performScrollTo().performClick()
         assertEquals(
             text,

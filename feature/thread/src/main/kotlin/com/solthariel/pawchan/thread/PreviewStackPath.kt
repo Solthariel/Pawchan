@@ -26,4 +26,4 @@ internal class PreviewStackPath {
     }
 }
 
-internal const val RETAINED_PREVIEW_WINDOWS = 3
+internal const val RETAINED_PREVIEW_WINDOWS = 5

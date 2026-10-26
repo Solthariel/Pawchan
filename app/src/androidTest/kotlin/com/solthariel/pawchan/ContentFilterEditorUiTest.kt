@@ -46,7 +46,7 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithContentDescription("Добавить правило").performClick()
         compose.onNodeWithText("Проверяемый текст").assertIsDisplayed()
         compose.onNodeWithContentDescription("Условие").performTextInput("голова дай денег")
-        compose.onNodeWithText("Все слова").performClick()
+        compose.onNodeWithText("Регулярное выражение").performClick()
         compose.onNodeWithText("Ответы").performClick()
         compose.runOnIdle {
             state.value = state.value.copy(app = state.value.app.copy(postMarkers = !state.value.app.postMarkers))
@@ -59,8 +59,8 @@ class ContentFilterEditorUiTest {
         compose.runOnIdle {
             val saved = state.value.app.contentFilters
             val rule = saved.single()
-            assertEquals(ContentFilterMode.ALL_WORDS, rule.mode)
-            assertEquals(listOf("голова", "дай", "денег"), rule.values)
+            assertEquals(ContentFilterMode.REGEX, rule.mode)
+            assertEquals(listOf("голова дай денег"), rule.values)
             assertTrue(rule.threads && rule.comments)
             assertTrue(rule.boards.isEmpty())
             assertTrue(rule.targets.threadIds.isEmpty())
@@ -75,8 +75,8 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
-        compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()
-        compose.onNodeWithText("Все слова").performScrollTo().performClick()
+        compose.onNodeWithText("Регулярное выражение").assertExists()
+        compose.onNodeWithText("Регулярное выражение").performScrollTo().performClick()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
     }

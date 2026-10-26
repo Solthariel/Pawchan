@@ -84,12 +84,16 @@ internal class CatalogViewModel(
                     (sourceState as? CatalogUiState.Content)?.boardSpeed ?: 0
                 val outcome = repository.loadCatalog(board)
                 val previous = sourceState
+                val speedAvailable =
+                    (outcome as? com.solthariel.pawchan.domain.model.DomainOutcome.Success)
+                        ?.value
+                        ?.boardSpeedAvailable == true
                 sourceState =
                     withContext(uiDispatcher) {
                         outcome
                             .toUiState()
                             .withViewerMedia()
-                            .withBoardSpeedFallback(cachedBoardSpeed)
+                            .withBoardSpeedFallback(cachedBoardSpeed, speedAvailable)
                             .keepContentOnRefreshFailure(previous)
                     }
                 presentSourceState()
@@ -196,8 +200,11 @@ private fun CatalogUiState.refreshing(): CatalogUiState =
         is CatalogUiState.Error, CatalogUiState.Loading -> CatalogUiState.Loading
     }
 
-private fun CatalogUiState.withBoardSpeedFallback(cachedBoardSpeed: Int): CatalogUiState =
-    if (this is CatalogUiState.Content && boardSpeed <= 0 && cachedBoardSpeed > 0) {
+internal fun CatalogUiState.withBoardSpeedFallback(
+    cachedBoardSpeed: Int,
+    speedAvailable: Boolean,
+): CatalogUiState =
+    if (this is CatalogUiState.Content && !speedAvailable && cachedBoardSpeed >= 0) {
         copy(boardSpeed = cachedBoardSpeed)
     } else {
         this

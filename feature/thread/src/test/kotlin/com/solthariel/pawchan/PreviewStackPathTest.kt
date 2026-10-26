@@ -28,10 +28,10 @@ class PreviewStackPathTest {
         assertNotEquals(before, after)
     }
 
-    @Test fun keysSurviveRecreationAndOnlyThreeWindowsAreLive() {
+    @Test fun keysSurviveRecreationAndOnlyFiveWindowsAreLive() {
         val targets = (1L..20L).map { PostPreviewTarget(defaultThreadAddress(1), it) }
         val entries = PreviewStackPath().reconcile(targets)
         assertEquals(entries, PreviewStackPath().reconcile(targets))
-        assertEquals(3, entries.takeLast(RETAINED_PREVIEW_WINDOWS).size)
+        assertEquals(5, entries.takeLast(RETAINED_PREVIEW_WINDOWS).size)
     }
 }

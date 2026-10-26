@@ -43,16 +43,17 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
             { draft.text = it },
             presentation = filterConditionPresentation(draft.mode),
         )
+        if (draft.mode == ContentFilterMode.REGEX.name) FilterRegexCopyButton(draft.text)
     }
 }
 
 @Composable
 private fun FilterMatchModes(draft: ContentFilterDraft) {
-    val basic = listOf(ContentFilterMode.EXACT_PHRASE, ContentFilterMode.ALL_WORDS)
+    val basic = listOf(ContentFilterMode.EXACT_PHRASE, ContentFilterMode.REGEX)
     val selectedMode = ContentFilterMode.valueOf(draft.mode)
-    val modes = if (selectedMode in basic || selectedMode == ContentFilterMode.REGEX) basic else basic + selectedMode
+    val modes = if (selectedMode in basic) basic else basic + selectedMode
     Column {
-        if (selectedMode == ContentFilterMode.REGEX) {
+        if (selectedMode !in basic) {
             Text(
                 "Старое условие сохранено. Для смены способа поиска выберите режим ниже.",
                 style = MaterialTheme.typography.bodyMedium,

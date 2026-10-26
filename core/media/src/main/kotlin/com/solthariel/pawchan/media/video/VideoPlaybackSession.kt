@@ -31,6 +31,7 @@ internal class VideoPlaybackSession(
     private var opening: Job? = null
     private var pendingSeek: Long? = null
     private var requestedPlaying = true
+    internal val wantsPlayback: Boolean get() = requestedPlaying && !closed && !status.value.ended
     private var closed = false
     private var generation = 0
 

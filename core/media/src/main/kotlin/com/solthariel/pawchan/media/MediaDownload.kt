@@ -89,6 +89,7 @@ data class MediaSaveActions(
     val request: (MediaAttachmentUi) -> Unit,
     /** Несколько файлов: одна папка вместо диалога на каждый файл. */
     val requestAll: (List<MediaAttachmentUi>) -> Unit = {},
+    val pickerPlayback: MediaPickerPlayback? = null,
 )
 
 @Composable
@@ -96,10 +97,16 @@ fun rememberMediaSaveActions(queue: MediaSaveQueue): MediaSaveActions {
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val state = remember(queue, context, scope) { MediaSavePickerState(queue, context, scope) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree(), state::directoryPicked)
+    val playback = remember(state) { MediaPickerPlayback() }
+    val picker =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            state.directoryPicked(uri)
+            playback.completed()
+        }
     LaunchedEffect(state.needsDirectory) {
         if (state.needsDirectory) {
             state.pickerStarted()
+            playback.started()
             picker.launch(null)
         }
     }
@@ -108,6 +115,7 @@ fun rememberMediaSaveActions(queue: MediaSaveQueue): MediaSaveActions {
         state.status,
         request = state::request,
         requestAll = state::requestAll,
+        pickerPlayback = playback,
     )
 }
 

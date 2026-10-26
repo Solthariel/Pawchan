@@ -31,15 +31,15 @@ class ContentFilterLayoutRuntimeTest {
         val draft = ContentFilterDraft(newContentFilterRule(defaultBoardAddress()))
         compose.setContent { MaterialTheme { Column(Modifier.width(320.dp)) { FilterEditorFields(draft) } } }
         val phrase = compose.onNodeWithText("Точная фраза").fetchSemanticsNode().boundsInRoot
-        val words = compose.onNodeWithText("Все слова").fetchSemanticsNode().boundsInRoot
+        val words = compose.onNodeWithText("Регулярное выражение").fetchSemanticsNode().boundsInRoot
         assertEquals(phrase.top, words.top, 1f)
         compose.onNodeWithText("Условие пусто").assertDoesNotExist()
         val condition = compose.onNodeWithContentDescription("Условие")
         condition.performClick()
         compose.onNodeWithText("Введите фразу целиком").assertExists()
-        compose.onNodeWithText("Все слова").performClick()
+        compose.onNodeWithText("Регулярное выражение").performClick()
         condition.performClick()
-        compose.onNodeWithText("Слова через пробел или запятую. Порядок не важен").assertExists()
+        compose.onNodeWithText("Вставьте регулярное выражение").assertExists()
         compose.onNodeWithText("Условие пусто").assertDoesNotExist()
     }
 

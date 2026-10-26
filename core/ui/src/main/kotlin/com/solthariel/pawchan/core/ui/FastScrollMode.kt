@@ -8,7 +8,6 @@ enum class FastScrollMode { CONTENT, ITEMS }
 internal fun itemScrollTarget(
     progress: Float,
     itemCount: Int,
-    fullyVisible: Int,
 ): FastScrollTarget =
     when {
         itemCount <= 0 || !progress.isFinite() -> {
@@ -20,7 +19,7 @@ internal fun itemScrollTarget(
         }
 
         else -> {
-            val lastStart = (itemCount - fullyVisible.coerceAtLeast(1)).coerceAtLeast(0)
+            val lastStart = (itemCount - 1).coerceAtLeast(0)
             val index = (lastStart * progress.coerceIn(0f, 1f)).roundToInt().coerceIn(0, itemCount - 1)
             FastScrollTarget(index, 0)
         }
@@ -29,19 +28,11 @@ internal fun itemScrollTarget(
 internal fun itemScrollProgress(
     firstIndex: Int,
     itemCount: Int,
-    fullyVisible: Int,
     canScrollBackward: Boolean,
     canScrollForward: Boolean,
 ): Float =
     when {
         !canScrollBackward -> 0f
         !canScrollForward -> 1f
-        else -> (firstIndex.toFloat() / (itemCount - fullyVisible.coerceAtLeast(1)).coerceAtLeast(1)).coerceIn(0f, 1f)
+        else -> (firstIndex.toFloat() / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
     }
-
-internal fun androidx.compose.foundation.lazy.LazyListState.fullyVisibleItems(): Int {
-    val layout = layoutInfo
-    return layout.visibleItemsInfo.count {
-        it.offset >= layout.viewportStartOffset && it.offset + it.size <= layout.viewportEndOffset
-    }
-}
