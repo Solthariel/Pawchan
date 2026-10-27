@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.settings
 
 import com.solthariel.pawchan.domain.filter.ContentFilterConditionSpec
-import com.solthariel.pawchan.domain.filter.ContentFilterFields
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.domain.filter.ContentFilterOptions
 import com.solthariel.pawchan.domain.filter.ContentFilterTargets
@@ -20,7 +19,7 @@ class ContentFilterBackupTest {
             base.copy(
                 boards = setOf("b", "vg"),
                 enabled = false,
-                targets = ContentFilterTargets(true, true, ContentFilterFields.SUBJECT, false, true, setOf(42L)),
+                targets = ContentFilterTargets(threadIds = setOf(42L)),
                 options = ContentFilterOptions("Имя\nправила", false, 12, listOf("x\ny", "z;="), 123456789L),
             )
         val text = encodeContentFilterBackup(listOf(rule, base))
@@ -29,12 +28,16 @@ class ContentFilterBackupTest {
     }
 
     @Test
-    fun everyLegacyModeRetainsItsExactValuesWithoutImplicitConversion() {
-        ContentFilterMode.entries.forEach { mode ->
-            val values = if (mode == ContentFilterMode.REGEX) listOf("кот|пёс") else listOf("голова")
-            val rule = base.copy(condition = ContentFilterConditionSpec(mode, values))
-            assertEquals(listOf(rule), decodeContentFilterBackup(encodeContentFilterBackup(listOf(rule))))
-        }
+    fun everyNewModeRoundTripsWithoutSplittingItsLiteralValues() {
+        ContentFilterMode.entries
+            .filter {
+                it == ContentFilterMode.PHRASE || it == ContentFilterMode.ANY_TERM ||
+                    it == ContentFilterMode.ALL_TERMS
+            }.forEach { mode ->
+                val values = if (mode == ContentFilterMode.REGEX) listOf("кот|пёс") else listOf("голова")
+                val rule = base.copy(condition = ContentFilterConditionSpec(mode, values))
+                assertEquals(listOf(rule), decodeContentFilterBackup(encodeContentFilterBackup(listOf(rule))))
+            }
     }
 
     @Test

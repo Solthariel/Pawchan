@@ -1,10 +1,10 @@
 package com.solthariel.pawchan
 
-import com.solthariel.pawchan.boards.FAVORITES_CATEGORY_KEY
 import com.solthariel.pawchan.domain.boards.BoardArchiveSnapshot
 import com.solthariel.pawchan.domain.boards.BoardDetailsRepository
 import com.solthariel.pawchan.domain.boards.BoardInformation
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
+import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainFailure
@@ -21,7 +21,7 @@ internal class FakeBoardMenuRepositories :
     override val theme = MutableStateFlow(ThemePreference.SYSTEM)
     override val homeBoard = MutableStateFlow<BoardAddress?>(null)
     override val favoriteBoards = MutableStateFlow(emptySet<BoardId>())
-    override val expandedBoardCategories = MutableStateFlow(setOf(FAVORITES_CATEGORY_KEY))
+    override val expandedBoardCategories = MutableStateFlow(setOf(FAVORITES_BOARD_CATEGORY_KEY))
     var failWrites = false
     var informationHold: CompletableDeferred<Unit>? = null
     var informationResult: DomainOutcome<BoardInformation> = DomainOutcome.Failure(DomainFailure.NetworkUnavailable)

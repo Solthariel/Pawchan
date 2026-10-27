@@ -20,6 +20,10 @@ internal fun ContentFilterOverflowMenu(actions: ContentFilterMenuActions) {
     Box {
         UiToolbarButton(UiIconKind.MORE, "Меню автоскрытия", onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = close) {
+            DropdownMenuItem(text = { Text("Как работает автоскрытие") }, onClick = {
+                close()
+                actions.help()
+            })
             DropdownMenuItem(text = { Text("Статистика") }, onClick = {
                 close()
                 actions.statistics()

@@ -17,6 +17,7 @@ internal fun MirrorSetting(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
+    val mirrors = com.solthariel.pawchan.infrastructure.LocalForumMirrors.current
     val host = app.behavior.client.mirror
     val options =
         listOf(
@@ -36,10 +37,12 @@ internal fun MirrorSetting(
             if (index == CUSTOM_MIRROR_INDEX) {
                 custom = true
             } else {
-                update { it.withClient { c -> c.copy(mirror = options[index]) } }
+                mirrors?.selectHost(options[index])
+                update { it.withClient { c -> c.copy(connection = c.connection.copy(preferredHost = options[index])) } }
             }
         },
     )
+    MirrorAvailabilitySetting(app, update)
     if (custom) {
         AppAlertDialog(
             onDismissRequest = { custom = false },
@@ -55,7 +58,8 @@ internal fun MirrorSetting(
             },
             confirmButton = {
                 TextButton(enabled = validMirrorHost(input), onClick = {
-                    update { it.withClient { c -> c.copy(mirror = input) } }
+                    mirrors?.selectHost(input)
+                    update { it.withClient { c -> c.copy(connection = c.connection.copy(preferredHost = input)) } }
                     custom = false
                 }) { Text("Сохранить") }
             },

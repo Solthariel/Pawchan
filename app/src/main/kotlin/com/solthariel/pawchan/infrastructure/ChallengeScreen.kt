@@ -19,7 +19,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +26,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.R
 
 @Composable
@@ -37,19 +35,7 @@ internal fun ChallengeScreen(
     onDone: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    val selected by (
-        com.solthariel.pawchan.workspace.LocalWorkspace.current
-            ?.appSettings
-            ?.appSettings
-            ?: kotlinx.coroutines.flow.flowOf(
-                com.solthariel.pawchan.domain.settings
-                    .AppSettings(),
-            )
-    ).collectAsStateWithLifecycle(
-        com.solthariel.pawchan.domain.settings
-            .AppSettings(),
-    )
-    val allowed = selected.behavior.client.mirror
+    val allowed = com.solthariel.pawchan.infrastructure.sites.LocalForumMirror.current
     Column(
         modifier =
             Modifier

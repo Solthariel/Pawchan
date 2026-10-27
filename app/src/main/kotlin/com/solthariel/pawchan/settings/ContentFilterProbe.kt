@@ -99,7 +99,7 @@ private fun probeRanges(
 ): List<IntRange> {
     val engine = ContentFilterEngine(listOf(rule.copy(enabled = true)))
     return listOfNotNull(
-        engine.threadMatch(board, text, text, threadId),
+        engine.threadMatch(board, null, text, threadId),
         engine.commentMatch(board, text, threadId),
     ).flatMap { it.ranges }.distinct()
 }

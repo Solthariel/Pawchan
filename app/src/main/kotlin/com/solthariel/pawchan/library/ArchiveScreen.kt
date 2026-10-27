@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.library
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,14 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,7 +31,6 @@ import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
-import com.solthariel.pawchan.domain.boards.ArchivedThreadSummary
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -68,7 +71,7 @@ internal fun ArchiveScreen(
         key(state.pageIndex) {
             LazyColumn(Modifier.weight(1f)) {
                 items(
-                    state.snapshot?.threads.orEmpty(),
+                    state.rows,
                     key = { it.address.saveableKey },
                     contentType = { "archive-thread" },
                 ) {
@@ -128,26 +131,33 @@ private fun ArchiveStatus(
 
 @Composable
 private fun ArchiveThreadRow(
-    thread: ArchivedThreadSummary,
+    thread: ArchiveThreadPresentation,
     onThread: (ThreadAddress) -> Unit,
 ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clickable {
-                onThread(thread.address)
-            }.padding(horizontal = 16.dp, vertical = 12.dp),
+    val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
+    Surface(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (bubble) 8.dp else 0.dp, vertical = if (bubble) 4.dp else 0.dp)
+                .clickable { onThread(thread.address) },
+        shape = if (bubble) RoundedCornerShape(14.dp) else RectangleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
-        Text(
-            thread.subject.ifBlank { stringResource(R.string.archive_thread_number, thread.address.thread.value) },
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            stringResource(R.string.archive_thread_number, thread.address.thread.value),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
+            Text(
+                thread.subject,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                thread.metadata,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
-    HorizontalDivider()
+    if (!bubble) HorizontalDivider()
 }

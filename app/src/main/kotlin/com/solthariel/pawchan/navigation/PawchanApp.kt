@@ -87,7 +87,9 @@ private fun LoadedPawchanApp(
     BindWorkspaceLifecycle(storage.workspace)
     BindArchiveNotices(archives)
 
-    AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
+    com.solthariel.pawchan.infrastructure.MirrorSessionHost(network.stack) {
+        AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
+    }
 }
 
 @Composable
@@ -112,8 +114,6 @@ private fun AppSessionSurface(
                     home?.let { loaded ->
                         CompositionLocalProvider(
                             com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
-                            com.solthariel.pawchan.infrastructure.sites.LocalForumMirror provides
-                                appSettings.behavior.client.mirror,
                             LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
                             LocalComposerPreferences provides appSettings.behavior.client.composer,
                             LocalMediaPreferences provides appSettings.behavior.client.media,
@@ -159,7 +159,9 @@ private fun BindAppSettingsEffects(
     loaders: MediaLoaders,
     stack: AppNetworkStack,
 ) {
-    androidx.compose.runtime.SideEffect { stack.selectMirror(appSettings.behavior.client.mirror) }
+    LaunchedEffect(stack, appSettings.behavior.client.connection) {
+        stack.mirror.recovery?.configure(appSettings.behavior.client.connection)
+    }
     val context = LocalContext.current
     androidx.compose.runtime.SideEffect {
         stack.github.update(appSettings.behavior.dns.github)

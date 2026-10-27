@@ -10,12 +10,11 @@ import java.util.UUID
 internal fun newContentFilterRule(
     board: BoardAddress,
     text: String = "",
-    comment: Boolean = false,
 ): ContentFilterRule =
     ContentFilterRule(
         id = UUID.randomUUID().toString(),
         site = board.site.value,
         boards = setOf(board.board.value),
-        targets = ContentFilterTargets(threads = !comment, comments = comment),
-        condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf(text)),
+        targets = ContentFilterTargets(threads = true, comments = true),
+        condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf(text)),
     )

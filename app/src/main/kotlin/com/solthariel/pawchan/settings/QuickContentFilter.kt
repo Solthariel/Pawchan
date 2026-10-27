@@ -29,7 +29,7 @@ internal fun rememberQuickContentFilter(repository: AppSettingsRepository?): Thr
     return ThreadContentFilterTools(
         add = { selection ->
             editing =
-                newContentFilterRule(selection.board, selection.text, selection.comment)
+                newContentFilterRule(selection.board, selection.text)
         },
         edit = { id -> editing = app.contentFilters.firstOrNull { it.id == id } },
         editor = { samples ->

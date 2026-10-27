@@ -61,6 +61,7 @@ internal class AppNetworkStack private constructor(
         httpClient.dispatcher.executorService.shutdown()
         // Закрытие TLS-соединений пишет в сокет: на главном потоке это NetworkOnMainThreadException.
         Thread({
+            mirror.recovery?.close()
             httpClient.connectionPool.evictAll()
             httpClient.cache?.close()
             if (clearCache && !clearClosedSessionCache(cacheDirectory)) {
@@ -92,12 +93,16 @@ internal class AppNetworkStack private constructor(
                     .toLong() * BYTES_PER_MB
             val mirror =
                 com.solthariel.pawchan.data.network
-                    .MirrorRoutingInterceptor(mirrorHost)
+                    .MirrorRoutingInterceptor(
+                        mirrorHost,
+                        com.solthariel.pawchan.data.network.MirrorRecovery
+                            .create(mirrorHost),
+                    )
             val httpClient =
                 DvachHttpClient
                     .create(cookies)
                     .newBuilder()
-                    .addInterceptor(mirror)
+                    .apply { interceptors().add(0, mirror) }
                     .build()
             val boardDirectory = DvachBoardDirectoryApi.create(httpClient)
             val arhivachDns = ArhivachDnsSelector(httpClient)

@@ -9,15 +9,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ContentFilterProbeTest {
+    @Test fun probeDoesNotJoinTwoCopiesOfTheTextAndInventAPhrase() {
+        val rule = newContentFilterRule(defaultBoardAddress(), "собака\nкот")
+        assertFalse(filterProbeResult(rule, "кот собака").matched)
+    }
+
     @Test
-    fun regexReportsTheActualConsumedSourceRatherThanAnAbstractSuccessLabel() {
+    fun literalProbeReportsTheActualSourceAndNotRegexInterpretation() {
         val rule =
             newContentFilterRule(defaultBoardAddress()).copy(
-                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("Денег.*ГОЛОВА.*дай")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf("ГОЛОВА")),
             )
         val result = filterProbeResult(rule, "Денег много; ГОЛОВА, дай немного!")
         assertTrue(result.matched)
-        assertTrue(result.caption.contains("«Денег много; ГОЛОВА, дай»"))
+        assertTrue(result.caption.contains("«ГОЛОВА»"))
         assertEquals(1, result.preview.spanStyles.size)
     }
 

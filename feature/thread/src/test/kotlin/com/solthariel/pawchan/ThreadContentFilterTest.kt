@@ -3,6 +3,7 @@ package com.solthariel.pawchan
 import com.solthariel.pawchan.domain.filter.ContentFilterConditionSpec
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterTargets
+import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.MediaKind
@@ -18,8 +19,10 @@ import com.solthariel.pawchan.thread.ThreadUiState
 import com.solthariel.pawchan.thread.filteredContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class ThreadContentFilterTest {
@@ -32,14 +35,18 @@ class ThreadContentFilterTest {
         ContentFilterRule(
             "r",
             "2ch",
-            targets = ContentFilterTargets(threads = false, comments = true),
             condition = ContentFilterConditionSpec(values = listOf("скрыть")),
         )
 
+    @Before
+    fun ruleUsesSupportedFormat() {
+        assertNull(contentFilterValidationError(rule))
+    }
+
     @Test
-    fun commentsNeverHideOpOrThreadAndKeepNavigation() {
+    fun matchingReplyKeepsNonmatchingOpAndNavigation() {
         val raw =
-            toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"), toolsPost(3, "оставить")))
+            toolsContent(listOf(toolsPost(1, "оставить"), toolsPost(2, "скрыть"), toolsPost(3, "оставить")))
                 .copy(address = address)
         val filtered = raw.filteredContent(listOf(rule)) as ThreadUiState.Content
         assertFalse(filtered.posts[0].metadata.hidden)
@@ -107,6 +114,45 @@ class ThreadContentFilterTest {
         assertEquals(raw.statistics, revealed.statistics)
         assertNull(revealed.posts[1].metadata.contentFilterId)
         assertFalse(raw.posts[1].metadata.hidden)
+    }
+
+    @Test
+    fun matchingOpProducesNoticeAndTheSameRuleHidesReply() {
+        val raw = toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"))).copy(address = address)
+        val filtered = raw.filteredContent(listOf(rule)) as ThreadUiState.Content
+        assertEquals(rule.label, filtered.presentation.contentFilterNotice)
+        assertFalse(
+            filtered.posts
+                .first()
+                .metadata.hidden,
+        )
+        assertTrue(
+            filtered.posts
+                .last()
+                .metadata.hidden,
+        )
+        assertEquals(listOf(1L, 2L), filtered.posts.map { it.id })
+        assertEquals(1, filtered.presentation.filteredComments)
+        assertEquals(
+            listOf(2L),
+            filtered.presentation.contentFilters.hits
+                .map { it.postId },
+        )
+    }
+
+    @Test
+    fun obsoleteReplyOnlyRuleIsRejectedAndDoesNotHidePosts() {
+        val obsolete = rule.copy(targets = ContentFilterTargets(threads = false, comments = true))
+        assertNotNull(contentFilterValidationError(obsolete))
+        val raw = toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"))).copy(address = address)
+        val filtered = raw.filteredContent(listOf(obsolete)) as ThreadUiState.Content
+        assertTrue(filtered.posts.none { it.metadata.hidden })
+        assertNull(filtered.presentation.contentFilterNotice)
+        assertTrue(
+            filtered.presentation.contentFilters.hits
+                .isEmpty(),
+        )
+        assertEquals(0, filtered.presentation.filteredComments)
     }
 
     @Test

@@ -38,7 +38,7 @@ class ContentFilterCompactLayoutRuntimeTest {
 
     @Test fun emptyAndFilledConditionsHaveOneLineInEitherSearchMode() {
         var text by mutableStateOf("")
-        var mode by mutableStateOf(ContentFilterMode.EXACT_PHRASE.name)
+        var mode by mutableStateOf(ContentFilterMode.PHRASE.name)
         var scale = 1f
         compose.setContent {
             val density = LocalDensity.current.density
@@ -58,11 +58,11 @@ class ContentFilterCompactLayoutRuntimeTest {
         }
         val field = compose.onNodeWithContentDescription("Условие")
         assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
-        compose.runOnIdle { mode = ContentFilterMode.ALL_WORDS.name }
+        compose.runOnIdle { mode = ContentFilterMode.ALL_TERMS.name }
         assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
         field.performTextReplacement("короткая фраза")
         assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
-        compose.runOnIdle { mode = ContentFilterMode.EXACT_PHRASE.name }
+        compose.runOnIdle { mode = ContentFilterMode.PHRASE.name }
         assertTrue(field.fetchSemanticsNode().boundsInRoot.height / scale in 56f..72f)
     }
 
@@ -94,7 +94,7 @@ class ContentFilterCompactLayoutRuntimeTest {
                 }
             }
         }
-        val opLabel = compose.onNodeWithText("ОП-посты", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val opLabel = compose.onNodeWithText("Учитывать регистр", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val enabled = compose.onNodeWithText("Включено", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(opLabel.left, enabled.left, 1f)
         compose.onNodeWithTag("filter-editor-enabled").assertHeightIsAtLeast(48.dp)

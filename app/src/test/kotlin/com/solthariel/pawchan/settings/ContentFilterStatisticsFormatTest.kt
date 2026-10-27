@@ -19,8 +19,8 @@ class ContentFilterStatisticsFormatTest {
 
     @Test fun removingEmptyMessageDoesNotDisableValidation() {
         val rule = newContentFilterRule(defaultBoardAddress())
-        assertNull(filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name).error)
-        assertEquals("Введите фразу целиком", filterConditionPresentation(ContentFilterMode.EXACT_PHRASE.name).hint)
+        assertNull(filterConditionPresentation(ContentFilterMode.PHRASE.name).error)
+        assertEquals("Введите фразу целиком", filterConditionPresentation(ContentFilterMode.PHRASE.name).hint)
         assertNotNull(contentFilterValidationError(rule))
         assertNull(contentFilterValidationError(newContentFilterRule(defaultBoardAddress(), "фраза")))
     }

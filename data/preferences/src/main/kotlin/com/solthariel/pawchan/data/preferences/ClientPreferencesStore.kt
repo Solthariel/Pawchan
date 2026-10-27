@@ -21,11 +21,15 @@ import com.solthariel.pawchan.domain.settings.VideoCompletion
 
 internal fun Preferences.readClientPreferences(): ClientPreferences =
     ClientPreferences(
-        mirror =
-            this[MIRROR]?.takeIf {
-                com.solthariel.pawchan.domain.settings
-                    .validMirrorHost(it)
-            } ?: "2ch.su",
+        connection =
+            com.solthariel.pawchan.domain.settings.ForumConnectionPreferences(
+                preferredHost =
+                    this[MIRROR]?.takeIf {
+                        com.solthariel.pawchan.domain.settings
+                            .validMirrorHost(it)
+                    } ?: "2ch.su",
+                automaticFallback = this[AUTO_MIRROR] ?: true,
+            ),
         automation = readAutomation(),
         downloads = readDownloads(),
         storage = readStorage(),
@@ -78,6 +82,7 @@ private fun Preferences.readAttachmentDefaults(): AttachmentDefaults =
     )
 
 internal fun MutablePreferences.writeClientPreferences(value: ClientPreferences) {
+    this[AUTO_MIRROR] = value.connection.automaticFallback
     writeNavigation(value.reading.navigation)
     this[MIRROR] = value.mirror.takeIf {
         com.solthariel.pawchan.domain.settings
@@ -112,6 +117,7 @@ private fun MutablePreferences.writeAttachmentDefaults(value: AttachmentDefaults
     this[DIVISOR] = value.reencoding.divisor.takeIf { it in IMAGE_DIVISORS } ?: 1
 }
 
+private val AUTO_MIRROR = booleanPreferencesKey("forum_auto_mirror")
 private val HIDDEN_FIELDS = stringSetPreferencesKey("composer_hidden_fields")
 private val UNIQUE_HASH = booleanPreferencesKey("attachment_unique_hash")
 private val REMOVE_METADATA = booleanPreferencesKey("attachment_remove_metadata")

@@ -12,6 +12,31 @@ class BoardDetailsPayloadDecoderTest {
     private val decoder = BoardDetailsPayloadDecoder(Json)
     private val board = BoardAddress(requireNotNull(SiteId.parse("dvach")), requireNotNull(BoardId.parse("biz")))
 
+    @Test fun archivePreservesOnlyRealMetadataWithoutInventingMedia() {
+        val board =
+            com.solthariel.pawchan.domain.model.BoardAddress(
+                com.solthariel.pawchan.domain.model.SiteId
+                    .parse("dvach")!!,
+                com.solthariel.pawchan.domain.model.BoardId
+                    .parse("mobi")!!,
+            )
+        val decoder = BoardDetailsPayloadDecoder(dvachReadJson())
+        val result =
+            decoder.archive(
+                board,
+                """{"threads":[{"thread":42,"subject":"Тема &amp; текст",""" +
+                    """"timestamp":1566572622,"date":"2020-05-09"}],"pages":[]}""",
+            )!!
+        val row = result.threads.single()
+        org.junit.Assert.assertEquals("Тема & текст", row.subject)
+        org.junit.Assert.assertEquals(1566572622L, row.timestampSeconds)
+        org.junit.Assert.assertEquals("2020-05-09", row.archiveDate)
+        val absent = decoder.archive(board, """{"threads":[{"thread":43}],"pages":[]}""")!!.threads.single()
+        org.junit.Assert.assertNull(absent.timestampSeconds)
+        org.junit.Assert.assertNull(absent.archiveDate)
+        org.junit.Assert.assertEquals("Без темы", absent.subject)
+    }
+
     @Test
     fun archiveParsesStringAndNumericIdsAndDeduplicates() {
         val result =
@@ -24,7 +49,7 @@ class BoardDetailsPayloadDecoderTest {
                 ),
             )
         assertEquals(listOf(42L, 43L), result.threads.map { it.address.thread.value })
-        assertEquals(listOf("A & B", "#43"), result.threads.map { it.subject })
+        assertEquals(listOf("A & B", "Без темы"), result.threads.map { it.subject })
         assertEquals(listOf(0, 1, 2), result.pages)
     }
 

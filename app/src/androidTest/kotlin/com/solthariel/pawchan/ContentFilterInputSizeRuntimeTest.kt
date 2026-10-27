@@ -104,7 +104,7 @@ class ContentFilterInputSizeRuntimeTest {
         text: String,
         fontScale: Float,
     ) {
-        var mode by mutableStateOf(ContentFilterMode.EXACT_PHRASE)
+        var mode by mutableStateOf(ContentFilterMode.PHRASE)
         compose.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
@@ -119,10 +119,10 @@ class ContentFilterInputSizeRuntimeTest {
         val before = compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot
         val marker = compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot
         repeat(3) {
-            compose.runOnIdle { mode = ContentFilterMode.ALL_WORDS }
+            compose.runOnIdle { mode = ContentFilterMode.ALL_TERMS }
             assertEquals(before, compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot)
             assertEquals(marker, compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot)
-            compose.runOnIdle { mode = ContentFilterMode.EXACT_PHRASE }
+            compose.runOnIdle { mode = ContentFilterMode.PHRASE }
             assertEquals(before, compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot)
             assertEquals(marker, compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot)
         }

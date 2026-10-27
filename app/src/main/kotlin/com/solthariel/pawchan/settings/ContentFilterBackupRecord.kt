@@ -6,6 +6,8 @@ import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.domain.filter.ContentFilterOptions
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterTargets
+import com.solthariel.pawchan.domain.filter.FilterBoundary
+import com.solthariel.pawchan.domain.filter.FilterTextMatch
 import com.solthariel.pawchan.domain.filter.contentFilterRecordValidationError
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
@@ -16,6 +18,7 @@ internal fun writeBackupRule(
     prefix: String,
     rule: ContentFilterRule,
 ) {
+    require(contentFilterRecordValidationError(rule) == null) { "Старое или некорректное правило" }
     val fields = BackupFields(data, prefix)
     fields.put("id", rule.id)
     fields.put("site", rule.site)
@@ -30,6 +33,8 @@ internal fun writeBackupRule(
     fields.put("mode", rule.mode.name)
     fields.putList("values", rule.values)
     rule.options.customLabel?.let { fields.put("label", it) }
+    fields.put("boundary", rule.options.textMatch.boundary.name)
+    fields.put("caseSensitive", rule.options.textMatch.caseSensitive)
     fields.put("wholeWords", rule.options.wholeWords)
     rule.options.maxGap?.let { fields.put("gap", it) }
     fields.putList("exceptions", rule.options.exceptions)
@@ -53,6 +58,10 @@ internal fun readBackupRule(fields: BackupFields): ContentFilterRule {
                     fields.optional("gap")?.toInt(),
                     fields.list("exceptions"),
                     fields.optional("expires")?.toLong(),
+                    FilterTextMatch(
+                        FilterBoundary.valueOf(fields.text("boundary")),
+                        fields.boolean("caseSensitive"),
+                    ),
                 ),
         )
     require(rule.id.isNotBlank() && SiteId.parse(rule.site)?.value == rule.site) { "Некорректный адрес правила" }

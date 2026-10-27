@@ -28,6 +28,7 @@ internal fun ContentFilterSettings(
 ) {
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
+    var helpVisible by rememberSaveable { mutableStateOf(false) }
     var statisticsVisible by rememberSaveable { mutableStateOf(false) }
     val rules = state.app.contentFilters
     val visible by visibleContentFilters(rules, query)
@@ -35,7 +36,8 @@ internal fun ContentFilterSettings(
     val backup = rememberContentFilterBackup(rules, actions.onRestoreFilters)
     val statistics by (actions.filterStatistics?.statistics ?: flowOf(ContentFilterStatistics(available = false)))
         .collectAsStateWithLifecycle(ContentFilterStatistics(available = false))
-    val menu = ContentFilterMenuActions({ editing = "new" }, backup, { statisticsVisible = true })
+    val menu =
+        ContentFilterMenuActions({ editing = "new" }, backup, { statisticsVisible = true }, { helpVisible = true })
     Column(Modifier.fillMaxSize()) {
         ContentFilterToolbar(onBack, search, menu)
         ContentFilterRulesList(
@@ -45,6 +47,7 @@ internal fun ContentFilterSettings(
             Modifier.weight(1f),
         ) { editing = it }
     }
+    if (helpVisible) AutohideHelpDialog { helpVisible = false }
     if (statisticsVisible) {
         ContentFilterStatisticsDialog(statistics, actions.filterStatistics) { statisticsVisible = false }
     }

@@ -12,7 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.navigation.defaultBoardAddress
@@ -27,20 +27,21 @@ import org.junit.Test
 class ContentFilterLayoutRuntimeTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun searchModesShareOneRowAndNoEmptyConditionErrorIsShown() {
-        val draft = ContentFilterDraft(newContentFilterRule(defaultBoardAddress()))
-        compose.setContent { MaterialTheme { Column(Modifier.width(320.dp)) { FilterEditorFields(draft) } } }
-        val phrase = compose.onNodeWithText("Точная фраза").fetchSemanticsNode().boundsInRoot
-        val words = compose.onNodeWithText("Регулярное выражение").fetchSemanticsNode().boundsInRoot
-        assertEquals(phrase.top, words.top, 1f)
-        compose.onNodeWithText("Условие пусто").assertDoesNotExist()
-        val condition = compose.onNodeWithContentDescription("Условие")
-        condition.performClick()
-        compose.onNodeWithText("Введите фразу целиком").assertExists()
-        compose.onNodeWithText("Регулярное выражение").performClick()
-        condition.performClick()
-        compose.onNodeWithText("Вставьте регулярное выражение").assertExists()
-        compose.onNodeWithText("Условие пусто").assertDoesNotExist()
+    @Test fun builderOffersOnlyThreeModesAndNoRemovedTargets() {
+        val rule = newContentFilterRule(defaultBoardAddress(), "кот")
+        compose.setContent {
+            MaterialTheme {
+                com.solthariel.pawchan.settings
+                    .ContentFilterEditor(rule, rule.id, {}, {})
+            }
+        }
+        listOf("Фраза", "Любое из слов", "Все слова").forEach { label ->
+            compose.onNodeWithText(label).performScrollTo().assertExists()
+        }
+        compose.onNodeWithText("ОП-посты").assertDoesNotExist()
+        compose.onNodeWithText("Ответы").assertDoesNotExist()
+        compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Копировать").assertDoesNotExist()
     }
 
     @Test fun probeHeightDoesNotCollapseBetweenRuleChanges() {

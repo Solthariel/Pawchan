@@ -10,21 +10,26 @@ import com.solthariel.pawchan.domain.boards.BoardDetailsRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal data class ArchiveUiState(
     val snapshot: BoardArchiveSnapshot? = null,
     val pageIndex: Int = 0,
     val loading: Boolean = true,
     val failure: DomainFailure? = null,
+    val rows: List<ArchiveThreadPresentation> = emptyList(),
 )
 
 internal class ArchiveViewModel(
     private val board: BoardAddress,
     private val repository: BoardDetailsRepository,
+    private val presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(ArchiveUiState())
     private var pages = listOf<Int?>(null)
@@ -61,7 +66,15 @@ internal class ArchiveViewModel(
                             pages = listOf(null) + indexPages.dropLast(1).asReversed()
                         }
                         mutableState.value =
-                            ArchiveUiState(result.value.copy(pages = indexPages), index, loading = false)
+                            ArchiveUiState(
+                                result.value.copy(pages = indexPages),
+                                index,
+                                loading = false,
+                                rows =
+                                    withContext(presentationDispatcher) {
+                                        result.value.threads.map { presentArchiveThread(it) }
+                                    },
+                            )
                     }
 
                     is DomainOutcome.Failure -> {

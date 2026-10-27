@@ -73,12 +73,6 @@ private fun ContentFilterRule.filterDescription(): String {
     return "$boards — $targets — ${filterModeLabel(mode)}$disabled"
 }
 
-internal fun ContentFilterRule.matchesRuleSearch(query: String): Boolean {
-    val matchesQuery =
-        query.isBlank() || listOf(label, site, boards.joinToString()).any { it.contains(query, ignoreCase = true) }
-    return matchesQuery
-}
-
 internal fun Long?.orZeroWhenAvailable(available: Boolean): Long? = if (available) this ?: 0L else null
 
 @Composable

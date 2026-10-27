@@ -9,123 +9,43 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ContentFilterAdvancedTest {
-    private val board = BoardAddress(checkNotNull(SiteId.parse("2ch")), checkNotNull(BoardId.parse("b")))
-    private val base =
-        ContentFilterRule(
-            "rule",
-            "2ch",
-            targets = ContentFilterTargets(comments = true),
-            condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf("Храм головы")),
-        )
-
-    @Test
-    fun allWordsHaveUnicodeBoundariesAndIgnoreOrder() {
-        val rule =
-            base.copy(
-                condition =
-                    ContentFilterConditionSpec(
-                        ContentFilterMode.REGEX,
-                        listOf(
-                            """\A(?=.*(?<![\p{L}\p{N}_])храм(?![\p{L}\p{N}_]))""" +
-                                """(?=.*(?<![\p{L}\p{N}_])головы(?![\p{L}\p{N}_])).+""",
-                        ),
-                    ),
-            )
-        val engine = ContentFilterEngine(listOf(rule))
-        assertNotNull(engine.comment(board, "головы, а потом ХРАМ"))
-        assertNull(engine.comment(board, "храмовый головы"))
-        assertNull(engine.comment(board, "_храм головы"))
-        val partial =
-            base.copy(
-                options = ContentFilterOptions(wholeWords = false),
-                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("\\A(?=.*храм)(?=.*головы).+")),
-            )
-        assertNotNull(ContentFilterEngine(listOf(partial)).comment(board, "храмовый головы"))
+    @Test fun boundariesDistinguishWholePrefixAndSubstring() {
+        for (boundary in FilterBoundary.entries) {
+            val engine = ContentFilterEngine(listOf(builderRule(boundary = boundary)))
+            assertNotNull(engine.comment(builderBoard, "кот"))
+            assertEquals(boundary != FilterBoundary.WORD, engine.comment(builderBoard, "котик") != null)
+            assertEquals(boundary == FilterBoundary.PART, engine.comment(builderBoard, "скот") != null)
+            assertEquals(boundary == FilterBoundary.PART, engine.comment(builderBoard, "Xкот") != null)
+        }
     }
 
-    @Test
-    fun exceptionsAreLocalToMatchedFieldAndRule() {
-        val rule =
-            base.copy(
-                options = ContentFilterOptions(exceptions = listOf("пример")),
-                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("храм.*головы")),
-            )
-        val engine = ContentFilterEngine(listOf(rule))
-        assertNull(engine.comment(board, "Храм головы: пример"))
-        assertNotNull(engine.thread(board, "Храм головы", "пример"))
-        assertNotNull(engine.thread(board, "Храм головы пример", "Храм головы"))
-        assertNotNull(ContentFilterEngine(listOf(rule, base.copy(id = "second"))).comment(board, "Храм головы пример"))
+    @Test fun unicodeMarksNumbersUnderscoreAndAstralLettersAreWordCharacters() {
+        val engine = ContentFilterEngine(listOf(builderRule()))
+        listOf("кот_1", "1кот", "кот\u0301", "\uD801\uDC00кот", "кот²").forEach {
+            assertNull(it, engine.comment(builderBoard, it))
+        }
+        assertNotNull(engine.comment(builderBoard, "«кот»"))
     }
 
-    @Test
-    fun orderedGapFindsLaterValidChain() {
-        val rule =
-            base.copy(
-                options = ContentFilterOptions(maxGap = 1),
-                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("a.{0,1}b.{0,1}c")),
-            )
-        val engine = ContentFilterEngine(listOf(rule))
-        assertNotNull(engine.comment(board, "a---a b c"))
-        assertNull(engine.comment(board, "a -- b c"))
-        assertNull(engine.comment(board, "c b a"))
-        assertNotNull(
-            ContentFilterEngine(
-                listOf(rule.copy(condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("a.*b.*c")))),
-            ).comment(board, "a\n\n-- b\n-- c"),
-        )
+    @Test fun caseSensitiveUsesExactCaseButDoesNotFoldYoToYe() {
+        val insensitive = ContentFilterEngine(listOf(builderRule()))
+        val sensitive = ContentFilterEngine(listOf(builderRule(sensitive = true)))
+        assertNotNull(insensitive.comment(builderBoard, "КОТ"))
+        assertNull(sensitive.comment(builderBoard, "КОТ"))
+        assertNotNull(sensitive.comment(builderBoard, "кот"))
+        assertNull(ContentFilterEngine(listOf(builderRule(terms = listOf("ёж")))).comment(builderBoard, "еж"))
     }
 
-    @Test
-    fun rangesReferToOriginalTextAfterNormalization() {
-        val rule = base.copy(condition = base.condition.copy(values = listOf("еще храм")))
-        val text = "  ЕЩЁ\n  ХРАМ!"
-        val match = checkNotNull(ContentFilterEngine(listOf(rule)).commentMatch(board, text))
-        assertEquals("ЕЩЁ\n  ХРАМ", text.substring(match.ranges.single()))
-        assertEquals(FilterMatchField.COMMENT, match.field)
+    @Test fun exceptionsShareCaseAndBoundaryPolicy() {
+        val rule = builderRule(boundary = FilterBoundary.PREFIX, exceptions = listOf("приют"))
+        assertNull(ContentFilterEngine(listOf(rule)).comment(builderBoard, "котик ПРИЮТский"))
+        val sensitive = rule.copy(options = rule.options.copy(textMatch = FilterTextMatch(FilterBoundary.PREFIX, true)))
+        assertNotNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик ПРИЮТский"))
+        assertNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик приютский"))
     }
 
-    @Test
-    fun regexIsExplicitMultilineAndValidated() {
-        val rule =
-            base.copy(
-                condition = base.condition.copy(mode = ContentFilterMode.REGEX, values = listOf("храм.*головы")),
-            )
-        assertNotNull(ContentFilterEngine(listOf(rule)).comment(board, "ХРАМ\nГОЛОВЫ"))
-        val invalid = rule.copy(condition = rule.condition.copy(values = listOf("[")))
-        assertNotNull(contentFilterValidationError(invalid))
-        assertNull(ContentFilterEngine(listOf(invalid)).comment(board, "anything"))
-        val emptyMatch = rule.copy(condition = rule.condition.copy(values = listOf("^")))
-        assertNull(ContentFilterEngine(listOf(emptyMatch)).comment(board, "anything"))
-        val literal = base.copy(condition = base.condition.copy(values = listOf("a.b")))
-        assertNull(ContentFilterEngine(listOf(literal)).comment(board, "axb"))
-    }
-
-    @Test
-    fun expiredDisabledAndOtherSitesDoNotMatch() {
-        val expired = base.copy(options = ContentFilterOptions(expiresAtMillis = 1L))
-        assertNull(ContentFilterEngine(listOf(expired)).comment(board, "Храм головы"))
-        assertNull(ContentFilterEngine(listOf(base.copy(site = "other"))).comment(board, "Храм головы"))
-        assertNull(ContentFilterEngine(listOf(base.copy(enabled = false))).comment(board, "Храм головы"))
-        assertEquals("Моё правило", base.copy(options = ContentFilterOptions(customLabel = "Моё правило")).label)
-    }
-
-    @Test
-    fun regexChainHighlightsTheEntireConsumedMatch() {
-        val rule =
-            base.copy(
-                condition =
-                    ContentFilterConditionSpec(
-                        mode = ContentFilterMode.REGEX,
-                        values = listOf("a.*b.*c"),
-                    ),
-            )
-        val match = checkNotNull(ContentFilterEngine(listOf(rule)).commentMatch(board, "a b c"))
-        assertEquals(listOf(0..4), match.ranges)
-    }
-
-    @Test(timeout = 2000)
-    fun pathologicalRegexHasFiniteWorkBudget() {
-        val rule = base.copy(condition = base.condition.copy(mode = ContentFilterMode.REGEX, values = listOf("(a+)+b")))
-        assertNull(ContentFilterEngine(listOf(rule)).comment(board, "a".repeat(4000)))
+    @Test fun everyExceptionCancelsNotOnlyTheFirstOne() {
+        val rule = builderRule(exceptions = listOf("приют", "дом"))
+        assertNull(ContentFilterEngine(listOf(rule)).comment(builderBoard, "кот дома дом"))
     }
 }

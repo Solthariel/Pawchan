@@ -25,15 +25,15 @@ class ContentFilterModeRoundTripRuntimeTest {
             ContentFilterRule(
                 "words",
                 "2ch",
-                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, listOf("голова", "дай", "денег")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_TERMS, listOf("голова", "дай", "денег")),
             )
         val saved = AtomicReference<ContentFilterRule?>()
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, { saved.set(it) }) } }
-        compose.onNodeWithText("Точная фраза").performScrollTo().performClick()
+        compose.onNodeWithText("Фраза").performScrollTo().performClick()
         assertEquals(
-            "голова дай денег",
+            "голова\nдай\nденег",
             compose
-                .onNodeWithContentDescription("Условие")
+                .onNodeWithContentDescription("Что искать")
                 .fetchSemanticsNode()
                 .config[SemanticsProperties.EditableText]
                 .text,
@@ -48,8 +48,8 @@ class ContentFilterModeRoundTripRuntimeTest {
         compose.onNodeWithText("Сохранить").performClick()
         compose.waitUntil(timeoutMillis = 5_000) { saved.get() != null }
         compose.runOnIdle {
-            assertEquals(ContentFilterMode.EXACT_PHRASE, saved.get()?.mode)
-            assertEquals(listOf("голова дай денег"), saved.get()?.values)
+            assertEquals(ContentFilterMode.PHRASE, saved.get()?.mode)
+            assertEquals(listOf("голова\nдай\nденег"), saved.get()?.values)
         }
     }
 
@@ -60,15 +60,15 @@ class ContentFilterModeRoundTripRuntimeTest {
             ContentFilterRule(
                 "phrase",
                 "2ch",
-                condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf(text)),
+                condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf(text)),
             )
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithText("Регулярное выражение").performScrollTo().performClick()
-        compose.onNodeWithText("Точная фраза").performScrollTo().performClick()
+        compose.onNodeWithText("Любое из слов").performScrollTo().performClick()
+        compose.onNodeWithText("Фраза").performScrollTo().performClick()
         assertEquals(
             text,
             compose
-                .onNodeWithContentDescription("Условие")
+                .onNodeWithContentDescription("Что искать")
                 .fetchSemanticsNode()
                 .config[SemanticsProperties.EditableText]
                 .text,

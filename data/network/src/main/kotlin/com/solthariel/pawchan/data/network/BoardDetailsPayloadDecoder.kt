@@ -59,9 +59,16 @@ internal class BoardDetailsPayloadDecoder(
 private fun JsonObject.toArchivedThread(board: BoardAddress): ArchivedThreadSummary? {
     val id = (get("thread") as? JsonPrimitive)?.longOrNull?.let(ThreadId::parse) ?: return null
     val subject = text("subject")?.decodeHtmlText()?.trim()?.takeIf { it.isNotEmpty() && it != "Нет темы" }
-    return ArchivedThreadSummary(ThreadAddress(board, id), subject ?: "#${id.value}")
+    return ArchivedThreadSummary(
+        ThreadAddress(board, id),
+        subject ?: "Без темы",
+        (get("timestamp") as? JsonPrimitive)?.longOrNull?.takeIf { it in 1L..MAX_ARCHIVE_TIMESTAMP_SECONDS },
+        text("date")?.takeIf { it.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")) },
+    )
 }
 
 private fun JsonObject.text(key: String): String? = (get(key) as? JsonPrimitive)?.contentOrNull
 
 private fun JsonObject.positiveInt(key: String): Int? = (get(key) as? JsonPrimitive)?.intOrNull?.takeIf { it > 0 }
+
+private const val MAX_ARCHIVE_TIMESTAMP_SECONDS = 253402300799L

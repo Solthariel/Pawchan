@@ -18,8 +18,7 @@ internal fun filterConditionPresentation(mode: String): ContentFilterInputPresen
     ContentFilterInputPresentation(
         hint =
             when (mode) {
-                ContentFilterMode.ALL_WORDS.name -> FILTER_CONDITION_HINTS[1]
-                ContentFilterMode.REGEX.name -> "Вставьте регулярное выражение"
+                ContentFilterMode.ANY_TERM.name, ContentFilterMode.ALL_TERMS.name -> FILTER_CONDITION_HINTS[1]
                 else -> FILTER_CONDITION_HINTS[0]
             },
         error = null,
@@ -48,10 +47,10 @@ internal fun FilterInputHint(
 internal fun filterEmptyErrorIsInline(
     error: String,
     text: String,
-): Boolean = text.isBlank() && (error == "Условие пустое" || error == "Введите одну точную фразу")
+): Boolean = text.isBlank() && (error == "Условие пустое" || error == "Введите одну фразу")
 
 private val FILTER_CONDITION_HINTS =
     listOf(
         "Введите фразу целиком",
-        "Слова через пробел или запятую. Порядок не важен",
+        "По одному слову или фразе на строку",
     )

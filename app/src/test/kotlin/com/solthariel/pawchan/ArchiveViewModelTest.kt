@@ -71,7 +71,12 @@ class ArchiveViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repos = FakeBoardMenuRepositories()
-            val model = ArchiveViewModel(requireNotNull(boardAddress("dvach", "biz")), repos)
+            val model =
+                ArchiveViewModel(
+                    requireNotNull(boardAddress("dvach", "biz")),
+                    repos,
+                    StandardTestDispatcher(testScheduler),
+                )
             try {
                 advanceUntilIdle()
                 action(model, repos)

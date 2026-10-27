@@ -305,6 +305,32 @@ androidComponents {
     }
 }
 
+/** Generates a single offline help asset from the versioned source document. */
+abstract class PrepareAutohideHelp : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val document: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun prepare() {
+        val directory = outputDirectory.get().asFile
+        directory.mkdirs()
+        document.get().asFile.copyTo(directory.resolve("AUTOHIDE.md"), overwrite = true)
+    }
+}
+
+val autohideHelpAssets =
+    tasks.register<PrepareAutohideHelp>("prepareAutohideHelp") {
+        document.set(rootProject.layout.projectDirectory.file("docs/AUTOHIDE.md"))
+        outputDirectory.set(layout.buildDirectory.dir("generated/autohideHelp"))
+    }
+androidComponents.onVariants { variant ->
+    variant.sources.assets?.addGeneratedSourceDirectory(autohideHelpAssets) { it.outputDirectory }
+}
+
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(project(":data:maintenance"))

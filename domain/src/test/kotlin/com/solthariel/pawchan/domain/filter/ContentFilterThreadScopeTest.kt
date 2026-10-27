@@ -8,22 +8,21 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ContentFilterThreadScopeTest {
-    @Test
-    fun containingThreadNumberRestrictsBothOpAndRepliesWithoutMatchingPostNumbers() {
-        val board = BoardAddress(checkNotNull(SiteId.parse("dvach")), checkNotNull(BoardId.parse("b")))
-        val rule =
-            ContentFilterRule(
-                "scope",
-                "dvach",
-                targets = ContentFilterTargets(comments = true, threadIds = setOf(42)),
-                condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf("голова")),
-            )
-        val engine = ContentFilterEngine(listOf(rule))
-        assertNotNull(engine.thread(board, null, "голова", 42))
-        assertNotNull(engine.comment(board, "голова", 42))
-        assertNull(engine.thread(board, null, "голова", 43))
-        assertNull(engine.comment(board, "голова", 43))
-        assertNull(engine.comment(board, "42", 42))
-        assertNull(engine.comment(board, "голова"))
+    @Test fun scopesAreConjunctiveAndBlankMeansAll() {
+        val base = builderRule()
+        assertNotNull(ContentFilterEngine(listOf(base)).comment(builderBoard, "кот", 17))
+        val scoped = base.copy(boards = setOf("b"), targets = base.targets.copy(threadIds = setOf(42)))
+        val engine = ContentFilterEngine(listOf(scoped))
+        assertNotNull(engine.comment(builderBoard, "кот", 42))
+        assertNull(engine.comment(builderBoard, "кот", 43))
+        assertNull(engine.comment(builderBoard, "кот"))
+        val other = BoardAddress(builderBoard.site, BoardId.parse("mobi")!!)
+        assertNull(engine.comment(other, "кот", 42))
+    }
+
+    @Test fun sameIdsOnOtherSiteNeverMatch() {
+        val rule = builderRule()
+        val other = BoardAddress(SiteId.parse("other")!!, builderBoard.board)
+        assertNull(ContentFilterEngine(listOf(rule)).comment(other, "кот", 42))
     }
 }

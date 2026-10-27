@@ -66,7 +66,7 @@ class ContentFilterValidationStateTest {
     @Test fun emptyConditionCannotBypassValidationThroughDirectSave() =
         runTest {
             val state = ContentFilterValidationState(StandardTestDispatcher(testScheduler))
-            val empty = base.copy(condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf("")))
+            val empty = base.copy(condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf("")))
             var saved = false
             state.save(empty, null, { empty }) { saved = true }
             assertFalse(saved)

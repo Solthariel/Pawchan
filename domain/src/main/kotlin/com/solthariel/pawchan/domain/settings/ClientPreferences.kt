@@ -8,7 +8,14 @@ data class ClientPreferences(
     val automation: AutomationPreferences = AutomationPreferences(),
     val downloads: DownloadPreferences = DownloadPreferences(),
     val storage: StoragePreferences = StoragePreferences(),
-    val mirror: String = "2ch.su",
+    val connection: ForumConnectionPreferences = ForumConnectionPreferences(),
+) {
+    val mirror: String get() = connection.preferredHost
+}
+
+data class ForumConnectionPreferences(
+    val preferredHost: String = "2ch.su",
+    val automaticFallback: Boolean = true,
 )
 
 enum class ComposerField { NAME, EMAIL, SUBJECT, TAG }

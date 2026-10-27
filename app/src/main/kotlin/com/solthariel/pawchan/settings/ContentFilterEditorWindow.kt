@@ -30,9 +30,7 @@ internal fun FilterEditorWindow(
     content: @Composable () -> Unit,
 ) {
     Dialog(onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        FilterCopyNoticeHost {
-            FilterEditorViewport(onClose) { FilterEditorBody(draft, onClose, onDelete, confirm, content) }
-        }
+        FilterEditorViewport(onClose) { FilterEditorBody(draft, onClose, onDelete, confirm, content) }
     }
 }
 

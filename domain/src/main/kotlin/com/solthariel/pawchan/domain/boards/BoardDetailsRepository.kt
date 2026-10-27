@@ -7,6 +7,8 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 data class ArchivedThreadSummary(
     val address: ThreadAddress,
     val subject: String,
+    val timestampSeconds: Long? = null,
+    val archiveDate: String? = null,
 )
 
 data class BoardArchiveSnapshot(

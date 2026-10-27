@@ -8,6 +8,7 @@ import okhttp3.Response
 /** App-stack-owned routing. CookieJar runs afterwards against the destination origin. */
 class MirrorRoutingInterceptor(
     initialHost: String = "2ch.su",
+    val recovery: MirrorRecovery? = null,
 ) : Interceptor {
     @Volatile var host: String = initialHost
         set(value) {
@@ -19,10 +20,10 @@ class MirrorRoutingInterceptor(
         require(validMirrorHost(initialHost))
     }
 
-    override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(route(chain.request()))
+    override fun intercept(chain: Interceptor.Chain): Response = readWithFallback(chain)
 
     fun route(request: okhttp3.Request): okhttp3.Request {
-        val selected = host
+        val selected = recovery?.state?.value?.activeHost ?: host
         val original = request.url
         if (original.host !in SOURCE_HOSTS) return request
         val builder = request.newBuilder().url(original.newBuilder().host(selected).build())

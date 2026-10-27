@@ -49,9 +49,8 @@ internal fun ContentFilterEditor(
             }
         },
     ) {
-        FilterEditorFields(draft, probeText)
+        FilterEditorFields(draft)
         ContentFilterProbe(next, samples, probeText) { probeText = it }
-        FilterLegacyFields(draft)
         if (error != null && !filterEmptyErrorIsInline(error, draft.text)) {
             Text(error, color = MaterialTheme.colorScheme.error)
         }

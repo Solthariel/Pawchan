@@ -44,7 +44,9 @@ class ClientPreferencesStoreTest {
                     ),
                 media = MediaPreferences(false, true, VideoCompletion.REPEAT, true, true),
                 reading = ReadingPreferences(false, false, NavigationPreferences(2, 15, 20)),
-                mirror = "2ch.org",
+                connection =
+                    com.solthariel.pawchan.domain.settings
+                        .ForumConnectionPreferences("2ch.org"),
             )
         val stored = mutablePreferencesOf()
         stored.writeClientPreferences(expected)

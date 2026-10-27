@@ -22,7 +22,6 @@ import com.solthariel.pawchan.settings.ContentFilterEditor
 import com.solthariel.pawchan.settings.ContentFilterProbe
 import com.solthariel.pawchan.settings.FilterEditorBody
 import com.solthariel.pawchan.settings.FilterEditorFields
-import com.solthariel.pawchan.settings.FilterLegacyFields
 import com.solthariel.pawchan.settings.newContentFilterRule
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +38,6 @@ class ContentFilterEditorWindowRuntimeTest {
                     FilterEditorBody(draft, {}, null, { TextButton(onClick = {}) { Text("Сохранить") } }) {
                         FilterEditorFields(draft)
                         ContentFilterProbe(rule)
-                        FilterLegacyFields(draft)
                     }
                 }
             }
@@ -56,7 +54,7 @@ class ContentFilterEditorWindowRuntimeTest {
         val rule = newContentFilterRule(defaultBoardAddress(), "кот")
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, "typing", {}, {}) } }
         listOf("ко", "кот", "котик", "новая фраза").forEach { value ->
-            compose.onNodeWithContentDescription("Условие").performTextReplacement(value)
+            compose.onNodeWithContentDescription("Что искать").performTextReplacement(value)
             compose.onNodeWithText("Сохранить").assertIsEnabled()
         }
     }

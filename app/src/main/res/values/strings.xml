@@ -75,7 +75,6 @@
     <string name="archive_not_available">Для этой доски архив недоступен.</string>
     <string name="archive_load_failed">Не удалось загрузить архив. Попробуйте обновить.</string>
     <string name="archive_empty">В архиве нет тредов.</string>
-    <string name="archive_thread_number">№%1$d</string>
     <string name="add_favorite_board">Добавить доску в избранное</string>
     <string name="remove_favorite_board">Убрать доску из избранного</string>
     <string name="board_configuration">Конфигурация</string>

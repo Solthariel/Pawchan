@@ -6,7 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.solthariel.pawchan.domain.filter.ContentFilterConditionSpec
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
-import com.solthariel.pawchan.domain.filter.ContentFilterTargets
+import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.domain.model.BoardPost
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.PostAddress
@@ -32,7 +32,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.coroutines.CoroutineContext
@@ -45,7 +47,6 @@ class ThreadFilterDispatcherTest {
             ContentFilterRule(
                 "filter",
                 address.site.value,
-                targets = ContentFilterTargets(threads = false, comments = true),
                 condition = ContentFilterConditionSpec(values = listOf("скрыть")),
             ),
         )
@@ -53,6 +54,7 @@ class ThreadFilterDispatcherTest {
     @Test
     fun ruleChangesUseInjectedDispatcherAndPublishBeforeSchedulerBecomesIdle() =
         runTest {
+            assertNull(contentFilterValidationError(rules.single()))
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val owner = ViewModelStore()
             try {
@@ -67,6 +69,7 @@ class ThreadFilterDispatcherTest {
                 val filtered = model.state.value as ThreadUiState.Content
                 val op = filtered.posts.first()
                 val reply = filtered.posts.last()
+                assertEquals(rules.single().label, filtered.presentation.contentFilterNotice)
                 assertFalse(op.metadata.hidden)
                 assertTrue(reply.metadata.hidden)
                 model.revealContentFilter(reply.id)

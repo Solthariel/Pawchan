@@ -1,59 +1,60 @@
 package com.solthariel.pawchan
 
-import android.content.ClipboardManager
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.test.platform.app.InstrumentationRegistry
+import androidx.compose.ui.test.performSemanticsAction
 import com.solthariel.pawchan.navigation.defaultBoardAddress
+import com.solthariel.pawchan.settings.AutohideHelpDialog
 import com.solthariel.pawchan.settings.ContentFilterEditor
-import com.solthariel.pawchan.settings.filterRegexPrompt
 import com.solthariel.pawchan.settings.newContentFilterRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicBoolean
 
 class FilterRegexCopyRuntimeTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun copyingIncludesTheWholeConditionWithoutEditingItAndShowsTheNotice() {
-        val text = "Аниме\nманга \\d+"
-        val rule = newContentFilterRule(defaultBoardAddress(), text)
+    @Test fun noModeOffersAiCopyOrRegexControls() {
+        val rule = newContentFilterRule(defaultBoardAddress(), "обычная фраза")
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithText("Регулярное выражение").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Условие").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Копировать").performScrollTo().performClick()
-        compose.onNodeWithTag("filter-copy-notice").assertIsDisplayed()
-        assertEquals(
-            text,
-            compose
-                .onNodeWithContentDescription("Условие")
-                .fetchSemanticsNode()
-                .config[SemanticsProperties.EditableText]
-                .text,
-        )
-        compose.runOnIdle {
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val clipboard = requireNotNull(context.getSystemService(ClipboardManager::class.java))
-            assertEquals(
-                filterRegexPrompt(text),
-                clipboard.primaryClip
-                    ?.getItemAt(0)
-                    ?.text
-                    ?.toString(),
-            )
+        listOf("Фраза", "Любое из слов", "Все слова").forEach {
+            compose.onNodeWithText(it).performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Копировать").assertDoesNotExist()
+            compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()
         }
     }
 
-    @Test fun simpleModeDoesNotOfferTheAiCopyButton() {
-        val rule = newContentFilterRule(defaultBoardAddress(), "обычная фраза")
-        compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithContentDescription("Копировать").assertDoesNotExist()
+    @Test fun helpIsBundledAndCanBeReadWithoutARequest() {
+        val closed = AtomicBoolean(false)
+        compose.setContent { MaterialTheme { AutohideHelpDialog { closed.set(true) } } }
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasText("## Что искать", substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onAllNodes(hasScrollAction()).assertCountEquals(1)
+        val scroll = compose.onNode(hasScrollAction())
+        val initial = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue(initial.maxValue().isFinite())
+        assertTrue(initial.maxValue() > 0f)
+        scroll.performSemanticsAction(SemanticsActions.ScrollBy) { action ->
+            assertTrue(action(0f, initial.maxValue()))
+        }
+        compose.waitForIdle()
+        val end = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertEquals(end.maxValue(), end.value(), 1f)
+        compose.onNodeWithText("Открыть на GitHub").assertIsDisplayed()
+        compose.onNodeWithText("Закрыть").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertTrue(closed.get()) }
     }
 }

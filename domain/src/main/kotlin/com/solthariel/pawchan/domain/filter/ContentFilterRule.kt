@@ -8,6 +8,9 @@ enum class ContentFilterMode {
     ORDERED,
     REGEX,
     EXACT_PHRASE,
+    PHRASE,
+    ANY_TERM,
+    ALL_TERMS,
 }
 
 enum class ContentFilterFields {
@@ -28,11 +31,12 @@ data class ContentFilterOptions(
     val maxGap: Int? = null,
     val exceptions: List<String> = emptyList(),
     val expiresAtMillis: Long? = null,
+    val textMatch: FilterTextMatch = FilterTextMatch(),
 )
 
 data class ContentFilterTargets(
     val threads: Boolean = true,
-    val comments: Boolean = false,
+    val comments: Boolean = true,
     val fields: ContentFilterFields = ContentFilterFields.EITHER,
     val catalog: Boolean = true,
     val thread: Boolean = true,
@@ -40,7 +44,7 @@ data class ContentFilterTargets(
 )
 
 data class ContentFilterConditionSpec(
-    val mode: ContentFilterMode = ContentFilterMode.EXACT_PHRASE,
+    val mode: ContentFilterMode = ContentFilterMode.PHRASE,
     val values: List<String> = emptyList(),
 )
 

@@ -8,7 +8,7 @@ internal fun initialFilterProbeText(
     rule: ContentFilterRule,
     samples: List<ContentFilterSample>,
 ): String =
-    if (rule.mode == ContentFilterMode.EXACT_PHRASE) {
+    if (rule.mode == ContentFilterMode.PHRASE) {
         rule.values.singleOrNull().orEmpty()
     } else {
         samples.firstOrNull()?.text.orEmpty()

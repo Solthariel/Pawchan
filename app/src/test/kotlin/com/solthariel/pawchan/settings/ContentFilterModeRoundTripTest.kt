@@ -13,16 +13,16 @@ class ContentFilterModeRoundTripTest {
         ContentFilterRule(
             "rule",
             "2ch",
-            condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf(phrase)),
+            condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf(phrase)),
         )
 
     @Test
     fun savedWordsCanBeReopenedAsExactPhraseWithoutGeneratedCommas() {
         val first = ContentFilterDraft(base)
-        first.selectMode(ContentFilterMode.ALL_WORDS)
+        first.selectMode(ContentFilterMode.ALL_TERMS)
         val saved = first.rule(base)
         val reopened = ContentFilterDraft(saved)
-        reopened.selectMode(ContentFilterMode.EXACT_PHRASE)
+        reopened.selectMode(ContentFilterMode.PHRASE)
         assertEquals(listOf(phrase), reopened.rule(saved).values)
     }
 
@@ -30,10 +30,10 @@ class ContentFilterModeRoundTripTest {
     fun openingSimpleWordsUsesSpacesAndPreservesDuplicateTokens() {
         val saved =
             base.copy(
-                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, listOf("дай", "дай", "денег")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_TERMS, listOf("дай", "дай", "денег")),
             )
         val draft = ContentFilterDraft(saved)
-        assertEquals("дай дай денег", draft.text)
+        assertEquals("дай\nдай\nденег", draft.text)
         assertEquals(saved, draft.rule(saved))
     }
 
@@ -42,15 +42,15 @@ class ContentFilterModeRoundTripTest {
         val draft = ContentFilterDraft(base)
         draft.text = "хлеб, молоко; чай!"
         repeat(3) {
-            draft.selectMode(ContentFilterMode.ALL_WORDS)
-            draft.selectMode(ContentFilterMode.EXACT_PHRASE)
+            draft.selectMode(ContentFilterMode.ALL_TERMS)
+            draft.selectMode(ContentFilterMode.PHRASE)
         }
         assertEquals(listOf("хлеб, молоко; чай!"), draft.rule(base).values)
     }
 
     @Test
     fun restoringReopenedWordsDoesNotReintroduceCommas() {
-        val saved = base.copy(condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, phrase.split(' ')))
+        val saved = base.copy(condition = ContentFilterConditionSpec(ContentFilterMode.ALL_TERMS, phrase.split(' ')))
         val draft = ContentFilterDraft(saved)
         val scope =
             object : SaverScope {
@@ -58,15 +58,15 @@ class ContentFilterModeRoundTripTest {
             }
         val state = with(ContentFilterDraft.Saver) { checkNotNull(scope.save(draft)) }
         val restored = checkNotNull(ContentFilterDraft.Saver.restore(state))
-        restored.selectMode(ContentFilterMode.EXACT_PHRASE)
-        assertEquals(listOf(phrase), restored.rule(saved).values)
+        restored.selectMode(ContentFilterMode.PHRASE)
+        assertEquals(listOf("голова\nдай\nденег"), restored.rule(saved).values)
     }
 
     @Test
     fun legacyAtomicValuesAreNotRewrittenOnOpen() {
         val saved =
             base.copy(
-                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, listOf("два слова", "ещё, пример")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_TERMS, listOf("два слова", "ещё, пример")),
             )
         assertEquals("два слова\nещё, пример", ContentFilterDraft(saved).text)
         assertEquals(saved, ContentFilterDraft(saved).rule(saved))
