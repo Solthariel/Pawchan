@@ -21,6 +21,7 @@ import com.solthariel.pawchan.domain.filter.ContentFilterEngine
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
 import com.solthariel.pawchan.domain.filter.FilterMatchField
+import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
@@ -29,8 +30,11 @@ import com.solthariel.pawchan.domain.model.SiteId
 internal fun ContentFilterProbe(
     rule: ContentFilterRule,
     samples: List<ContentFilterSample> = emptyList(),
+    sourceText: String? = null,
+    onTextChange: ((String) -> Unit)? = null,
 ) {
-    var text by rememberSaveable { mutableStateOf("") }
+    var localText by rememberSaveable { mutableStateOf(initialFilterProbeText(rule, samples)) }
+    val text = sourceText ?: localText
     val state = remember { ContentFilterProbeState() }
     val threadId = samples.firstOrNull()?.threadId ?: rule.targets.threadIds.firstOrNull()
     val input = FilterProbeInput(rule, text, threadId)
@@ -39,11 +43,11 @@ internal fun ContentFilterProbe(
         FilterLineInput(
             "Проверяемый текст",
             text,
-            { text = it },
+            { value -> if (onTextChange != null) onTextChange(value) else localText = value },
             presentation = ContentFilterInputPresentation(preview = state.preview(input)),
         )
         Text(
-            state.caption(text),
+            state.caption(input),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             minLines = 1,
@@ -64,6 +68,9 @@ internal fun filterProbeResult(
     text: String,
     threadId: Long? = rule.targets.threadIds.firstOrNull(),
 ): FilterProbeResult {
+    contentFilterValidationError(rule)?.let {
+        return FilterProbeResult("Проверка недоступна: исправьте условие", AnnotatedString(text), false)
+    }
     val site = SiteId.parse(rule.site)
     val board = BoardId.parse(rule.boards.firstOrNull() ?: "b")
     val ranges =

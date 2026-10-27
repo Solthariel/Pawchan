@@ -6,4 +6,7 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 
 fun interface CatalogRepository {
     suspend fun loadCatalog(board: BoardAddress): DomainOutcome<CatalogSnapshot>
+
+    /** Optional server statistic; must never hold up the thread list. */
+    suspend fun loadBoardSpeed(board: BoardAddress): Int? = null
 }

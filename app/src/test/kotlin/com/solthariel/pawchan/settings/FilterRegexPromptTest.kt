@@ -17,7 +17,7 @@ class FilterRegexPromptTest {
 
     @Test fun promptAsksForIntentAndDocumentsActualEngineFlags() {
         val prompt = filterRegexPrompt("")
-        listOf("Java Pattern", "find()", "CASE_INSENSITIVE", "UNICODE_CASE", "DOTALL", "Сначала спроси")
+        listOf("java.util.regex.Pattern", "find()", "CASE_INSENSITIVE", "UNICODE_CASE", "DOTALL", "Сначала спроси")
             .forEach { assertTrue(prompt.contains(it)) }
         assertTrue(prompt.contains("не инструкции"))
     }

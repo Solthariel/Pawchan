@@ -14,7 +14,9 @@ import com.solthariel.pawchan.navigation.defaultBoardAddress
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,9 @@ internal class CatalogViewModel(
         com.solthariel.pawchan.domain.filter
             .ContentFilterEngine(emptyList(), com.solthariel.pawchan.domain.filter.ContentFilterPlace.CATALOG)
     private var loadJob: Job? = null
+    private var speedJob: Job? = null
+    private var latestSpeed: Int? = null
+    private var refreshRevision = 0L
     private var presentationJob: Job? = null
 
     val state: StateFlow<CatalogUiState> = mutableState.asStateFlow()
@@ -71,11 +76,25 @@ internal class CatalogViewModel(
                 presentSourceState()
             }
         }
-        refresh()
+        load(resetScroll = false)
     }
 
-    fun refresh() {
+    fun refresh() = load(resetScroll = true)
+
+    private fun load(resetScroll: Boolean) {
         loadJob?.cancel()
+        speedJob?.cancel()
+        speedJob =
+            viewModelScope.launch {
+                repository.loadBoardSpeed(board)?.let { speed ->
+                    currentCoroutineContext().ensureActive()
+                    if (speed >= 0) {
+                        latestSpeed = speed
+                        sourceState = (sourceState as? CatalogUiState.Content)?.copy(boardSpeed = speed) ?: sourceState
+                        presentSourceState()
+                    }
+                }
+            }
         sourceState = sourceState.refreshing()
         presentSourceState()
         loadJob =
@@ -96,6 +115,18 @@ internal class CatalogViewModel(
                             .withBoardSpeedFallback(cachedBoardSpeed, speedAvailable)
                             .keepContentOnRefreshFailure(previous)
                     }
+                if (sourceState is CatalogUiState.Content) {
+                    if (outcome is com.solthariel.pawchan.domain.model.DomainOutcome.Success && resetScroll) {
+                        refreshRevision++
+                    }
+                    sourceState =
+                        (sourceState as CatalogUiState.Content).let { content ->
+                            content.copy(
+                                boardSpeed = latestSpeed ?: content.boardSpeed,
+                                refresh = content.refresh.copy(revision = refreshRevision),
+                            )
+                        }
+                }
                 presentSourceState()
             }
     }
@@ -196,7 +227,7 @@ private fun CatalogUiState.filtered(
 
 private fun CatalogUiState.refreshing(): CatalogUiState =
     when (this) {
-        is CatalogUiState.Content -> copy(isRefreshing = true, refreshFailure = null)
+        is CatalogUiState.Content -> copy(refresh = refresh.copy(loading = true, failure = null))
         is CatalogUiState.Error, CatalogUiState.Loading -> CatalogUiState.Loading
     }
 

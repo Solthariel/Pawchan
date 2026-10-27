@@ -18,11 +18,13 @@ internal sealed interface CatalogUiState {
         val boardTitle: String,
         val boardSpeed: Int,
         val threads: List<CatalogThreadUi>,
-        val isRefreshing: Boolean = false,
-        val refreshFailure: RefreshFailure? = null,
+        val refresh: CatalogRefreshState = CatalogRefreshState(),
         val viewerMediaGroups: Map<Long, List<MediaAttachmentUi>> = emptyMap(),
         val contentFilters: CatalogFilterPresentation = CatalogFilterPresentation(),
     ) : CatalogUiState {
+        val isRefreshing: Boolean get() = refresh.loading
+        val refreshFailure: RefreshFailure? get() = refresh.failure
+        val refreshRevision: Long get() = refresh.revision
         val autoHiddenThreads: List<CatalogThreadUi> get() = contentFilters.hiddenThreads
         val filtersRevealed: Boolean get() = contentFilters.revealed
         val allThreadsFiltered: Boolean get() = contentFilters.allThreadsFiltered
@@ -34,6 +36,12 @@ internal sealed interface CatalogUiState {
         val challengeUrl: String? = null,
     ) : CatalogUiState
 }
+
+internal data class CatalogRefreshState(
+    val loading: Boolean = false,
+    val failure: RefreshFailure? = null,
+    val revision: Long = 0L,
+)
 
 internal data class CatalogFilterPresentation(
     val hiddenThreads: List<CatalogThreadUi> = emptyList(),

@@ -5,7 +5,6 @@ import com.solthariel.pawchan.domain.catalog.CatalogRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.CatalogSnapshot
 import com.solthariel.pawchan.domain.model.DomainOutcome
-import kotlinx.serialization.json.Json
 import okhttp3.Call
 
 class DvachCatalogApi private constructor(
@@ -15,53 +14,25 @@ class DvachCatalogApi private constructor(
 ) : CatalogRepository {
     override suspend fun loadCatalog(board: BoardAddress): DomainOutcome<CatalogSnapshot> {
         if (!board.isDvachSource()) return unsupportedDvachSource()
-        val catalog =
-            executeDomainRequest(
-                callFactory,
-                CatalogRequestFactory.create(board.board),
-                decoder::decode,
-            )
-        return if (catalog is DomainOutcome.Success && !catalog.value.boardSpeedAvailable) {
-            catalog.withFallbackSpeed(loadBoardPageSpeed(board))
+        val result = executeDomainRequest(callFactory, CatalogRequestFactory.create(board.board), decoder::decode)
+        val known = directory.knownBoardSpeed(board)
+        return if (result is DomainOutcome.Success && !result.value.boardSpeedAvailable && known != null) {
+            DomainOutcome.Success(CatalogSnapshot(result.value.board, result.value.threads, known, true))
         } else {
-            catalog
+            result
         }
     }
 
-    private suspend fun loadBoardPageSpeed(board: BoardAddress): Int? {
-        val boards = directory.loadBoards(forceRefresh = true)
-        return (boards as? DomainOutcome.Success)
-            ?.value
-            ?.firstOrNull { entry -> entry.address == board }
-            ?.postsPerHour
+    override suspend fun loadBoardSpeed(board: BoardAddress): Int? {
+        if (!board.isDvachSource()) return null
+        val outcome = executeDomainRequest(callFactory, BoardSpeedRequest.create(board.board), ::decodeBoardSpeed)
+        return (outcome as? DomainOutcome.Success)?.value?.also { directory.rememberBoardSpeed(board, it) }
     }
 
     companion object {
         fun create(
             callFactory: Call.Factory,
             directory: BoardDirectoryRepository,
-        ): DvachCatalogApi {
-            val json =
-                dvachReadJson()
-            return DvachCatalogApi(
-                callFactory = callFactory,
-                decoder = CatalogPayloadDecoder(json),
-                directory = directory,
-            )
-        }
+        ): DvachCatalogApi = DvachCatalogApi(callFactory, CatalogPayloadDecoder(dvachReadJson()), directory)
     }
 }
-
-private fun DomainOutcome.Success<CatalogSnapshot>.withFallbackSpeed(boardSpeed: Int?): DomainOutcome<CatalogSnapshot> =
-    if (boardSpeed != null && boardSpeed >= 0) {
-        DomainOutcome.Success(
-            CatalogSnapshot(
-                board = value.board,
-                threads = value.threads,
-                boardSpeed = boardSpeed,
-                boardSpeedAvailable = true,
-            ),
-        )
-    } else {
-        this
-    }

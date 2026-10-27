@@ -11,12 +11,21 @@ import org.junit.Test
 class RefreshFailureTest {
     @Test
     fun catalogRefreshRetainsRowsAndStopsSpinnerOn429() {
-        val previous = CatalogUiState.Content("Бред", 100, emptyList(), isRefreshing = true)
+        val previous =
+            CatalogUiState.Content(
+                "Бред",
+                100,
+                emptyList(),
+                refresh =
+                    com.solthariel.pawchan.catalog
+                        .CatalogRefreshState(loading = true, revision = 7L),
+            )
         val next =
             CatalogUiState.Error(CatalogError.RATE_LIMITED).keepContentOnRefreshFailure(previous)
                 as CatalogUiState.Content
         assertSame(previous.threads, next.threads)
         assertEquals(false, next.isRefreshing)
+        assertEquals(7L, next.refreshRevision)
         assertEquals(RefreshFailure(rateLimited = true), next.refreshFailure)
     }
 

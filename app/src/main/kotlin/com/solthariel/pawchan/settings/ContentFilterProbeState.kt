@@ -24,6 +24,9 @@ internal class ContentFilterProbeState(
 
     fun caption(text: String): String = if (text.isBlank()) "" else completed?.second?.caption.orEmpty()
 
+    fun caption(input: FilterProbeInput): String =
+        if (input.text.isBlank()) "" else completed?.takeIf { it.first == input }?.second?.caption ?: "Проверка…"
+
     fun preview(input: FilterProbeInput): AnnotatedString? = completed?.takeIf { it.first == input }?.second?.preview
 
     suspend fun check(input: FilterProbeInput) {

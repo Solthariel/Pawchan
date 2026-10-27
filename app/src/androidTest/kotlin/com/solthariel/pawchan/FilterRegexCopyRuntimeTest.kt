@@ -28,7 +28,7 @@ class FilterRegexCopyRuntimeTest {
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
         compose.onNodeWithText("Регулярное выражение").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Условие").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Скопировать инструкцию и текст условия").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Копировать").performScrollTo().performClick()
         compose.onNodeWithTag("filter-copy-notice").assertIsDisplayed()
         assertEquals(
             text,
@@ -54,6 +54,6 @@ class FilterRegexCopyRuntimeTest {
     @Test fun simpleModeDoesNotOfferTheAiCopyButton() {
         val rule = newContentFilterRule(defaultBoardAddress(), "обычная фраза")
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithContentDescription("Скопировать инструкцию и текст условия").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Копировать").assertDoesNotExist()
     }
 }

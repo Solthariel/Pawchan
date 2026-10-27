@@ -16,7 +16,7 @@ class ContentFilterEngineTest {
             "2ch",
             setOf("b"),
             targets = ContentFilterTargets(comments = true),
-            condition = ContentFilterConditionSpec(mode = ContentFilterMode.ORDERED, values = listOf("Храм", "ГОЛОВЫ")),
+            condition = ContentFilterConditionSpec(mode = ContentFilterMode.REGEX, values = listOf("Храм.*ГОЛОВЫ")),
         )
 
     @Test fun orderedFragmentsStayInOneField() {
@@ -31,8 +31,8 @@ class ContentFilterEngineTest {
             ordered.copy(
                 condition =
                     ordered.condition.copy(
-                        mode = ContentFilterMode.ANY_PHRASE,
-                        values = listOf("ещё /pure/", "a.b"),
+                        mode = ContentFilterMode.REGEX,
+                        values = listOf("ещ[её]\\s+/pure/|a\\.b"),
                     ),
             )
         val engine = ContentFilterEngine(listOf(rule))

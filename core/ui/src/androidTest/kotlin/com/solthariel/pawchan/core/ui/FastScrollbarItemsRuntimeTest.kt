@@ -96,7 +96,32 @@ class FastScrollbarItemsRuntimeTest {
         compose.runOnIdle { assertFalse(list.canScrollBackward) }
     }
 
-    private fun showList() {
+    @Test fun shortTailDoesNotReachTheEndSeveralPostStepsBeforeTheThumbDoes() {
+        showList(tallLast = false)
+        val bar = compose.onNodeWithTag("items-bar")
+        val height =
+            bar
+                .fetchSemanticsNode()
+                .size.height
+                .toFloat()
+        val travel = height - thumbHeight
+        val x = bar.fetchSemanticsNode().size.width / 2f
+        val positions = mutableListOf<Pair<Int, Int>>()
+        bar.performTouchInput { down(Offset(x, thumbHeight / 2f + travel * 0.86f)) }
+        compose.waitForIdle()
+        for (progress in listOf(0.90f, 0.94f, 0.98f)) {
+            bar.performTouchInput { moveTo(Offset(x, thumbHeight / 2f + travel * progress), 32) }
+            compose.waitForIdle()
+            compose.runOnIdle { positions += list.firstVisibleItemIndex to list.firstVisibleItemScrollOffset }
+        }
+        compose.runOnIdle {
+            assertEquals(positions.size, positions.distinct().size)
+            assertTrue("Thumb has not reached the bottom yet", list.canScrollForward)
+        }
+        bar.performTouchInput { up() }
+    }
+
+    private fun showList(tallLast: Boolean = true) {
         compose.setContent {
             MaterialTheme {
                 list = rememberLazyListState()
@@ -107,7 +132,8 @@ class FastScrollbarItemsRuntimeTest {
                             Box(
                                 Modifier.fillMaxWidth().height(
                                     when {
-                                        index == 99 -> 1800.dp
+                                        index == 99 && tallLast -> 1800.dp
+                                        !tallLast && index >= 90 -> 24.dp
                                         index % 3 == 0 -> 240.dp
                                         else -> 60.dp
                                     },

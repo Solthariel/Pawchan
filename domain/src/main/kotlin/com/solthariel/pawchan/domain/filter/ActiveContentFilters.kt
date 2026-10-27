@@ -15,7 +15,8 @@ fun Flow<List<ContentFilterRule>>.activeContentFilters(): Flow<List<ContentFilte
                 val now = System.currentTimeMillis()
                 val active =
                     rules.filter {
-                        it.enabled && (it.options.expiresAtMillis == null || now < it.options.expiresAtMillis)
+                        it.enabled && it.mode.isCurrentFilterMode &&
+                            (it.options.expiresAtMillis == null || now < it.options.expiresAtMillis)
                     }
                 send(active)
                 val next = active.mapNotNull { it.options.expiresAtMillis }.minOrNull()

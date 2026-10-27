@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +64,15 @@ internal fun CatalogContent(
     val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
     val listState = rememberLazyListState()
     val thumbnailLoading = rememberThumbnailLoading(thumbnailLoader, listState)
+    var appliedRefresh by androidx.compose.runtime.saveable.rememberSaveable {
+        androidx.compose.runtime.mutableLongStateOf(state.refreshRevision)
+    }
+    androidx.compose.runtime.LaunchedEffect(state.refreshRevision) {
+        if (appliedRefresh != state.refreshRevision) {
+            appliedRefresh = state.refreshRevision
+            listState.scrollToItem(0, 0)
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,

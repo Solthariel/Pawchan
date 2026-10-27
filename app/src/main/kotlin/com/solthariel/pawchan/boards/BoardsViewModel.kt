@@ -15,10 +15,13 @@ import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.isRateLimited
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -44,13 +47,24 @@ internal class BoardsViewModel(
     private val directory: BoardDirectoryRepository,
     private val preferences: BoardPreferencesRepository,
     private val postingAccess: PostingAccessRepository,
+    processingDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val directoryOutcome = MutableStateFlow<DomainOutcome<List<BoardDirectoryEntry>>?>(null)
     private val refreshing = MutableStateFlow(false)
     private val transientExpandedCategories = MutableStateFlow(emptySet<String>())
     private val directoryState =
-        combine(directoryOutcome, refreshing) { outcome, isRefreshing ->
-            BoardDirectoryState(outcome, isRefreshing)
+        combine(directoryOutcome, refreshing, directory.boardSpeeds) { outcome, isRefreshing, speeds ->
+            val updated =
+                if (outcome is DomainOutcome.Success) {
+                    DomainOutcome.Success(
+                        outcome.value.map { entry ->
+                            speeds[entry.address]?.let { entry.copy(postsPerHour = it) } ?: entry
+                        },
+                    )
+                } else {
+                    outcome
+                }
+            BoardDirectoryState(updated, isRefreshing)
         }
 
     val state: StateFlow<BoardsUiState> =
@@ -94,7 +108,7 @@ internal class BoardsViewModel(
                     )
                 }
             }
-        }.stateIn(
+        }.flowOn(processingDispatcher).stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = BoardsUiState.Loading,

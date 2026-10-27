@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
+import com.solthariel.pawchan.domain.filter.isCurrentFilterMode
 
 @Composable
 internal fun ContentFilterRuleRow(
@@ -61,7 +62,14 @@ internal fun ContentFilterRuleRow(
 private fun ContentFilterRule.filterDescription(): String {
     val targets = listOfNotNull("ОП".takeIf { threads }, "Ответы".takeIf { comments }).joinToString(" + ")
     val boards = boards.joinToString { "/$it/" }.ifEmpty { "Все доски" }
-    val disabled = if (enabled) "" else " — Выключено"
+    val disabled =
+        if (!mode.isCurrentFilterMode) {
+            " — Не применяется"
+        } else if (enabled) {
+            ""
+        } else {
+            " — Выключено"
+        }
     return "$boards — $targets — ${filterModeLabel(mode)}$disabled"
 }
 

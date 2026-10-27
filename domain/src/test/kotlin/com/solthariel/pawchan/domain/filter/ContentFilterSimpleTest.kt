@@ -50,7 +50,15 @@ class ContentFilterSimpleTest {
 
     @Test
     fun allWordsStayInOneFieldOrOnePostAndHaveWholeWordEdges() {
-        val condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, listOf("голова", "дай", "денег"))
+        val condition =
+            ContentFilterConditionSpec(
+                ContentFilterMode.REGEX,
+                listOf(
+                    """\A(?=.*(?<![\p{L}\p{N}_])голова(?![\p{L}\p{N}_]))""" +
+                        """(?=.*(?<![\p{L}\p{N}_])дай(?![\p{L}\p{N}_]))""" +
+                        """(?=.*(?<![\p{L}\p{N}_])денег(?![\p{L}\p{N}_])).+""",
+                ),
+            )
         val rule = phrase.copy(condition = condition)
         val engine = ContentFilterEngine(listOf(rule))
         assertNotNull(engine.comment(board, "Денег! Потом голова, потом дай."))
@@ -84,9 +92,9 @@ class ContentFilterSimpleTest {
     }
 
     @Test
-    fun legacySubstringBehaviorAndLogicalBoardIsolationRemainUnchanged() {
-        val legacy = phrase.copy(condition = ContentFilterConditionSpec(values = listOf("хлеб")))
-        assertNotNull(ContentFilterEngine(listOf(legacy)).comment(board, "хлебный"))
+    fun legacyRulesNeverExecuteAndLogicalBoardIsolationRemainsUnchanged() {
+        val legacy = phrase.copy(condition = ContentFilterConditionSpec(ContentFilterMode.ANY_PHRASE, listOf("хлеб")))
+        assertNull(ContentFilterEngine(listOf(legacy)).comment(board, "хлебный"))
         val otherBoard = board.copy(board = checkNotNull(BoardId.parse("po")))
         assertNull(ContentFilterEngine(listOf(phrase)).comment(otherBoard, phrase.values.single()))
         val otherSite = board.copy(site = checkNotNull(SiteId.parse("another")))

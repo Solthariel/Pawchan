@@ -40,7 +40,7 @@ data class ContentFilterTargets(
 )
 
 data class ContentFilterConditionSpec(
-    val mode: ContentFilterMode = ContentFilterMode.ANY_PHRASE,
+    val mode: ContentFilterMode = ContentFilterMode.EXACT_PHRASE,
     val values: List<String> = emptyList(),
 )
 

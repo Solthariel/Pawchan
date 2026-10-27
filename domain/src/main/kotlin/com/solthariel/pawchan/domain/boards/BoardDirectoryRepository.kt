@@ -16,6 +16,17 @@ data class BoardDirectoryEntry(
 
 interface BoardDirectoryRepository {
     suspend fun loadBoards(forceRefresh: Boolean = false): DomainOutcome<List<BoardDirectoryEntry>>
+
+    val boardSpeeds: Flow<Map<BoardAddress, Int>> get() = kotlinx.coroutines.flow.flowOf(emptyMap())
+
+    /** Publish an observed server value without requesting all boards again. */
+    fun rememberBoardSpeed(
+        board: BoardAddress,
+        speed: Int,
+    ) = Unit
+
+    /** Synchronous memory-only fallback; never a network request. */
+    fun knownBoardSpeed(board: BoardAddress): Int? = null
 }
 
 interface PostingAccessRepository {

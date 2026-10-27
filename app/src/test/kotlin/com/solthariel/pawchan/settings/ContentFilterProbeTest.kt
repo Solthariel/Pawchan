@@ -10,17 +10,15 @@ import org.junit.Test
 
 class ContentFilterProbeTest {
     @Test
-    fun allWordsReportsTheActualSourceFragmentsRatherThanAnAbstractSuccessLabel() {
+    fun regexReportsTheActualConsumedSourceRatherThanAnAbstractSuccessLabel() {
         val rule =
             newContentFilterRule(defaultBoardAddress()).copy(
-                condition = ContentFilterConditionSpec(ContentFilterMode.ALL_WORDS, listOf("голова", "дай", "денег")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("Денег.*ГОЛОВА.*дай")),
             )
         val result = filterProbeResult(rule, "Денег много; ГОЛОВА, дай немного!")
         assertTrue(result.matched)
-        assertTrue(result.caption.contains("«ГОЛОВА»"))
-        assertTrue(result.caption.contains("«дай»"))
-        assertTrue(result.caption.contains("«Денег»"))
-        assertEquals(3, result.preview.spanStyles.size)
+        assertTrue(result.caption.contains("«Денег много; ГОЛОВА, дай»"))
+        assertEquals(1, result.preview.spanStyles.size)
     }
 
     @Test

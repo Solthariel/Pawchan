@@ -15,12 +15,22 @@ class ContentFilterAdvancedTest {
             "rule",
             "2ch",
             targets = ContentFilterTargets(comments = true),
-            condition = ContentFilterConditionSpec(values = listOf("Храм", "ГОЛОВЫ")),
+            condition = ContentFilterConditionSpec(ContentFilterMode.EXACT_PHRASE, listOf("Храм головы")),
         )
 
     @Test
     fun allWordsHaveUnicodeBoundariesAndIgnoreOrder() {
-        val rule = base.copy(condition = base.condition.copy(mode = ContentFilterMode.ALL_WORDS))
+        val rule =
+            base.copy(
+                condition =
+                    ContentFilterConditionSpec(
+                        ContentFilterMode.REGEX,
+                        listOf(
+                            """\A(?=.*(?<![\p{L}\p{N}_])храм(?![\p{L}\p{N}_]))""" +
+                                """(?=.*(?<![\p{L}\p{N}_])головы(?![\p{L}\p{N}_])).+""",
+                        ),
+                    ),
+            )
         val engine = ContentFilterEngine(listOf(rule))
         assertNotNull(engine.comment(board, "головы, а потом ХРАМ"))
         assertNull(engine.comment(board, "храмовый головы"))
@@ -28,7 +38,7 @@ class ContentFilterAdvancedTest {
         val partial =
             base.copy(
                 options = ContentFilterOptions(wholeWords = false),
-                condition = base.condition.copy(mode = ContentFilterMode.ALL_WORDS),
+                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("\\A(?=.*храм)(?=.*головы).+")),
             )
         assertNotNull(ContentFilterEngine(listOf(partial)).comment(board, "храмовый головы"))
     }
@@ -38,7 +48,7 @@ class ContentFilterAdvancedTest {
         val rule =
             base.copy(
                 options = ContentFilterOptions(exceptions = listOf("пример")),
-                condition = base.condition.copy(mode = ContentFilterMode.ORDERED),
+                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("храм.*головы")),
             )
         val engine = ContentFilterEngine(listOf(rule))
         assertNull(engine.comment(board, "Храм головы: пример"))
@@ -52,15 +62,16 @@ class ContentFilterAdvancedTest {
         val rule =
             base.copy(
                 options = ContentFilterOptions(maxGap = 1),
-                condition = base.condition.copy(mode = ContentFilterMode.ORDERED, values = listOf("a", "b", "c")),
+                condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("a.{0,1}b.{0,1}c")),
             )
         val engine = ContentFilterEngine(listOf(rule))
         assertNotNull(engine.comment(board, "a---a b c"))
         assertNull(engine.comment(board, "a -- b c"))
         assertNull(engine.comment(board, "c b a"))
         assertNotNull(
-            ContentFilterEngine(listOf(rule.copy(options = ContentFilterOptions())))
-                .comment(board, "a\n\n-- b\n-- c"),
+            ContentFilterEngine(
+                listOf(rule.copy(condition = ContentFilterConditionSpec(ContentFilterMode.REGEX, listOf("a.*b.*c")))),
+            ).comment(board, "a\n\n-- b\n-- c"),
         )
     }
 
@@ -99,17 +110,17 @@ class ContentFilterAdvancedTest {
     }
 
     @Test
-    fun orderedChainPreservesRangesAsElements() {
+    fun regexChainHighlightsTheEntireConsumedMatch() {
         val rule =
             base.copy(
                 condition =
                     ContentFilterConditionSpec(
-                        mode = ContentFilterMode.ORDERED,
-                        values = listOf("a", "b", "c"),
+                        mode = ContentFilterMode.REGEX,
+                        values = listOf("a.*b.*c"),
                     ),
             )
         val match = checkNotNull(ContentFilterEngine(listOf(rule)).commentMatch(board, "a b c"))
-        assertEquals(listOf(0..0, 2..2, 4..4), match.ranges)
+        assertEquals(listOf(0..4), match.ranges)
     }
 
     @Test(timeout = 2000)

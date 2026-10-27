@@ -58,7 +58,16 @@ internal class RegexInput(
     override fun toString(): String = text
 }
 
+/** Execution validation: retired modes cannot hide posts, even after a successful restore. */
 fun contentFilterValidationError(rule: ContentFilterRule): String? =
+    if (!rule.mode.isCurrentFilterMode) {
+        "Старое правило не применяется. Выберите точную фразу или регулярное выражение и сохраните"
+    } else {
+        contentFilterRecordValidationError(rule)
+    }
+
+/** Storage validation preserves bounded legacy records without converting or executing their conditions. */
+fun contentFilterRecordValidationError(rule: ContentFilterRule): String? =
     when {
         oversizedFilterCondition(rule) -> {
             "До $MAX_FILTER_VALUES значений/исключений и $MAX_FILTER_CONDITION_CHARACTERS символов в условии"
@@ -102,10 +111,15 @@ private fun regexConditionError(rule: ContentFilterRule): String? =
 
 private fun regexValidationError(expression: String): String? =
     try {
-        Pattern.compile(expression)
+        Pattern.compile(expression, Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE or Pattern.DOTALL)
         null
     } catch (error: PatternSyntaxException) {
-        "${error.description}, позиция ${error.index}"
+        val position = if (error.index >= 0) ", позиция ${error.index + 1}" else ""
+        if (error.description.contains("flag", ignoreCase = true)) {
+            "Недопустимый флаг регулярного выражения$position. Android не поддерживает (?U)"
+        } else {
+            "Ошибка в регулярном выражении$position. Проверьте скобки, повторы и экранирование"
+        }
     } catch (_: StackOverflowError) {
         "Слишком глубокая вложенность regex"
     }

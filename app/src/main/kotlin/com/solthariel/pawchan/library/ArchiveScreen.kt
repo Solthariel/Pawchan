@@ -1,27 +1,32 @@
 package com.solthariel.pawchan.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
+import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.domain.boards.ArchivedThreadSummary
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.DomainFailure
@@ -36,17 +41,30 @@ internal fun ArchiveScreen(
     actions: ArchiveActions,
 ) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        Row(Modifier.fillMaxWidth()) {
-            TextButton(onClick = actions.onBack) { Text(stringResource(R.string.back_to_catalog)) }
-            TextButton(onClick = actions.onRefresh, enabled = !state.loading) { Text(stringResource(R.string.refresh)) }
+        Row(
+            Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            UiToolbarButton(
+                UiIconKind.BACK,
+                stringResource(R.string.back_to_catalog).removePrefix("← "),
+                onClick = actions.onBack,
+            )
+            Text(
+                stringResource(R.string.board_archive_title, board.board.value),
+                Modifier.weight(1f).padding(start = 8.dp),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            UiToolbarButton(
+                UiIconKind.REFRESH,
+                stringResource(R.string.refresh),
+                enabled = !state.loading,
+                onClick = actions.onRefresh,
+            )
         }
-        Text(
-            stringResource(R.string.board_archive_title, board.board.value),
-            Modifier.padding(16.dp),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        ArchivePaging(state, actions)
-        ArchiveStatus(state)
+        ArchiveStatus(state, actions.onRefresh)
         key(state.pageIndex) {
             LazyColumn(Modifier.weight(1f)) {
                 items(
@@ -58,6 +76,8 @@ internal fun ArchiveScreen(
                 }
             }
         }
+        HorizontalDivider()
+        ArchivePaging(state, actions)
     }
 }
 
@@ -71,7 +91,11 @@ private fun ArchivePaging(
             ?.pages
             ?.size
             ?.coerceAtLeast(1) ?: 1
-    Row(Modifier.fillMaxWidth()) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         TextButton(actions.onPrevious, enabled = !state.loading && state.pageIndex > 0) {
             Text(stringResource(R.string.archive_previous))
         }
@@ -83,7 +107,10 @@ private fun ArchivePaging(
 }
 
 @Composable
-private fun ArchiveStatus(state: ArchiveUiState) {
+private fun ArchiveStatus(
+    state: ArchiveUiState,
+    retry: () -> Unit,
+) {
     val message =
         when {
             state.loading -> R.string.board_information_loading
@@ -94,6 +121,9 @@ private fun ArchiveStatus(state: ArchiveUiState) {
             else -> null
         }
     message?.let { Text(stringResource(it), Modifier.padding(16.dp)) }
+    if (state.failure != null && !state.loading) {
+        TextButton(onClick = retry) { Text("Повторить") }
+    }
 }
 
 @Composable
@@ -104,12 +134,15 @@ private fun ArchiveThreadRow(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
             .clickable {
                 onThread(thread.address)
             }.padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Text(thread.subject, maxLines = 3)
+        Text(
+            thread.subject.ifBlank { stringResource(R.string.archive_thread_number, thread.address.thread.value) },
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
         Text(
             stringResource(R.string.archive_thread_number, thread.address.thread.value),
             style = MaterialTheme.typography.bodySmall,

@@ -13,16 +13,16 @@ import com.solthariel.pawchan.R
 internal val LocalFilterCopyNotice = staticCompositionLocalOf<() -> Unit> { {} }
 
 @Composable
-internal fun FilterRegexCopyButton(condition: String) {
+internal fun FilterRegexCopyButton(sourceText: String) {
     val context = LocalContext.current
     val notice = LocalFilterCopyNotice.current
     IconButton(onClick = {
         val clipboard = context.getSystemService(ClipboardManager::class.java)
         if (clipboard != null) {
-            clipboard.setPrimaryClip(ClipData.newPlainText("Условие автоскрытия", filterRegexPrompt(condition)))
+            clipboard.setPrimaryClip(ClipData.newPlainText("Условие автоскрытия", filterRegexPrompt(sourceText)))
             notice()
         }
     }) {
-        Icon(painterResource(R.drawable.ic_copy), contentDescription = "Скопировать инструкцию и текст условия")
+        Icon(painterResource(R.drawable.ic_copy), contentDescription = "Копировать")
     }
 }

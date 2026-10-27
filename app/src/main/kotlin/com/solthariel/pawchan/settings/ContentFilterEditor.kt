@@ -5,9 +5,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
 import kotlinx.coroutines.delay
@@ -24,6 +27,7 @@ internal fun ContentFilterEditor(
 ) {
     val draft = rememberSaveable(editorKey, saver = ContentFilterDraft.Saver) { ContentFilterDraft(rule) }
     val next = draft.rule(rule)
+    var probeText by rememberSaveable(editorKey) { mutableStateOf(initialFilterProbeText(rule, samples)) }
     val validation = remember(editorKey) { ContentFilterValidationState() }
     val scope = rememberCoroutineScope()
     LaunchedEffect(next) {
@@ -45,8 +49,8 @@ internal fun ContentFilterEditor(
             }
         },
     ) {
-        FilterEditorFields(draft)
-        ContentFilterProbe(next, samples)
+        FilterEditorFields(draft, probeText)
+        ContentFilterProbe(next, samples, probeText) { probeText = it }
         FilterLegacyFields(draft)
         if (error != null && !filterEmptyErrorIsInline(error, draft.text)) {
             Text(error, color = MaterialTheme.colorScheme.error)

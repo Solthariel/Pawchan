@@ -76,10 +76,12 @@ private fun FastScrollbarCanvas(
     val mode = settings.mode
     val scope = rememberCoroutineScope()
     val controller = remember(state, scope) { FastScrollController(state, scope) }
+    val items = remember(state, scope) { ItemScrollSession(state, scope) }
     val gesture = inputGesture ?: remember(state) { FastScrollGesture() }
+    BindItemScrollMeasurement(state, items, gesture, mode)
     val suppliedSizes = rememberUpdatedState(itemSizes)
     val geometry = remember(state) { derivedStateOf { state.fastScrollGeometry(suppliedSizes.value) } }
-    val progress = rememberFastScrollProgress(state, mode, geometry)
+    val progress = rememberFastScrollProgress(state, mode, geometry, items)
     val available by remember(state) { derivedStateOf { state.canScrollBackward || state.canScrollForward } }
     val reveal =
         rememberFastScrollbarReveal(
@@ -90,7 +92,10 @@ private fun FastScrollbarCanvas(
     val style = fastScrollbarStyle(settings.width)
     val markerStyle = fastScrollbarMarkerStyle()
     val description = stringResource(R.string.core_ui_fast_scrollbar)
-    val onProgress: (Float) -> Unit = { controller.request(it, geometry.value, mode) }
+    val onProgress: (Float) -> Unit = {
+        if (mode == FastScrollMode.ITEMS) items.request(it) else controller.request(it, geometry.value, mode)
+    }
+    val onBegin = { if (mode == FastScrollMode.ITEMS) items.begin() }
     if (!available) return
     Canvas(
         modifier =
@@ -99,12 +104,13 @@ private fun FastScrollbarCanvas(
                 .width(FAST_SCROLL_TOUCH_WIDTH)
                 .clipToBounds()
                 .onSizeChanged { gesture.trackHeight = it.height.toFloat() }
-                .fastScrollInput(available, gesture, progress, style.thumbHeight, onProgress)
+                .fastScrollInput(available, gesture, progress, style.thumbHeight, onProgress, onBegin)
                 .semantics {
                     if (available && reveal.value > 0f) {
                         contentDescription = description
                         progressBarRangeInfo = ProgressBarRangeInfo(progress.value, 0f..1f)
                         setProgress { value ->
+                            onBegin()
                             onProgress(value)
                             true
                         }
@@ -112,7 +118,7 @@ private fun FastScrollbarCanvas(
                 },
     ) {
         if (available && markers.itemCount > 1) {
-            drawFastScrollbarMarkers(markers, markerStyle)
+            drawFastScrollbarMarkers(markers, markerStyle, if (mode == FastScrollMode.ITEMS) items.anchors else null)
         }
         if (available && reveal.value > 0f) {
             val position = if (gesture.dragging) gesture.progress else progress.value
@@ -126,16 +132,25 @@ private fun rememberFastScrollProgress(
     state: LazyListState,
     mode: FastScrollMode,
     geometry: State<FastScrollGeometry>,
+    items: ItemScrollSession,
 ): State<Float> =
-    remember(state, mode, geometry) {
+    remember(state, mode, geometry, items) {
         derivedStateOf {
             if (mode == FastScrollMode.ITEMS) {
-                itemScrollProgress(
-                    state.firstVisibleItemIndex,
-                    geometry.value.totalItems,
-                    state.canScrollBackward,
-                    state.canScrollForward,
-                )
+                when {
+                    !state.canScrollBackward -> {
+                        0f
+                    }
+
+                    !state.canScrollForward -> {
+                        1f
+                    }
+
+                    else -> {
+                        items.anchors?.progress(state.firstVisibleItemIndex, state.firstVisibleItemScrollOffset)
+                            ?: itemScrollProgress(state.firstVisibleItemIndex, geometry.value.totalItems, true, true)
+                    }
+                }
             } else {
                 geometry.value.progress(
                     state.firstVisibleItemIndex,
@@ -171,12 +186,13 @@ private fun fastScrollbarMarkerStyle(): FastScrollbarMarkerStyle {
 private fun DrawScope.drawFastScrollbarMarkers(
     markers: FastScrollMarkers,
     style: FastScrollbarMarkerStyle,
+    anchors: ItemScrollAnchors?,
 ) {
     fun marker(
         index: Int,
         color: Color,
     ) {
-        val progress = index.toFloat() / (markers.itemCount - 1).coerceAtLeast(1)
+        val progress = anchors?.progress(index, 0) ?: (index.toFloat() / (markers.itemCount - 1).coerceAtLeast(1))
         drawRect(
             color = color,
             topLeft = Offset(size.width - style.width, (size.height - style.height) * progress),

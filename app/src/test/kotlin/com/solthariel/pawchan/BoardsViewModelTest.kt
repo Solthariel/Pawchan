@@ -39,6 +39,7 @@ class BoardsViewModelTest {
                         FakeBoardDirectoryRepository(boards()),
                         preferences,
                         FakePostingAccess(),
+                        dispatcher,
                     )
                 advanceUntilIdle()
 
@@ -66,6 +67,7 @@ class BoardsViewModelTest {
                         FakeBoardDirectoryRepository(boards()),
                         preferences,
                         FakePostingAccess(),
+                        dispatcher,
                     )
                 advanceUntilIdle()
 
@@ -97,6 +99,7 @@ class BoardsViewModelTest {
                         FakeBoardDirectoryRepository(listOf(protectedBoard)),
                         FakeBoardPreferences(),
                         access,
+                        dispatcher,
                     )
                 advanceUntilIdle()
 
@@ -133,6 +136,36 @@ class BoardsViewModelTest {
         assertEquals(listOf("a"), filterBoards(boards, "аниме").map { it.address.board.value })
         assertEquals(listOf("test"), filterBoards(boards, "пользовательские").map { it.address.board.value })
     }
+
+    @Test fun observedIndexSpeedUpdatesTheBoardListWithoutAnotherDirectoryRequest() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val initial = boards()
+                val address = initial.first { it.address.board.value == "b" }.address
+                val observed = MutableStateFlow<Map<com.solthariel.pawchan.domain.model.BoardAddress, Int>>(emptyMap())
+                var requests = 0
+                val response = DomainOutcome.Success(initial)
+                val directory =
+                    object : BoardDirectoryRepository {
+                        override val boardSpeeds = observed
+
+                        override suspend fun loadBoards(forceRefresh: Boolean) = response.also { requests++ }
+                    }
+                val model = BoardsViewModel(directory, FakeBoardPreferences(), FakePostingAccess(), dispatcher)
+                advanceUntilIdle()
+                observed.value = mapOf(address to 1529)
+                advanceUntilIdle()
+                assertEquals(1529, (model.state.value as BoardsUiState.Content).boardSpeeds[address.board])
+                observed.value = mapOf(address to 0)
+                advanceUntilIdle()
+                assertEquals(0, (model.state.value as BoardsUiState.Content).boardSpeeds[address.board])
+                assertEquals(1, requests)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
 
     private fun boards(): List<BoardDirectoryEntry> =
         listOf(

@@ -8,7 +8,10 @@ internal fun CatalogUiState.keepContentOnRefreshFailure(previous: CatalogUiState
         return this
     }
     return previous.copy(
-        isRefreshing = false,
-        refreshFailure = RefreshFailure(reason == CatalogError.RATE_LIMITED, challengeUrl),
+        refresh =
+            previous.refresh.copy(
+                loading = false,
+                failure = RefreshFailure(reason == CatalogError.RATE_LIMITED, challengeUrl),
+            ),
     )
 }

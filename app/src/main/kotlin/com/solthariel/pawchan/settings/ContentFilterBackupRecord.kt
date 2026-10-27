@@ -6,7 +6,7 @@ import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.domain.filter.ContentFilterOptions
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterTargets
-import com.solthariel.pawchan.domain.filter.contentFilterValidationError
+import com.solthariel.pawchan.domain.filter.contentFilterRecordValidationError
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
 import java.util.Properties
@@ -58,7 +58,7 @@ internal fun readBackupRule(fields: BackupFields): ContentFilterRule {
     require(rule.id.isNotBlank() && SiteId.parse(rule.site)?.value == rule.site) { "Некорректный адрес правила" }
     require(rule.boards.all { BoardId.parse(it)?.value == it }) { "Некорректная доска" }
     require(rule.targets.threadIds.all { it > 0L }) { "Некорректный номер треда" }
-    require(contentFilterValidationError(rule) == null) { "Некорректное условие правила" }
+    require(contentFilterRecordValidationError(rule) == null) { "Некорректное условие правила" }
     return rule
 }
 

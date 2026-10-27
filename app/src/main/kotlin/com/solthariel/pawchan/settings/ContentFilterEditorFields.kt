@@ -23,7 +23,10 @@ import com.solthariel.pawchan.domain.filter.ContentFilterFields
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
 
 @Composable
-internal fun FilterEditorFields(draft: ContentFilterDraft) {
+internal fun FilterEditorFields(
+    draft: ContentFilterDraft,
+    copyText: String = "",
+) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FilterLineInput("Доски", draft.boards, { draft.boards = it }, Modifier.weight(1f), singleLine = true)
@@ -36,34 +39,36 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
             }
             if (draft.threads) FilterOpFields(draft)
         }
-        FilterMatchModes(draft)
+        FilterMatchModes(draft, copyText)
         FilterLineInput(
             "Условие",
             draft.text,
             { draft.text = it },
             presentation = filterConditionPresentation(draft.mode),
         )
-        if (draft.mode == ContentFilterMode.REGEX.name) FilterRegexCopyButton(draft.text)
     }
 }
 
 @Composable
-private fun FilterMatchModes(draft: ContentFilterDraft) {
+private fun FilterMatchModes(
+    draft: ContentFilterDraft,
+    copyText: String,
+) {
     val basic = listOf(ContentFilterMode.EXACT_PHRASE, ContentFilterMode.REGEX)
     val selectedMode = ContentFilterMode.valueOf(draft.mode)
-    val modes = if (selectedMode in basic) basic else basic + selectedMode
     Column {
         if (selectedMode !in basic) {
             Text(
-                "Старое условие сохранено. Для смены способа поиска выберите режим ниже.",
+                "Старое правило не применяется. Его текст сохранён. " +
+                    "Выберите режим ниже, проверьте условие и сохраните.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             basic.forEach { mode -> FilterModeChoice(draft, mode, Modifier.weight(1f)) }
+            if (selectedMode == ContentFilterMode.REGEX) FilterRegexCopyButton(copyText)
         }
-        modes.filterNot { it in basic }.forEach { mode -> FilterModeChoice(draft, mode, Modifier.fillMaxWidth()) }
     }
 }
 

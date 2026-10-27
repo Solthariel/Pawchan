@@ -37,7 +37,7 @@ class CatalogSpeedRefreshTest {
         assertEquals(listOf(1218, 1204, 0), values)
     }
 
-    @Test fun missingSpeedForcesFreshDirectoryRead() =
+    @Test fun missingSpeedNeverWaitsForTheDirectory() =
         runTest {
             val requests = mutableListOf<Boolean>()
             val directory =
@@ -49,9 +49,9 @@ class CatalogSpeedRefreshTest {
                 }
             val api = DvachCatalogApi.create(client(payload("")), directory)
             val result = api.loadCatalog(address()) as DomainOutcome.Success
-            assertEquals(1204, result.value.boardSpeed)
-            assertTrue(result.value.boardSpeedAvailable)
-            assertEquals(listOf(true), requests)
+            assertEquals(0, result.value.boardSpeed)
+            assertFalse(result.value.boardSpeedAvailable)
+            assertTrue(requests.isEmpty())
         }
 
     @Test fun catalogZeroDoesNotRequestTheDirectory() =
@@ -71,6 +71,36 @@ class CatalogSpeedRefreshTest {
             assertEquals(0, result.value.boardSpeed)
             assertEquals(0, calls)
         }
+
+    @Test fun indexSpeedIncludingZeroIsPublishedWithoutLoadingBoards() =
+        runTest {
+            val observed = mutableListOf<Int>()
+            val directory =
+                object : BoardDirectoryRepository {
+                    override suspend fun loadBoards(forceRefresh: Boolean): DomainOutcome<List<BoardDirectoryEntry>> =
+                        error("Statistics must not request the board directory")
+
+                    override fun rememberBoardSpeed(
+                        board: BoardAddress,
+                        speed: Int,
+                    ) {
+                        observed += speed
+                    }
+                }
+            for (speed in listOf(1529, 0)) {
+                val api = DvachCatalogApi.create(client("""{"board_speed":$speed}"""), directory)
+                assertEquals(speed, api.loadBoardSpeed(address()))
+            }
+            assertEquals(listOf(1529, 0), observed)
+            assertEquals("/b/index.json", BoardSpeedRequest.create(address().board).url.encodedPath)
+            assertTrue(BoardSpeedRequest.create(address().board).cacheControl.noCache)
+        }
+
+    @Test fun invalidIndexSpeedIsNeverPublishedAsZero() {
+        for (payload in listOf("{}", """{"board_speed":-1}""", """{"board_speed":"bad"}""")) {
+            assertEquals(null, decodeBoardSpeed(payload))
+        }
+    }
 
     private fun client(payload: String): okhttp3.OkHttpClient =
         okhttp3.OkHttpClient

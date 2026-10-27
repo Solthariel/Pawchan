@@ -62,11 +62,13 @@ internal fun Modifier.fastScrollInput(
     progress: State<Float>,
     thumbHeight: Float,
     onProgress: (Float) -> Unit,
+    onBegin: () -> Unit = {},
 ): Modifier =
     pointerInput(available, gesture.trackHeight, thumbHeight) {
         if (!available || gesture.trackHeight <= 0f) return@pointerInput
         awaitEachGesture {
             val down = awaitFirstDown()
+            onBegin()
             gesture.begin(down.position.y, progress.value, thumbHeight)
             down.consume()
             try {

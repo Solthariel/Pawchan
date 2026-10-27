@@ -19,7 +19,7 @@ class ContentFilterValidationTest {
             contentFilterValidationError(rule.copy(targets = ContentFilterTargets(threads = false))),
         )
         assertEquals(
-            "Условие пустое",
+            "Введите одну точную фразу",
             contentFilterValidationError(rule.copy(condition = rule.condition.copy(values = emptyList()))),
         )
         assertEquals(
@@ -50,7 +50,7 @@ class ContentFilterValidationTest {
 
     @Test
     fun emptyAndBlankConditionsRetainTheirModeSpecificErrors() {
-        ContentFilterMode.entries.forEach { mode ->
+        ContentFilterMode.entries.filter { it.isCurrentFilterMode }.forEach { mode ->
             val condition = rule.condition.copy(mode = mode, values = emptyList())
             val expected = if (mode == ContentFilterMode.EXACT_PHRASE) "Введите одну точную фразу" else "Условие пустое"
             assertEquals(expected, contentFilterValidationError(rule.copy(condition = condition)))
@@ -67,7 +67,7 @@ class ContentFilterValidationTest {
         assertNull(contentFilterValidationError(rule.copy(condition = one)))
         val multiple = one.copy(values = listOf("голова", "хлеб"))
         assertEquals("Введите одну точную фразу", contentFilterValidationError(rule.copy(condition = multiple)))
-        assertNull(
+        org.junit.Assert.assertNotNull(
             contentFilterValidationError(rule.copy(condition = multiple.copy(mode = ContentFilterMode.ALL_WORDS))),
         )
     }
