@@ -63,7 +63,7 @@ class ContentFilterModeRoundTripRuntimeTest {
                 condition = ContentFilterConditionSpec(ContentFilterMode.PHRASE, listOf(text)),
             )
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        compose.onNodeWithText("Любое из слов").performScrollTo().performClick()
+        compose.onNodeWithText("Любое слово").performScrollTo().performClick()
         compose.onNodeWithText("Фраза").performScrollTo().performClick()
         assertEquals(
             text,

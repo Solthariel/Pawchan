@@ -29,7 +29,7 @@ class FilterRegexCopyRuntimeTest {
     @Test fun noModeOffersAiCopyOrRegexControls() {
         val rule = newContentFilterRule(defaultBoardAddress(), "обычная фраза")
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
-        listOf("Фраза", "Любое из слов", "Все слова").forEach {
+        listOf("Фраза", "Любое слово", "Все слова").forEach {
             compose.onNodeWithText(it).performScrollTo().performClick()
             compose.onNodeWithContentDescription("Копировать").assertDoesNotExist()
             compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()

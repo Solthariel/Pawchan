@@ -23,7 +23,7 @@ class FilterEditorSourceRuntimeTest {
         val rule = newContentFilterRule(defaultBoardAddress(), source)
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
         compose.onNodeWithContentDescription("Что искать").performScrollTo().performTextReplacement("беларус")
-        compose.onNodeWithText("Начало слова").performScrollTo().performClick()
+        compose.onNodeWithText("Часть слова").performScrollTo().performClick()
         val probe = compose.onNodeWithContentDescription("Проверяемый текст").performScrollTo()
         assertEquals(source, probe.fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
     }

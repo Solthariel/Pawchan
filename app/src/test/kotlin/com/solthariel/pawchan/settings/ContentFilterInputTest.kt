@@ -29,12 +29,11 @@ class ContentFilterInputTest {
         assertEquals(listOf(draft.text), draft.rule(base).values)
     }
 
-    @Test fun saveableDraftKeepsBoundaryCaseExceptionsScopeAndIdentity() {
+    @Test fun saveableDraftKeepsBoundaryExceptionsScopeAndIdentity() {
         val draft = ContentFilterDraft(base)
         draft.selectMode(ContentFilterMode.ANY_TERM)
         draft.text = "кот\nсобака"
-        draft.boundary = "PREFIX"
-        draft.caseSensitive = true
+        draft.boundary = "PART"
         draft.exceptions = "приют\nдом"
         draft.threadIds = "42, 43"
         val scope =

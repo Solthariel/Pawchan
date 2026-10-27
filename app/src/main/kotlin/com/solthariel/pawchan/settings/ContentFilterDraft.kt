@@ -21,8 +21,11 @@ internal class ContentFilterDraft(
     var text by mutableStateOf(filterInputText(rule))
     var boards by mutableStateOf(rule.boards.joinToString(", "))
     var threadIds by mutableStateOf(rule.targets.threadIds.joinToString(", "))
-    var boundary by mutableStateOf(rule.options.textMatch.boundary.name)
-    var caseSensitive by mutableStateOf(rule.options.textMatch.caseSensitive)
+    var boundary by mutableStateOf(
+        rule.options.textMatch.boundary
+            .takeUnless { it == FilterBoundary.PREFIX }
+            ?.name ?: FilterBoundary.WORD.name,
+    )
     var exceptions by mutableStateOf(rule.options.exceptions.joinToString("\n"))
 
     fun rule(base: ContentFilterRule): ContentFilterRule =
@@ -34,7 +37,7 @@ internal class ContentFilterDraft(
             options =
                 ContentFilterOptions(
                     exceptions = exceptions.lines().map(String::trim).filter(String::isNotEmpty),
-                    textMatch = FilterTextMatch(FilterBoundary.valueOf(boundary), caseSensitive),
+                    textMatch = FilterTextMatch(FilterBoundary.valueOf(boundary)),
                 ),
         )
 
@@ -67,19 +70,18 @@ internal class ContentFilterDraft(
             listSaver<ContentFilterDraft, Any>(
                 save = {
                     listOf(
-                        "builder-1",
+                        "builder-2",
                         it.enabled,
                         it.mode,
                         it.text,
                         it.boards,
                         it.threadIds,
                         it.boundary,
-                        it.caseSensitive,
                         it.exceptions,
                     )
                 },
                 restore = { values ->
-                    if (values.size != DRAFT_STATE_FIELDS || values.firstOrNull() != "builder-1") {
+                    if (values.size != DRAFT_STATE_FIELDS || values.firstOrNull() != "builder-2") {
                         null
                     } else {
                         val fields = values.drop(1).iterator()
@@ -90,7 +92,6 @@ internal class ContentFilterDraft(
                             boards = fields.next() as String
                             threadIds = fields.next() as String
                             boundary = fields.next() as String
-                            caseSensitive = fields.next() as Boolean
                             exceptions = fields.next() as String
                         }
                     }
@@ -99,4 +100,4 @@ internal class ContentFilterDraft(
     }
 }
 
-private const val DRAFT_STATE_FIELDS = 9
+private const val DRAFT_STATE_FIELDS = 8

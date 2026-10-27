@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.data.preferences
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.preferencesOf
@@ -41,19 +40,23 @@ class PostAppearanceMigrationTest {
         runBlocking {
             val file = File(temporary.root, "appearance.preferences_pb")
             val oldJob = SupervisorJob()
-            val old = PreferenceDataStoreFactory.create(scope = CoroutineScope(oldJob + Dispatchers.IO)) { file }
-            old.edit {
-                it[bubbles] = true
-                it[theme] = "DARK"
+            try {
+                val old = diskPreferencesTestStore(file, CoroutineScope(oldJob + Dispatchers.IO))
+                old.edit {
+                    it[bubbles] = true
+                    it[theme] = "DARK"
+                }
+            } finally {
+                oldJob.cancelAndJoin()
             }
-            oldJob.cancelAndJoin()
             val job = SupervisorJob()
             try {
                 val migrated =
-                    PreferenceDataStoreFactory.create(
+                    diskPreferencesTestStore(
+                        file,
                         scope = CoroutineScope(job + Dispatchers.IO),
                         migrations = listOf(PostAppearanceMigration),
-                    ) { file }
+                    )
                 assertFalse(
                     migrated.data
                         .first()
@@ -67,10 +70,11 @@ class PostAppearanceMigrationTest {
             val nextJob = SupervisorJob()
             try {
                 val reopened =
-                    PreferenceDataStoreFactory.create(
+                    diskPreferencesTestStore(
+                        file,
                         scope = CoroutineScope(nextJob + Dispatchers.IO),
                         migrations = listOf(PostAppearanceMigration),
-                    ) { file }
+                    )
                 val actual = reopened.data.first()
                 assertTrue(actual.toAppSettings().bubblePosts)
                 assertEquals("DARK", actual[theme])

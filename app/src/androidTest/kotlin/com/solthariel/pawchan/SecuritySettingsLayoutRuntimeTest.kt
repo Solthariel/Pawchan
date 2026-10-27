@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.solthariel.pawchan.domain.security.AppLockDelay
+import com.solthariel.pawchan.domain.security.appLockDelayChoices
 import com.solthariel.pawchan.security.AppLockSettingsContent
 import com.solthariel.pawchan.security.AppLockSettingsState
 import com.solthariel.pawchan.security.LockAction
@@ -75,8 +76,8 @@ class SecuritySettingsLayoutRuntimeTest {
                 )
             }
         }
-        AppLockDelay.entries.forEach { delay ->
-            compose.onNodeWithText("Блокировать после выхода").performClick()
+        appLockDelayChoices(AppLockDelay.MINUTE_1).forEach { delay ->
+            compose.onNodeWithText("Запрашивать PIN после отсутствия").performClick()
             compose.onNode(hasText(delay.label) and hasAnyAncestor(isDialog())).performScrollTo().performClick()
             compose.runOnIdle { assertEquals(delay, state.value.delay) }
         }

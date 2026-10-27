@@ -78,7 +78,7 @@ internal fun SettingsItemRow(item: SettingsItem) {
 }
 
 @Composable
-private fun SettingsRow(
+internal fun SettingsRow(
     title: String,
     summary: String?,
     titleColor: Color = Color.Unspecified,

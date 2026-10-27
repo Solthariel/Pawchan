@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.data.preferences
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -48,7 +47,7 @@ class RemovedUsageMigrationTest {
             val file = File(temporary.root, "usage.preferences_pb")
             val oldJob = SupervisorJob()
             try {
-                val old = PreferenceDataStoreFactory.create(scope = CoroutineScope(oldJob + Dispatchers.IO)) { file }
+                val old = diskPreferencesTestStore(file, CoroutineScope(oldJob + Dispatchers.IO))
                 old.edit {
                     it[longPreferencesKey("usage|1|POSTS_VIEWED")] = 500L
                     it[longPreferencesKey("usage|1|POSTS_SENT")] = 3L
@@ -60,10 +59,11 @@ class RemovedUsageMigrationTest {
                 val job = SupervisorJob()
                 try {
                     val store =
-                        PreferenceDataStoreFactory.create(
+                        diskPreferencesTestStore(
+                            file,
                             scope = CoroutineScope(job + Dispatchers.IO),
                             migrations = listOf(RemovedUsageMigration),
-                        ) { file }
+                        )
                     val actual = store.data.first()
                     assertFalse(actual.asMap().keys.any { it.name.endsWith("|POSTS_VIEWED") })
                     assertEquals(3L, actual[longPreferencesKey("usage|1|POSTS_SENT")])

@@ -31,7 +31,7 @@ class ContentFilterProbeTest {
         val rule = newContentFilterRule(defaultBoardAddress(), "голова дай денег")
         val result = filterProbeResult(rule, "головы дайте деньги")
         assertFalse(result.matched)
-        assertEquals("Нет совпадений", result.caption)
+        assertEquals("Пост останется видимым", result.caption)
         assertTrue(result.preview.spanStyles.isEmpty())
     }
 }

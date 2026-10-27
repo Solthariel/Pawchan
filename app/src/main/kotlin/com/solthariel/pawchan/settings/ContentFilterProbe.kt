@@ -80,7 +80,12 @@ internal fun filterProbeResult(
             emptyList()
         }
     val fragments = ranges.map { text.substring(it) }.distinct()
-    val caption = if (fragments.isEmpty()) "Нет совпадений" else "Совпало: " + fragments.joinToString { "«$it»" }
+    val caption =
+        if (fragments.isEmpty()) {
+            "Пост останется видимым"
+        } else {
+            "Пост будет скрыт. Найдено: " + fragments.joinToString { "«$it»" }
+        }
     val preview =
         buildAnnotatedString {
             append(text)

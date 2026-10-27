@@ -60,7 +60,8 @@ class AppLockTimingTest {
     }
 
     @Test fun persistedDurationsAreExplicitAndUnknownValuesUseOneMinute() {
-        val expected = listOf(0L, 30_000L, 60_000L, 120_000L, 300_000L, 1_800_000L, 3_600_000L)
+        val expected =
+            listOf(0L, 30_000L, 60_000L, 120_000L, 300_000L, 1_800_000L, 3_600_000L, 900_000L, 10_800_000L, 21_600_000L)
         assertEquals(expected, AppLockDelay.entries.map { it.millis })
         AppLockDelay.entries.forEach { assertEquals(it, AppLockDelay.fromMillis(it.millis)) }
         listOf(-1L, 1L, Long.MAX_VALUE).forEach {

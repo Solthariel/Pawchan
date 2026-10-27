@@ -11,6 +11,9 @@ enum class AppLockDelay(
     MINUTES_5(FIVE_MINUTES_MILLIS),
     MINUTES_30(THIRTY_MINUTES_MILLIS),
     HOUR_1(ONE_HOUR_MILLIS),
+    MINUTES_15(FIFTEEN_MINUTES_MILLIS),
+    HOURS_3(THREE_HOURS_MILLIS),
+    HOURS_6(SIX_HOURS_MILLIS),
     ;
 
     companion object {
@@ -24,3 +27,22 @@ private const val TWO_MINUTES_MILLIS = 120_000L
 private const val FIVE_MINUTES_MILLIS = 300_000L
 private const val THIRTY_MINUTES_MILLIS = 1_800_000L
 private const val ONE_HOUR_MILLIS = 3_600_000L
+
+private const val FIFTEEN_MINUTES_MILLIS = 900_000L
+private const val THREE_HOURS_MILLIS = 10_800_000L
+private const val SIX_HOURS_MILLIS = 21_600_000L
+
+/** Legacy durations remain readable, but are not offered for new selections. */
+fun appLockDelayChoices(current: AppLockDelay): List<AppLockDelay> {
+    val choices =
+        listOf(
+            AppLockDelay.IMMEDIATE,
+            AppLockDelay.MINUTE_1,
+            AppLockDelay.MINUTES_5,
+            AppLockDelay.MINUTES_15,
+            AppLockDelay.HOUR_1,
+            AppLockDelay.HOURS_3,
+            AppLockDelay.HOURS_6,
+        )
+    return if (current in choices) choices else (choices + current).sortedBy { it.millis }
+}

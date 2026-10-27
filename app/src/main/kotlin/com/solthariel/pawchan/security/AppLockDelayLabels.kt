@@ -12,4 +12,7 @@ internal val AppLockDelay.label: String
             AppLockDelay.MINUTES_5 -> "Через 5 минут"
             AppLockDelay.MINUTES_30 -> "Через 30 минут"
             AppLockDelay.HOUR_1 -> "Через 1 час"
+            AppLockDelay.MINUTES_15 -> "Через 15 минут"
+            AppLockDelay.HOURS_3 -> "Через 3 часа"
+            AppLockDelay.HOURS_6 -> "Через 6 часов"
         }

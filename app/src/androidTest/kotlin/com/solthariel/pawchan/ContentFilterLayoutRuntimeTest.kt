@@ -35,9 +35,13 @@ class ContentFilterLayoutRuntimeTest {
                     .ContentFilterEditor(rule, rule.id, {}, {})
             }
         }
-        listOf("Фраза", "Любое из слов", "Все слова").forEach { label ->
+        listOf("Фраза", "Любое слово", "Все слова").forEach { label ->
             compose.onNodeWithText(label).performScrollTo().assertExists()
         }
+        compose.onNodeWithText("Слово целиком").performScrollTo().assertExists()
+        compose.onNodeWithText("Часть слова").performScrollTo().assertExists()
+        compose.onNodeWithText("Начало слова").assertDoesNotExist()
+        compose.onNodeWithText("Учитывать регистр").assertDoesNotExist()
         compose.onNodeWithText("ОП-посты").assertDoesNotExist()
         compose.onNodeWithText("Ответы").assertDoesNotExist()
         compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()

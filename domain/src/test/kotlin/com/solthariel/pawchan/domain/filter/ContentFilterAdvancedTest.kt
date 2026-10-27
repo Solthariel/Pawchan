@@ -27,11 +27,11 @@ class ContentFilterAdvancedTest {
         assertNotNull(engine.comment(builderBoard, "«кот»"))
     }
 
-    @Test fun caseSensitiveUsesExactCaseButDoesNotFoldYoToYe() {
+    @Test fun searchAlwaysIgnoresCaseButDoesNotFoldYoToYe() {
         val insensitive = ContentFilterEngine(listOf(builderRule()))
         val sensitive = ContentFilterEngine(listOf(builderRule(sensitive = true)))
         assertNotNull(insensitive.comment(builderBoard, "КОТ"))
-        assertNull(sensitive.comment(builderBoard, "КОТ"))
+        assertNotNull(sensitive.comment(builderBoard, "КОТ"))
         assertNotNull(sensitive.comment(builderBoard, "кот"))
         assertNull(ContentFilterEngine(listOf(builderRule(terms = listOf("ёж")))).comment(builderBoard, "еж"))
     }
@@ -40,7 +40,7 @@ class ContentFilterAdvancedTest {
         val rule = builderRule(boundary = FilterBoundary.PREFIX, exceptions = listOf("приют"))
         assertNull(ContentFilterEngine(listOf(rule)).comment(builderBoard, "котик ПРИЮТский"))
         val sensitive = rule.copy(options = rule.options.copy(textMatch = FilterTextMatch(FilterBoundary.PREFIX, true)))
-        assertNotNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик ПРИЮТский"))
+        assertNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик ПРИЮТский"))
         assertNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик приютский"))
     }
 

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.security.AppLockDelay
+import com.solthariel.pawchan.domain.security.appLockDelayChoices
 import com.solthariel.pawchan.settings.SettingsItem
 import com.solthariel.pawchan.settings.SettingsItemRow
 
@@ -57,13 +58,14 @@ private fun LockEnabledControls(
     onDelay: (AppLockDelay) -> Unit = {},
     onEdit: (LockAction) -> Unit,
 ) {
+    val delays = appLockDelayChoices(state.delay)
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
     SettingsItemRow(
         SettingsItem.Choice(
-            "Блокировать после выхода",
-            AppLockDelay.entries.map { it.label },
-            AppLockDelay.entries.indexOf(state.delay),
-        ) { onDelay(AppLockDelay.entries[it]) },
+            "Запрашивать PIN после отсутствия",
+            delays.map { it.label },
+            delays.indexOf(state.delay),
+        ) { onDelay(delays[it]) },
     )
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
     SettingsItemRow(SettingsItem.Action("Изменить PIN-код", null, onClick = { onEdit(LockAction.CHANGE) }))

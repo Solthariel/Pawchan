@@ -46,8 +46,9 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithContentDescription("Добавить правило").performClick()
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Что искать").performScrollTo().performTextInput("голова дай денег")
-        compose.onNodeWithText("Любое из слов").performScrollTo().performClick()
-        compose.onNodeWithText("Учитывать регистр").performScrollTo().performClick()
+        compose.onNodeWithText("Любое слово").performScrollTo().performClick()
+        compose.onNodeWithText("Учитывать регистр").assertDoesNotExist()
+        compose.onNodeWithText("Часть слова").performScrollTo().performClick()
         compose.runOnIdle {
             state.value = state.value.copy(app = state.value.app.copy(postMarkers = !state.value.app.postMarkers))
         }
@@ -62,6 +63,8 @@ class ContentFilterEditorUiTest {
             assertEquals(ContentFilterMode.ANY_TERM, rule.mode)
             assertEquals(listOf("голова дай денег"), rule.values)
             assertTrue(rule.threads && rule.comments)
+            assertEquals(com.solthariel.pawchan.domain.filter.FilterBoundary.PART, rule.options.textMatch.boundary)
+            assertTrue(!rule.options.textMatch.caseSensitive)
             assertTrue(rule.boards.isEmpty())
             assertTrue(rule.targets.threadIds.isEmpty())
         }
@@ -75,8 +78,8 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
-        compose.onNodeWithText("Любое из слов").assertExists()
-        compose.onNodeWithText("Любое из слов").performScrollTo().performClick()
+        compose.onNodeWithText("Любое слово").assertExists()
+        compose.onNodeWithText("Любое слово").performScrollTo().performClick()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
     }

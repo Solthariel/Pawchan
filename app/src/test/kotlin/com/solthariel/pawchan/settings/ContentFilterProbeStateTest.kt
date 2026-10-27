@@ -21,10 +21,10 @@ class ContentFilterProbeStateTest {
             repeat(8) { count ->
                 val next = FilterProbeInput(newContentFilterRule(defaultBoardAddress(), "кот$count"), "собака")
                 val job = launch(start = CoroutineStart.UNDISPATCHED) { state.check(next) }
-                assertEquals("Нет совпадений", state.caption(next.text))
+                assertEquals("Пост останется видимым", state.caption(next.text))
                 assertNull(state.preview(next))
                 job.join()
-                assertEquals("Нет совпадений", state.caption(next.text))
+                assertEquals("Пост останется видимым", state.caption(next.text))
             }
         }
 
@@ -38,7 +38,7 @@ class ContentFilterProbeStateTest {
             val job = launch(start = CoroutineStart.UNDISPATCHED) { state.check(changed) }
             assertNull(state.preview(changed))
             job.join()
-            assertEquals("Нет совпадений", state.caption(changed.text))
+            assertEquals("Пост останется видимым", state.caption(changed.text))
             assertEquals(emptyList<Any>(), state.preview(changed)?.spanStyles)
         }
 
@@ -61,7 +61,7 @@ class ContentFilterProbeStateTest {
             val job = launch(start = CoroutineStart.UNDISPATCHED) { state.check(FilterProbeInput(base, "кот")) }
             job.cancel()
             job.join()
-            assertEquals("Нет совпадений", state.caption("кот"))
+            assertEquals("Пост останется видимым", state.caption("кот"))
             assertNull(state.preview(FilterProbeInput(base, "кот")))
         }
 
@@ -70,9 +70,9 @@ class ContentFilterProbeStateTest {
             val state = ContentFilterProbeState(StandardTestDispatcher(testScheduler))
             state.check(FilterProbeInput(base, "собака"))
             state.check(FilterProbeInput(base, "кот"))
-            assertEquals("Совпало: «кот»", state.caption("кот"))
+            assertEquals("Пост будет скрыт. Найдено: «кот»", state.caption("кот"))
             state.check(FilterProbeInput(base, "собака"))
-            assertEquals("Нет совпадений", state.caption("собака"))
+            assertEquals("Пост останется видимым", state.caption("собака"))
         }
 
     @Test fun inputHasOneTouchableLineAndRespectsLargeFontsWithoutHintDependentSpace() {

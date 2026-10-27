@@ -94,9 +94,11 @@ class ContentFilterCompactLayoutRuntimeTest {
                 }
             }
         }
-        val opLabel = compose.onNodeWithText("Учитывать регистр", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val field = compose.onNodeWithContentDescription("Доски").fetchSemanticsNode().boundsInRoot
         val enabled = compose.onNodeWithText("Включено", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals(opLabel.left, enabled.left, 1f)
+        val toggle = compose.onNodeWithTag("filter-editor-enabled").fetchSemanticsNode().boundsInRoot
+        assertEquals(field.left, toggle.left, 1f)
+        assertTrue(enabled.left > toggle.left)
         compose.onNodeWithTag("filter-editor-enabled").assertHeightIsAtLeast(48.dp)
     }
 }

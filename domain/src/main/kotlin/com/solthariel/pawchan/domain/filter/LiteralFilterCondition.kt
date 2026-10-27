@@ -6,8 +6,7 @@ import java.util.regex.Pattern
 internal class LiteralFilterCondition(
     private val rule: ContentFilterRule,
 ) {
-    private val flags =
-        if (rule.options.textMatch.caseSensitive) 0 else Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
+    private val flags = Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
     private val terms = rule.values.map { Pattern.compile(Pattern.quote(it), flags) }
     private val exceptions =
         rule.options.exceptions
