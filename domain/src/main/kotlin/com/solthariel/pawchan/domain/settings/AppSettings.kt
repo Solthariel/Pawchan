@@ -19,7 +19,7 @@ data class AppSettings(
     val contentFilters: List<ContentFilterRule> get() = behavior.contentFilters
 
     fun withContentFilters(contentFilters: List<ContentFilterRule>): AppSettings =
-        copy(behavior = behavior.copy(contentFilters = contentFilters))
+        copy(behavior = behavior.copy(autohide = behavior.autohide.copy(rules = contentFilters)))
 
     companion object {
         const val DEFAULT_TEXT_SIZE = 12
@@ -38,9 +38,17 @@ data class AppBehavior(
     /** Сохранённые копии тредов дополняются новыми постами, пока тред жив. */
     val updateSavedCopies: Boolean = true,
     val dns: ServiceDnsPreferences = ServiceDnsPreferences(),
-    val contentFilters: List<ContentFilterRule> = emptyList(),
+    val autohide: AutohidePreferences = AutohidePreferences(),
     val showHiddenThreads: Boolean = false,
     val client: ClientPreferences = ClientPreferences(),
+) {
+    val contentFilters: List<ContentFilterRule> get() = autohide.rules
+    val contentFilterResetNotice: Boolean get() = autohide.resetNotice
+}
+
+data class AutohidePreferences(
+    val rules: List<ContentFilterRule> = emptyList(),
+    val resetNotice: Boolean = false,
 )
 
 /** Публичные DoH-серверы для внешних сервисов; [SYSTEM] — обычный DNS телефона. */

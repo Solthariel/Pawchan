@@ -20,7 +20,7 @@ class ContentFilterInputTest {
         assertNotEquals(base.id, other.id)
     }
 
-    @Test fun termsAreSeparatedOnlyByNewlines() {
+    @Test fun rowsKeepTheirCommaSeparatedAlternatives() {
         val draft = ContentFilterDraft(base)
         draft.selectMode(ContentFilterMode.ALL_TERMS)
         draft.text = "два слова\nещё, пример"
@@ -36,6 +36,7 @@ class ContentFilterInputTest {
         draft.boundary = "PART"
         draft.exceptions = "приют\nдом"
         draft.threadIds = "42, 43"
+        draft.postScope = FilterPostScope.COMMENTS.name
         val scope =
             object : SaverScope {
                 override fun canBeSaved(value: Any): Boolean = true

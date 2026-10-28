@@ -2,9 +2,11 @@ package com.solthariel.pawchan.settings
 
 import com.solthariel.pawchan.domain.filter.FilterBoundary
 import com.solthariel.pawchan.domain.filter.FilterTextMatch
+import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class FilterEditorPolicyTest {
@@ -17,7 +19,7 @@ class FilterEditorPolicyTest {
         assertFalse(next.options.textMatch.caseSensitive)
     }
 
-    @Test fun removedPrefixChoiceBecomesWholeWordOnlyWhenTheEditorIsSaved() {
+    @Test fun removedPrefixCannotExecuteAndEditorOffersOnlyWholeOrPart() {
         val base = newContentFilterRule(defaultBoardAddress(), "кот")
         val old = base.copy(options = base.options.copy(textMatch = FilterTextMatch(FilterBoundary.PREFIX)))
         assertEquals(
@@ -26,6 +28,6 @@ class FilterEditorPolicyTest {
                 .rule(old)
                 .options.textMatch.boundary,
         )
-        assertEquals(FilterBoundary.PREFIX, old.options.textMatch.boundary)
+        assertNotNull(contentFilterValidationError(old))
     }
 }

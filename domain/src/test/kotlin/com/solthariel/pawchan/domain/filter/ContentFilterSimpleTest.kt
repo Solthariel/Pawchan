@@ -30,11 +30,11 @@ class ContentFilterSimpleTest {
         assertNotNull(ContentFilterEngine(listOf(all)).comment(builderBoard, "собака\nи кот"))
     }
 
-    @Test fun multiwordTermIsNotSplitOnSpacesOrComma() {
+    @Test fun multiwordAlternativesKeepSpacesButSplitOnComma() {
         val rule = builderRule(ContentFilterMode.ANY_TERM, listOf("кот дома", "собака, рядом"))
         val engine = ContentFilterEngine(listOf(rule))
         assertNotNull(engine.comment(builderBoard, "кот дома"))
         assertNull(engine.comment(builderBoard, "кот"))
-        assertNull(engine.comment(builderBoard, "собака рядом"))
+        assertNotNull(engine.comment(builderBoard, "собака рядом"))
     }
 }

@@ -27,12 +27,18 @@ internal class ContentFilterDraft(
             ?.name ?: FilterBoundary.WORD.name,
     )
     var exceptions by mutableStateOf(rule.options.exceptions.joinToString("\n"))
+    var postScope by mutableStateOf(rule.targets.postScope())
 
     fun rule(base: ContentFilterRule): ContentFilterRule =
         base.copy(
             enabled = enabled,
             boards = boardValues().mapNotNull { BoardId.parse(it)?.value }.toSet(),
-            targets = ContentFilterTargets(threadIds = threadIdParts().mapNotNull(String::toLongOrNull).toSet()),
+            targets =
+                ContentFilterTargets(
+                    threads = postScope != FilterPostScope.COMMENTS.name,
+                    comments = postScope != FilterPostScope.OP.name,
+                    threadIds = threadIdParts().mapNotNull(String::toLongOrNull).toSet(),
+                ),
             condition = ContentFilterConditionSpec(ContentFilterMode.valueOf(mode), filterInputValues(mode, text)),
             options =
                 ContentFilterOptions(
@@ -70,7 +76,7 @@ internal class ContentFilterDraft(
             listSaver<ContentFilterDraft, Any>(
                 save = {
                     listOf(
-                        "builder-2",
+                        "groups-1",
                         it.enabled,
                         it.mode,
                         it.text,
@@ -78,10 +84,11 @@ internal class ContentFilterDraft(
                         it.threadIds,
                         it.boundary,
                         it.exceptions,
+                        it.postScope,
                     )
                 },
                 restore = { values ->
-                    if (values.size != DRAFT_STATE_FIELDS || values.firstOrNull() != "builder-2") {
+                    if (values.size != DRAFT_STATE_FIELDS || values.firstOrNull() != "groups-1") {
                         null
                     } else {
                         val fields = values.drop(1).iterator()
@@ -93,6 +100,7 @@ internal class ContentFilterDraft(
                             threadIds = fields.next() as String
                             boundary = fields.next() as String
                             exceptions = fields.next() as String
+                            postScope = fields.next() as String
                         }
                     }
                 },
@@ -100,4 +108,4 @@ internal class ContentFilterDraft(
     }
 }
 
-private const val DRAFT_STATE_FIELDS = 8
+private const val DRAFT_STATE_FIELDS = 9

@@ -8,25 +8,18 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CurrentFilterRecipesTest {
-    @Test fun prefixRecipeHasWholePostException() {
+    @Test fun explicitAlternativesHaveWholePostException() {
         val rule =
             builderRule(
-                terms = listOf("беларус"),
-                boundary = FilterBoundary.PREFIX,
-                exceptions = listOf("известн"),
+                ContentFilterMode.ANY_TERM,
+                listOf("беларус, беларуса, беларусы"),
+                exceptions = listOf("известный, известного"),
             )
         val engine = ContentFilterEngine(listOf(rule))
         listOf("Почему нет ни одного беларуса?", "БЕЛАРУСЫ", "Неизвестный беларус", "Беларус\nи культура").forEach {
             assertNotNull(it, engine.comment(builderBoard, it))
         }
-        listOf(
-            "Известный беларус",
-            "беларус, известного всем",
-            "Известного\nбеларуса",
-            "белорус",
-            "небеларус",
-            "_беларус",
-        ).forEach {
+        listOf("Известный беларус", "беларус, известного всем", "Известного\nбеларуса", "небеларус").forEach {
             assertNull(it, engine.comment(builderBoard, it))
         }
     }

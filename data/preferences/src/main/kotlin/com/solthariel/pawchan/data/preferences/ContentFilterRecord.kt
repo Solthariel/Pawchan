@@ -10,11 +10,11 @@ import com.solthariel.pawchan.domain.filter.FilterTextMatch
 import com.solthariel.pawchan.domain.filter.contentFilterRecordValidationError
 import java.util.Base64
 
-/** Version five is a clean break: old records are discarded, not converted or kept dormant. */
+/** Version six is a clean break: old records are discarded, not converted or kept dormant. */
 internal fun decodeContentFilterRecord(line: String): ContentFilterRule? =
     try {
         val fields = line.split('\t').map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
-        if (fields.size != BUILDER_RECORD_FIELDS || fields[FIELD_VERSION] != "5") null else fields.builderRule()
+        if (fields.size != BUILDER_RECORD_FIELDS || fields[FIELD_VERSION] != "6") null else fields.builderRule()
     } catch (_: IllegalArgumentException) {
         null
     }

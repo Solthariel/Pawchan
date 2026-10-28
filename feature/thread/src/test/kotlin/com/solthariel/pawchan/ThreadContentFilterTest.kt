@@ -141,11 +141,11 @@ class ThreadContentFilterTest {
     }
 
     @Test
-    fun obsoleteReplyOnlyRuleIsRejectedAndDoesNotHidePosts() {
-        val obsolete = rule.copy(targets = ContentFilterTargets(threads = false, comments = true))
-        assertNotNull(contentFilterValidationError(obsolete))
+    fun ruleWithoutAnyPostKindIsRejectedAndDoesNotHidePosts() {
+        val invalid = rule.copy(targets = ContentFilterTargets(threads = false, comments = false))
+        assertNotNull(contentFilterValidationError(invalid))
         val raw = toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"))).copy(address = address)
-        val filtered = raw.filteredContent(listOf(obsolete)) as ThreadUiState.Content
+        val filtered = raw.filteredContent(listOf(invalid)) as ThreadUiState.Content
         assertTrue(filtered.posts.none { it.metadata.hidden })
         assertNull(filtered.presentation.contentFilterNotice)
         assertTrue(
@@ -153,6 +153,50 @@ class ThreadContentFilterTest {
                 .isEmpty(),
         )
         assertEquals(0, filtered.presentation.filteredComments)
+    }
+
+    @Test
+    fun replyOnlyRuleHidesMatchingCommentsWithoutOpNoticeOrNavigationLoss() {
+        val replies = rule.copy(targets = ContentFilterTargets(threads = false, comments = true))
+        assertNull(contentFilterValidationError(replies))
+        val raw =
+            toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"), toolsPost(3, "оставить")))
+                .copy(address = address)
+        val filtered = raw.filteredContent(listOf(replies)) as ThreadUiState.Content
+        assertNull(filtered.presentation.contentFilterNotice)
+        assertEquals(listOf(false, true, false), filtered.posts.map { it.metadata.hidden })
+        assertEquals(1, filtered.presentation.filteredComments)
+        assertEquals(
+            listOf(2L),
+            filtered.presentation.contentFilters.hits
+                .map { it.postId },
+        )
+        assertFalse(
+            filtered.presentation.contentFilters.hits
+                .single()
+                .originalPost,
+        )
+        assertEquals(raw.posts.map { it.id }, filtered.posts.map { it.id })
+        assertEquals(raw.presentation.postPositions, filtered.presentation.postPositions)
+        assertTrue(raw.posts.none { it.metadata.hidden })
+    }
+
+    @Test
+    fun opOnlyRuleProducesNoticeWithoutHidingMatchingComments() {
+        val op = rule.copy(targets = ContentFilterTargets(threads = true, comments = false))
+        assertNull(contentFilterValidationError(op))
+        val raw = toolsContent(listOf(toolsPost(1, "скрыть"), toolsPost(2, "скрыть"))).copy(address = address)
+        val filtered = raw.filteredContent(listOf(op)) as ThreadUiState.Content
+        assertEquals(op.label, filtered.presentation.contentFilterNotice)
+        assertTrue(filtered.posts.none { it.metadata.hidden })
+        assertEquals(0, filtered.presentation.filteredComments)
+        assertTrue(
+            filtered.presentation.contentFilters.hits
+                .isEmpty(),
+        )
+        assertEquals(raw.posts.map { it.id }, filtered.posts.map { it.id })
+        assertEquals(raw.presentation.postPositions, filtered.presentation.postPositions)
+        assertTrue(raw.posts.none { it.metadata.hidden })
     }
 
     @Test

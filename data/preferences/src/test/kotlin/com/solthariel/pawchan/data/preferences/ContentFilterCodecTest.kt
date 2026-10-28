@@ -14,7 +14,7 @@ import java.util.Base64
 class ContentFilterCodecTest {
     @Test fun newModesScopesFlagsAndUtf8RoundTrip() {
         for (mode in listOf(ContentFilterMode.PHRASE, ContentFilterMode.ANY_TERM, ContentFilterMode.ALL_TERMS)) {
-            for (boundary in FilterBoundary.entries) {
+            for (boundary in listOf(FilterBoundary.WORD, FilterBoundary.PART)) {
                 val rule =
                     ContentFilterRule(
                         "id",

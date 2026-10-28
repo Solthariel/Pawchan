@@ -58,7 +58,7 @@ internal fun validatePortablePreferences(source: Map<String, String>): Preferenc
                 ?: throw IllegalArgumentException("Неизвестная настройка: $name")
         copyPortableValue(result, field.key, field.value, encoded)
     }
-    return result
+    return discardUnsupportedFilterRecords(result)
 }
 
 private fun encodePortableValue(value: Any): String =

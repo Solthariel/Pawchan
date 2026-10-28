@@ -49,9 +49,6 @@ internal fun ContentFilterEditor(
             }
         },
     ) {
-        if (rule.options.textMatch.boundary == com.solthariel.pawchan.domain.filter.FilterBoundary.PREFIX) {
-            Text("Поиск по началу слова убран. При сохранении будет применён выбранный ниже способ совпадения.")
-        }
         FilterEditorFields(draft)
         ContentFilterProbe(next, samples, probeText) { probeText = it }
         if (error != null && !filterEmptyErrorIsInline(error, draft.text)) {

@@ -14,8 +14,10 @@ class ContentFilterBackupRecoveryTest {
     private val base = newContentFilterRule(defaultBoardAddress(), "кот")
 
     @Test fun oldBackupVersionsAreRejectedWithoutApplyingAnything() {
-        assertThrows(IllegalArgumentException::class.java) {
-            decodeContentFilterBackup("format=pawchan-autohide\nversion=1\nrules=0")
+        for (version in listOf(1, 2)) {
+            assertThrows(IllegalArgumentException::class.java) {
+                decodeContentFilterBackup("format=pawchan-autohide\nversion=$version\nrules=0")
+            }
         }
     }
 
@@ -27,7 +29,7 @@ class ContentFilterBackupRecoveryTest {
     }
 
     @Test fun flagsAndExceptionsSurviveRestoreExactly() {
-        for (boundary in FilterBoundary.entries) {
+        for (boundary in listOf(FilterBoundary.WORD, FilterBoundary.PART)) {
             val rule =
                 base.copy(
                     options =

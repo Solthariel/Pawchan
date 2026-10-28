@@ -31,7 +31,8 @@ class AppSettingsContentFiltersTest {
         val next = previous.withContentFilters(rules)
         assertEquals(rules, next.contentFilters)
         assertEquals(rules, next.behavior.contentFilters)
-        assertEquals(previous.copy(behavior = previous.behavior.copy(contentFilters = rules)), next)
+        val expected = previous.behavior.copy(autohide = previous.behavior.autohide.copy(rules = rules))
+        assertEquals(previous.copy(behavior = expected), next)
         assertEquals(emptyList<ContentFilterRule>(), previous.contentFilters)
         assertEquals(previous, next.withContentFilters(emptyList()))
     }

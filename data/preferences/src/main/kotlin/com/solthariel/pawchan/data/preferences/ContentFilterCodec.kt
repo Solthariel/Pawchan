@@ -11,7 +11,7 @@ internal fun encodeContentFilters(rules: List<ContentFilterRule>): String =
                 .contentFilterRecordValidationError(it) == null
         }.joinToString("\n") { rule ->
             listOf(
-                "5",
+                "6",
                 rule.id,
                 rule.site,
                 rule.boards.joinToString("\n"),

@@ -16,8 +16,8 @@ internal fun filterInputValues(
 internal fun filterModeLabel(mode: ContentFilterMode): String =
     when (mode) {
         ContentFilterMode.PHRASE -> "Фраза"
-        ContentFilterMode.ANY_TERM -> "Любое слово"
-        ContentFilterMode.ALL_TERMS -> "Все слова"
+        ContentFilterMode.ANY_TERM -> "Любой вариант"
+        ContentFilterMode.ALL_TERMS -> "Все условия"
         else -> "Неподдерживаемый формат"
     }
 
@@ -30,21 +30,21 @@ internal fun filterInputText(rule: ContentFilterRule): String = rule.values.join
 internal fun filterModeHint(mode: String): String =
     when (mode) {
         ContentFilterMode.ANY_TERM.name -> {
-            "Достаточно одного условия. Каждое слово или фраза — с новой строки."
+            "Достаточно любого варианта. Слова или фразы разделяйте запятыми или переносами строк."
         }
 
         ContentFilterMode.ALL_TERMS.name -> {
-            "Нужны все условия, порядок не важен. Каждое слово или фраза — с новой строки."
+            "Каждая строка — обязательное условие. Варианты внутри строки разделяйте запятыми. Порядок не важен."
         }
 
         else -> {
-            "Искать введённую фразу подряд. Пробелы и переносы имеют значение."
+            "Искать введённую фразу подряд. Запятые, пробелы и переносы — часть фразы."
         }
     }
 
 internal fun filterBoundaryHint(boundary: String): String =
     if (boundary == "PART") {
-        "«кот» найдётся в «котик», «скот» и «котлета». Регистр не важен."
+        "«кот» найдётся в «котик», «скот» и «котлета»."
     } else {
-        "«кот» найдётся отдельно, но не в «котик» и «скот». Регистр не важен."
+        "«кот» найдётся отдельно, но не в «котик» и «скот»."
     }

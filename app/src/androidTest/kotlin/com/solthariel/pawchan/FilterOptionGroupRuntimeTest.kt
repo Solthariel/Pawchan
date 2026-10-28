@@ -18,13 +18,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.settings.FilterOptionGroup
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class FilterOptionGroupRuntimeTest {
     @get:Rule val compose = createComposeRule()
-    private val options = listOf("phrase" to "Фраза", "any" to "Любое слово", "all" to "Все слова")
+    private val options = listOf("phrase" to "Фраза", "any" to "Любой вариант", "all" to "Все условия")
 
     @Test fun wholeButtonsSelectExactlyOneOptionAndRepeatedClickDoesNotClearIt() {
         var selected by mutableStateOf("phrase")
@@ -39,13 +40,17 @@ class FilterOptionGroupRuntimeTest {
             }
         }
         compose.onNodeWithText("Фраза").assertIsSelected()
-        compose.onNodeWithText("Любое слово").performClick().assertIsSelected()
+        compose.onNodeWithText("Любой вариант").performClick().assertIsSelected()
         compose.onNodeWithText("Фраза").assertIsNotSelected()
-        compose.onNodeWithText("Все слова").assertIsNotSelected()
-        compose.onNodeWithText("Любое слово").performClick().assertIsSelected()
+        compose.onNodeWithText("Все условия").assertIsNotSelected()
+        compose.onNodeWithText("Любой вариант").performClick().assertIsSelected()
         options.forEach { (_, label) -> compose.onNodeWithText(label).assertHeightIsAtLeast(48.dp) }
         val bounds = options.map { (_, label) -> compose.onNodeWithText(label).fetchSemanticsNode().boundsInRoot }
         assertTrue(bounds.all { kotlin.math.abs(it.top - bounds.first().top) < 1f })
+        bounds.forEach {
+            assertEquals(bounds.first().width, it.width, 1f)
+            assertEquals(bounds.first().height, it.height, 1f)
+        }
     }
 
     @Test fun largeFontsWrapChoicesWithoutOverlappingOrShrinkingTouchTargets() {

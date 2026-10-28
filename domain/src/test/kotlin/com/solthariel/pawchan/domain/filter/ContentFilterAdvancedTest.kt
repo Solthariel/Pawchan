@@ -9,9 +9,14 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ContentFilterAdvancedTest {
-    @Test fun boundariesDistinguishWholePrefixAndSubstring() {
+    @Test fun boundariesDistinguishWholeAndSubstringAndRejectRemovedPrefix() {
         for (boundary in FilterBoundary.entries) {
             val engine = ContentFilterEngine(listOf(builderRule(boundary = boundary)))
+            if (boundary == FilterBoundary.PREFIX) {
+                assertNotNull(contentFilterValidationError(builderRule(boundary = boundary)))
+                assertNull(engine.comment(builderBoard, "кот"))
+                continue
+            }
             assertNotNull(engine.comment(builderBoard, "кот"))
             assertEquals(boundary != FilterBoundary.WORD, engine.comment(builderBoard, "котик") != null)
             assertEquals(boundary == FilterBoundary.PART, engine.comment(builderBoard, "скот") != null)
@@ -37,9 +42,9 @@ class ContentFilterAdvancedTest {
     }
 
     @Test fun exceptionsShareCaseAndBoundaryPolicy() {
-        val rule = builderRule(boundary = FilterBoundary.PREFIX, exceptions = listOf("приют"))
+        val rule = builderRule(boundary = FilterBoundary.PART, exceptions = listOf("приют"))
         assertNull(ContentFilterEngine(listOf(rule)).comment(builderBoard, "котик ПРИЮТский"))
-        val sensitive = rule.copy(options = rule.options.copy(textMatch = FilterTextMatch(FilterBoundary.PREFIX, true)))
+        val sensitive = rule.copy(options = rule.options.copy(textMatch = FilterTextMatch(FilterBoundary.PART, true)))
         assertNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик ПРИЮТский"))
         assertNull(ContentFilterEngine(listOf(sensitive)).comment(builderBoard, "котик приютский"))
     }

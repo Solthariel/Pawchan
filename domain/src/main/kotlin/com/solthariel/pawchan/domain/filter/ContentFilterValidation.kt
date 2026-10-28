@@ -14,16 +14,20 @@ fun contentFilterRecordValidationError(rule: ContentFilterRule): String? =
                 "$MAX_FILTER_CONDITION_CHARACTERS символов в условии"
         }
 
-        !rule.threads || !rule.comments || rule.fields != ContentFilterFields.EITHER ||
+        (!rule.threads && !rule.comments) || rule.fields != ContentFilterFields.EITHER ||
             !rule.targets.catalog || !rule.targets.thread -> {
-            "Правило должно применяться ко всем постам и обоим полям"
+            "Выберите ОП-посты, комментарии или все посты; проверяются заголовок и текст"
+        }
+
+        rule.options.textMatch.boundary == FilterBoundary.PREFIX -> {
+            "Выберите совпадение слова целиком или по части"
         }
 
         rule.mode == ContentFilterMode.PHRASE && rule.values.size != 1 -> {
             "Введите одну фразу"
         }
 
-        rule.values.isEmpty() || rule.values.any { it.isBlank() } -> {
+        rule.values.isEmpty() || rule.conditionGroups().any { it.isEmpty() || it.any(String::isBlank) } -> {
             "Условие пустое"
         }
 

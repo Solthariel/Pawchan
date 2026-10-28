@@ -27,6 +27,11 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
             FilterLineInput("Треды", draft.threadIds, { draft.threadIds = it }, Modifier.weight(1f), singleLine = true)
         }
         FilterOptionGroup(
+            "Где скрывать",
+            FilterPostScope.entries.map { it.name to it.label },
+            draft.postScope,
+        ) { draft.postScope = it }
+        FilterOptionGroup(
             "Как искать",
             FILTER_EDITOR_MODES.map { it.name to filterModeLabel(it) },
             draft.mode,
@@ -41,8 +46,8 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
         Text(filterBoundaryHint(draft.boundary), style = MaterialTheme.typography.bodySmall)
         FilterLineInput("Не скрывать, если есть…", draft.exceptions, { draft.exceptions = it })
         Text(
-            "Каждое исключение — с новой строки. Совпадение любого из них оставит пост видимым. " +
-                "Выбранный способ совпадения действует и на исключения. Регистр не важен.",
+            "Исключения разделяйте запятыми или переносами строк. Любое совпадение оставит пост видимым. " +
+                "Выбранный способ совпадения действует и на исключения.",
             style = MaterialTheme.typography.bodySmall,
         )
     }

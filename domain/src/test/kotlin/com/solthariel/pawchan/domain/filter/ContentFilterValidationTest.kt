@@ -32,11 +32,13 @@ class ContentFilterValidationTest {
         )
     }
 
-    @Test fun phraseRequiresOneTermAndBuilderRequiresBothFieldsAndPostKinds() {
+    @Test fun phraseRequiresOneTermAndBuilderRequiresAtLeastOnePostKind() {
         val rule = builderRule(terms = listOf("кот", "собака"))
         assertNotNull(contentFilterValidationError(rule))
         assertNotNull(
-            contentFilterValidationError(builderRule().copy(targets = ContentFilterTargets(comments = false))),
+            contentFilterValidationError(
+                builderRule().copy(targets = ContentFilterTargets(threads = false, comments = false)),
+            ),
         )
         assertNull(
             contentFilterValidationError(builderRule(ContentFilterMode.ALL_TERMS, listOf("кот", "собака"))),

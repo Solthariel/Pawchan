@@ -13,6 +13,7 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppBehavior
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
+import com.solthariel.pawchan.domain.settings.AutohidePreferences
 import com.solthariel.pawchan.domain.settings.DnsProvider
 import com.solthariel.pawchan.domain.settings.ServiceDns
 import com.solthariel.pawchan.domain.settings.ServiceDnsPreferences
@@ -55,7 +56,11 @@ internal fun Preferences.toAppSettings(): AppSettings {
             AppBehavior(
                 postCountEnabled = this[POST_COUNT] ?: defaults.postCountEnabled,
                 client = readClientPreferences(),
-                contentFilters = decodeContentFilters(this[CONTENT_FILTERS].orEmpty()),
+                autohide =
+                    AutohidePreferences(
+                        decodeContentFilters(this[CONTENT_FILTER_RECORDS].orEmpty()),
+                        this[CONTENT_FILTER_RESET_NOTICE] ?: false,
+                    ),
                 showHiddenThreads = this[SHOW_HIDDEN_THREADS] ?: defaults.behavior.showHiddenThreads,
                 videoStartMuted = this[VIDEO_MUTED] ?: defaults.behavior.videoStartMuted,
                 updateSavedCopies = this[UPDATE_COPIES] ?: defaults.behavior.updateSavedCopies,
@@ -66,7 +71,8 @@ internal fun Preferences.toAppSettings(): AppSettings {
 
 internal fun MutablePreferences.write(settings: AppSettings) {
     writeClientPreferences(settings.behavior.client)
-    this[CONTENT_FILTERS] = encodeContentFilters(settings.contentFilters)
+    this[CONTENT_FILTER_RECORDS] = encodeContentFilters(settings.contentFilters)
+    this[CONTENT_FILTER_RESET_NOTICE] = settings.behavior.contentFilterResetNotice
     this[SHOW_HIDDEN_THREADS] = settings.behavior.showHiddenThreads
     this[POST_MARKERS] = settings.postMarkers
     this[BUBBLE_POSTS] = settings.bubblePosts
@@ -85,7 +91,6 @@ internal fun MutablePreferences.write(settings: AppSettings) {
     this[VOCAROO_DNS_URL] = settings.behavior.dns.vocaroo.customUrl
 }
 
-private val CONTENT_FILTERS = stringPreferencesKey("app_content_filters_v1")
 private val BUBBLE_POSTS = booleanPreferencesKey("app_bubble_posts")
 private val HIDE_STICKERS = booleanPreferencesKey("app_hide_stickers")
 private val POST_COUNT = booleanPreferencesKey("app_postcount_enabled")

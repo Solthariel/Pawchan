@@ -10,7 +10,7 @@ import java.util.Base64
 
 class ContentFilterV3Test {
     @Test fun oldRecordsAreDiscardedRatherThanMigrated() {
-        for (version in listOf("1", "2", "3", "4")) {
+        for (version in listOf("1", "2", "3", "4", "5")) {
             val fields = listOf(version, "old", "dvach", "b", "true", "true", "true", "EITHER", "REGEX", "кот")
             val record = fields.joinToString("\t") { Base64.getEncoder().encodeToString(it.toByteArray()) }
             assertEquals(emptyList<ContentFilterRule>(), decodeContentFilters(record))

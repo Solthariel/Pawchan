@@ -63,7 +63,7 @@ class ContentFilterModeRoundTripTest {
     }
 
     @Test
-    fun legacyAtomicValuesAreNotRewrittenOnOpen() {
+    fun groupRowsAndTheirAlternativesAreNotRewrittenOnOpen() {
         val saved =
             base.copy(
                 condition = ContentFilterConditionSpec(ContentFilterMode.ALL_TERMS, listOf("два слова", "ещё, пример")),

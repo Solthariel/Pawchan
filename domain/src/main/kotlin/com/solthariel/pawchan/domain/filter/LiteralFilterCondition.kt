@@ -7,15 +7,15 @@ internal class LiteralFilterCondition(
     private val rule: ContentFilterRule,
 ) {
     private val flags = Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
-    private val terms = rule.values.map { Pattern.compile(Pattern.quote(it), flags) }
+    private val groups = rule.conditionGroups().map { group -> group.map { Pattern.compile(Pattern.quote(it), flags) } }
     private val exceptions =
         rule.options.exceptions
-            .filter(String::isNotBlank)
+            .flatMap(::filterAlternatives)
             .map { Pattern.compile(Pattern.quote(it), flags) }
 
     fun ranges(source: String): List<IntRange>? {
-        if (terms.isEmpty() || exceptions.any { firstRange(it, source) != null }) return null
-        val found = terms.map { firstRange(it, source) }
+        if (groups.isEmpty() || exceptions.any { firstRange(it, source) != null }) return null
+        val found = groups.map { group -> group.firstNotNullOfOrNull { firstRange(it, source) } }
         return when {
             rule.mode == ContentFilterMode.ALL_TERMS && found.any { it == null } -> null
             else -> found.filterNotNull().takeIf { it.isNotEmpty() }
@@ -43,7 +43,7 @@ internal class LiteralFilterCondition(
         val boundary = rule.options.textMatch.boundary
         val left = start == 0 || !filterWordCodePoint(source.codePointBefore(start))
         val right = end == source.length || !filterWordCodePoint(source.codePointAt(end))
-        return boundary == FilterBoundary.PART || (left && (boundary == FilterBoundary.PREFIX || right))
+        return boundary == FilterBoundary.PART || (left && right)
     }
 }
 

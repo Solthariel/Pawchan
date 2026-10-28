@@ -40,6 +40,13 @@ internal fun ContentFilterSettings(
         ContentFilterMenuActions({ editing = "new" }, backup, { statisticsVisible = true }, { helpVisible = true })
     Column(Modifier.fillMaxSize()) {
         ContentFilterToolbar(onBack, search, menu)
+        if (state.app.behavior.contentFilterResetNotice) {
+            ContentFilterResetNotice {
+                actions.onUpdate { app ->
+                    app.copy(behavior = app.behavior.copy(autohide = app.behavior.autohide.copy(resetNotice = false)))
+                }
+            }
+        }
         ContentFilterRulesList(
             visible,
             statistics,

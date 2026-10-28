@@ -13,7 +13,7 @@ internal fun encodeContentFilterBackup(rules: List<ContentFilterRule>): String {
     require(rules.size <= FILTER_BACKUP_MAX_ITEMS) { "Слишком много правил" }
     val data = Properties()
     data.setProperty("format", "pawchan-autohide")
-    data.setProperty("version", "2")
+    data.setProperty("version", "3")
     data.setProperty("rules", rules.size.toString())
     rules.forEachIndexed { index, rule -> writeBackupRule(data, "rule.$index.", rule) }
     val text = StringWriter().also { data.store(it, "Pawchan autohide - UTF-8") }.toString()
@@ -26,7 +26,7 @@ internal fun decodeContentFilterBackup(source: String): List<ContentFilterRule> 
     val data = UniqueBackupProperties()
     data.load(StringReader(source.removePrefix("\uFEFF")))
     require(data.getProperty("format") == "pawchan-autohide") { "Это не резервная копия правил Pawchan" }
-    require(data.getProperty("version") == "2") { "Неподдерживаемая версия резервной копии" }
+    require(data.getProperty("version") == "3") { "Неподдерживаемая версия резервной копии" }
     val count = requireNotNull(data.getProperty("rules")).toInt()
     require(count in 0..FILTER_BACKUP_MAX_ITEMS) { "Некорректное число правил" }
     return List(count) { index -> readBackupRule(BackupFields(data, "rule.$index.")) }

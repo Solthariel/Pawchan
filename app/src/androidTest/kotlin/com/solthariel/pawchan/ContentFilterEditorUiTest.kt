@@ -46,7 +46,7 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithContentDescription("Добавить правило").performClick()
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Что искать").performScrollTo().performTextInput("голова дай денег")
-        compose.onNodeWithText("Любое слово").performScrollTo().performClick()
+        compose.onNodeWithText("Любой вариант").performScrollTo().performClick()
         compose.onNodeWithText("Учитывать регистр").assertDoesNotExist()
         compose.onNodeWithText("Часть слова").performScrollTo().performClick()
         compose.runOnIdle {
@@ -78,8 +78,8 @@ class ContentFilterEditorUiTest {
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
-        compose.onNodeWithText("Любое слово").assertExists()
-        compose.onNodeWithText("Любое слово").performScrollTo().performClick()
+        compose.onNodeWithText("Любой вариант").assertExists()
+        compose.onNodeWithText("Любой вариант").performScrollTo().performClick()
         compose.onNodeWithText("Отмена").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
     }
