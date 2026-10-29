@@ -23,7 +23,7 @@ public final class PawPlayback implements AutoCloseable {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final PlaybackHandle handle = new PlaybackHandle();
     private final PcmOutput audio = new PcmOutput();
-    final PublishedInput input = new PublishedInput(() -> busy(true), () -> busy(false));
+    final PublishedInput input;
     public final PlaybackControls controls = new PlaybackControls(handle, audio);
     public final PlaybackFacts facts = new PlaybackFacts(handle);
     public final PlaybackVideo video = new PlaybackVideo(handle, facts, () -> dispatch(l -> l.onVideoOutputReset(this)));
@@ -31,7 +31,11 @@ public final class PawPlayback implements AutoCloseable {
     private Thread decoder;
     private boolean closed;
     private volatile IOException openingError;
-    public PawPlayback(Listener listener) { this.listener = listener; }
+    public PawPlayback(Listener listener) { this(listener, TimingProbe.disabled()); }
+    public PawPlayback(Listener listener, TimingProbe timing) {
+        this.listener = listener;
+        input = new PublishedInput(() -> busy(true), () -> busy(false), timing);
+    }
     public static void loadLibraries() { Libraries.ensure(); }
     public void init(File file, RangeCallback callback) throws IOException {
         input.open(file, callback);

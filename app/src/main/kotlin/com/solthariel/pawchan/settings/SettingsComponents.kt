@@ -3,15 +3,15 @@ package com.solthariel.pawchan.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -86,32 +86,19 @@ internal fun SettingsRow(
     toggleState: Boolean? = null,
     trailing: @Composable () -> Unit = {},
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .then(
-                when {
-                    toggleState != null -> Modifier.toggleable(toggleState, role = Role.Switch) { onClick?.invoke() }
-                    onClick != null -> Modifier.clickable(onClick = onClick)
-                    else -> Modifier
-                },
-            ).heightIn(min = if (summary.isNullOrBlank()) SETTINGS_SINGLE_ROW_HEIGHT else SETTINGS_DOUBLE_ROW_HEIGHT)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = titleColor, style = MaterialTheme.typography.bodyLarge)
-            summary?.let {
-                Text(
-                    it,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+    val interaction =
+        when {
+            toggleState != null -> Modifier.toggleable(toggleState, role = Role.Switch) { onClick?.invoke() }
+            onClick != null -> Modifier.clickable(onClick = onClick)
+            else -> Modifier
         }
-        Spacer(Modifier.width(12.dp))
-        trailing()
-    }
+    ListItem(
+        headlineContent = { Text(title, color = titleColor) },
+        supportingContent = summary?.let { caption -> { Text(caption) } },
+        trailingContent = trailing,
+        modifier = Modifier.fillMaxWidth().then(interaction),
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
 }
 
 @Composable

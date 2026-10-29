@@ -3,6 +3,7 @@ package com.solthariel.pawchan.settings
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -17,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
-import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 @Composable
 internal fun UsagePeriodOptions(

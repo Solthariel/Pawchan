@@ -16,7 +16,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiChoiceSegments
 
-/** Same centered, outlined cells as quality selection; stack at large text sizes. */
+/** Shared Material segments; stack before labels run out of room at large text sizes. */
 @Composable
 internal fun FilterOptionGroup(
     title: String,
@@ -31,7 +31,7 @@ internal fun FilterOptionGroup(
         options.flatMap { it.second.split(' ') }.maxOf {
             measurer.measure(AnnotatedString(it), style).size.width
         }
-    val minimum = with(density) { widestWord.toDp() } + 16.dp
+    val minimum = with(density) { widestWord.toDp() } + 32.dp
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, style = MaterialTheme.typography.labelLarge)
         BoxWithConstraints(Modifier.fillMaxWidth().selectableGroup().testTag("filter-options-$title")) {

@@ -43,7 +43,8 @@ class ImageQualityControlRuntimeTest {
             assertEquals(cells.first().width, it.width, 1f)
             assertEquals(cells.first().height, it.height, 1f)
         }
-        assertTrue(cells.zipWithNext().all { (left, right) -> left.right < right.left })
+        // Material segments share an outline; labels/click targets stay ordered without a gap.
+        assertTrue(cells.zipWithNext().all { (left, right) -> left.left < right.left && left.right <= right.right })
         compose.onNodeWithText("85%").performClick().assertIsSelected()
         compose.runOnIdle { assertEquals(85, quality.value) }
         compose.onNodeWithContentDescription("Ввести качество JPEG").performClick()

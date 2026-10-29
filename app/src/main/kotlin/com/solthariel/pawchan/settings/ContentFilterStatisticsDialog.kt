@@ -58,7 +58,7 @@ private fun FilterStatisticsResetConfirmation(
     close: () -> Unit,
     reset: () -> Unit,
 ) {
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = close,
         title = { Text("Сбросить статистику?") },
         text = { Text("Счётчики обнулятся. Правила и настройка скрытых тредов останутся без изменений.") },

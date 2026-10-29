@@ -11,7 +11,12 @@ namespace paw {
 Input::Input(JNIEnv* env, jobject reader) : env_(env), reader_(reader) {
     jclass type = env->GetObjectClass(reader);
     read_ = env->GetMethodID(type, "read", "(J[BI)I");
-    length_ = env->GetMethodID(type, "length", "()J"); env->DeleteLocalRef(type);
+    length_ = env->GetMethodID(type, "length", "()J");
+    jmethodID enabled = env->GetMethodID(type, "timingEnabled", "()Z");
+    timing_ = env->GetMethodID(type, "timingStage", "(IJ)V");
+    if (!env->ExceptionCheck() && enabled && timing_) tracing_ = env->CallBooleanMethod(reader, enabled);
+    if (env->ExceptionCheck()) env->ExceptionClear();
+    env->DeleteLocalRef(type);
     jbyteArray local = env->NewByteArray(32768);
     buffer_ = local ? static_cast<jbyteArray>(env->NewGlobalRef(local)) : nullptr;
     if (local) env->DeleteLocalRef(local);
@@ -19,6 +24,11 @@ Input::Input(JNIEnv* env, jobject reader) : env_(env), reader_(reader) {
     if (bytes && buffer_ && read_ && length_)
         io = avio_alloc_context(bytes, 32768, 0, this, read, nullptr, seek);
     if (!io) av_free(bytes);
+}
+void Input::timing(int stage, int64_t micros) {
+    if (!tracing_ || env_->ExceptionCheck()) return;
+    env_->CallVoidMethod(reader_, timing_, stage, static_cast<jlong>(micros));
+    if (env_->ExceptionCheck()) env_->ExceptionClear();
 }
 Input::~Input() {
     if (io) { av_freep(&io->buffer); avio_context_free(&io); }

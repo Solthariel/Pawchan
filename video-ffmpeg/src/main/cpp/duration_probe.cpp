@@ -1,5 +1,6 @@
 #include "duration_probe.hpp"
 #include "transport.hpp"
+#include "timing_scope.hpp"
 #include <algorithm>
 #include <cerrno>
 extern "C" {
@@ -112,7 +113,11 @@ int64_t DurationProbe::check(JNIEnv* env, jobject reader, AVFormatContext* sourc
     finished_ = true;
     Scan scan(env, reader, quit);
     int64_t origin = source->start_time != AV_NOPTS_VALUE ? source->start_time : 0;
-    int64_t observed = measure(scan, total, origin);
+    int64_t observed;
+    {
+        TimingScope timing(scan.input, 4);
+        observed = measure(scan, total, origin);
+    }
     int64_t declared = source->duration > 0 ? source->duration / 1000 : 0;
     return observed > 0 && std::max(declared, observed) - std::min(declared, observed) > 1000 ? observed : 0;
 }

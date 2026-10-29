@@ -4,6 +4,8 @@
     int read(long, byte[], int);
     long length();
     boolean complete();
+    boolean timingEnabled();
+    void timingStage(int, long);
 }
 -keepclassmembers class com.solthariel.pawchan.ffmpeg.PcmOutput {
     void configure();

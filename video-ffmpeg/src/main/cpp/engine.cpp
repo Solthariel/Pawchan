@@ -1,5 +1,6 @@
 #include "engine.hpp"
 #include "frames.hpp"
+#include "timing_scope.hpp"
 #include <chrono>
 #include <cmath>
 extern "C" {
@@ -20,9 +21,18 @@ bool Engine::open(JNIEnv* env, jobject reader, jobject output, bool software) {
     format_->interrupt_callback = AVIOInterruptCB{interrupted, this};
     format_->protocol_whitelist = av_strdup("");
     if (!format_->protocol_whitelist) return false;
-    if (avformat_open_input(&format_, "", nullptr, nullptr) < 0 ||
-            avformat_find_stream_info(format_, nullptr) < 0) return false;
-    if (!video_.open(format_, AVMEDIA_TYPE_VIDEO, software) || !sound_.open(format_, AVMEDIA_TYPE_AUDIO, true)) return false;
+    {
+        TimingScope timing(*input_, 1);
+        if (avformat_open_input(&format_, "", nullptr, nullptr) < 0) return false;
+    }
+    {
+        TimingScope timing(*input_, 2);
+        if (avformat_find_stream_info(format_, nullptr) < 0) return false;
+    }
+    {
+        TimingScope timing(*input_, 3);
+        if (!video_.open(format_, AVMEDIA_TYPE_VIDEO, software) || !sound_.open(format_, AVMEDIA_TYPE_AUDIO, true)) return false;
+    }
     origin_ = format_->start_time == AV_NOPTS_VALUE ? 0 : format_->start_time;
     if (format_->duration != AV_NOPTS_VALUE) duration_ = std::max<int64_t>(0, format_->duration / 1000);
     declaredDuration_ = duration_;

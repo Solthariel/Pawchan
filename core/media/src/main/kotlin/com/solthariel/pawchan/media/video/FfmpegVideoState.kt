@@ -4,8 +4,10 @@ import android.content.Context
 import android.os.Handler
 import android.widget.Toast
 import com.solthariel.pawchan.core.media.R
+import com.solthariel.pawchan.ffmpeg.MediaTiming
 import com.solthariel.pawchan.ffmpeg.PawPlayback
 import com.solthariel.pawchan.ffmpeg.ProgressiveSource
+import com.solthariel.pawchan.ffmpeg.TimingProbe
 import okhttp3.OkHttpClient
 import java.io.File
 import java.io.IOException
@@ -41,6 +43,8 @@ internal class FfmpegVideoState(
     private var initializingGeneration = -1
 
     private val stall = VideoStallDiagnostics()
+    private var timing = MediaTiming.create()
+    private var firstOutput = false
 
     private val polling =
         object : Runnable {
@@ -65,7 +69,10 @@ internal class FfmpegVideoState(
         requestedPlaying = true
         busy = true
         ended = false
-        val next = PawPlayback(listener(token))
+        timing = MediaTiming.create()
+        firstOutput = false
+        timing.mark(TimingProbe.Event.OPEN, 0)
+        val next = PawPlayback(listener(token), timing)
         next.controls.setHardwareEnabled(!software)
         next.controls.setPlaybackSpeed(speed)
         next.controls.setVolume(volume)
@@ -79,6 +86,7 @@ internal class FfmpegVideoState(
 
             sourceKey == source && this.source != null -> {
                 val existing = checkNotNull(this.source)
+                timing.mark(TimingProbe.Event.SOURCE_REUSED, existing.timingId().toLong())
                 existing.bind(next)
                 existing.file?.let { initialize(it, next, token, existing) }
             }
@@ -120,6 +128,7 @@ internal class FfmpegVideoState(
                         }
                     }
                 },
+                timing,
             )
         source = download
         download.bind(next)
@@ -134,6 +143,7 @@ internal class FfmpegVideoState(
     ) {
         if (initializingGeneration == token) return
         initializingGeneration = token
+        timing.mark(TimingProbe.Event.INITIALIZE, 0)
         worker.execute {
             if (closed || token != generation) return@execute
             try {
@@ -155,6 +165,7 @@ internal class FfmpegVideoState(
         token: Int,
     ) {
         if (closed || token != generation) return
+        timing.mark(TimingProbe.Event.INITIALIZED, 0)
         initialized = true
         busy = false
         signalNextFrame()
@@ -169,7 +180,13 @@ internal class FfmpegVideoState(
     fun signalNextFrame() {
         val token = generation
         player?.video?.onFrame {
-            if (!closed && token == generation) emit(VideoEvent.VIDEO_OUTPUT)
+            if (!closed && token == generation) {
+                if (!firstOutput) {
+                    firstOutput = true
+                    timing.mark(TimingProbe.Event.FIRST_OUTPUT, 0)
+                }
+                emit(VideoEvent.VIDEO_OUTPUT)
+            }
         }
     }
 
@@ -239,6 +256,7 @@ internal class FfmpegVideoState(
     }
 
     fun stop() {
+        timing.mark(TimingProbe.Event.STOP, 0)
         generation += 1
         main.removeCallbacks(polling)
         initialized = false

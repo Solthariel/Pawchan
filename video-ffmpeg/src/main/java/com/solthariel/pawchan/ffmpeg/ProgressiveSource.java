@@ -23,6 +23,7 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
         void onError(IOException error);
     }
     private static final long MAX_BYTES = 1024L * 1024 * 1024;
+    private final TimingProbe timing;
     private final OkHttpClient client;
     private final File directory;
     private final String url;
@@ -46,13 +47,18 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
     private volatile boolean rangesAllowed = true;
 
     public ProgressiveSource(OkHttpClient client, File directory, String url, Listener listener) {
+        this(client, directory, url, listener, TimingProbe.disabled());
+    }
+    public ProgressiveSource(OkHttpClient client, File directory, String url, Listener listener, TimingProbe timing) {
+        this.timing = timing;
         this.client = client;
         this.directory = directory;
         this.url = url;
         this.listener = listener;
     }
-    public void start() { sequential.execute(this::download); }
+    public void start() { timing.mark(TimingProbe.Event.GET_START, 0); sequential.execute(this::download); }
     public File getFile() { return file; }
+    public int timingId() { return timing.id(); }
     public long getProgress() { return progress; }
     public boolean isComplete() { return complete; }
     public void bind(PawPlayback player) { this.player = player; }
@@ -66,12 +72,14 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
             primaryCall = call;
             if (closed) { call.cancel(); return; }
             try (Response response = call.execute()) {
+                timing.mark(TimingProbe.Event.GET_HEADERS, response.code());
                 if (response.code() != 200) throw new IOException("Video HTTP " + response.code());
                 if (!"identity".equalsIgnoreCase(response.header("Content-Encoding", "identity")))
                     throw new IOException("Video server ignored identity encoding");
                 ResponseBody body = response.body();
                 if (body == null) throw new IOException("Empty response body");
                 total = body.contentLength();
+                timing.mark(TimingProbe.Event.GET_LENGTH, total);
                 if (total > MAX_BYTES) throw new IOException("Video exceeds 1 GiB safety limit");
                 String etag = response.header("ETag");
                 validator = etag != null && !etag.startsWith("W/") ? etag : null;
@@ -81,10 +89,12 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
                 if (progress == 0 || (total >= 0 && progress != total)) throw new IOException("Incomplete video GET");
                 total = progress;
                 complete = true;
+                timing.mark(TimingProbe.Event.GET_COMPLETE, progress);
                 cancelRange();
                 publishProgress();
             }
         } catch (IOException error) {
+            timing.mark(TimingProbe.Event.GET_ERROR, closed ? 1 : 0);
             if (!closed) listener.onError(error);
         } finally {
             primaryCall = null;
@@ -105,7 +115,8 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
             return;
         }
         // Without an entity validator concurrent requests could merge different files.
-        if (validator == null && lastModified == null) { rangesAllowed = false; publishProgress(); return; }
+        if (validator == null && lastModified == null) { timing.mark(TimingProbe.Event.RANGE_NO_VALIDATOR, start); rangesAllowed = false; publishProgress(); return; }
+        timing.mark(TimingProbe.Event.RANGE_REQUEST, start);
         long token = rangeGeneration.get();
         ranges.execute(() -> downloadRange(start, token));
     }
@@ -116,7 +127,9 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
         rangeCall = call;
         if (closed || token != rangeGeneration.get()) { call.cancel(); return; }
         try (Response response = call.execute()) {
+            timing.mark(TimingProbe.Event.RANGE_HEADERS, response.code());
             if (response.code() == 200 || response.code() == 416) {
+                timing.mark(TimingProbe.Event.RANGE_UNAVAILABLE, response.code());
                 rangesAllowed = false;
                 publishProgress();
                 return;
@@ -132,6 +145,7 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
                 throw new IOException("Range body length mismatch");
             copy(body.byteStream(), file, start, range.endExclusive, true, token);
         } catch (IOException error) {
+            timing.mark(TimingProbe.Event.RANGE_ERROR, closed ? 1 : 0);
             // A failed optional range never discards the sequential download.
             if (!closed && token == rangeGeneration.get()) { rangesAllowed = false; publishProgress(); }
         } finally {
@@ -151,6 +165,7 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
                 if (position > MAX_BYTES - count || (expectedEnd >= 0 && position + count > expectedEnd))
                     throw new IOException("Video response exceeds declared limit");
                 output.write(buffer, 0, count);
+                if (!partial && position == 0) timing.mark(TimingProbe.Event.GET_FIRST_BYTES, count);
                 position += count;
                 if (partial) {
                     PawPlayback active = player;
@@ -169,6 +184,7 @@ public final class ProgressiveSource implements PawPlayback.RangeCallback, AutoC
         if (call != null) call.cancel();
     }
     @Override public void close() {
+        timing.mark(TimingProbe.Event.SOURCE_CLOSE, progress);
         closed = true;
         player = null;
         Call call = primaryCall;

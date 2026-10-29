@@ -119,9 +119,13 @@ class SettingsLayoutRuntimeTest {
     @Test
     fun statisticValueSitsBesideItsLabelInsteadOfBelow() {
         compose.setContent { MaterialTheme { UsageValueRow("Открыто тредов", "123") } }
+        compose.onNodeWithText("Открыто тредов").assertIsDisplayed()
+        compose.onNodeWithText("123").assertIsDisplayed()
         val label = compose.onNodeWithText("Открыто тредов").fetchSemanticsNode().boundsInRoot
         val value = compose.onNodeWithText("123").fetchSemanticsNode().boundsInRoot
-        assertEquals(label.center.y, value.center.y, 1f)
+        assertTrue("Label was not laid out: $label", label.width > 0f && label.height > 0f)
+        assertTrue("Value was not laid out: $value", value.width > 0f && value.height > 0f)
+        assertEquals("label=$label, value=$value", label.center.y, value.center.y, 1f)
         assertTrue(value.left > label.right)
     }
 

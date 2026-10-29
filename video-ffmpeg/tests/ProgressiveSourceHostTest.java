@@ -25,6 +25,8 @@ public class ProgressiveSourceHostTest {
         CountDownLatch rangeDone = new CountDownLatch(1);
         CountDownLatch fileReady = new CountDownLatch(1);
         AtomicReference<IOException> failure = new AtomicReference<>();
+        java.util.List<String> events = new java.util.concurrent.CopyOnWriteArrayList<>();
+        TimingProbe timing = new TimingProbe(true, System::nanoTime, events::add);
         HttpServer server = HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
         java.util.concurrent.ExecutorService network = java.util.concurrent.Executors.newFixedThreadPool(2);
         server.setExecutor(network);
@@ -59,7 +61,7 @@ public class ProgressiveSourceHostTest {
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/video", new ProgressiveSource.Listener() {
             public void onFile(File file) { fileReady.countDown(); }
             public void onError(IOException e) { failure.set(e); }
-        });
+        }, timing);
         try {
             source.start();
             assertTrue(fileReady.await(3, TimeUnit.SECONDS));
@@ -67,7 +69,11 @@ public class ProgressiveSourceHostTest {
             assertFalse(source.isComplete());
             source.requestPartFromPosition(128);
             assertTrue(rangeDone.await(3, TimeUnit.SECONDS));
+            // Wait for the client to observe the headers before completing the primary GET,
+            // which is allowed to cancel the optional range as soon as the file is complete.
+            await(() -> events.stream().anyMatch(line -> line.contains("event=RANGE_HEADERS value=" + rangeStatus)));
             if (rangeStatus != 206) {
+                await(() -> events.stream().anyMatch(line -> line.contains("event=RANGE_UNAVAILABLE value=" + rangeStatus)));
                 Thread.sleep(100);
                 assertEquals("Full response must not be appended at range offset", 64, source.getFile().length());
             }
@@ -75,6 +81,14 @@ public class ProgressiveSourceHostTest {
             await(source::isComplete);
             assertNull(failure.get());
             assertArrayEquals(bytes, Files.readAllBytes(source.getFile().toPath()));
+            await(() -> events.stream().anyMatch(line -> line.contains("event=GET_COMPLETE value=256")));
+            assertTrue(events.stream().anyMatch(line -> line.contains("event=GET_HEADERS value=200")));
+            assertTrue(events.stream().anyMatch(line -> line.contains("event=GET_FIRST_BYTES value=64")));
+            assertTrue(events.stream().anyMatch(line -> line.contains("event=RANGE_HEADERS value=" + rangeStatus)));
+            if (rangeStatus != 206) {
+                assertTrue(events.stream().anyMatch(line -> line.contains("event=RANGE_UNAVAILABLE value=" + rangeStatus)));
+            }
+            assertTrue(events.stream().noneMatch(line -> line.contains("127.0.0.1") || line.contains("same-file")));
         } finally {
             resume.countDown(); source.close(); source.deleteFile(); server.stop(0); network.shutdownNow();
             directory.delete();

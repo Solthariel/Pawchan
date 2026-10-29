@@ -1,5 +1,6 @@
 package com.solthariel.pawchan
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -75,17 +76,32 @@ class SettingsToolbarUiTest {
 
     @Test
     fun tappingSelectedSettingsTabClosesSearchAndClearsItsQuery() {
-        showSettings()
-        compose.onNodeWithText("Интерфейс").performClick()
-        compose.onNodeWithContentDescription("Поиск настроек").performClick()
-        compose.onNodeWithContentDescription("Поиск настроек").performTextInput("зеркало")
-        compose.onNodeWithContentDescription("Поиск настроек").assertTextEquals("зеркало")
-        compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Настройки").performClick()
-        compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
-        compose.onNodeWithText("Медиа").assertIsDisplayed()
-        compose.onNodeWithText("Интерфейс").performClick()
-        compose.onNodeWithText("Тема оформления").assertIsDisplayed()
+        searchStep("set-content") { showSettings() }
+        searchStep("open-appearance") { compose.onNodeWithText("Интерфейс").performClick() }
+        searchStep("open-search") { compose.onNodeWithContentDescription("Поиск настроек").performClick() }
+        searchStep("type-query") { compose.onNodeWithContentDescription("Поиск настроек").performTextInput("зеркало") }
+        searchStep("check-results") {
+            compose.onNodeWithContentDescription("Поиск настроек").assertTextEquals("зеркало")
+            compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
+        }
+        searchStep("return-to-settings") { compose.onNodeWithContentDescription("Настройки").performClick() }
+        searchStep("check-search-closed") {
+            compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
+            compose.onNodeWithText("Медиа").assertIsDisplayed()
+        }
+        searchStep("reopen-appearance") {
+            compose.onNodeWithText("Интерфейс").performClick()
+            compose.onNodeWithText("Тема оформления").assertIsDisplayed()
+        }
+    }
+
+    private fun searchStep(
+        name: String,
+        action: () -> Unit,
+    ) {
+        Log.i("PawchanUiTest", "START $name")
+        action()
+        Log.i("PawchanUiTest", "DONE $name")
     }
 
     private fun showSettings(compact: Boolean = false) {
