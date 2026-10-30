@@ -51,7 +51,7 @@ class ComposerEditorUiTest {
     }
 
     @Test
-    fun allFormattingKeysAreVisibleInOneNarrowRow() {
+    fun allFormattingKeysRemainVisibleWhenNarrowLayoutWraps() {
         compose.setContent {
             MaterialTheme {
                 Column(Modifier.width(320.dp)) { ComposerFormattingToolbar(true, false, {}, {}) }

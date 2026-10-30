@@ -1,36 +1,32 @@
 package com.solthariel.pawchan.library
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
-import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiThreadCard
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.core.ui.UiTopAppBar
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -44,29 +40,30 @@ internal fun ArchiveScreen(
     actions: ArchiveActions,
 ) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        Row(
-            Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            UiToolbarButton(
-                UiIconKind.BACK,
-                stringResource(R.string.back_to_catalog).removePrefix("← "),
-                onClick = actions.onBack,
-            )
-            Text(
-                stringResource(R.string.board_archive_title, board.board.value),
-                Modifier.weight(1f).padding(start = 8.dp),
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            UiToolbarButton(
-                UiIconKind.REFRESH,
-                stringResource(R.string.refresh),
-                enabled = !state.loading,
-                onClick = actions.onRefresh,
-            )
-        }
+        UiTopAppBar(
+            title = {
+                Text(
+                    stringResource(R.string.board_archive_title, board.board.value),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            navigationIcon = {
+                UiToolbarButton(
+                    UiIconKind.BACK,
+                    stringResource(R.string.back_to_catalog).removePrefix("← "),
+                    onClick = actions.onBack,
+                )
+            },
+            actions = {
+                UiToolbarButton(
+                    UiIconKind.REFRESH,
+                    stringResource(R.string.refresh),
+                    enabled = !state.loading,
+                    onClick = actions.onRefresh,
+                )
+            },
+        )
         ArchiveStatus(state, actions.onRefresh)
         key(state.pageIndex) {
             LazyColumn(Modifier.weight(1f)) {
@@ -135,20 +132,18 @@ private fun ArchiveThreadRow(
     onThread: (ThreadAddress) -> Unit,
 ) {
     val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
-    Surface(
+    UiThreadCard(
+        outlined = bubble,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = if (bubble) 8.dp else 0.dp, vertical = if (bubble) 4.dp else 0.dp)
                 .clickable { onThread(thread.address) },
-        shape = if (bubble) RoundedCornerShape(14.dp) else RectangleShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
             Text(
                 thread.subject,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )

@@ -77,8 +77,8 @@ class ContentFilterAppearanceUiTest {
         }
         val add = compose.onNodeWithContentDescription("Добавить правило").fetchSemanticsNode().boundsInRoot
         val more = compose.onNodeWithContentDescription("Меню автоскрытия").fetchSemanticsNode().boundsInRoot
-        assertEquals(72f, add.width, 0.5f)
-        assertEquals(72f, add.height, 0.5f)
+        assertEquals(96f, add.width, 0.5f)
+        assertEquals(96f, add.height, 0.5f)
         assertEquals(add.width, more.width, 0.5f)
         compose.onNodeWithText("+").assertDoesNotExist()
     }

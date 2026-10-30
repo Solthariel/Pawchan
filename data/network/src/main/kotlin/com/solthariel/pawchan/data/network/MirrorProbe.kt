@@ -9,7 +9,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -42,34 +41,7 @@ internal class MirrorProbe : AutoCloseable {
                     .header("Cache-Control", "no-cache")
                     .build(),
             )
-        call.enqueue(
-            object : Callback {
-                override fun onFailure(
-                    call: Call,
-                    e: IOException,
-                ) {
-                    report(
-                        MirrorObservation(
-                            host,
-                            if (e is java.io.InterruptedIOException && !call.isCanceled()) {
-                                MirrorAvailability.TIMEOUT
-                            } else {
-                                MirrorAvailability.NETWORK_ERROR
-                            },
-                            System.currentTimeMillis(),
-                        ),
-                    )
-                }
-
-                override fun onResponse(
-                    call: Call,
-                    response: Response,
-                ) {
-                    val status = response.use(::classifyMirrorResponse)
-                    report(MirrorObservation(host, status, System.currentTimeMillis()))
-                }
-            },
-        )
+        call.enqueue(MirrorProbeCallback(host, report))
         return call
     }
 

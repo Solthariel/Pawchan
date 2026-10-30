@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.catalog
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,19 +7,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
@@ -43,6 +38,7 @@ import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiThreadCard
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
@@ -121,24 +117,21 @@ internal fun CatalogThreadCard(
     onThreadLongClick: (CatalogThreadUi) -> Unit = {},
 ) {
     val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
-    val shape = if (bubble) RoundedCornerShape(14.dp) else androidx.compose.ui.graphics.RectangleShape
-    Surface(
+    UiThreadCard(
+        outlined = bubble,
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(if (thread.hidden) CATALOG_HIDDEN_CARD_HEIGHT else CATALOG_CARD_HEIGHT)
-                .clip(shape)
+                .heightIn(min = CATALOG_MIN_CARD_HEIGHT)
+                .clip(if (bubble) MaterialTheme.shapes.medium else androidx.compose.ui.graphics.RectangleShape)
                 .combinedClickable(
                     onClick = { onThreadClick(thread.address) },
                     onLongClick = { onThreadLongClick(thread) },
                 ),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surface,
-        border = if (bubble) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(CATALOG_CARD_CONTENT_PADDING),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(CATALOG_CARD_CONTENT_PADDING),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (thread.hidden) {
@@ -169,9 +162,8 @@ private fun CatalogPreview(
     Box(
         modifier =
             Modifier
-                .fillMaxHeight()
-                .width(CATALOG_CARD_HEIGHT - CATALOG_CARD_CONTENT_PADDING * 2)
-                .clip(RoundedCornerShape(10.dp))
+                .size(CATALOG_PREVIEW_SIZE)
+                .clip(MaterialTheme.shapes.small)
                 .combinedClickable(
                     onClick = { media.open(attachments) },
                     // меню файла, который виден на миниатюре (первого).
@@ -214,20 +206,17 @@ private fun CatalogThreadDetails(
     thread: CatalogThreadUi,
     modifier: Modifier,
 ) {
-    Column(modifier = modifier.fillMaxHeight()) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         thread.displaySubject?.let { subject ->
             Text(
                 text = subject,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
             )
         }
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            CatalogComment(thread)
-        }
+        CatalogComment(thread)
         thread.note?.let { note ->
             Text(
                 note,
@@ -252,7 +241,7 @@ private fun CatalogComment(thread: CatalogThreadUi) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
     )
 }
 
@@ -261,14 +250,13 @@ private fun CatalogMetadata(thread: CatalogThreadUi) {
     CatalogCardMetadata(thread)
 }
 
-private const val CATALOG_COMMENT_LINES = 5
-private const val CATALOG_COMMENT_LINES_WITH_SUBJECT = 4
+private const val CATALOG_COMMENT_LINES = 4
+private const val CATALOG_COMMENT_LINES_WITH_SUBJECT = 3
 private const val MEDIA_BADGE_ALPHA = 0.48f
-private val CATALOG_CARD_HEIGHT = 110.dp
-private val CATALOG_CARD_GAP = 6.dp
-private val CATALOG_CARD_CONTENT_PADDING = 8.dp
-
-private val CATALOG_HIDDEN_CARD_HEIGHT = 48.dp
+private val CATALOG_MIN_CARD_HEIGHT = 80.dp
+private val CATALOG_PREVIEW_SIZE = 88.dp
+private val CATALOG_CARD_GAP = 8.dp
+private val CATALOG_CARD_CONTENT_PADDING = 16.dp
 
 internal data class CatalogMediaClicks(
     val open: (List<MediaAttachmentUi>) -> Unit,

@@ -57,7 +57,7 @@ master, origin, чистоту tracked-файлов, отсутствие заб
 После ошибки commit/push проверяйте состояние: команда намеренно не сбрасывает файлы.
 
 Actions: read-only preflight → полный штатный package-release.sh (LOCAL CHECK,
-qualityCheck, release build) → проверка подписи и SHA → плоский source ZIP →
+qualityCheck, release build) → проверка подписи и SHA подписанного APK →
 создание постоянного целевого тега на текущем коммите → draft → проверка всех скачанных обратно файлов → promotion → атомарный Git-коммит ленты.
 На компьютере нужен Git/Python и обычная авторизация push; gh/winget/PAT не нужны.
 Ключи подписи остаются в GitHub Secrets и временной папке существующего build-step.

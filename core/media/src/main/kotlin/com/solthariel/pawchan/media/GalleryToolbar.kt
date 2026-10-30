@@ -1,31 +1,23 @@
 package com.solthariel.pawchan.media
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
-import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiTopAppBar
 
 @Composable
 internal fun GalleryToolbar(
@@ -37,28 +29,26 @@ internal fun GalleryToolbar(
         GallerySelectionToolbar(state, actions)
         return
     }
-    Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        GalleryIconButton("Назад", actions.back) {
-            UiIcon(UiIconKind.BACK, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
-        }
-        Text(
-            "Галерея",
-            Modifier.weight(1f).padding(start = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+    Column {
+        UiTopAppBar(
+            title = { Text("Галерея", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            navigationIcon = {
+                GalleryIconButton("Назад", actions.back) {
+                    UiIcon(UiIconKind.BACK, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
+                }
+            },
+            actions = {
+                GalleryIconButton("Выделить медиа", actions.toggleSelection) {
+                    GallerySelectIcon(MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
         )
-        GalleryFilter.entries.forEach { filter ->
-            GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
-                actions.chooseFilter(filter)
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            GalleryFilter.entries.forEach { filter ->
+                GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
+                    actions.chooseFilter(filter)
+                }
             }
-        }
-        GalleryIconButton("Выделить медиа", actions.toggleSelection) {
-            GallerySelectIcon(MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -70,21 +60,13 @@ internal fun GalleryFilterButton(
     active: Boolean,
     onClick: () -> Unit,
 ) {
-    val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    Row(
-        Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .semantics {
-                contentDescription = "${filter.label}: $count"
-                selected = active
-            }.clickable(role = Role.Button, onClick = onClick),
-        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        GalleryFilterIcon(filter, color)
-        Text(count.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, maxLines = 1)
-    }
+    FilterChip(
+        selected = active,
+        onClick = onClick,
+        label = { Text(count.toString()) },
+        leadingIcon = { GalleryFilterIcon(filter, MaterialTheme.colorScheme.onSurfaceVariant) },
+        modifier = Modifier.semantics { contentDescription = "${filter.label}: $count" },
+    )
 }
 
 internal fun GalleryFilter.group(gallery: MediaGalleryContent): MediaGalleryGroup =

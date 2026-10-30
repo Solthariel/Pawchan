@@ -17,6 +17,8 @@ data class MirrorObservation(
     val host: String,
     val availability: MirrorAvailability,
     val checkedAtMillis: Long,
+    /** Full HTTP probe duration through body validation; null when no response was received. */
+    val responseTimeMillis: Long? = null,
 )
 
 data class MirrorState(

@@ -1,6 +1,8 @@
 package com.solthariel.pawchan.thread
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PostStateMarkers
 import com.solthariel.pawchan.core.ui.formatPostTime
@@ -29,8 +30,8 @@ import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 
 /**
  * Заголовок поста (единая схема, см. AGENTS.md): порядковый номер, #номер, дата — начало строки
- * одной ширины, поэтому номера и даты стоят столбиком; дальше значки состояния,
- * значки сайта, имя и трипкод. Обрезается только имя; оценки прижаты вправо.
+ * одной последовательности; целые поля могут переходить на следующую строку.
+ * Автор, значки сайта и оценки занимают отдельную строку с доступными целями нажатия.
  */
 @Composable
 internal fun ThreadPostHeader(
@@ -45,29 +46,47 @@ internal fun ThreadPostHeader(
         remember(byline.timestamp, byline.date, preferences) {
             byline.timestamp?.let { formatPostTime(it, preferences) } ?: byline.date
         }
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(HEADER_GAP),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        PostIndex(post.metadata.changes.deleted, display.index)
-        HeaderText("#${post.id}", secondary)
-        date?.let { HeaderText(it, secondary) }
-        if (preferences.showStateMarkers) PostStateMarkers(display.markers, byline.email)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(HEADER_GAP),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            PostIndex(post.metadata.changes.deleted, display.index)
+            HeaderText("#${post.id}", secondary)
+            date?.let { HeaderText(it, secondary, wrap = true) }
+            if (preferences.showStateMarkers) PostStateMarkers(display.markers, byline.email)
+        }
+        val hasAuthor = byline.author != null || byline.tripcode != null
+        val hasDefaultName = preferences.showDefaultName && byline.defaultName != null
+        val hasDecorations = display.badges.isNotEmpty() || post.metadata.rating != null
+        if (hasAuthor || hasDefaultName || hasDecorations) {
+            HeaderAuthorAndRating(post, loading, preferences.showDefaultName)
+        }
+    }
+}
+
+@Composable
+private fun HeaderAuthorAndRating(
+    post: ThreadPostUi,
+    loading: ThumbnailLoading,
+    showDefaultName: Boolean,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(HEADER_GAP),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            display.badges.forEach { badge ->
+            post.metadata.display.badges.forEach { badge ->
                 val symbol = badge.symbol
                 if (symbol != null) {
-                    Text(symbol, fontSize = HEADER_TEXT, maxLines = 1)
+                    Text(symbol, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                 } else {
-                    DeferredThumbnail(badge.image.value, loading, badge.label, Modifier.size(14.dp))
+                    DeferredThumbnail(badge.image.value, loading, badge.label, Modifier.size(16.dp))
                 }
             }
-            HeaderAuthor(byline, preferences.showDefaultName)
+            HeaderAuthor(post.metadata.display.byline, showDefaultName)
         }
         post.metadata.rating?.let { PostRatingButtons(post.id, it) }
     }
@@ -91,8 +110,7 @@ private fun RowScope.HeaderAuthor(
     Text(
         text,
         Modifier.weight(1f, fill = false),
-        fontSize = HEADER_TEXT,
-        lineHeight = HEADER_LINE,
+        style = MaterialTheme.typography.labelMedium,
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Ellipsis,
@@ -123,20 +141,18 @@ private fun HeaderText(
     color: Color,
     modifier: Modifier = Modifier,
     weight: FontWeight? = null,
+    wrap: Boolean = false,
 ) {
     Text(
         text,
         modifier,
         color = color,
-        fontSize = HEADER_TEXT,
-        lineHeight = HEADER_LINE,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = weight,
-        maxLines = 1,
-        softWrap = false,
+        maxLines = if (wrap) 2 else 1,
+        softWrap = wrap,
         overflow = TextOverflow.Ellipsis,
     )
 }
 
-private val HEADER_GAP = 3.dp
-private val HEADER_TEXT = 12.sp
-private val HEADER_LINE = 14.sp
+private val HEADER_GAP = 4.dp

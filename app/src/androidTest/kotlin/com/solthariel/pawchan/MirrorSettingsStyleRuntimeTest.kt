@@ -11,12 +11,13 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.domain.network.ForumMirrors
@@ -53,8 +54,8 @@ class MirrorSettingsStyleRuntimeTest {
             }
         }
         compose.runOnIdle { assertEquals(0, mirrors.requests) }
-        compose.onNodeWithText("Проверить доступность").performClick()
-        compose.onNodeWithText("Проверка доступности…").assertHasNoClickAction()
+        compose.onNodeWithContentDescription("Проверить доступность").performClick()
+        compose.onNodeWithContentDescription("Проверить доступность").assertIsNotEnabled()
         compose.runOnIdle {
             assertEquals(1, mirrors.requests)
             mirrors.state.value =

@@ -24,7 +24,7 @@ class PublicationFixture(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.old = {'name': '0.1.0', 'code': 1, 'date': '01.01.2026', 'notes': 'Old notes'}
         self.latest = {'name': '0.1.1', 'code': 2, 'date': '02.01.2026'}
-        self.notes = 'Версия 0.1.1\n\nИсправления\n- Проверка\n'
+        self.notes = 'Версия 0.1.1\n\nИсправления\n\n- Проверка\n'
         self.tag = 'v0.1.1'
         self.sha = 'a' * 40
         self.blobs = {}

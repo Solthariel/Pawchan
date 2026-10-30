@@ -2,10 +2,12 @@ package com.solthariel.pawchan
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -13,7 +15,9 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.media.MediaViewerNavigation
 import com.solthariel.pawchan.media.video.VideoPlaybackControls
 import com.solthariel.pawchan.media.video.VideoPlaybackPanel
@@ -23,11 +27,32 @@ import com.solthariel.pawchan.media.video.VideoSpeed
 import com.solthariel.pawchan.media.video.VideoStage
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class VideoPlaybackPanelRuntimeTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun narrowPanelKeepsTransportCenteredAndEveryButtonInsideViewport() {
+        compose.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                Box(Modifier.width(320.dp).testTag("video-panel")) {
+                    VideoPlaybackPanel(TestVideoControls(), onPip = {})
+                }
+            }
+        }
+        val viewport = compose.onNodeWithTag("video-panel").fetchSemanticsNode().boundsInRoot
+        val labels = listOf("Предыдущий файл", "Воспроизвести", "Следующий файл", "Выключить звук")
+        val minimum = with(compose.density) { 48.dp.toPx() }
+        labels.forEach {
+            val bounds = compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
+            assertTrue(bounds.left >= viewport.left && bounds.right <= viewport.right)
+            assertTrue(bounds.width >= minimum - 1f && bounds.height >= minimum - 1f)
+        }
+        val play = compose.onNodeWithContentDescription("Воспроизвести").fetchSemanticsNode().boundsInRoot
+        assertEquals(viewport.center.x, play.center.x, 1f)
+    }
 
     @Test
     fun unknownDurationStillShowsTimeLabelsAndPlaybackControls() {

@@ -1,11 +1,10 @@
 package com.solthariel.pawchan.thread
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -22,15 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.solthariel.pawchan.core.ui.PostStatsText
 import com.solthariel.pawchan.core.ui.postContainerShape
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.PostAttachments
@@ -165,16 +161,22 @@ private fun ThreadPostBody(
                 "/$it/",
                 Modifier.padding(bottom = TAG_GAP),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = (options.appearance.textSize + TAG_SIZE_EXTRA).sp,
-                lineHeight = (options.appearance.textSize + TAG_SIZE_EXTRA + POST_LINE_HEIGHT_EXTRA).sp,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = (options.appearance.textSize + TAG_SIZE_EXTRA).sp,
+                        lineHeight = (options.appearance.textSize + TAG_SIZE_EXTRA + POST_LINE_HEIGHT_EXTRA).sp,
+                    ),
             )
         }
         subject?.let {
             Text(
                 it,
-                fontWeight = FontWeight.Bold,
-                fontSize = options.appearance.textSize.sp,
-                lineHeight = (options.appearance.textSize + POST_LINE_HEIGHT_EXTRA).sp,
+                style =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = options.appearance.textSize.sp,
+                        lineHeight = (options.appearance.textSize + POST_LINE_HEIGHT_EXTRA).sp,
+                    ),
             )
         }
         ThreadPostComment(post, options, expanded, onPostReference, onLimitedChange)
@@ -196,7 +198,7 @@ private fun ThreadPostComment(
         presentation =
             RichPostPresentation(
                 style =
-                    TextStyle(
+                    MaterialTheme.typography.bodyLarge.copy(
                         fontSize = options.appearance.textSize.sp,
                         lineHeight = (options.appearance.textSize + POST_LINE_HEIGHT_EXTRA).sp,
                     ),
@@ -228,12 +230,11 @@ private fun ThreadPostBottomBar(
     onExpand: () -> Unit,
 ) {
     if (options.replyLabel == null && !limited) return
-    Row(
+    FlowRow(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        // кнопки стоят рядом слева, последняя занимает остаток строки.
         options.replyLabel?.let { label ->
             PostRepliesFooter(
                 label,
@@ -243,16 +244,7 @@ private fun ThreadPostBottomBar(
             )
         }
         if (limited) {
-            PostStatsText(
-                "Раскрыть",
-                Modifier
-                    .weight(1f)
-                    .clickable(
-                        enabled = !options.selecting,
-                        role = Role.Button,
-                        onClick = onExpand,
-                    ),
-            )
+            PostTextAction("Раскрыть", !options.selecting, onExpand, Modifier.weight(1f))
         }
     }
 }

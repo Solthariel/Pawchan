@@ -7,21 +7,19 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiRefreshButton
+import com.solthariel.pawchan.core.ui.UiTopAppBar
 import com.solthariel.pawchan.feature.thread.R
 
 @Composable
@@ -82,46 +80,45 @@ private fun ThreadToolbarActions(
     actions: ThreadActions,
     tools: ThreadToolsState,
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(APP_TOOLBAR_BUTTON_SIZE)
-            .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ThreadToolbarNavigation(content, actions, tools)
-        Spacer(Modifier.weight(1f))
-        ThreadToolbarButton(
-            kind = UiIconKind.WRITE,
-            description = stringResource(R.string.reply_open),
-            enabled = content != null && !content.closed,
-            onClick = { actions.onReplyTo(null) },
-        )
-        ThreadToolbarButton(
-            kind = UiIconKind.SEARCH,
-            description = "Поиск",
-            enabled = content != null,
-            onClick = { tools.searchOpen = true },
-        )
-        ThreadToolbarSlot {
-            UiRefreshButton(
-                description = stringResource(R.string.refresh),
-                isRefreshing = content?.isRefreshing == true || state is ThreadUiState.Loading,
-                enabled = content?.isRefreshing != true && state !is ThreadUiState.Loading,
-                onClick = actions.onRefresh,
-            )
-        }
-        ThreadToolbarSlot {
-            Box {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 400.dp
+        UiTopAppBar(
+            title = { if (!compact) Row { ThreadToolbarNavigation(content, actions, tools) } },
+            navigationIcon = { ThreadToolbarButton(UiIconKind.BACK, "Назад", onClick = actions.onBack) },
+            actions = {
                 ThreadToolbarButton(
-                    kind = UiIconKind.MORE,
-                    description = "Меню треда",
-                    enabled = content != null,
-                    onClick = { tools.menu = true },
+                    UiIconKind.WRITE,
+                    stringResource(R.string.reply_open),
+                    enabled = content != null && !content.closed,
+                    onClick = { actions.onReplyTo(null) },
                 )
-                ThreadOverflowMenu(tools, content, actions)
-            }
-        }
+                ThreadToolbarButton(
+                    UiIconKind.SEARCH,
+                    "Поиск",
+                    enabled = content != null,
+                    onClick = { tools.searchOpen = true },
+                )
+                ThreadToolbarSlot {
+                    UiRefreshButton(
+                        description = stringResource(R.string.refresh),
+                        isRefreshing = content?.isRefreshing == true || state is ThreadUiState.Loading,
+                        enabled = content?.isRefreshing != true && state !is ThreadUiState.Loading,
+                        onClick = actions.onRefresh,
+                    )
+                }
+                ThreadToolbarSlot {
+                    Box {
+                        ThreadToolbarButton(
+                            UiIconKind.MORE,
+                            "Меню треда",
+                            enabled = content != null,
+                            onClick = { tools.menu = true },
+                        )
+                        ThreadOverflowMenu(tools, content, actions, toolbarNavigationVisible = !compact)
+                    }
+                }
+            },
+        )
     }
 }
 
@@ -136,9 +133,6 @@ private fun ThreadToolbarNavigation(
     actions: ThreadActions,
     tools: ThreadToolsState,
 ) {
-    ThreadToolbarSlot {
-        ThreadToolbarButton(UiIconKind.BACK, "Назад", onClick = actions.onBack)
-    }
     ThreadToolbarSlot {
         ThreadToolbarButton(
             kind = UiIconKind.BOOKMARK,

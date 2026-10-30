@@ -141,7 +141,7 @@ private fun tomorrowColorScheme() =
         onSurfaceVariant = themeColor("#B5B8BD"),
         outline = themeColor("#73767E"),
         outlineVariant = themeColor("#4A4D54"),
-    )
+    ).withCustomMaterialRoles(dark = true)
 
 private fun normieColorScheme() =
     lightColorScheme(
@@ -157,7 +157,7 @@ private fun normieColorScheme() =
         onSurfaceVariant = themeColor("#46505B"),
         outline = themeColor("#747D87"),
         outlineVariant = themeColor("#C5CBD2"),
-    )
+    ).withCustomMaterialRoles(dark = false)
 
 private fun burichanColorScheme() =
     lightColorScheme(
@@ -173,7 +173,7 @@ private fun burichanColorScheme() =
         onSurfaceVariant = themeColor("#4D5064"),
         outline = themeColor("#76798D"),
         outlineVariant = themeColor("#C7CADB"),
-    )
+    ).withCustomMaterialRoles(dark = false)
 
 private fun hardonColorScheme() =
     darkColorScheme(
@@ -189,7 +189,7 @@ private fun hardonColorScheme() =
         onSurfaceVariant = themeColor("#C8C3C7"),
         outline = themeColor("#938F93"),
         outlineVariant = themeColor("#494649"),
-    )
+    ).withCustomMaterialRoles(dark = true)
 
 private fun neutronColorScheme() =
     darkColorScheme(
@@ -205,7 +205,7 @@ private fun neutronColorScheme() =
         onSurfaceVariant = themeColor("#CCBB88"),
         outline = themeColor("#687080"),
         outlineVariant = themeColor("#3E4654"),
-    )
+    ).withCustomMaterialRoles(dark = true)
 
 private fun photonColorScheme() =
     lightColorScheme(
@@ -221,7 +221,7 @@ private fun photonColorScheme() =
         onSurfaceVariant = themeColor("#554D47"),
         outline = themeColor("#83746A"),
         outlineVariant = themeColor("#D3C5BB"),
-    )
+    ).withCustomMaterialRoles(dark = false)
 
 private fun themeColor(value: String): Color = Color(value.toColorInt())
 

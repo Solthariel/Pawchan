@@ -87,7 +87,7 @@ class CatalogHeaderRuntimeTest {
     }
 
     @Test
-    fun titleAndSpeedKeepHistoricalLeftInsetWithTheIndicatorInTheMargin() {
+    fun titleAndSpeedAlignAfterIndicatorInsideMaterialTitleSlot() {
         val lookup = CatalogBoardLookupBindings(false, "", {}, {}, {}) {}
         val menu =
             CatalogMenuBindings(
@@ -110,9 +110,11 @@ class CatalogHeaderRuntimeTest {
         val label = compose.onNodeWithText("/hry/ — Highlights", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val arrow = compose.onNodeWithTag("disclosure-indicator", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val speed = compose.onNodeWithText("1 сообщение в час", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals(28f * compose.density.density, label.left, 1f)
+        // Material rounds its 12dp title inset and 4dp inner padding independently.
+        val titleInset = with(compose.density) { 12.dp.roundToPx() + 4.dp.roundToPx() }
+        assertEquals(titleInset.toFloat(), arrow.left, 0.1f)
+        assertEquals(arrow.right, label.left, 0.1f)
         assertEquals(label.left, speed.left, 1f)
-        assertEquals(8f * compose.density.density, arrow.left, 1f)
         assertTrue(arrow.right <= label.left)
     }
 

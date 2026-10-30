@@ -1,21 +1,27 @@
 package com.solthariel.pawchan
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.thread.ThreadActions
 import com.solthariel.pawchan.thread.ThreadContentFlags
 import com.solthariel.pawchan.thread.ThreadContentPresentation
 import com.solthariel.pawchan.thread.ThreadContentStatistics
+import com.solthariel.pawchan.thread.ThreadDialog
 import com.solthariel.pawchan.thread.ThreadToolbar
 import com.solthariel.pawchan.thread.ThreadToolsState
 import com.solthariel.pawchan.thread.ThreadUiState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
@@ -66,5 +72,43 @@ class ThreadToolbarUiTest {
         compose.onNodeWithText("Расширенный поиск").performClick()
         compose.onNodeWithText("Мои посты").assertIsDisplayed()
         compose.onNodeWithText("С вложениями").assertIsDisplayed()
+    }
+
+    @Test fun compactToolbarKeepsNavigationActionsInOverflow() {
+        lateinit var tools: ThreadToolsState
+        var favorites = 0
+        compose.setContent {
+            MaterialTheme {
+                val scope = rememberCoroutineScope()
+                tools = remember { ThreadToolsState(scope) }
+                val state =
+                    ThreadUiState.Content(
+                        1,
+                        "Название",
+                        emptyList(),
+                        ThreadContentFlags(false),
+                        ThreadContentPresentation(false),
+                        ThreadContentStatistics(),
+                    )
+                Box(Modifier.width(320.dp)) {
+                    ThreadToolbar(state, ThreadActions({}, {}, { favorites++ }, {}), tools) {}
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("Добавить тред в избранное").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Галерея").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Меню треда").performClick()
+        compose.onNodeWithText("Галерея").assertIsDisplayed()
+        compose.onNodeWithText("Добавить тред в избранное").performClick()
+        compose.runOnIdle {
+            assertEquals(1, favorites)
+            assertFalse(tools.menu)
+        }
+        compose.onNodeWithContentDescription("Меню треда").performClick()
+        compose.onNodeWithText("Галерея").performClick()
+        compose.runOnIdle {
+            assertEquals(ThreadDialog.GALLERY, tools.dialog)
+            assertFalse(tools.menu)
+        }
     }
 }

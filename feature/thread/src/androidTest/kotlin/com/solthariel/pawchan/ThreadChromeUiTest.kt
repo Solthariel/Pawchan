@@ -3,10 +3,12 @@ package com.solthariel.pawchan
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.thread.PostRepliesFooter
@@ -34,32 +37,52 @@ import org.junit.Test
 
 class ThreadChromeUiTest {
     @get:Rule val compose = createComposeRule()
+    private var fixtureDensity = 1f
 
-    @Test
-    fun normalToolbarUsesCatalogueEdgeSlots() {
+    @Test fun compactToolbarKeeps48dpActionsAndMovesSecondaryActionsToMenu() {
+        showToolbar(320)
+        assertToolbarTargets(listOf("Назад", "Написать", "Поиск", "Обновить", "Меню треда"))
+        compose.onNodeWithContentDescription("Галерея").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Меню треда").performClick()
+        compose.onNodeWithText("Галерея").assertIsDisplayed()
+        compose.onNodeWithText("Добавить тред в избранное").assertIsDisplayed()
+        saveThreadChromeScreenshot("toolbar-compact")
+    }
+
+    @Test fun wideToolbarKeepsDirectBookmarkAndGalleryActions() {
+        showToolbar(420)
+        assertToolbarTargets(listOf("Назад", "Добавить тред в избранное", "Галерея", "Написать", "Поиск", "Обновить", "Меню треда"))
+    }
+
+    private fun showToolbar(width: Int) {
         compose.setContent {
             val scope = rememberCoroutineScope()
             val tools = remember { ThreadToolsState(scope) }
-            ThreadTestTheme(ThemePreference.DARK) {
-                Box(Modifier.width(360.dp).statusBarsPadding().testTag("toolbar-fixture")) {
-                    ThreadToolbar(testContent(), ThreadActions({}, {}, {}, {}), tools) {}
+            val density = LocalDensity.current
+            fixtureDensity = density.density * 0.75f
+            CompositionLocalProvider(LocalDensity provides Density(fixtureDensity, density.fontScale)) {
+                ThreadTestTheme(ThemePreference.DARK) {
+                    Box(Modifier.width(width.dp).statusBarsPadding().testTag("toolbar-fixture")) {
+                        ThreadToolbar(testContent(), ThreadActions({}, {}, {}, {}), tools) {}
+                    }
                 }
             }
         }
-        val descriptions = listOf("Назад", "Добавить тред в избранное", "Галерея", "Написать", "Поиск", "Обновить", "Меню треда")
+    }
+
+    private fun assertToolbarTargets(descriptions: List<String>) {
         val toolbar = compose.onNodeWithTag("toolbar-fixture").fetchSemanticsNode().boundsInRoot
-        val inset = with(compose.density) { 12.dp.roundToPx() }
-        val slot = with(compose.density) { 36.dp.roundToPx() }
-        // Compose rounds each measured slot, not the sum of dp coordinates.
-        val expectedCenters =
-            List(3) { toolbar.left + inset + slot * (it + 0.5f) } +
-                List(4) { toolbar.right - inset - slot * (3.5f - it) }
-        descriptions.forEachIndexed { index, description ->
-            val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
-            assertEquals(slot.toFloat(), bounds.width, 0f)
-            assertEquals(expectedCenters[index], bounds.center.x, 1f)
+        val slot = kotlin.math.round(48f * fixtureDensity)
+        val bounds =
+            descriptions.map { description ->
+                compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
+            }
+        bounds.forEach {
+            assertEquals(slot.toFloat(), it.width, 1f)
+            assertEquals(slot.toFloat(), it.height, 1f)
+            org.junit.Assert.assertTrue(it.left >= toolbar.left && it.right <= toolbar.right)
         }
-        saveThreadChromeScreenshot("toolbar")
+        bounds.zipWithNext().forEach { (left, right) -> org.junit.Assert.assertTrue(left.right <= right.left + 1f) }
     }
 
     @Test

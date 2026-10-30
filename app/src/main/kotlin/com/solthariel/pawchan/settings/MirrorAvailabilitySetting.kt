@@ -2,11 +2,7 @@ package com.solthariel.pawchan.settings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppAlertDialog
-import com.solthariel.pawchan.core.ui.UiIcon
-import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.infrastructure.LocalForumMirrors
 import kotlinx.coroutines.Dispatchers
@@ -46,33 +40,8 @@ internal fun MirrorAvailabilitySetting(
         value = withContext(Dispatchers.Default) { mirrorAvailabilityPresentation(state.observations) }
     }
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-    SettingsRow(
-        if (state.checking) "Проверка доступности…" else "Проверить доступность",
-        presentation.checkedCaption,
-        onClick = if (state.checking) null else mirrors::checkAvailability,
-    ) {
-        if (state.checking) {
-            CircularProgressIndicator(Modifier.size(24.dp))
-        } else {
-            UiIcon(UiIconKind.REFRESH, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
-        }
-    }
-    MirrorStatusRows(presentation)
+    MirrorAvailabilityResults(presentation, state.checking, mirrors::checkAvailability)
     MirrorAvailabilityHelp()
-}
-
-@Composable
-private fun MirrorStatusRows(presentation: MirrorAvailabilityPresentation) {
-    presentation.rows.forEach { row ->
-        SettingsRow(row.host, null, onClick = null) {
-            Text(
-                row.caption,
-                Modifier.widthIn(max = 160.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
 }
 
 @Composable
@@ -86,6 +55,10 @@ private fun MirrorAvailabilityHelp() {
             text = {
                 Column {
                     Text("Проверяется доступность с этого устройства, а не для всех пользователей.")
+                    Text(
+                        "Время HTTP-проверки включает соединение, получение и проверку ответа. " +
+                            "Это не пинг и не скорость загрузки медиа.",
+                    )
                     Text("Автоматический выбор действует до перезапуска приложения и не меняет выбранный домен.")
                     Text("Авторизация не переносится между доменами. Ошибки капчи и ограничения запросов не обходятся.")
                 }

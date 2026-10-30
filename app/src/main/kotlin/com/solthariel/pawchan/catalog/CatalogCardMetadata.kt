@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.catalog
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,10 +22,10 @@ import com.solthariel.pawchan.core.ui.PostStatsText
 @Composable
 internal fun CatalogCardMetadata(thread: CatalogThreadUi) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Row(
+        FlowRow(
             Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             val display = thread.statistics
             CatalogMetadataCount(
@@ -33,22 +34,12 @@ internal fun CatalogCardMetadata(thread: CatalogThreadUi) {
                 R.drawable.ic_catalog_replies,
                 Modifier,
             )
-            CatalogMetadataCount(
-                display.filesText,
-                display.filesDescription,
-                R.drawable.ic_catalog_files,
-                Modifier,
-            )
-            if (display.sizeText.isNotEmpty()) PostStatsText(display.sizeText, Modifier.weight(1f))
+            CatalogMetadataCount(display.filesText, display.filesDescription, R.drawable.ic_catalog_files, Modifier)
+            if (display.sizeText.isNotEmpty()) PostStatsText(display.sizeText)
+            CatalogThreadStatusIcons(pinned = thread.pinned, closed = thread.closed, endless = thread.endless)
         }
-        CatalogThreadStatusIcons(
-            pinned = thread.pinned,
-            closed = thread.closed,
-            endless = thread.endless,
-            modifier = Modifier.padding(start = 4.dp),
-        )
         if (thread.age.text.isNotEmpty()) {
-            PostStatsText(thread.age.text, Modifier.padding(start = 6.dp).widthIn(max = 100.dp))
+            PostStatsText(thread.age.text, Modifier.padding(start = 8.dp).widthIn(max = 100.dp))
         }
     }
 }

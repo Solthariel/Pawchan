@@ -50,13 +50,13 @@ class ContentFilterToolbarUiTest {
                 ContentFilterToolbar({}, search, actions)
             }
         }
-        compose.onNodeWithContentDescription("Назад").assertLeftPositionInRootIsEqualTo(12.dp)
+        compose.onNodeWithContentDescription("Назад").assertLeftPositionInRootIsEqualTo(4.dp)
         listOf("Назад", "Поиск правил", "Добавить правило", "Меню автоскрытия").forEach { description ->
             compose
                 .onNodeWithContentDescription(description)
-                .assertWidthIsEqualTo(36.dp)
-                .assertHeightIsEqualTo(36.dp)
-                .assertTopPositionInRootIsEqualTo(9.dp)
+                .assertWidthIsEqualTo(48.dp)
+                .assertHeightIsEqualTo(48.dp)
+                .assertTopPositionInRootIsEqualTo(8.dp)
         }
         val add = compose.onNodeWithContentDescription("Добавить правило").fetchSemanticsNode().boundsInRoot
         val search = compose.onNodeWithContentDescription("Поиск правил").fetchSemanticsNode().boundsInRoot
@@ -78,7 +78,7 @@ class ContentFilterToolbarUiTest {
     }
 
     @Test
-    fun actionButtonsUseCatalogAxesAndTheStandardNineDpVerticalInset() {
+    fun actionButtonsUseMaterialFourDpEdgesAndEightDpVerticalInset() {
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
                 MaterialTheme {
@@ -92,18 +92,18 @@ class ContentFilterToolbarUiTest {
         }
         val positions =
             mapOf(
-                "Назад" to 12.dp,
-                "Поиск правил" to 180.dp,
-                "Добавить правило" to 216.dp,
-                "Меню автоскрытия" to 252.dp,
+                "Назад" to 4.dp,
+                "Поиск правил" to 148.dp,
+                "Добавить правило" to 200.dp,
+                "Меню автоскрытия" to 248.dp,
             )
         positions.forEach { (description, left) ->
             compose
                 .onNodeWithContentDescription(description)
                 .assertLeftPositionInRootIsEqualTo(left)
-                .assertTopPositionInRootIsEqualTo(9.dp)
-                .assertWidthIsEqualTo(36.dp)
-                .assertHeightIsEqualTo(36.dp)
+                .assertTopPositionInRootIsEqualTo(8.dp)
+                .assertWidthIsEqualTo(48.dp)
+                .assertHeightIsEqualTo(48.dp)
         }
     }
 

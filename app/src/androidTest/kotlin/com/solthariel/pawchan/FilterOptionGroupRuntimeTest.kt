@@ -54,8 +54,10 @@ class FilterOptionGroupRuntimeTest {
     }
 
     @Test fun largeFontsWrapChoicesWithoutOverlappingOrShrinkingTouchTargets() {
+        var sharedBorderPx = 0f
         compose.setContent {
             val density = LocalDensity.current
+            sharedBorderPx = with(density) { 1.dp.toPx() }
             CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
                 MaterialTheme { Box(Modifier.width(240.dp)) { FilterOptionGroup("Как искать", options, "phrase", {}) } }
             }
@@ -68,11 +70,14 @@ class FilterOptionGroupRuntimeTest {
                     .fetchSemanticsNode()
                     .boundsInRoot
             }
-        assertTrue(bounds.last().top > bounds.first().top)
+        assertTrue(bounds.all { kotlin.math.abs(it.top - bounds.first().top) < 1f })
+        assertTrue(bounds.all { kotlin.math.abs(it.height - bounds.first().height) < 1f })
         bounds.forEachIndexed { index, rect ->
             bounds.drop(index + 1).forEach { other ->
                 assertTrue(
-                    rect.right <= other.left || other.right <= rect.left ||
+                    // M3 adjacent segments share a 1dp border, not overlapping labels.
+                    rect.right <= other.left + sharedBorderPx + 1f ||
+                        other.right <= rect.left + sharedBorderPx + 1f ||
                         rect.bottom <= other.top || other.bottom <= rect.top,
                 )
             }

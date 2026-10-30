@@ -9,11 +9,13 @@ import java.time.format.DateTimeFormatter
 internal data class MirrorStatusRow(
     val host: String,
     val caption: String,
+    val responseCaption: String? = null,
 )
 
 internal data class MirrorAvailabilityPresentation(
     val rows: List<MirrorStatusRow> = emptyList(),
     val checkedCaption: String? = null,
+    val summary: String? = null,
 )
 
 internal fun mirrorAvailabilityPresentation(
@@ -24,8 +26,18 @@ internal fun mirrorAvailabilityPresentation(
     val checked =
         latest?.let { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(zone).format(Instant.ofEpochMilli(it)) }
     return MirrorAvailabilityPresentation(
-        observations.map { MirrorStatusRow(it.host, it.availability.mirrorCaption()) },
+        observations.map {
+            MirrorStatusRow(
+                it.host,
+                it.availability.mirrorCaption(),
+                it.responseTimeMillis?.takeIf { time -> time >= 0 }?.let { time -> "HTTP-проверка: $time мс" },
+            )
+        },
         checked?.let { "Проверено с этого устройства в $it" },
+        checked?.let {
+            "Доступны ${observations.count { row -> row.availability == MirrorAvailability.AVAILABLE }} " +
+                "из ${observations.size} — проверено в $it"
+        },
     )
 }
 

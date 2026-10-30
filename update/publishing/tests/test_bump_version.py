@@ -60,7 +60,7 @@ class VersioningTest(unittest.TestCase):
             publishing, _ = self.fixture(root)
             bump.prepare_release(root, "patch", "• Один\n• Два", date.today())
             text = (publishing / "changelogs/ru/2.txt").read_text(encoding="utf-8")
-            self.assertEqual("Версия 0.1.1\n\nИзменения\n\n• Один\n• Два\n", text)
+            self.assertEqual("Версия 0.1.1\n\nИзменения\n\n- Один\n- Два\n", text)
             self.assertEqual(text, (root / "app/src/main/assets/settings-changelog.txt").read_text(encoding="utf-8"))
 
     def test_unstructured_notes_cannot_create_an_empty_history_entry(self):

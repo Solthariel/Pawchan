@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,9 +13,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarSearchTransition
+import com.solthariel.pawchan.core.ui.UiTopAppBar
 import com.solthariel.pawchan.domain.model.BoardAddress
 
 @Composable
@@ -25,32 +24,24 @@ internal fun CatalogToolbarRow(
     focusRequester: FocusRequester,
     actions: CatalogToolbarRowActions,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(CATALOG_TOOLBAR_CONTENT_HEIGHT)
-                .padding(
-                    start = if (ui.header.searchVisible) CATALOG_HORIZONTAL_INSET else CATALOG_TITLE_START_INSET,
-                    end = CATALOG_HORIZONTAL_INSET,
-                ),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CatalogLeadingButton(ui.header.searchVisible, actions.onCloseSearch)
-        CatalogAnimatedHeader(
-            ui.header,
-            focusRequester,
-            actions.onQueryChange,
-            actions.onOpenSearch,
-            actions.overflow.boardLookup?.onOpen,
-        )
-        CatalogRefreshButton(ui.refreshing, actions.onRefresh)
-        CatalogOverflowMenu(
-            ui.menu.expanded,
-            ui.menu.onExpandedChange,
-            actions.overflow,
-        )
-    }
+    UiTopAppBar(
+        title = {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                CatalogAnimatedHeader(
+                    ui.header,
+                    focusRequester,
+                    actions.onQueryChange,
+                    actions.onOpenSearch,
+                    actions.overflow.boardLookup?.onOpen,
+                )
+            }
+        },
+        navigationIcon = { CatalogLeadingButton(ui.header.searchVisible, actions.onCloseSearch) },
+        actions = {
+            CatalogRefreshButton(ui.refreshing, actions.onRefresh)
+            CatalogOverflowMenu(ui.menu.expanded, ui.menu.onExpandedChange, actions.overflow)
+        },
+    )
 }
 
 @Composable
@@ -67,8 +58,6 @@ private fun CatalogLeadingButton(
         )
     }
 }
-
-private val CATALOG_TITLE_START_INSET = 8.dp
 
 @Composable
 private fun RowScope.CatalogAnimatedHeader(
@@ -119,7 +108,7 @@ private fun CatalogIdentityRow(
                         } else {
                             Modifier
                         },
-                    ).padding(start = if (onChooseBoard == null) 20.dp else 0.dp),
+                    ),
             switchable = onChooseBoard != null,
         )
         CatalogIconButton(
@@ -173,6 +162,3 @@ internal data class CatalogToolbarSearchActions(
 internal data class CatalogToolbarNavigationActions(
     val onRefresh: () -> Unit,
 )
-
-private val CATALOG_TOOLBAR_CONTENT_HEIGHT = 36.dp
-private val CATALOG_HORIZONTAL_INSET = APP_TOOLBAR_HORIZONTAL_INSET

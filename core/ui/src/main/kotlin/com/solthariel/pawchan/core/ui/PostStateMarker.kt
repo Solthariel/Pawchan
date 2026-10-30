@@ -1,23 +1,23 @@
 package com.solthariel.pawchan.core.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -51,14 +51,18 @@ fun PostStateMarkers(
     // Размер привязан к шрифту строки статуса (12sp): иконка не выше цифр и масштабируется вместе с текстом.
     val iconSize = with(LocalDensity.current) { MARKER_SIZE.toDp() }
     val description = markers.map { stringResource(it.label) }.joinToString()
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .clickable(role = Role.Button) { open = true }
-            .semantics { contentDescription = description },
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    TextButton(
+        onClick = { open = true },
+        modifier =
+            Modifier
+                .heightIn(min = 48.dp)
+                .widthIn(min = 48.dp)
+                .semantics { contentDescription = description },
+        contentPadding = PaddingValues(4.dp),
     ) {
-        markers.forEach { marker -> UiIcon(marker.icon, marker.color(), Modifier.size(iconSize)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            markers.forEach { marker -> UiIcon(marker.icon, marker.color(), Modifier.size(iconSize)) }
+        }
     }
     if (open) PostStateMarkersDialog(markers, email) { open = false }
 }
