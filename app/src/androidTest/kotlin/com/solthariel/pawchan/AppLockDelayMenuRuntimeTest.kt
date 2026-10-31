@@ -32,7 +32,7 @@ class AppLockDelayMenuRuntimeTest {
                 }
             }
         }
-        compose.onNodeWithText("Запрашивать PIN после отсутствия").performScrollTo().performClick()
+        compose.onNodeWithText("Блокировать после выхода").performScrollTo().performClick()
         compose.onNodeWithText("Через 15 минут").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Через 3 часа").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Через 6 часов").performScrollTo().performClick()

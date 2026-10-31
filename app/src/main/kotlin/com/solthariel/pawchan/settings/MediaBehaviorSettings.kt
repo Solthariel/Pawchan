@@ -17,8 +17,8 @@ internal fun mediaBehaviorGroups(
             "Галерея и видео",
             listOf(
                 SettingsItem.Toggle(
-                    "Воспроизводить видео после перелистывания",
-                    "При выключении следующее видео открывается на паузе",
+                    "Автозапуск при перелистывании",
+                    null,
                     media.playAfterScroll,
                 ) { on ->
                     change {
@@ -26,8 +26,8 @@ internal fun mediaBehaviorGroups(
                     }
                 },
                 SettingsItem.Toggle(
-                    "Синхронизировать позицию треда с галереей",
-                    "После закрытия просмотрщика перейти к посту с последним просмотренным файлом",
+                    "Позиция треда после галереи",
+                    "Перейти к просмотренному посту",
                     media.syncThreadPosition,
                 ) { on ->
                     change {
@@ -45,7 +45,7 @@ internal fun mediaBehaviorGroups(
                 },
                 SettingsItem.Toggle(
                     "Предзагружать следующее видео",
-                    "Заранее открывать соседнее видео; расходует трафик",
+                    "Использует дополнительный трафик",
                     media.preloadVideo,
                 ) { on ->
                     change {

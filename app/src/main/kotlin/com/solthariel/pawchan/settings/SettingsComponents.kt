@@ -156,7 +156,7 @@ private fun ScaleRow(item: SettingsItem.Scale) {
         )
         if (item.preview) {
             Text(
-                "Пример текста поста: так будут выглядеть сообщения в новых тредах.",
+                "Пример текста поста",
                 fontSize = current.sp,
                 lineHeight = (current * PREVIEW_LINE_HEIGHT).sp,
             )

@@ -8,7 +8,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.settings.MirrorAvailabilityPresentation
@@ -23,24 +22,24 @@ class MirrorAvailabilityResultsRuntimeTest {
     private val result =
         MirrorAvailabilityPresentation(
             rows = listOf(MirrorStatusRow("2ch.su", "Доступно", "HTTP-проверка: 123 мс")),
-            summary = "Доступны 1 из 1 — проверено в 12:00:00",
         )
 
-    @Test fun expandingAndCollapsingDoesNotRequestNetworkOrDiscardResults() {
+    @Test fun checkingOpensASeparateWindowAndClosingHidesAllResults() {
         var requests = 0
         compose.setContent { MaterialTheme { Column { MirrorAvailabilityResults(result, false) { requests++ } } } }
         compose.onNodeWithText("2ch.su").assertDoesNotExist()
-        compose.onNodeWithText("Доступность зеркал").performClick()
-        compose.onNodeWithText("Доступно — HTTP-проверка: 123 мс").assertIsDisplayed()
-        compose.onNodeWithText("Доступность зеркал").performClick()
-        compose.onNodeWithText("2ch.su").assertDoesNotExist()
-        compose.onNodeWithText(requireNotNull(result.summary)).assertIsDisplayed()
-        compose.onNodeWithText("Доступность зеркал").performClick()
+        compose.onNodeWithText("Проверить зеркала").performClick()
+        compose.onNodeWithText("Проверка зеркал").assertIsDisplayed()
         compose.onNodeWithText("2ch.su").assertIsDisplayed()
-        compose.runOnIdle { assertEquals(0, requests) }
+        compose.onNodeWithText("Доступно · 123 мс").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(1, requests) }
+        compose.onNodeWithText("Закрыть").performClick()
+        compose.onNodeWithText("2ch.su").assertDoesNotExist()
+        compose.onNodeWithText("Проверка зеркал").assertDoesNotExist()
+        compose.onNodeWithText("Доступность зеркал").assertDoesNotExist()
     }
 
-    @Test fun refreshOpensResultsAndStaysOpenWhenCheckCompletes() {
+    @Test fun repeatIsDisabledWhileCheckingAndCompletingDoesNotRequestAgain() {
         var checking by mutableStateOf(false)
         var presentation by mutableStateOf(MirrorAvailabilityPresentation())
         var requests = 0
@@ -54,16 +53,29 @@ class MirrorAvailabilityResultsRuntimeTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Проверить доступность").performClick().assertIsNotEnabled()
+        compose.onNodeWithText("Проверить зеркала").performClick()
+        compose.onNodeWithText("Повторить").assertIsNotEnabled()
+        compose.onNodeWithText("Проверяем доступность…").assertIsDisplayed()
         compose.runOnIdle {
             assertEquals(1, requests)
             presentation = result
             checking = false
         }
         compose.onNodeWithText("2ch.su").assertIsDisplayed()
-        compose.onNodeWithText("Доступность зеркал").performClick()
-        compose.onNodeWithText("2ch.su").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Проверить доступность").performClick()
+        compose.runOnIdle { assertEquals(1, requests) }
+        compose.onNodeWithText("Повторить").performClick().assertIsNotEnabled()
         compose.runOnIdle { assertEquals(2, requests) }
+        compose.onNodeWithText("Закрыть").performClick()
+        compose.onNodeWithText("Проверка зеркал").assertDoesNotExist()
+    }
+
+    @Test fun reopeningDuringAnExistingCheckDoesNotStartAnotherRequest() {
+        var requests = 0
+        compose.setContent { MaterialTheme { MirrorAvailabilityResults(result, true) { requests++ } } }
+        compose.onNodeWithText("Проверить зеркала").performClick()
+        compose.onNodeWithText("Повторить").assertIsNotEnabled()
+        compose.onNodeWithText("Закрыть").performClick()
+        compose.onNodeWithText("Проверить зеркала").performClick()
+        compose.runOnIdle { assertEquals(0, requests) }
     }
 }

@@ -17,7 +17,6 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.domain.network.ForumMirrors
@@ -40,7 +39,7 @@ class MirrorSettingsStyleRuntimeTest {
         compose.setContent {
             MaterialTheme { Column { MirrorAvailabilitySetting(app) { app = it(app) } } }
         }
-        val row = compose.onNodeWithText("Автоматически переключать зеркало")
+        val row = compose.onNodeWithText("Автовыбор зеркала")
         row.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch)).assertIsOn()
         row.performClick().assertIsOff()
         compose.runOnIdle { assertEquals(false, app.behavior.client.connection.automaticFallback) }
@@ -54,8 +53,8 @@ class MirrorSettingsStyleRuntimeTest {
             }
         }
         compose.runOnIdle { assertEquals(0, mirrors.requests) }
-        compose.onNodeWithContentDescription("Проверить доступность").performClick()
-        compose.onNodeWithContentDescription("Проверить доступность").assertIsNotEnabled()
+        compose.onNodeWithText("Проверить зеркала").performClick()
+        compose.onNodeWithText("Повторить").assertIsNotEnabled()
         compose.runOnIdle {
             assertEquals(1, mirrors.requests)
             mirrors.state.value =
@@ -66,8 +65,8 @@ class MirrorSettingsStyleRuntimeTest {
         }
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Доступно").fetchSemanticsNodes().isNotEmpty() }
         compose.onAllNodesWithText("2ch.su").assertCountEquals(1)
-        compose.onNodeWithText("Как работает переключение").performClick()
-        compose.onNodeWithText("Переключение зеркал").assertIsDisplayed()
+        compose.onNodeWithText("Как работает переключение").assertDoesNotExist()
+        compose.onNodeWithText("Проверка зеркал").assertIsDisplayed()
         compose.onNodeWithText("Закрыть").performClick()
     }
 }

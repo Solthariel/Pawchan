@@ -11,7 +11,7 @@ internal fun hiddenThreadsSettingsGroup(
         listOf(
             SettingsItem.Toggle(
                 "Выводить скрытые треды",
-                "Показывать свёрнутые карточки вместо полного удаления из списка",
+                "Показывать свёрнутые карточки",
                 app.behavior.showHiddenThreads,
             ) { enabled ->
                 update { current -> current.copy(behavior = current.behavior.copy(showHiddenThreads = enabled)) }

@@ -96,7 +96,7 @@ private fun interfaceGroups(
                 ) { selected -> update { it.copy(bubblePosts = selected == 1) } },
                 SettingsItem.Toggle(
                     "Скрывать стикеры",
-                    "Скрывать вложения стикеров, оставляя текст поста",
+                    "Текст постов остаётся",
                     app.hideStickers,
                 ) { on -> update { it.copy(hideStickers = on) } },
                 SettingsItem.Scale(
@@ -107,7 +107,7 @@ private fun interfaceGroups(
                     preview = true,
                 ) { size -> update { it.copy(textSize = size) } },
                 SettingsItem.Scale(
-                    "Сворачивать длинные посты после",
+                    "Строк до сворачивания",
                     app.collapseLines,
                     AppSettings.MIN_COLLAPSE_LINES..AppSettings.MAX_COLLAPSE_LINES,
                     "строк",
@@ -122,7 +122,7 @@ private fun interfaceGroups(
                 SettingsItem.Toggle("Значки постов", "ОП, сажа, закреп, закрыт…", app.postMarkers) { on ->
                     update { it.copy(postMarkers = on) }
                 },
-                SettingsItem.Toggle("Показывать «Аноним»", "Имя по умолчанию в шапке", app.showDefaultName) { on ->
+                SettingsItem.Toggle("Показывать «Аноним»", null, app.showDefaultName) { on ->
                     update { it.copy(showDefaultName = on) }
                 },
             ),
@@ -140,7 +140,7 @@ private fun threadGroups(
             listOf(
                 SettingsItem.Toggle(
                     "Обновлять сохранённые копии",
-                    "Новые посты добавляются, пока тред жив; в фоне — примерно раз в 15 минут",
+                    "В фоне — раз в ~15 минут",
                     app.behavior.updateSavedCopies,
                 ) { on ->
                     update { it.copy(behavior = it.behavior.copy(updateSavedCopies = on)) }
@@ -159,7 +159,7 @@ private fun mediaGroups(
             listOf(
                 SettingsItem.Toggle(
                     "Видео без звука",
-                    "Кнопка звука в плеере запоминает выбор",
+                    "Плеер запоминает выбор",
                     app.behavior.videoStartMuted,
                 ) { on ->
                     update { it.copy(behavior = it.behavior.copy(videoStartMuted = on)) }

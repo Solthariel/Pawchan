@@ -19,28 +19,28 @@ internal fun automationGroups(
             listOf(
                 SettingsItem.Toggle(
                     "Обновлять избранное",
-                    "И треды с включённым наблюдением",
+                    "Включая отслеживаемые треды",
                     value.favorites,
                 ) { on ->
                     change { it.copy(favorites = on) }
                 },
                 SettingsItem.Toggle(
-                    "Проверять ответы на свои посты",
-                    "Для отслеживаемых постов",
+                    "Проверять ответы мне",
+                    "На отслеживаемые посты",
                     value.replies,
                 ) { on ->
                     change { it.copy(replies = on) }
                 },
                 SettingsItem.Choice(
-                    "Интервал фоновой проверки",
+                    "Интервал проверки",
                     minutes.map { "$it минут" },
                     minutes.indexOf(value.backgroundMinutes),
                 ) { index ->
                     change { it.copy(backgroundMinutes = minutes[index]) }
                 },
                 SettingsItem.Toggle(
-                    "Проверять только через Wi-Fi",
-                    "Для автоматических обновлений",
+                    "Проверять по Wi-Fi",
+                    "Без мобильного интернета",
                     value.wifiOnly,
                 ) { on ->
                     change { it.copy(wifiOnly = on) }
@@ -61,13 +61,13 @@ private fun foregroundRefreshGroup(
         listOf(
             SettingsItem.Toggle(
                 "Обновлять открытый тред",
-                "Пока открыт экран треда",
+                null,
                 value.openThread,
             ) { on ->
                 change { it.copy(openThread = on) }
             },
             SettingsItem.Choice(
-                "Интервал обновления треда",
+                "Интервал обновления",
                 seconds.map { "$it секунд" },
                 seconds.indexOf(value.openIntervalSeconds),
             ) { index ->

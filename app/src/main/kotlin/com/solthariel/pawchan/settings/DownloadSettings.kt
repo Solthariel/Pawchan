@@ -30,7 +30,7 @@ internal fun downloadGroups(
             "Скачивание и предзагрузка",
             listOf(
                 SettingsItem.Choice(
-                    "Предзагрузка ближайших изображений",
+                    "Предзагрузка изображений",
                     listOf("Выключена", "Только Wi-Fi", "Любая сеть"),
                     value.media.preloadImages.ordinal,
                 ) { index ->
@@ -42,7 +42,7 @@ internal fun downloadGroups(
                 },
                 SettingsItem.Choice(
                     "Имя скачиваемого файла",
-                    listOf("Исходное", "Подробное: сайт, доска, тред, пост и имя"),
+                    listOf("Исходное", "С доской, тредом и постом"),
                     value.downloads.naming.ordinal,
                 ) { index ->
                     update { current ->

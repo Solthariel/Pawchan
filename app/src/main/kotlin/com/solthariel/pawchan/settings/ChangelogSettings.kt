@@ -29,7 +29,13 @@ internal fun rememberChangelogHistory(): ChangelogHistoryController {
     val scope = rememberCoroutineScope()
     val network = com.solthariel.pawchan.infrastructure.LocalGithubNetwork.current
     return remember(context, scope, network) {
-        val url = historyUrl(BuildConfig.UPDATE_MANIFEST_URL)
+        // Private Dev uses bundled history; its current update notes arrive through the authenticated updater.
+        val url =
+            if (BuildConfig.PRIVATE_UPDATE_REPOSITORY.isBlank()) {
+                historyUrl(BuildConfig.UPDATE_MANIFEST_URL)
+            } else {
+                null
+            }
         val http = ChangelogHttp(network.historyClient)
         val repository =
             ChangelogHistoryRepository(

@@ -51,14 +51,14 @@ internal fun postingGroups(
                 },
                 SettingsItem.Toggle(
                     "Удалять метаданные",
-                    "JPEG и PNG; ориентация сохраняется",
+                    "JPEG/PNG, без поворота снимка",
                     files.removeMetadata,
                 ) { on ->
                     changeFiles {
                         it.copy(removeMetadata = on)
                     }
                 },
-                SettingsItem.Toggle("Спойлер", "Применяется при отправке на поддерживаемый сайт", files.spoiler) { on ->
+                SettingsItem.Toggle("Спойлер", "Если поддерживается сайтом", files.spoiler) { on ->
                     changeFiles {
                         it.copy(spoiler = on)
                     }

@@ -30,6 +30,12 @@ public fun UpdatePanel(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        controller.access?.let { access ->
+            PrivateUpdateAccess(access) { configured ->
+                updateViewModel.accessChanged()
+                if (configured) updateViewModel.check(configuration)
+            }
+        }
         Text(
             text = stringResource(R.string.update_title),
             style = MaterialTheme.typography.bodyLarge,
@@ -129,6 +135,7 @@ private fun ErrorStatus(
     val message =
         when (reason) {
             UpdateError.NOT_CONFIGURED -> R.string.update_not_configured
+            UpdateError.ACCESS_REQUIRED -> R.string.update_access_required
             UpdateError.GENERAL -> R.string.update_error
         }
     Text(

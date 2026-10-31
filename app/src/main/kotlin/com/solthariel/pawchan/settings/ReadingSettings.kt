@@ -31,7 +31,7 @@ internal fun readingGroups(
             listOf(
                 SettingsItem.Toggle(
                     "Восстанавливать последний экран",
-                    "При новом запуске; открытые страницы сохраняются",
+                    "При запуске",
                     value.restoreLastScreen,
                 ) { on ->
                     change {
@@ -40,7 +40,7 @@ internal fun readingGroups(
                 },
                 SettingsItem.Toggle(
                     "Запоминать позицию чтения",
-                    "Выключение не мешает переходу к посту по ссылке",
+                    "Для каждого треда",
                     value.rememberPosition,
                 ) { on ->
                     change {

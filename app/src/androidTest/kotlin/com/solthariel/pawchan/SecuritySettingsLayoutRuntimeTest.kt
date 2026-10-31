@@ -77,7 +77,7 @@ class SecuritySettingsLayoutRuntimeTest {
             }
         }
         appLockDelayChoices(AppLockDelay.MINUTE_1).forEach { delay ->
-            compose.onNodeWithText("Запрашивать PIN после отсутствия").performClick()
+            compose.onNodeWithText("Блокировать после выхода").performClick()
             compose.onNode(hasText(delay.label) and hasAnyAncestor(isDialog())).performScrollTo().performClick()
             compose.runOnIdle { assertEquals(delay, state.value.delay) }
         }

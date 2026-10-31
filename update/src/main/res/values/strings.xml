@@ -13,4 +13,5 @@
     <string name="update_not_configured">Адрес сервера обновлений ещё не настроен.</string>
     <string name="update_error">Не удалось проверить или загрузить обновление.</string>
     <string name="update_permission">Разрешите установку обновлений и нажмите «Установить» ещё раз.</string>
+    <string name="update_access_required">Настройте доступ к закрытому репозиторию. Проверьте срок действия токена и право Contents: Read.</string>
 </resources>

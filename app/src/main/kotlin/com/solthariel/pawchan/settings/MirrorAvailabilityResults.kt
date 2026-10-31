@@ -1,73 +1,90 @@
 package com.solthariel.pawchan.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 
-/** Expanding is independent of requesting. A check opens results and never auto-hides them. */
+/** One settings action; results live only in the shared, dismissible menu-style window. */
 @Composable
 internal fun MirrorAvailabilityResults(
     presentation: MirrorAvailabilityPresentation,
     checking: Boolean,
     onCheck: () -> Unit,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f).semantics { stateDescription = if (expanded) "Развёрнуто" else "Свёрнуто" }) {
-            SettingsRow(
-                "Доступность зеркал",
-                if (checking) "Проверка доступности…" else presentation.summary ?: "Ещё не проверено",
-                onClick = { expanded = !expanded },
-            ) {
-                UiIcon(
-                    if (expanded) UiIconKind.UP else UiIconKind.DOWN,
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                    Modifier.size(24.dp),
-                )
-            }
-        }
-        IconButton(
-            onClick = {
-                expanded = true
-                onCheck()
-            },
-            enabled = !checking,
-            modifier = Modifier.semantics { contentDescription = "Проверить доступность" },
-        ) {
-            if (checking) {
-                CircularProgressIndicator(Modifier.size(24.dp))
-            } else {
-                UiIcon(UiIconKind.REFRESH, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
-            }
-        }
+    var open by rememberSaveable { mutableStateOf(false) }
+    SettingsRow("Проверить зеркала", null, onClick = {
+        open = true
+        if (!checking) onCheck()
+    }) {
+        UiIcon(UiIconKind.REFRESH, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
     }
-    if (expanded) MirrorStatusRows(presentation)
+    if (open) {
+        AppAlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text("Проверка зеркал") },
+            text = { MirrorCheckResults(presentation, checking) },
+            confirmButton = {
+                TextButton(onClick = { open = false }) { Text("Закрыть") }
+            },
+            dismissButton = {
+                TextButton(onClick = onCheck, enabled = !checking) { Text("Повторить") }
+            },
+        )
+    }
 }
 
 @Composable
-private fun MirrorStatusRows(presentation: MirrorAvailabilityPresentation) {
-    presentation.rows.forEach { row ->
-        SettingsRow(
-            row.host,
-            listOfNotNull(row.caption, row.responseCaption).joinToString(" — "),
-            onClick = null,
+private fun MirrorCheckResults(
+    presentation: MirrorAvailabilityPresentation,
+    checking: Boolean,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (checking) {
+            Text("Проверяем доступность…")
+        } else if (presentation.rows.isEmpty()) {
+            Text("Нет результатов проверки")
+        } else {
+            presentation.rows.forEachIndexed { index, row ->
+                if (index > 0) HorizontalDivider()
+                MirrorCheckRow(row)
+            }
+        }
+        Text(
+            "Время HTTP-проверки, не сетевой ping.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun MirrorCheckRow(row: MirrorStatusRow) {
+    FlowRow(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(row.host, Modifier.padding(end = 12.dp))
+        Text(
+            listOfNotNull(row.caption, row.responseCaption?.removePrefix("HTTP-проверка: ")).joinToString(" · "),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

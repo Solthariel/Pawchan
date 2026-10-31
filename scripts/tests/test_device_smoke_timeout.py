@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
-MODULES = ('app', 'data:database', 'core:ui', 'core:media',
+MODULES = ('app', 'data:database', 'update', 'core:ui', 'core:media',
            'feature:composer', 'feature:thread', 'feature:applock')
 
 

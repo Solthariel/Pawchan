@@ -19,8 +19,8 @@ internal fun storageGroups(
                     environment.onClearCache,
                 ),
                 SettingsItem.Toggle(
-                    "Очищать кэш изображений при выходе",
-                    "При закрытии приложения, не при сворачивании",
+                    "Очищать кэш при выходе",
+                    "Не при сворачивании",
                     app.behavior.client.media.clearCacheOnExit,
                 ) { on ->
                     update { current -> current.withClient { it.copy(media = it.media.copy(clearCacheOnExit = on)) } }

@@ -19,14 +19,13 @@ internal fun ThreadOverflowMenu(
     tools: ThreadToolsState,
     content: ThreadUiState.Content? = null,
     actions: ThreadActions? = null,
-    toolbarNavigationVisible: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     DropdownMenu(expanded = tools.menu, onDismissRequest = { tools.closeMenu() }) {
         when {
             tools.advanced -> ThreadSearchFlagItems(tools)
             tools.contents -> ThreadContentsItems(tools, content, actions)
-            else -> ThreadMainMenuItems(tools, content, actions, scope, toolbarNavigationVisible)
+            else -> ThreadMainMenuItems(tools, content, actions, scope)
         }
     }
 }
@@ -37,7 +36,6 @@ private fun ThreadMainMenuItems(
     content: ThreadUiState.Content?,
     actions: ThreadActions?,
     scope: CoroutineScope,
-    toolbarNavigationVisible: Boolean,
 ) {
     if (tools.readingReturn != null) {
         ThreadMenuItem("Вернуться к месту чтения") {
@@ -45,7 +43,6 @@ private fun ThreadMainMenuItems(
             tools.onReadingReturn()
         }
     }
-    if (!toolbarNavigationVisible) ThreadNavigationMenuItems(tools, content, actions)
     ThreadMenuItem("Расширенный поиск") { tools.advanced = true }
     ThreadMenuItem("Выделить") {
         tools.menu = false
@@ -59,23 +56,6 @@ private fun ThreadMainMenuItems(
     content?.let {
         HorizontalDivider()
         ThreadMenuStatistics(it)
-    }
-}
-
-/** These actions move into overflow only when they are absent from the toolbar. */
-@Composable
-private fun ThreadNavigationMenuItems(
-    tools: ThreadToolsState,
-    content: ThreadUiState.Content?,
-    actions: ThreadActions?,
-) {
-    ThreadMenuItem("Галерея", enabled = content != null) { tools.openDialog(ThreadDialog.GALLERY) }
-    ThreadMenuItem(
-        if (content?.isFavorite == true) "Убрать из избранного" else "Добавить тред в избранное",
-        enabled = content != null && actions != null,
-    ) {
-        tools.closeMenu()
-        actions?.onFavoriteToggle?.invoke()
     }
 }
 

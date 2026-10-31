@@ -33,7 +33,7 @@ NDK 29.0.14206865 и CMake 3.22.1. Приложение рассчитано н�
 4. С разрешённой ADB-отладкой на подключённом ARM64-устройстве либо совместимом
    эмуляторе запустить полный `scripts/device-smoke`, без фильтра классов/методов
    и без ограничения изменённым модулем. Он охватывает все текущие модули с
-   `src/androidTest`: app, data/database, core/ui, core/media, feature/composer,
+   `src/androidTest`: app, data/database, update, core/ui, core/media, feature/composer,
    feature/thread, feature/applock. При добавлении нового AndroidTest-модуля
    обновить оба device-smoke-скрипта; список должен оставаться полным.
 5. Проверить свежие результаты ВСЕХ этапов и модулей, затем дополнительные
@@ -147,7 +147,7 @@ Linux/macOS:
 ./scripts/device-smoke.sh
 ```
 
-Скрипт обязательно запускается после каждого патча и выполняет connectedDebugAndroidTest для app, data/database, core/ui,
+Скрипт обязательно запускается после каждого патча и выполняет connectedDebugAndroidTest для app, data/database, update, core/ui,
 core/media, feature/composer, feature/thread и feature/applock. Наличие compiled AndroidTest APK
 не означает исполнение тестов на устройстве. Целевые ручные сценарии выбираются
 по изменённой подсистеме, замеры — по [протоколу performance](contracts/PERFORMANCE.md).
@@ -155,8 +155,9 @@ core/media, feature/composer, feature/thread и feature/applock. Наличие 
 ## Изоляция приложения при device-тестах
 
 Debug устанавливается как **Pawchan Debug**: `com.solthariel.pawchan.debug`,
-тестовый APK — `com.solthariel.pawchan.debug.test`. Release сохраняет прежний
-`com.solthariel.pawchan` и обновляет установленный Pawchan с прежним ключом подписи.
+тестовый APK — `com.solthariel.pawchan.debug.test`. Рабочий release теперь называется Pawchan Dev и использует
+`com.solthariel.pawchan.dev`: он устанавливается рядом с прежним Pawchan, а не обновляет его.
+Его последующие APK требуют одного постоянного ключа подписи.
 У debug отдельные настройки, БД, файлы и PIN; данные release туда не переносятся.
 
 Перед установкой debug или connectedDebugAndroidTest задача
@@ -278,3 +279,9 @@ shell. Внешние/внутренние символьные ссылки и 
 Происхождение прежних скриптов и сохранённого MOV-исправления описано в
 [NOTICE инструмента](../tools/native-build/NOTICE.md). Исторические хеши в старом
 `native-prebuilt/manifest.json` не переписываются под новый инструмент.
+
+## Закрытый рабочий выпуск
+
+Release этого рабочего репозитория — `com.solthariel.pawchan.dev`, Pawchan Dev.
+Подпись, первый переход и закрытые обновления описаны в [PRIVATE_DEV.md](PRIVATE_DEV.md).
+Отдельный Debug остаётся целью instrumented tests, не пользовательским каналом.

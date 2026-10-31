@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Reads bounded responses on IO; a structured child cancels the call until body close. */
 internal class UpdateTransport(
     private val client: OkHttpClient,
+    private val rewriteUrl: (HttpUrl) -> HttpUrl = { it },
 ) : AutoCloseable {
     private val closed = AtomicBoolean()
 
@@ -60,7 +61,7 @@ internal class UpdateTransport(
         withContext(Dispatchers.IO) {
             coroutineScope {
                 check(!closed.get()) { "Update transport is closed" }
-                val call = client.newCall(Request.Builder().url(url).build())
+                val call = client.newCall(Request.Builder().url(rewriteUrl(url)).build())
                 val cancellation =
                     launch(start = CoroutineStart.UNDISPATCHED) {
                         try {

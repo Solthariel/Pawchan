@@ -158,6 +158,7 @@ private fun releaseUpdateConfiguration(): UpdateConfiguration =
         manifestUrl = BuildConfig.UPDATE_MANIFEST_URL,
         currentVersionCode = BuildConfig.VERSION_CODE.toLong(),
         currentVersionName = BuildConfig.VERSION_NAME,
+        privateRepository = BuildConfig.PRIVATE_UPDATE_REPOSITORY,
     )
 
 internal val ThemePreference.labelResource: Int

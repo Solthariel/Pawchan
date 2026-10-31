@@ -1,12 +1,14 @@
 package com.solthariel.pawchan.core.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -21,23 +23,26 @@ fun UiToolbarButton(
     active: Boolean = false,
     onClick: () -> Unit,
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.size(APP_TOOLBAR_BUTTON_SIZE).semantics { contentDescription = description },
-        colors =
-            IconButtonDefaults.iconButtonColors(
-                contentColor =
-                    if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
+    Box(
+        modifier =
+            Modifier
+                .size(APP_TOOLBAR_BUTTON_SIZE)
+                .clip(CircleShape)
+                .clickable(enabled = enabled, onClick = onClick)
+                .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
     ) {
         UiIcon(
             kind = kind,
-            color = LocalContentColor.current,
+            color =
+                when {
+                    active -> MaterialTheme.colorScheme.primary
+                    enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                    else -> MaterialTheme.colorScheme.outline
+                },
             modifier = Modifier.size(24.dp).rotate(rotationDegrees),
         )
     }
 }
 
-/** Standard Material action target; panel slots use the same geometry. */
-val APP_TOOLBAR_BUTTON_SIZE = 48.dp
+val APP_TOOLBAR_BUTTON_SIZE = 36.dp

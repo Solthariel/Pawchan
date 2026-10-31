@@ -190,6 +190,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "UPDATE_MANIFEST_URL", "\"$updateManifestUrl\"")
+        buildConfigField("String", "PRIVATE_UPDATE_REPOSITORY", "\"Solthariel/Pawchan\"")
     }
 
     buildFeatures {
@@ -217,6 +218,8 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
+            applicationIdSuffix = ".dev"
+            isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             // Use the real release key when supplied by CI. For local

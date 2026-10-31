@@ -25,9 +25,9 @@ internal fun AppLockSettingsContent(
             SettingsItem.Toggle(
                 "Блокировка приложения",
                 if (state.enabled) {
-                    "Запрашивать PIN-код при открытии приложения"
+                    "Запрашивать PIN-код при входе"
                 } else {
-                    "Четырёхзначный PIN-код для Pawchan"
+                    "Защита четырёхзначным PIN-кодом"
                 },
                 state.enabled,
             ) { onEdit(if (it) LockAction.ENABLE else LockAction.DISABLE) },
@@ -62,7 +62,7 @@ private fun LockEnabledControls(
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
     SettingsItemRow(
         SettingsItem.Choice(
-            "Запрашивать PIN после отсутствия",
+            "Блокировать после выхода",
             delays.map { it.label },
             delays.indexOf(state.delay),
         ) { onDelay(delays[it]) },
@@ -74,11 +74,11 @@ private fun LockEnabledControls(
         SettingsItemRow(
             SettingsItem.Toggle(
                 "Вход по отпечатку",
-                "Использовать вместо PIN-кода",
+                "Вместо PIN-кода",
                 state.biometric,
             ) { onEdit(if (it) LockAction.BIOMETRIC_ENABLE else LockAction.BIOMETRIC_DISABLE) },
         )
     } else {
-        SettingsItemRow(SettingsItem.Action("Вход по отпечатку", "Недоступен. Проверьте настройки телефона."))
+        SettingsItemRow(SettingsItem.Action("Вход по отпечатку", "Недоступен на устройстве"))
     }
 }

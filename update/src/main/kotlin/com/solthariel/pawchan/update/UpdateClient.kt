@@ -11,7 +11,8 @@ internal class UpdateClient(
     private val configuration: UpdateConfiguration,
     httpClient: OkHttpClient,
 ) : UpdateOperations {
-    private val transport = UpdateTransport(httpClient)
+    private val github = configuration.privateRepository?.let(::GithubUpdateUrls)
+    private val transport = UpdateTransport(httpClient) { github?.content(it) ?: it }
     private val downloads =
         UpdateDownloadStore(
             java.io.File(context.applicationContext.cacheDir, "updates"),
@@ -32,7 +33,8 @@ internal class UpdateClient(
         onProgress: (Int) -> Unit,
     ): java.io.File {
         val source = checkNotNull(release.source) { "Update source is missing" }
-        val url = resolveHttpsUrl(requireHttpsUrl(configuration.manifestUrl), source)
+        val sourceUrl = resolveHttpsUrl(requireHttpsUrl(configuration.manifestUrl), source)
+        val url = github?.let { githubReleaseAsset(transport, it, sourceUrl, release.length) } ?: sourceUrl
         return downloads.download(release) { partial ->
             transport.downloadTo(url, partial, release.length, onProgress)
         }

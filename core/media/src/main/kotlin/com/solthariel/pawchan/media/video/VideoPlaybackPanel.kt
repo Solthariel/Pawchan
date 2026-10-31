@@ -1,10 +1,9 @@
 package com.solthariel.pawchan.media.video
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -14,20 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,8 +42,9 @@ import com.solthariel.pawchan.media.LocalMediaRotation
 import com.solthariel.pawchan.media.MediaViewerNavigation
 
 /**
- * M3 controls in separate rows: seek, audio/utilities, centered transport.
- * All actions retain 48dp targets even on a 320dp viewport.
+ * Нижняя панель видео: тонкая строка перемотки и компактная строка кнопок.
+ * Слева звук и скорость, по центру предыдущий/play/следующий, справа PiP и поворот —
+ * по два слота с каждой стороны, поэтому play ровно по центру экрана.
  */
 @Composable
 internal fun VideoPlaybackPanel(
@@ -56,7 +56,10 @@ internal fun VideoPlaybackPanel(
     val sound by player.sound.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxWidth().padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET)) {
         VideoSeekRow(player, progress)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().height(VIDEO_CONTROLS_HEIGHT),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             UiToolbarButton(
                 if (!sound.hasAudio || sound.muted) UiIconKind.VOLUME_OFF else UiIconKind.VOLUME_ON,
                 stringResource(if (sound.muted) R.string.video_unmute else R.string.video_mute),
@@ -65,15 +68,6 @@ internal fun VideoPlaybackPanel(
             )
             VideoSpeedButton(sound.speed, player::cycleSpeed)
             Spacer(Modifier.weight(1f))
-            VideoOptionalButton(UiIconKind.PIP, stringResource(R.string.video_pip), onPip)
-            VideoOptionalButton(UiIconKind.ROTATE, stringResource(R.string.video_rotate), LocalMediaRotation.current)
-        }
-
-        Row(
-            Modifier.fillMaxWidth().height(VIDEO_CONTROLS_HEIGHT),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
             UiToolbarButton(
                 UiIconKind.PREVIOUS,
                 stringResource(R.string.video_previous),
@@ -87,6 +81,9 @@ internal fun VideoPlaybackPanel(
                 enabled = navigation.next != null,
                 onClick = { navigation.next?.invoke() },
             )
+            Spacer(Modifier.weight(1f))
+            VideoOptionalButton(UiIconKind.PIP, stringResource(R.string.video_pip), onPip)
+            VideoOptionalButton(UiIconKind.ROTATE, stringResource(R.string.video_rotate), LocalMediaRotation.current)
         }
     }
 }
@@ -110,16 +107,18 @@ private fun VideoPlayButton(
     onClick: () -> Unit,
 ) {
     val description = stringResource(if (playing) R.string.video_pause else R.string.video_play)
-    FilledTonalIconButton(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .size(VIDEO_PLAY_BUTTON_SIZE)
-                .semantics { contentDescription = description },
+    Box(
+        Modifier
+            .padding(horizontal = 4.dp)
+            .size(VIDEO_PLAY_BUTTON_SIZE)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
     ) {
         UiIcon(
             if (playing) UiIconKind.PAUSE else UiIconKind.PLAY,
-            LocalContentColor.current,
+            MaterialTheme.colorScheme.onSurface,
             Modifier.size(VIDEO_PLAY_ICON_SIZE),
         )
     }
@@ -131,13 +130,13 @@ private fun VideoSpeedButton(
     onClick: () -> Unit,
 ) {
     val description = stringResource(R.string.video_speed, speed.label)
-    TextButton(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .size(APP_TOOLBAR_BUTTON_SIZE)
-                .semantics { contentDescription = description },
-        contentPadding = PaddingValues(0.dp),
+    Box(
+        Modifier
+            .size(APP_TOOLBAR_BUTTON_SIZE)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             speed.label,
@@ -162,15 +161,18 @@ private fun VideoSeekRow(
     val position = scrubbing?.toLong() ?: progress.position
     Row(Modifier.fillMaxWidth().height(VIDEO_SEEK_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         VideoTimeLabel(videoTimeLabel(position))
-        VideoSeekSlider(
-            position.toFloat(),
-            progress,
-            onChange = { scrubbing = it },
-            onFinish = {
-                scrubbing?.let { player.seekTo(it.toLong()) }
-                scrubbing = null
-            },
-        )
+        // Строка 28dp: Slider сам расширился бы до 48dp минимальной области касания.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+            VideoSeekSlider(
+                position.toFloat(),
+                progress,
+                onChange = { scrubbing = it },
+                onFinish = {
+                    scrubbing?.let { player.seekTo(it.toLong()) }
+                    scrubbing = null
+                },
+            )
+        }
         VideoTimeLabel(videoDurationLabel(progress.duration))
     }
 }
@@ -229,9 +231,9 @@ private fun VideoTimeLabel(
 }
 
 private val VIDEO_TRACK_HEIGHT = 3.dp
-private val VIDEO_SEEK_ROW_HEIGHT = 48.dp
-private val VIDEO_CONTROLS_HEIGHT = 48.dp
-private val VIDEO_PLAY_BUTTON_SIZE = 48.dp
+private val VIDEO_SEEK_ROW_HEIGHT = 28.dp
+private val VIDEO_CONTROLS_HEIGHT = 44.dp
+private val VIDEO_PLAY_BUTTON_SIZE = 44.dp
 private val VIDEO_PLAY_ICON_SIZE = 32.dp
 private val VIDEO_THUMB_SIZE = 12.dp
 private val VIDEO_THUMB_TOUCH = 20.dp

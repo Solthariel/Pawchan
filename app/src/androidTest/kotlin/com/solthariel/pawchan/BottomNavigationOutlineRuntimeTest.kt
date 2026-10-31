@@ -1,8 +1,10 @@
 package com.solthariel.pawchan
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -12,19 +14,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertHeightIsEqualTo
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
@@ -34,82 +31,110 @@ import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomBar
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.math.roundToInt
 
-/** Navigation uses M3 tabs independently of the post bubble preference. */
 class BottomNavigationOutlineRuntimeTest {
     @get:Rule val compose = createComposeRule()
     private val bubbles = mutableStateOf(false)
-    private val selected = mutableStateOf(AppBottomDestination.CATALOG)
+    private var density = 1f
     private var clicks = 0
-    private val labels = listOf("Каталог", "Треды", "Доски", "Настройки")
 
-    @Test fun darkNavigationWithPlainPostsUsesMaterialTabs() = checkMaterial(false, false)
+    @Test fun plainDarkPanelHasOnlyTheTopDivider() = checkOutline(false, false)
 
-    @Test fun darkNavigationWithBubblePostsUsesMaterialTabs() = checkMaterial(true, false)
+    @Test fun bubbleDarkPanelKeepsItsCapsuleOutline() = checkOutline(true, false)
 
-    @Test fun lightNavigationWithPlainPostsUsesMaterialTabs() = checkMaterial(false, true)
+    @Test fun plainLightPanelHasOnlyTheTopDivider() = checkOutline(false, true)
 
-    @Test fun lightNavigationWithBubblePostsUsesMaterialTabs() = checkMaterial(true, true)
+    @Test fun bubbleLightPanelKeepsItsCapsuleOutline() = checkOutline(true, true)
 
-    @Test fun changingPostStyleDoesNotMoveOrResizeNavigation() {
+    @Test
+    fun changingModeDoesNotMoveOrResizeAnyButton() {
         show()
         val before = buttonBounds()
         compose.runOnIdle { bubbles.value = true }
+        compose.waitForIdle()
         assertEquals(before, buttonBounds())
         compose.runOnIdle { bubbles.value = false }
+        compose.waitForIdle()
         assertEquals(before, buttonBounds())
     }
 
-    @Test fun allButtonsDispatchTheSameActionsInBothPostStyles() {
+    @Test
+    fun allButtonsStillDispatchTheSameActionsInBothModes() {
         show()
         repeat(2) { mode ->
             compose.runOnIdle { bubbles.value = mode == 1 }
-            labels.forEach { compose.onNodeWithContentDescription(it).performClick() }
+            compose.waitForIdle()
+            listOf("Каталог", "Треды", "Доски", "Настройки").forEach {
+                compose.onNodeWithContentDescription(it).performClick()
+            }
         }
         compose.runOnIdle { assertEquals(8, clicks) }
     }
 
-    @Test fun changingDestinationUpdatesTheSelectedMaterialTab() {
+    @Test
+    fun activeTabPixelsRemainIdenticalWhenOnlyTheOutlineChanges() {
         show()
-        compose.onNodeWithContentDescription("Каталог").assertIsSelected()
-        compose.onNodeWithContentDescription("Настройки").assertIsNotSelected()
-        compose.runOnIdle { selected.value = AppBottomDestination.SETTINGS }
-        compose.onNodeWithContentDescription("Каталог").assertIsNotSelected()
-        compose.onNodeWithContentDescription("Настройки").assertIsSelected()
+        val before = compose.onNodeWithContentDescription("Каталог").captureToImage().toPixelMap()
+        compose.runOnIdle { bubbles.value = true }
+        compose.waitForIdle()
+        val after = compose.onNodeWithContentDescription("Каталог").captureToImage().toPixelMap()
+        assertEquals(before.width, after.width)
+        assertEquals(before.height, after.height)
+        for (y in 0 until before.height) {
+            for (x in 0 until before.width) assertEquals(before[x, y], after[x, y])
+        }
     }
 
-    private fun checkMaterial(
+    private fun checkOutline(
         bubble: Boolean,
         light: Boolean,
     ) {
         bubbles.value = bubble
         show(light)
-        compose.onNodeWithTag("navigation-bar").assertHeightIsEqualTo(APP_BOTTOM_BAR_HEIGHT)
-        labels.forEach { label ->
-            compose.onNodeWithText(label).assertIsDisplayed()
-            compose
-                .onNodeWithContentDescription(label)
-                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
+        val colors = if (light) lightColorScheme() else darkColorScheme()
+        val bar = compose.onNodeWithTag("navigation-bar").fetchSemanticsNode().boundsInRoot
+        assertEquals(APP_BOTTOM_BAR_HEIGHT.value * density, bar.height, 1f)
+        val pixels = compose.onNodeWithTag("navigation-outline").captureToImage().toPixelMap()
+        val middleX = pixels.width / 2
+        val sideX = (10 * density).roundToInt()
+        val middleY = (18 * density).roundToInt()
+        val bottomY = (35 * density).roundToInt()
+        assertEquals(colors.outlineVariant, pixels[middleX, 0])
+        if (bubble) {
+            assertNotEquals(colors.surface, pixels[sideX, middleY])
+            assertNotEquals(colors.surface, pixels[middleX, bottomY])
+        } else {
+            assertSurfaceColor(colors.surface, pixels[sideX, middleY])
+            assertSurfaceColor(colors.surface, pixels[middleX, bottomY])
+            assertSurfaceColor(colors.surface, pixels[(12 * density).roundToInt(), 0])
         }
-        val bounds = buttonBounds()
-        val minimum = with(compose.density) { 48.dp.toPx() }
-        bounds.forEach { assertTrue(it.width >= minimum && it.height >= minimum) }
-        bounds.zipWithNext().forEach { (left, right) -> assertTrue(left.right <= right.left + 1f) }
     }
 
     private fun show(light: Boolean = false) {
         compose.setContent {
+            density = LocalDensity.current.density
             MaterialTheme(colorScheme = if (light) lightColorScheme() else darkColorScheme()) {
                 CompositionLocalProvider(
                     LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = bubbles.value),
                 ) {
-                    Box(Modifier.width(320.dp).consumeWindowInsets(WindowInsets.navigationBars)) {
+                    Box(
+                        Modifier
+                            .width(360.dp)
+                            .height(80.dp)
+                            // This fixture checks the panel drawing, not system-bar padding.
+                            // Consume the real device inset so it cannot shrink the 36dp surface.
+                            .consumeWindowInsets(WindowInsets.navigationBars)
+                            .background(Color.Magenta)
+                            .testTag("navigation-outline"),
+                    ) {
                         AppBottomBar(
                             AppBottomActions({ clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }),
-                            selected.value,
+                            AppBottomDestination.CATALOG,
                             modifier = Modifier.testTag("navigation-bar"),
                         )
                     }
@@ -118,8 +143,20 @@ class BottomNavigationOutlineRuntimeTest {
         }
     }
 
+    // Native screenshot color conversion may round a channel by one 8-bit level.
+    private fun assertSurfaceColor(
+        expected: Color,
+        actual: Color,
+    ) {
+        val tolerance = 1.01f / 255f
+        assertTrue(kotlin.math.abs(expected.red - actual.red) <= tolerance)
+        assertTrue(kotlin.math.abs(expected.green - actual.green) <= tolerance)
+        assertTrue(kotlin.math.abs(expected.blue - actual.blue) <= tolerance)
+        assertEquals(expected.alpha, actual.alpha)
+    }
+
     private fun buttonBounds(): List<Rect> =
-        labels.map {
+        listOf("Каталог", "Треды", "Доски", "Настройки").map {
             compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
         }
 }
