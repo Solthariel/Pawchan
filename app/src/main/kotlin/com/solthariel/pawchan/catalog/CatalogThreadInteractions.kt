@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppMenuDialog
+import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
 
 internal data class CatalogThreadInteractions(
@@ -100,12 +101,13 @@ private fun CatalogThreadMenuDialog(
                 if (options.favorite == true) "Убрать тред из избранного" else "Добавить тред в избранное",
                 callbacks.favorite,
                 options.favorite != null,
+                icon = if (options.favorite == true) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
             )
         }
-        ActionMenuItem("Копировать ссылку", callbacks.copy, options.canLink)
-        ActionMenuItem("Поделиться ссылкой", callbacks.share, options.canLink)
-        if (options.canAddRule) ActionMenuItem("Добавить правило", callbacks.addRule)
-        if (!options.hidden && options.canHide) ActionMenuItem("Скрыть", callbacks.hide)
+        ActionMenuItem("Копировать ссылку", callbacks.copy, options.canLink, icon = UiIconKind.LINK)
+        ActionMenuItem("Поделиться ссылкой", callbacks.share, options.canLink, icon = UiIconKind.SHARE)
+        if (options.canAddRule) ActionMenuItem("Добавить правило", callbacks.addRule, icon = UiIconKind.FILTER)
+        if (!options.hidden && options.canHide) ActionMenuItem("Скрыть", callbacks.hide, icon = UiIconKind.HIDE)
     }
 }
 

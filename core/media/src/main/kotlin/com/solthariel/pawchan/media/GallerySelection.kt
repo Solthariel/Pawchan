@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -90,91 +92,29 @@ internal fun GallerySelectionToolbar(
     actions: GalleryToolbarActions,
 ) {
     Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        Modifier
+            .testTag(
+                "gallery-toolbar",
+            ).fillMaxWidth()
+            .heightIn(min = APP_TOP_BAR_HEIGHT)
+            .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(role = Role.Checkbox, onClick = actions.selectAll)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            GallerySelectionCircle(state.allSelected, Modifier.border(1.dp, OUTLINE, CircleShape))
-            Text(stringResource(R.string.gallery_all), fontSize = 10.sp, maxLines = 1)
+        GalleryIconButton(stringResource(R.string.gallery_cancel), actions.toggleSelection) {
+            UiIcon(UiIconKind.BACK, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
         }
         Text(
             stringResource(R.string.gallery_selected_count, state.selectedCount),
-            Modifier.weight(1f).padding(start = 8.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
+            Modifier.weight(1f).padding(start = 12.dp),
+            style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
-        Text(
-            stringResource(R.string.gallery_cancel),
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(role = Role.Button, onClick = actions.toggleSelection)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
-        )
-    }
-}
-
-/** Нижняя панель действий над выбранным: подписанные значки. */
-@Composable
-internal fun GallerySelectionBar(
-    enabled: Boolean,
-    actions: GallerySelectionBarActions,
-) {
-    Column(Modifier.fillMaxWidth()) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            actions.download?.let {
-                GalleryBarAction(UiIconKind.SAVE, stringResource(R.string.gallery_download), enabled, it)
-            }
-            GalleryBarAction(UiIconKind.LINK, stringResource(R.string.gallery_copy_links), enabled, actions.copyLinks)
-            actions.favorite?.let {
-                GalleryBarAction(UiIconKind.STAR, stringResource(R.string.gallery_favorite), enabled, it)
-            }
-            actions.remove?.let {
-                GalleryBarAction(UiIconKind.CLOSE, stringResource(R.string.gallery_unfavorite), enabled, it)
-            }
+        GalleryIconButton(stringResource(R.string.gallery_all), actions.selectAll) {
+            GallerySelectionCircle(state.allSelected, Modifier.border(1.dp, OUTLINE, CircleShape))
         }
     }
 }
-
-@Composable
-private fun GalleryBarAction(
-    icon: UiIconKind,
-    label: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    Column(
-        Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .alpha(if (enabled) 1f else DISABLED_ALPHA)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        UiIcon(icon, MaterialTheme.colorScheme.onSurface, Modifier.size(24.dp))
-        Text(label, fontSize = 11.sp, maxLines = 1)
-    }
-}
-
-internal data class GallerySelectionBarActions(
-    val download: (() -> Unit)?,
-    val copyLinks: () -> Unit,
-    val favorite: (() -> Unit)?,
-    /** Убрать выбранное из избранного; null — кнопки нет. */
-    val remove: (() -> Unit)? = null,
-)
 
 /** Ссылки на все выбранные файлы — по одной в строке. */
 internal fun copyGalleryLinks(
@@ -192,4 +132,3 @@ private const val OUTLINE_ARGB = 0x33000000
 private val SELECTED_FILL = Color(SELECTED_FILL_ARGB)
 private val UNSELECTED_FILL = Color(UNSELECTED_FILL_ARGB)
 private val OUTLINE = Color(OUTLINE_ARGB)
-private const val DISABLED_ALPHA = 0.38f

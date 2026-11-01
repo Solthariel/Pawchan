@@ -2,6 +2,7 @@ package com.solthariel.pawchan.composer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -21,9 +24,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,43 +49,52 @@ internal fun ComposerFormattingToolbar(
     onClear: () -> Unit,
     onMarkup: (CommentMarkup) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth()) {
-        CommentMarkup.entries.forEach { markup ->
-            val description = stringResource(markup.descriptionResource)
+    val keyCount = CommentMarkup.entries.size + 1
+    val minimumWidth = FORMAT_MIN_CELL_WIDTH * LocalDensity.current.fontScale * keyCount
+    BoxWithConstraints(Modifier.fillMaxWidth().testTag("composer-formatting-viewport")) {
+        Row(Modifier.horizontalScroll(rememberScrollState()).width(maxWidth.coerceAtLeast(minimumWidth))) {
+            CommentMarkup.entries.forEachIndexed { index, markup ->
+                ComposerMarkupKey(
+                    Modifier.weight(1f),
+                    enabled && !filesLoading,
+                    stringResource(markup.descriptionResource),
+                    onClick = { onMarkup(markup) },
+                    alignment = BiasAlignment(2f * index / (keyCount - 1) - 1f, 0f),
+                ) { ComposerMarkupLabel(markup) }
+            }
             ComposerMarkupKey(
                 Modifier.weight(1f),
-                enabled && !filesLoading,
-                description,
-                onClick = { onMarkup(markup) },
+                enabled,
+                stringResource(R.string.composer_clear_all),
+                onClick = onClear,
+                alignment = Alignment.CenterEnd,
             ) {
-                Text(
-                    markup.label,
-                    maxLines = 1,
-                    fontSize = if (markup.label.length > 1) 11.sp else 16.sp,
-                    fontWeight = if (markup == CommentMarkup.BOLD) FontWeight.Bold else FontWeight.Normal,
-                    fontStyle = if (markup == CommentMarkup.ITALIC) FontStyle.Italic else FontStyle.Normal,
-                    textDecoration =
-                        when (markup) {
-                            CommentMarkup.UNDERLINE -> TextDecoration.Underline
-                            CommentMarkup.STRIKE -> TextDecoration.LineThrough
-                            else -> null
-                        },
+                Icon(
+                    painterResource(R.drawable.ic_composer_backspace),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp).testTag("composer-clear-glyph"),
                 )
             }
         }
-        ComposerMarkupKey(
-            Modifier.weight(1f),
-            enabled,
-            stringResource(R.string.composer_clear_all),
-            onClick = onClear,
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_composer_backspace),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-            )
-        }
     }
+}
+
+@Composable
+private fun ComposerMarkupLabel(markup: CommentMarkup) {
+    Text(
+        markup.label,
+        modifier = Modifier.testTag("composer-markup-glyph-${markup.name}"),
+        maxLines = 1,
+        fontSize = if (markup.label.length > 1) 11.sp else 16.sp,
+        fontWeight = if (markup == CommentMarkup.BOLD) FontWeight.Bold else FontWeight.Normal,
+        fontStyle = if (markup == CommentMarkup.ITALIC) FontStyle.Italic else FontStyle.Normal,
+        textDecoration =
+            when (markup) {
+                CommentMarkup.UNDERLINE -> TextDecoration.Underline
+                CommentMarkup.STRIKE -> TextDecoration.LineThrough
+                else -> null
+            },
+    )
 }
 
 private val CommentMarkup.descriptionResource: Int
@@ -103,6 +117,7 @@ private fun ComposerMarkupKey(
     enabled: Boolean,
     description: String,
     onClick: () -> Unit,
+    alignment: Alignment,
     content: @Composable () -> Unit,
 ) {
     val color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -120,10 +135,11 @@ private fun ComposerMarkupKey(
                 indication = null,
                 onClick = onClick,
             ),
-        contentAlignment = Alignment.Center,
+        contentAlignment = alignment,
     ) {
         Box(
             Modifier
+                .align(Alignment.Center)
                 .size(maxWidth.coerceAtMost(48.dp))
                 .clip(RoundedCornerShape(8.dp))
                 .background(if (enabled && (pressed || focused)) color.copy(alpha = 0.16f) else Color.Transparent)
@@ -132,3 +148,5 @@ private fun ComposerMarkupKey(
         CompositionLocalProvider(LocalContentColor provides color) { content() }
     }
 }
+
+private val FORMAT_MIN_CELL_WIDTH = 24.dp

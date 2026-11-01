@@ -30,7 +30,11 @@ internal fun ComposerViewerHeader(
 ) {
     val close = stringResource(R.string.board_dialog_close)
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
             TextButton(onClick = onRemove, enabled = enabled) { Text(stringResource(R.string.attachment_remove)) }
             IconButton(onClick = onDismiss, modifier = Modifier.semantics { contentDescription = close }) {
                 UiIcon(UiIconKind.CLOSE, MaterialTheme.colorScheme.onSurface, Modifier.size(24.dp))

@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -31,7 +32,6 @@ import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomBar
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -43,13 +43,13 @@ class BottomNavigationOutlineRuntimeTest {
     private var density = 1f
     private var clicks = 0
 
-    @Test fun plainDarkPanelHasOnlyTheTopDivider() = checkOutline(false, false)
+    @Test fun plainDarkPanelHasFlatTranslucentSurface() = checkSurface(false, false)
 
-    @Test fun bubbleDarkPanelKeepsItsCapsuleOutline() = checkOutline(true, false)
+    @Test fun bubbleDarkPanelUsesTheSameFlatSurface() = checkSurface(true, false)
 
-    @Test fun plainLightPanelHasOnlyTheTopDivider() = checkOutline(false, true)
+    @Test fun plainLightPanelHasFlatTranslucentSurface() = checkSurface(false, true)
 
-    @Test fun bubbleLightPanelKeepsItsCapsuleOutline() = checkOutline(true, true)
+    @Test fun bubbleLightPanelUsesTheSameFlatSurface() = checkSurface(true, true)
 
     @Test
     fun changingModeDoesNotMoveOrResizeAnyButton() {
@@ -69,15 +69,15 @@ class BottomNavigationOutlineRuntimeTest {
         repeat(2) { mode ->
             compose.runOnIdle { bubbles.value = mode == 1 }
             compose.waitForIdle()
-            listOf("Каталог", "Треды", "Доски", "Настройки").forEach {
+            listOf("Каталог", "Треды", "Доски", "Настройки", "Написать").forEach {
                 compose.onNodeWithContentDescription(it).performClick()
             }
         }
-        compose.runOnIdle { assertEquals(8, clicks) }
+        compose.runOnIdle { assertEquals(10, clicks) }
     }
 
     @Test
-    fun activeTabPixelsRemainIdenticalWhenOnlyTheOutlineChanges() {
+    fun activeTabPixelsRemainIdenticalWhenPostModeChanges() {
         show()
         val before = compose.onNodeWithContentDescription("Каталог").captureToImage().toPixelMap()
         compose.runOnIdle { bubbles.value = true }
@@ -90,7 +90,7 @@ class BottomNavigationOutlineRuntimeTest {
         }
     }
 
-    private fun checkOutline(
+    private fun checkSurface(
         bubble: Boolean,
         light: Boolean,
     ) {
@@ -103,16 +103,16 @@ class BottomNavigationOutlineRuntimeTest {
         val middleX = pixels.width / 2
         val sideX = (10 * density).roundToInt()
         val middleY = (18 * density).roundToInt()
-        val bottomY = (35 * density).roundToInt()
-        assertEquals(colors.outlineVariant, pixels[middleX, 0])
-        if (bubble) {
-            assertNotEquals(colors.surface, pixels[sideX, middleY])
-            assertNotEquals(colors.surface, pixels[middleX, bottomY])
-        } else {
-            assertSurfaceColor(colors.surface, pixels[sideX, middleY])
-            assertSurfaceColor(colors.surface, pixels[middleX, bottomY])
-            assertSurfaceColor(colors.surface, pixels[(12 * density).roundToInt(), 0])
-        }
+        val bottomY = (55 * density).roundToInt().coerceAtMost(pixels.height - 1)
+        val expected = colors.surface.copy(alpha = 0.8f).compositeOver(Color.Magenta)
+        assertSurfaceColor(expected, pixels[sideX, middleY])
+        assertSurfaceColor(expected, pixels[middleX, bottomY])
+        // The 8dp fade starts transparent, not with an outline/divider.
+        val firstPixelAlpha = 0.8f * (0.5f / density / 8f)
+        assertSurfaceColor(
+            colors.surface.copy(alpha = firstPixelAlpha).compositeOver(Color.Magenta),
+            pixels[middleX, 0],
+        )
     }
 
     private fun show(light: Boolean = false) {
@@ -127,13 +127,13 @@ class BottomNavigationOutlineRuntimeTest {
                             .width(360.dp)
                             .height(80.dp)
                             // This fixture checks the panel drawing, not system-bar padding.
-                            // Consume the real device inset so it cannot shrink the 36dp surface.
+                            // Consume the real device inset so it cannot shrink the 56dp surface.
                             .consumeWindowInsets(WindowInsets.navigationBars)
                             .background(Color.Magenta)
                             .testTag("navigation-outline"),
                     ) {
                         AppBottomBar(
-                            AppBottomActions({ clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }),
+                            AppBottomActions({ clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }, { clicks++ }),
                             AppBottomDestination.CATALOG,
                             modifier = Modifier.testTag("navigation-bar"),
                         )
@@ -156,7 +156,7 @@ class BottomNavigationOutlineRuntimeTest {
     }
 
     private fun buttonBounds(): List<Rect> =
-        listOf("Каталог", "Треды", "Доски", "Настройки").map {
+        listOf("Каталог", "Треды", "Доски", "Настройки", "Написать").map {
             compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
         }
 }

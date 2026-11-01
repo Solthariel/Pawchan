@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 /** Both initial placement and the parent viewport are independent of keyboard height. */
@@ -25,7 +24,7 @@ internal fun StableKeyboardDialog(
     properties: DialogProperties,
     content: @Composable () -> Unit,
 ) {
-    Dialog(
+    ModalWindow(
         onDismiss,
         properties =
             DialogProperties(
@@ -47,7 +46,8 @@ internal fun StableKeyboardDialog(
                     .widthIn(max = AppDialogStyle.maxWidth)
                     .fillMaxWidth()
                     .heightIn(max = maxHeight)
-                    .testTag("app-dialog"),
+                    .testTag("app-dialog")
+                    .modalLayerSurface(AppDialogStyle.shape),
                 shape = AppDialogStyle.shape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,

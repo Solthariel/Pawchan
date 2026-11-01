@@ -22,28 +22,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppDialog
+import com.solthariel.pawchan.core.ui.MenuNavigation
+import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 import com.solthariel.pawchan.domain.model.MediaKind
 import com.solthariel.pawchan.media.metadata.MediaMetadataDialog
 import com.solthariel.pawchan.media.metadata.MediaMetadataSource
 import com.solthariel.pawchan.media.metadata.MediaMetadataSummary
 import com.solthariel.pawchan.media.metadata.rememberMediaMetadata
+import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
 
 enum class ImageSearchEngine {
     GOOGLE,
@@ -196,7 +196,7 @@ private fun CenteredMediaMenu(
     }
 }
 
-/** Всплывающее меню у ⋮ в правом верхнем углу, без затемнения — в виде меню действий. */
+/** Меню у ⋮ сохраняет привязку к правому верхнему углу; фон приглушает общий modal host. */
 @Composable
 private fun AnchoredMediaMenu(
     onClose: () -> Unit,
@@ -206,17 +206,17 @@ private fun AnchoredMediaMenu(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
         Box(Modifier.fillMaxSize().clickable(interactionSource = null, indication = null, onClick = onClose)) {
             Surface(
                 Modifier
                     .align(Alignment.TopEnd)
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(top = 4.dp, end = 4.dp)
-                    .widthIn(min = 220.dp, max = 300.dp),
+                    .widthIn(min = 220.dp, max = 300.dp)
+                    .modalLayerSurface(RoundedCornerShape(8.dp)),
                 shape = RoundedCornerShape(8.dp),
-                shadowElevation = 8.dp,
+                shadowElevation = 3.dp,
+                color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
                 Column(
                     Modifier.width(IntrinsicSize.Max).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
@@ -267,7 +267,7 @@ private fun MediaSearchItems(
     actions: MediaMenuActions,
     onBack: () -> Unit,
 ) {
-    ActionMenuItem("‹ Назад", onBack)
+    ActionMenuItem("Назад", onBack, navigation = MenuNavigation.BACK)
     ActionMenuItem(stringResource(R.string.media_menu_google), { actions.onSearch(ImageSearchEngine.GOOGLE) })
     ActionMenuItem(stringResource(R.string.media_menu_yandex), { actions.onSearch(ImageSearchEngine.YANDEX) })
 }
@@ -284,7 +284,12 @@ private fun MediaMenuEntry(
     if (item == MediaMenuItem.SOFTWARE_DECODER) {
         MediaCheckItem(label, viewer?.softwareDecoder == true, handlers.closing { viewer?.onSoftwareDecoder?.invoke() })
     } else {
-        ActionMenuItem(label, mediaMenuAction(item, request, actions, handlers))
+        ActionMenuItem(
+            label,
+            mediaMenuAction(item, request, actions, handlers),
+            navigation = if (item == MediaMenuItem.SEARCH) MenuNavigation.FORWARD else null,
+            icon = item.icon,
+        )
     }
 }
 
@@ -318,3 +323,17 @@ private fun MediaCheckItem(
         Checkbox(checked = checked, onCheckedChange = { onClick() })
     }
 }
+
+private val MediaMenuItem.icon: UiIconKind
+    get() =
+        when (this) {
+            MediaMenuItem.METADATA -> UiIconKind.INFO
+            MediaMenuItem.OPEN_THREAD, MediaMenuItem.GO_TO_POST -> UiIconKind.FORUM
+            MediaMenuItem.REFRESH -> UiIconKind.REFRESH
+            MediaMenuItem.DOWNLOAD -> UiIconKind.SAVE
+            MediaMenuItem.SEARCH -> UiIconKind.SEARCH
+            MediaMenuItem.COPY_IMAGE -> UiIconKind.COPY
+            MediaMenuItem.COPY_LINK -> UiIconKind.LINK
+            MediaMenuItem.FAVORITE -> UiIconKind.BOOKMARK_ADD
+            MediaMenuItem.SOFTWARE_DECODER -> UiIconKind.SETTINGS
+        }

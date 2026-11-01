@@ -46,7 +46,7 @@ class SettingsToolbarUiTest {
     fun overflowNavigatesToSectionsAndBackReturnsToTheList() {
         showSettings()
         compose.onNodeWithText("Интерфейс").performClick()
-        compose.onNodeWithText("Тема оформления").assertIsDisplayed()
+        compose.onNodeWithText("Режим темы").assertIsDisplayed()
         compose.onNodeWithContentDescription("Меню настроек").performClick()
         compose.onNodeWithText("Общие").performClick()
         compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
@@ -91,7 +91,7 @@ class SettingsToolbarUiTest {
         }
         searchStep("reopen-appearance") {
             compose.onNodeWithText("Интерфейс").performClick()
-            compose.onNodeWithText("Тема оформления").assertIsDisplayed()
+            compose.onNodeWithText("Режим темы").assertIsDisplayed()
         }
     }
 

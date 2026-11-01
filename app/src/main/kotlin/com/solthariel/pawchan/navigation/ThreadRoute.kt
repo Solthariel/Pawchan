@@ -38,20 +38,6 @@ internal fun ThreadRoute(
     challengeRetryToken: Long,
     bottomActions: AppBottomActions,
 ) {
-    // Та же обёртка, что в каталоге: панель плавает поверх ленты, посты уходят под неё.
-    AppNavigationWorkspace(actions = bottomActions, selected = null, hideWithKeyboard = true) {
-        ThreadRouteContent(address, dependencies, onBack, onChallenge, challengeRetryToken)
-    }
-}
-
-@Composable
-private fun ThreadRouteContent(
-    address: ThreadAddress,
-    dependencies: AppDependencies,
-    onBack: () -> Unit,
-    onChallenge: (String) -> Unit,
-    challengeRetryToken: Long,
-) {
     val workspace = LocalWorkspace.current?.controller
     val storage = remember(workspace) { workspace?.let(::AppThreadPostStorage) }
     val model = rememberThreadSession(address, dependencies)
@@ -74,6 +60,14 @@ private fun ThreadRouteContent(
                 watcherToggle = { enabled, toggle -> rememberWatcherNotificationToggle(enabled, toggle) },
             ),
         storage = storage,
+        navigationHost = { onWrite, content ->
+            AppNavigationWorkspace(
+                actions = bottomActions.copy(onWriteClick = onWrite),
+                selected = null,
+                hideWithKeyboard = true,
+                content = content,
+            )
+        },
         contentHost = { content ->
             ThreadReplyHost(
                 address.board.board,

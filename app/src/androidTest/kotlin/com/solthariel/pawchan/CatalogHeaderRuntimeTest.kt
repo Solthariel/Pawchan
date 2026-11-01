@@ -79,6 +79,13 @@ class CatalogHeaderRuntimeTest {
             it(results)
         }
         assertEquals(1, results.single().lineCount)
+        assertEquals(
+            18f,
+            results
+                .single()
+                .layoutInput.style.fontSize.value,
+            0f,
+        )
         assertTrue(results.single().isLineEllipsized(0))
         compose
             .onNodeWithTag("disclosure-indicator", useUnmergedTree = true)
@@ -87,7 +94,7 @@ class CatalogHeaderRuntimeTest {
     }
 
     @Test
-    fun titleAndSpeedKeepHistoricalLeftInsetWithTheIndicatorInTheMargin() {
+    fun boardSurfaceStartsAtListInsetAndIndicatorCentersOnBothLines() {
         val lookup = CatalogBoardLookupBindings(false, "", {}, {}, {}) {}
         val menu =
             CatalogMenuBindings(
@@ -101,25 +108,47 @@ class CatalogHeaderRuntimeTest {
         compose.setContent {
             MaterialTheme {
                 CatalogToolbarRow(
-                    CatalogToolbarRowUi(CatalogHeaderUi(board, "Highlights", 1, false, ""), false, CatalogMenuUi(false, {})),
+                    CatalogToolbarRowUi(
+                        CatalogHeaderUi(board, "Highlights", 1, false, ""),
+                        false,
+                        CatalogMenuUi(false, {}),
+                    ),
                     focus,
-                    CatalogToolbarRowActions(CatalogToolbarSearchActions({}, {}, {}), CatalogToolbarNavigationActions({}), menu),
+                    CatalogToolbarRowActions(
+                        CatalogToolbarSearchActions({}, {}, {}),
+                        CatalogToolbarNavigationActions({}),
+                        menu,
+                    ),
                 )
             }
         }
-        val label = compose.onNodeWithText("/hry/ — Highlights", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val arrow = compose.onNodeWithTag("disclosure-indicator", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val speed = compose.onNodeWithText("1 сообщение в час", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val label =
+            compose
+                .onNodeWithText("/hry/ — Highlights", useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val arrow =
+            compose
+                .onNodeWithTag("disclosure-indicator", useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val speed =
+            compose
+                .onNodeWithText("1 сообщение в час", useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val chooser = compose.onNodeWithText("/hry/ — Highlights").fetchSemanticsNode().boundsInRoot
+        assertEquals(16f * compose.density.density, chooser.left, 1f)
         assertEquals(28f * compose.density.density, label.left, 1f)
         assertEquals(label.left, speed.left, 1f)
-        assertEquals(8f * compose.density.density, arrow.left, 1f)
-        assertTrue(arrow.right <= label.left)
+        assertTrue(arrow.left >= label.right)
+        assertEquals((label.top + speed.bottom) / 2f, arrow.center.y, 1f)
     }
 
     private fun show() {
         compose.setContent {
             MaterialTheme {
-                Row(Modifier.width(240.dp).height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.width(240.dp).height(64.dp), verticalAlignment = Alignment.CenterVertically) {
                     CatalogBoardIdentity(board, title.value, speed.value, Modifier.weight(1f), switchable = true)
                 }
             }

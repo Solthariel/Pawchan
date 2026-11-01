@@ -20,7 +20,11 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.SettingsRepository
+import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePreference
+import com.solthariel.pawchan.domain.settings.displayMode
+import com.solthariel.pawchan.domain.settings.legacyColors
+import com.solthariel.pawchan.domain.settings.selectionMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -58,9 +62,14 @@ class DataStoreSettingsRepository private constructor(
     private val homeBoardWritten = MutableStateFlow(false)
     private val favoriteBoardsOverride = MutableStateFlow<Set<BoardId>?>(null)
 
+    private val colorStore = ThemeColorsStore(dataStore)
+    override val themeColors: Flow<ThemeColors> = colorStore.colors
+
+    override suspend fun setThemeColors(colors: ThemeColors): DomainOutcome<Unit> = colorStore.save(colors)
+
     override val theme: Flow<ThemePreference> =
         combine(dataStore.safeData(), themeOverride) { preferences, override ->
-            override ?: parseTheme(preferences[THEME_KEY])
+            (override ?: parseTheme(preferences[THEME_KEY])).selectionMode(preferences.readThemeColors())
         }
 
     override val homeBoard: Flow<BoardAddress?> =
@@ -88,6 +97,14 @@ class DataStoreSettingsRepository private constructor(
     override suspend fun setTheme(theme: ThemePreference): DomainOutcome<Unit> {
         val outcome =
             editPreferences { preferences ->
+                // Freeze the effective legacy colors before replacing the old combined theme name.
+                val colors =
+                    if (theme.displayMode() == theme || theme == ThemePreference.AMOLED) {
+                        preferences.readThemeColors().copy(pureBlack = theme == ThemePreference.AMOLED)
+                    } else {
+                        theme.legacyColors()
+                    }
+                preferences.writeThemeColors(colors)
                 preferences[THEME_KEY] = theme.name
             }
         if (outcome is DomainOutcome.Success) {

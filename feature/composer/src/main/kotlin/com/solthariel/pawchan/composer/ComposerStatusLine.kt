@@ -100,7 +100,7 @@ private fun RowScope.ComposerStatusBody(
 }
 
 @Composable
-private fun ComposerStatusControls(
+private fun RowScope.ComposerStatusControls(
     remaining: Long?,
     expired: Boolean,
     reloadLabel: String,
@@ -110,7 +110,7 @@ private fun ComposerStatusControls(
     if (remaining != null) {
         Text(
             captchaTimerLabel(remaining),
-            Modifier.padding(start = 6.dp).semantics {
+            Modifier.weight(1f).padding(start = 6.dp).semantics {
                 contentDescription = "Осталось $remaining секунд"
             },
             color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,

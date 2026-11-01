@@ -37,7 +37,6 @@ public data class UpdateConfiguration(
     val manifestUrl: String,
     val currentVersionCode: Long,
     val currentVersionName: String,
-    val privateRepository: String? = null,
 )
 
 internal sealed interface UpdateUiState {
@@ -70,6 +69,5 @@ internal sealed interface UpdateUiState {
 
 internal enum class UpdateError {
     NOT_CONFIGURED,
-    ACCESS_REQUIRED,
     GENERAL,
 }

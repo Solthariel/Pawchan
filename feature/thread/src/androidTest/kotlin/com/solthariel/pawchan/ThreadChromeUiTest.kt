@@ -46,14 +46,14 @@ class ThreadChromeUiTest {
                 }
             }
         }
-        val descriptions = listOf("Назад", "Добавить тред в избранное", "Галерея", "Написать", "Поиск", "Обновить", "Меню треда")
+        val descriptions = listOf("Назад", "Добавить тред в избранное", "Галерея", "Поиск", "Обновить", "Меню треда")
         val toolbar = compose.onNodeWithTag("toolbar-fixture").fetchSemanticsNode().boundsInRoot
-        val inset = with(compose.density) { 12.dp.roundToPx() }
-        val slot = with(compose.density) { 36.dp.roundToPx() }
+        val inset = with(compose.density) { 4.dp.roundToPx() }
+        val slot = with(compose.density) { 48.dp.roundToPx() }
         // Compose rounds each measured slot, not the sum of dp coordinates.
         val expectedCenters =
             List(3) { toolbar.left + inset + slot * (it + 0.5f) } +
-                List(4) { toolbar.right - inset - slot * (3.5f - it) }
+                List(3) { toolbar.right - inset - slot * (2.5f - it) }
         descriptions.forEachIndexed { index, description ->
             val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
             assertEquals(slot.toFloat(), bounds.width, 0f)

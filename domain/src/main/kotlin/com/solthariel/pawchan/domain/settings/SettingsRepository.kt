@@ -19,9 +19,12 @@ enum class ThemePreference {
 
 interface SettingsRepository {
     val theme: Flow<ThemePreference>
+    val themeColors: Flow<ThemeColors>
     val homeBoard: Flow<BoardAddress?>
 
     suspend fun setHomeBoard(board: BoardAddress): DomainOutcome<Unit>
 
     suspend fun setTheme(theme: ThemePreference): DomainOutcome<Unit>
+
+    suspend fun setThemeColors(colors: ThemeColors): DomainOutcome<Unit>
 }

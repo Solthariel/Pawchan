@@ -40,9 +40,17 @@ class ThreadToolbarUiTest {
                 ThreadToolbar(state, ThreadActions({}, {}, {}, {}), tools) {}
             }
         }
-        for (description in listOf("Назад", "Добавить тред в избранное", "Галерея", "Поиск", "Написать", "Обновить", "Меню треда")) {
+        for (description in listOf(
+            "Назад",
+            "Добавить тред в избранное",
+            "Галерея",
+            "Поиск",
+            "Обновить",
+            "Меню треда",
+        )) {
             compose.onNodeWithContentDescription(description).assertIsDisplayed()
         }
+        compose.onNodeWithContentDescription("Написать").assertDoesNotExist()
         compose.onNodeWithText("Название").assertDoesNotExist()
         compose.onNodeWithContentDescription("Меню треда").performClick()
         for (label in listOf(

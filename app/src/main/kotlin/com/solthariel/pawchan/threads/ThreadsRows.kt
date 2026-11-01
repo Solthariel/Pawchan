@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +41,6 @@ internal fun ThreadsSectionHeader(
     total: ThreadCounter,
     onToggle: () -> Unit,
     counterWidth: Dp? = null,
-    trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         Modifier
@@ -52,19 +50,18 @@ internal fun ThreadsSectionHeader(
             .padding(start = THREADS_ROW_START, end = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        UiDisclosureIndicator(expanded)
         Text(
             section.title,
             Modifier.weight(1f),
             style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         val reply = section == ThreadsSection.REPLIES
-        if (counterWidth == null || trailing != null) {
-            ThreadCounterBox(total, reply)
-            trailing?.invoke()
-        } else {
-            ThreadCounterColumn(total, reply, counterWidth)
+        ThreadCounterColumn(total, reply, counterWidth)
+        Box(Modifier.size(THREADS_TRAILING_WIDTH), contentAlignment = Alignment.Center) {
+            UiDisclosureIndicator(expanded)
         }
     }
 }
@@ -77,7 +74,7 @@ internal fun ThreadRow(
     current: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onClose: (() -> Unit)? = null,
+    closeAction: ThreadRowCloseAction? = null,
     counterWidth: Dp? = null,
 ) {
     Row(
@@ -98,11 +95,11 @@ internal fun ThreadRow(
             color =
                 if (current) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
         )
-        if (onClose != null) {
-            ThreadCounterBox(row.counter, row.reply)
-            CatalogIconButton(UiIconKind.CLOSE, "Закрыть", onClick = onClose)
-        } else {
-            ThreadCounterColumn(row.counter, row.reply, counterWidth)
+        ThreadCounterColumn(row.counter, row.reply, counterWidth)
+        Box(Modifier.size(THREADS_TRAILING_WIDTH), contentAlignment = Alignment.Center) {
+            closeAction?.let { action ->
+                CatalogIconButton(UiIconKind.CLOSE, action.label, onClick = action.onClick)
+            }
         }
     }
 }
@@ -125,34 +122,6 @@ private fun ThreadCounterColumn(
     ) {
         Box(Modifier.width(THREADS_TRAILING_WIDTH), contentAlignment = Alignment.Center) {
             ThreadCounterCell(counter, reply, cell)
-        }
-    }
-}
-
-@Composable
-internal fun ThreadCounterBox(
-    counter: ThreadCounter,
-    reply: Boolean,
-) {
-    if (!counter.visible) return
-    val important = reply && counter.count > 0
-    val container =
-        if (important) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant
-    val content =
-        if (important) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant
-    Box(
-        Modifier
-            .padding(start = 8.dp)
-            .height(COUNTER_HEIGHT)
-            .widthIn(min = COUNTER_MIN_WIDTH)
-            .background(container, RoundedCornerShape(4.dp))
-            .padding(horizontal = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (counter.running && counter.label.isEmpty()) {
-            Box(Modifier.size(6.dp).background(content, CircleShape))
-        } else {
-            Text(counter.label, style = MaterialTheme.typography.labelMedium, color = content, maxLines = 1)
         }
     }
 }
@@ -205,7 +174,13 @@ internal fun rememberThreadCounterWidth(sections: List<List<ThreadRowUi>>): Dp {
     val style = MaterialTheme.typography.labelMedium
     val density = LocalDensity.current
     // Сумма в заголовке секции стоит в той же колонке, поэтому тоже участвует в ширине.
-    val totals = sections.map { rows -> ThreadCounter(rows.sumOf { it.counter.count }).cellLabel.length }
+    val totals =
+        sections.map { rows ->
+            maxOf(
+                ThreadCounter(rows.sumOf { it.counter.count }).cellLabel.length,
+                ThreadCounter(rows.size).cellLabel.length,
+            )
+        }
     val widest = (sections.flatten().map { it.counter.cellLabel.length } + totals).maxOrNull() ?: 1
     return remember(widest, style, density) {
         val text = measurer.measure("0".repeat(widest.coerceAtLeast(1)), style, maxLines = 1)
@@ -262,12 +237,12 @@ internal fun ThreadsLinkRow(
 }
 
 private val THREADS_ROW_HEIGHT = 48.dp
-private val THREADS_HEADER_HEIGHT = 44.dp
+private val THREADS_HEADER_HEIGHT = 48.dp
 private val THREADS_ROW_START = 16.dp
 private val COUNTER_HEIGHT = 26.dp
-private val COUNTER_MIN_WIDTH = 32.dp
+private val COUNTER_MIN_WIDTH = 26.dp
 private val COUNTER_HORIZONTAL_PADDING = 6.dp
 private const val MUTED_ZERO_ALPHA = 0.6f
 
-/** Ширина кнопки «Закрыть» ([CatalogIconButton]): по ней выравнивается колонка счётчиков. */
+/** Общая крайняя колонка стрелок заголовков и крестиков строк. */
 private val THREADS_TRAILING_WIDTH = APP_TOOLBAR_BUTTON_SIZE

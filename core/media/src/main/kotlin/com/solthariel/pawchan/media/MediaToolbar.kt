@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,7 +44,10 @@ internal fun MediaToolbar(
 ) {
     Surface(color = Color.Transparent) {
         Row(
-            Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = APP_TOP_BAR_HEIGHT)
+                .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             UiToolbarButton(
@@ -52,7 +56,7 @@ internal fun MediaToolbar(
                 active = LocalMediaPresentation.current.backHighlighted,
                 onClick = onClose,
             )
-            Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+            Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {
                 Text(
                     attachment.fileName,
                     style =

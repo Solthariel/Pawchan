@@ -30,19 +30,8 @@ fun UiToolbarSearchField(
     placeholder: String = "Поиск",
     clearDescription: String = "Очистить поиск",
 ) {
-    Row(
-        modifier
-            .height(34.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = SEARCH_ALPHA), RoundedCornerShape(17.dp))
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        UiIcon(UiIconKind.SEARCH, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(20.dp))
-        Spacer(Modifier.size(10.dp))
+    UiToolbarSearchLayout(modifier, if (query.isNotEmpty()) ({ onQueryChange("") }) else null, clearDescription) {
         ToolbarSearchInput(query, onQueryChange, focusRequester, placeholder, Modifier.weight(1f))
-        if (query.isNotEmpty()) {
-            UiToolbarButton(UiIconKind.CLOSE, clearDescription, onClick = { onQueryChange("") })
-        }
     }
 }
 
@@ -73,5 +62,3 @@ private fun ToolbarSearchInput(
         },
     )
 }
-
-private const val SEARCH_ALPHA = 0.58f

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
+import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 
@@ -49,16 +51,22 @@ internal fun ThreadSearchBar(
         focusRequester.requestFocus()
         keyboard?.show()
     }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(APP_TOOLBAR_BUTTON_SIZE)
-            .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ThreadToolbarButton(UiIconKind.BACK, "Закрыть поиск", onClick = closeSearch)
-        ThreadSearchField(tools, content, focusRequester)
-        ThreadSearchNavigation(tools, onResult)
+    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = APP_TOP_BAR_HEIGHT)
+                .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ThreadToolbarButton(UiIconKind.BACK, "Закрыть поиск", onClick = closeSearch)
+            ThreadSearchField(tools, content, focusRequester)
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) { ThreadSearchNavigation(tools, onResult) }
     }
 }
 
@@ -68,24 +76,10 @@ private fun RowScope.ThreadSearchField(
     content: ThreadUiState.Content?,
     focusRequester: FocusRequester,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .weight(1f)
-                .height(34.dp)
-                .padding(horizontal = 4.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
-                    RoundedCornerShape(17.dp),
-                ).padding(start = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    com.solthariel.pawchan.core.ui.UiToolbarSearchLayout(
+        Modifier.weight(1f).padding(horizontal = 4.dp),
+        if (tools.query.isNotEmpty()) ({ tools.search(content, "") }) else null,
     ) {
-        UiIcon(
-            UiIconKind.SEARCH,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-            Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(8.dp))
         BasicTextField(
             value = tools.query,
             onValueChange = { tools.search(content, it) },
@@ -95,11 +89,6 @@ private fun RowScope.ThreadSearchField(
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { inner -> ThreadSearchPlaceholder(tools, inner) },
         )
-        if (tools.query.isNotEmpty()) {
-            ThreadToolbarButton(UiIconKind.CLOSE, "Очистить поиск") {
-                tools.search(content, "")
-            }
-        }
     }
 }
 

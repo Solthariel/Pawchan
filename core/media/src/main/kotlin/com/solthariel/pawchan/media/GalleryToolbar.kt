@@ -1,12 +1,16 @@
 package com.solthariel.pawchan.media
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -38,7 +43,11 @@ internal fun GalleryToolbar(
         return
     }
     Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        Modifier
+            .testTag("gallery-toolbar")
+            .fillMaxWidth()
+            .heightIn(min = APP_TOP_BAR_HEIGHT)
+            .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GalleryIconButton("Назад", actions.back) {
@@ -46,15 +55,19 @@ internal fun GalleryToolbar(
         }
         Text(
             "Галерея",
-            Modifier.weight(1f).padding(start = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
+            Modifier.widthIn(max = 88.dp).padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        GalleryFilter.entries.forEach { filter ->
-            GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
-                actions.chooseFilter(filter)
+        Row(
+            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GalleryFilter.entries.forEach { filter ->
+                GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
+                    actions.chooseFilter(filter)
+                }
             }
         }
         GalleryIconButton("Выделить медиа", actions.toggleSelection) {
@@ -73,17 +86,24 @@ internal fun GalleryFilterButton(
     val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         Modifier
-            .size(44.dp)
+            .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
             .clip(CircleShape)
             .semantics {
                 contentDescription = "${filter.label}: $count"
                 selected = active
-            }.clickable(role = Role.Button, onClick = onClick),
+            }.clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GalleryFilterIcon(filter, color)
-        Text(count.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, maxLines = 1)
+        Text(
+            count.toString(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+        )
     }
 }
 

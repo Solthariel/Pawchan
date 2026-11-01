@@ -8,15 +8,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
 internal fun ComposerAttachButton(onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+    IconButton(onClick = onClick, modifier = Modifier.size(APP_TOOLBAR_BUTTON_SIZE)) {
         Icon(
             painterResource(R.drawable.ic_composer_attach),
             contentDescription = stringResource(R.string.attachment_add),
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(24.dp),
         )
     }
 }

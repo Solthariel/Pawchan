@@ -66,6 +66,8 @@ class ComposerInlineStatusUiTest {
         }
         val reload = compose.onNodeWithContentDescription("Повторить загрузку капчи")
         val before = reload.fetchSemanticsNode().boundsInRoot
+        assertEquals(240f * compose.density.density, before.right, 1f)
+        assertEquals(48f * compose.density.density, before.width, 1f)
         compose.runOnIdle { failure.value = ComposerFailureState(ReplyError.REJECTED, reason) }
         val status = compose.onNodeWithText(reason)
         status.assertIsDisplayed()

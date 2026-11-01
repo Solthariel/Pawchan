@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppDialog
+import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.media.MediaSaveQueue
 import com.solthariel.pawchan.media.rememberMediaSaveActions
@@ -34,12 +35,12 @@ internal fun PostLinkMenu(
     val bindings = LocalPostLinks.current
     AppDialog(onDismiss, Modifier.testTag("post-link-menu")) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
-            LinkMenuRow("Копировать ссылку") {
+            LinkMenuRow("Копировать ссылку", UiIconKind.LINK) {
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("Ссылка", target.url))
                 onDismiss()
             }
-            LinkMenuRow("Открыть в браузере") {
+            LinkMenuRow("Открыть в браузере", UiIconKind.GLOBE) {
                 uri.openUri(target.url)
                 onDismiss()
             }
@@ -48,7 +49,7 @@ internal fun PostLinkMenu(
             }
             bindings?.onOpenFilePost?.let { open ->
                 target.fileThread?.let { address ->
-                    LinkMenuRow("Открыть пост") {
+                    LinkMenuRow("Открыть пост", UiIconKind.FORUM) {
                         onDismiss()
                         open(address, target.url)
                     }
@@ -56,7 +57,7 @@ internal fun PostLinkMenu(
             }
             bindings?.onOpenThread?.let { navigate ->
                 target.thread?.let { address ->
-                    LinkMenuRow(target.openLabel(address)) {
+                    LinkMenuRow(target.openLabel(address), UiIconKind.FORUM) {
                         onDismiss()
                         navigate(address, target.postId)
                     }
@@ -73,7 +74,7 @@ private fun LinkDownloadAction(
     onDismiss: () -> Unit,
 ) {
     val save = rememberMediaSaveActions(queue)
-    LinkMenuRow("Скачать файл") { save.request(attachment) }
+    LinkMenuRow("Скачать файл", UiIconKind.SAVE) { save.request(attachment) }
     // Keep the launcher composed until the document picker has returned.
     androidx.compose.runtime.LaunchedEffect(save.status) {
         if (save.status !is com.solthariel.pawchan.media.MediaSaveStatus.Idle) onDismiss()
@@ -83,9 +84,10 @@ private fun LinkDownloadAction(
 @Composable
 private fun LinkMenuRow(
     label: String,
+    icon: UiIconKind,
     onClick: () -> Unit,
 ) {
-    ActionMenuItem(label, onClick)
+    ActionMenuItem(label, onClick, icon = icon)
 }
 
 /** Ссылка на пост (не ОП) ведёт к посту, на тред или ОП-пост — к треду. */

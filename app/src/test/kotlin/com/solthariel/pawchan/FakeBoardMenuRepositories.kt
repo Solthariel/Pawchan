@@ -10,6 +10,7 @@ import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.SettingsRepository
+import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,10 @@ internal class FakeBoardMenuRepositories :
     BoardPreferencesRepository,
     BoardDetailsRepository {
     override val theme = MutableStateFlow(ThemePreference.SYSTEM)
+    override val themeColors = MutableStateFlow(ThemeColors())
+
+    override suspend fun setThemeColors(colors: ThemeColors): DomainOutcome<Unit> = write { themeColors.value = colors }
+
     override val homeBoard = MutableStateFlow<BoardAddress?>(null)
     override val favoriteBoards = MutableStateFlow(emptySet<BoardId>())
     override val expandedBoardCategories = MutableStateFlow(setOf(FAVORITES_BOARD_CATEGORY_KEY))

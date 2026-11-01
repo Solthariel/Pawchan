@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,7 +49,7 @@ internal fun ThreadToolbar(
 ) {
     val content = state as? ThreadUiState.Content
     Box(
-        modifier = Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT),
+        modifier = Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT),
         contentAlignment = Alignment.Center,
     ) {
         AnimatedContent(
@@ -82,6 +83,20 @@ private fun ThreadToolbarActions(
     actions: ThreadActions,
     tools: ThreadToolsState,
 ) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = threadToolbarUsesCompactActions(maxWidth)
+        ThreadToolbarActionRow(state, content, actions, tools, compact)
+    }
+}
+
+@Composable
+private fun ThreadToolbarActionRow(
+    state: ThreadUiState,
+    content: ThreadUiState.Content?,
+    actions: ThreadActions,
+    tools: ThreadToolsState,
+    compact: Boolean,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -89,14 +104,8 @@ private fun ThreadToolbarActions(
             .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ThreadToolbarNavigation(content, actions, tools)
+        ThreadToolbarNavigation(content, actions, tools, compact)
         Spacer(Modifier.weight(1f))
-        ThreadToolbarButton(
-            kind = UiIconKind.WRITE,
-            description = stringResource(R.string.reply_open),
-            enabled = content != null && !content.closed,
-            onClick = { actions.onReplyTo(null) },
-        )
         ThreadToolbarButton(
             kind = UiIconKind.SEARCH,
             description = "Поиск",
@@ -119,7 +128,7 @@ private fun ThreadToolbarActions(
                     enabled = content != null,
                     onClick = { tools.menu = true },
                 )
-                ThreadOverflowMenu(tools, content, actions)
+                ThreadOverflowMenu(tools, content, actions, compact)
             }
         }
     }
@@ -135,13 +144,15 @@ private fun ThreadToolbarNavigation(
     content: ThreadUiState.Content?,
     actions: ThreadActions,
     tools: ThreadToolsState,
+    compact: Boolean,
 ) {
     ThreadToolbarSlot {
         ThreadToolbarButton(UiIconKind.BACK, "Назад", onClick = actions.onBack)
     }
+    if (compact) return
     ThreadToolbarSlot {
         ThreadToolbarButton(
-            kind = UiIconKind.BOOKMARK,
+            kind = if (content?.isFavorite == true) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
             description =
                 stringResource(
                     if (content?.isFavorite == true) R.string.favorite_remove else R.string.favorite_add,

@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -10,7 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiMenuIcon
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 
 /** Direct navigation only: no placeholder actions or destructive settings resets. */
 @Composable
@@ -19,12 +20,12 @@ internal fun SettingsOverflowMenu(onOpen: (SettingsSection?) -> Unit) {
     Box {
         UiToolbarButton(UiIconKind.MORE, "Меню настроек", onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Все разделы") }, onClick = {
+            DropdownMenuItem(text = { Text("Все разделы") }, leadingIcon = { UiMenuIcon(UiIconKind.GRID) }, onClick = {
                 expanded = false
                 onOpen(null)
             })
             SettingsSection.entries.forEach { section ->
-                DropdownMenuItem(text = { Text(section.title) }, onClick = {
+                DropdownMenuItem(text = { Text(section.title) }, leadingIcon = { UiMenuIcon(section.icon) }, onClick = {
                     expanded = false
                     onOpen(section)
                 })

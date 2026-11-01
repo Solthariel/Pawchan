@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.map
 public class UpdatePanelController internal constructor(
     internal val model: UpdateViewModel,
     internal val configuration: UpdateConfiguration,
-    internal val access: UpdateTokenStore?,
 )
 
 /** Kept above lazy settings rows, so discovery does not depend on scrolling the panel into view. */
@@ -26,13 +25,9 @@ public fun rememberUpdatePanel(
     dns: okhttp3.Dns = okhttp3.Dns.SYSTEM,
 ): UpdatePanelController {
     val context = LocalContext.current
-    val access =
-        remember(context, configuration.privateRepository) {
-            configuration.privateRepository?.let { AndroidUpdateTokenStore(context) }
-        }
     val factory =
-        remember(context, configuration, dns, access) {
-            UpdateViewModel.factory(context, configuration, dns, access)
+        remember(context, configuration, dns) {
+            UpdateViewModel.factory(context, configuration, dns)
         }
     val model: UpdateViewModel =
         viewModel(
@@ -48,5 +43,5 @@ public fun rememberUpdatePanel(
             .distinctUntilChanged()
             .collect { it?.let(notifyAvailable) }
     }
-    return remember(model, configuration) { UpdatePanelController(model, configuration, access) }
+    return remember(model, configuration) { UpdatePanelController(model, configuration) }
 }

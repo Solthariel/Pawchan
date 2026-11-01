@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,15 +28,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.core.ui.PawchanThinRowScrollbar
+import com.solthariel.pawchan.core.ui.UiIcon
+import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.media.MEDIA_ATTACHMENT_COLUMNS
 import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 @Composable
 fun MediaGallery(
@@ -200,7 +203,7 @@ private fun GalleryCell(
             Modifier.fillMaxSize(),
         )
         if (attachment.viewer == AttachmentViewer.VIDEO) {
-            Text("▶", color = Color.White, modifier = Modifier.align(Alignment.Center))
+            UiIcon(UiIconKind.PLAY, Color.White, Modifier.align(Alignment.Center).size(24.dp))
         }
         AttachmentCaption(attachment, Modifier.align(Alignment.BottomStart))
         if (state.selecting) {

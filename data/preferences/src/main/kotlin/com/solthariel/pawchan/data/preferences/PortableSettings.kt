@@ -32,7 +32,11 @@ internal class DataStorePortableSettings(
 
     override suspend fun export(): Map<String, String> {
         val stored = dataStore.data.first()
-        val effective = stored.toMutablePreferences().apply { write(stored.toAppSettings()) }
+        val effective =
+            stored.toMutablePreferences().apply {
+                write(stored.toAppSettings())
+                writeThemeColors(stored.readThemeColors())
+            }
         return exportPortablePreferences(effective)
     }
 

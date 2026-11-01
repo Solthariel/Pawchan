@@ -1,4 +1,4 @@
-"""Configuration guards; runtime authentication is covered by Kotlin/device tests."""
+"""Configuration guards; anonymous transport is covered by Kotlin/device tests."""
 from pathlib import Path
 import re
 import unittest
@@ -16,12 +16,24 @@ class PrivateDevConfigurationTests(unittest.TestCase):
             self.assertIn(required, release)
         self.assertIn('signingConfigs.findByName("release")', release)
 
-    def test_release_label_and_private_repo_are_explicit(self):
+    def test_release_label_and_anonymous_updates_are_explicit(self):
         strings = ET.parse(ROOT / 'app/src/release/res/values/strings.xml').getroot()
         self.assertEqual('Pawchan Dev', strings.find("string[@name='app_name']").text)
         build = (ROOT / 'app/build.gradle.kts').read_text()
-        self.assertIn('PRIVATE_UPDATE_REPOSITORY', build)
-        self.assertIn('Solthariel/Pawchan', build)
+        settings = ROOT / 'app/src/main/kotlin/com/solthariel/pawchan/settings'
+        configuration = (settings / 'ReleaseUpdateConfiguration.kt').read_text()
+        self.assertNotIn('PRIVATE_UPDATE_REPOSITORY', build)
+        self.assertNotIn('privateRepository =', configuration)
+        self.assertIn('manifestUrl = BuildConfig.UPDATE_MANIFEST_URL', configuration)
+        self.assertIn('releaseUpdateConfiguration()', (settings / 'SettingsScreen.kt').read_text())
+        self.assertIn('https://raw.githubusercontent.com/Solthariel/Pawchan/', build)
+
+    def test_changelog_uses_regular_feed_without_private_access(self):
+        source = ROOT / 'app/src/main/kotlin/com/solthariel/pawchan/settings/ChangelogSettings.kt'
+        settings = source.read_text()
+        self.assertIn('val url = historyUrl(BuildConfig.UPDATE_MANIFEST_URL)', settings)
+        self.assertNotIn('PRIVATE_UPDATE_REPOSITORY', settings)
+        self.assertNotIn('AndroidUpdateTokenStore', settings)
 
     def test_no_credential_is_a_build_config_field(self):
         build = (ROOT / 'app/build.gradle.kts').read_text()
@@ -35,11 +47,17 @@ class PrivateDevConfigurationTests(unittest.TestCase):
                     if len(line) > 120]
         self.assertEqual([], too_long)
 
-    def test_private_token_file_is_in_no_backup_storage(self):
-        store = (ROOT / 'update/src/main/kotlin/com/solthariel/pawchan/update/AndroidUpdateTokenStore.kt').read_text()
-        self.assertIn('app.noBackupFilesDir', store)
-        self.assertIn('"AndroidKeyStore"', store)
-        self.assertNotIn('getSharedPreferences(', store)
+    def test_updater_has_no_private_access_implementation(self):
+        source = ROOT / 'update/src/main/kotlin/com/solthariel/pawchan/update'
+        retired = ('UpdateTokenStore', 'UpdateTokenCipher', 'PrivateUpdateAccess',
+                   'GithubUpdateAuth', 'GithubUpdateUrls', 'GithubReleaseAsset',
+                   'privateRepository', 'ACCESS_REQUIRED', 'removeSavedUpdateAccess')
+        production = '\n'.join(path.read_text(encoding='utf-8') for path in source.glob('*.kt'))
+        for symbol in retired:
+            self.assertNotIn(symbol, production)
+        self.assertNotIn('AndroidKeyStore', production)
+        self.assertNotIn('private-update-access.bin', production)
+        self.assertNotIn('Authorization', production)
 
     def test_all_device_scripts_include_update_runtime_tests(self):
         for suffix in ('ps1', 'sh'):

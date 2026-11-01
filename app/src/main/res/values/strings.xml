@@ -34,17 +34,10 @@
     <string name="new_thread_short">Новый тред</string>
     <string name="settings_short">Настройки</string>
     <string name="settings_title">Настройки</string>
-    <string name="theme_title">Тема оформления</string>
     <string name="theme_system">Как в системе</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
     <string name="theme_amoled">AMOLED</string>
-    <string name="theme_tomorrow">Tomorrow</string>
-    <string name="theme_normie">Normie</string>
-    <string name="theme_burichan">Burichan</string>
-    <string name="theme_hardon">Hardon</string>
-    <string name="theme_neutron">Neutron</string>
-    <string name="theme_photon">Photon</string>
     <string name="threads_hub">Треды</string>
     <string name="back_to_catalog">← К каталогу</string>
     <string name="thread_pinned">закреплён</string>
@@ -87,4 +80,5 @@
     <string name="media_image_copy_failed">Не удалось скопировать изображение</string>
     <string name="link_file_post_missing">Пост с этим файлом не найден</string>
     <string name="choose_board">Выбрать доску</string>
+    <string name="write">Написать</string>
 </resources>

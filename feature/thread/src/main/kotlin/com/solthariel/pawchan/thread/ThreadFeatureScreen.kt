@@ -27,6 +27,7 @@ fun ThreadFeatureScreen(
     actions: ThreadFeatureActions,
     storage: ThreadPostStorage? = null,
     contentHost: @Composable (@Composable () -> Unit) -> Unit = { it() },
+    navigationHost: @Composable ((() -> Unit)?, @Composable () -> Unit) -> Unit = { _, content -> content() },
 ) {
     LifecycleStartEffect(session) {
         session.refreshFavorite()
@@ -41,34 +42,36 @@ fun ThreadFeatureScreen(
     val reply: (String?) -> Unit = { insertion ->
         actions.onReply(ThreadReplyRequest((state as? ThreadUiState.Content)?.closed != false, insertion))
     }
-    ThreadScreen(
-        state = state,
-        actions =
-            ThreadActions(
-                onBack = actions.onBack,
-                onRefresh = session::refresh,
-                onFavoriteToggle = {
-                    (session.state.value as? ThreadUiState.Content)?.let { session.setFavorite(!it.isFavorite) }
-                },
-                onChallenge = actions.onChallenge,
-                onWatcherToggle = toggle,
-                onReplyTo = reply,
-                history = session.history,
-            ),
-        presentation =
-            ThreadPresentation(
-                watcherState = watcher,
-                reports = session.reports,
-                postContext =
-                    ThreadPostContext(
-                        session.sessionAddress,
-                        session.postPreferences,
-                        storage,
-                        session::revealContentFilter,
-                    ),
-            ),
-        host = host,
-        requestPost = session::ensurePost,
-        contentHost = contentHost,
-    )
+    navigationHost(threadWriteAction(state, actions.onReply)) {
+        ThreadScreen(
+            state = state,
+            actions =
+                ThreadActions(
+                    onBack = actions.onBack,
+                    onRefresh = session::refresh,
+                    onFavoriteToggle = {
+                        (session.state.value as? ThreadUiState.Content)?.let { session.setFavorite(!it.isFavorite) }
+                    },
+                    onChallenge = actions.onChallenge,
+                    onWatcherToggle = toggle,
+                    onReplyTo = reply,
+                    history = session.history,
+                ),
+            presentation =
+                ThreadPresentation(
+                    watcherState = watcher,
+                    reports = session.reports,
+                    postContext =
+                        ThreadPostContext(
+                            session.sessionAddress,
+                            session.postPreferences,
+                            storage,
+                            session::revealContentFilter,
+                        ),
+                ),
+            host = host,
+            requestPost = session::ensurePost,
+            contentHost = contentHost,
+        )
+    }
 }

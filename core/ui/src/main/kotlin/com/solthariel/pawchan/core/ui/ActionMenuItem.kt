@@ -18,6 +18,7 @@ fun ActionMenuItem(
     action: () -> Unit,
     enabled: Boolean = true,
     navigation: MenuNavigation? = null,
+    icon: UiIconKind? = null,
 ) {
     TextButton(
         onClick = action,
@@ -29,7 +30,11 @@ fun ActionMenuItem(
             UiBackwardIndicator()
             Spacer(Modifier.width(4.dp))
         }
+        if (icon != null && navigation != MenuNavigation.BACK) {
+            UiMenuIcon(icon)
+            Spacer(Modifier.width(12.dp))
+        }
         Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        if (navigation == MenuNavigation.FORWARD) UiForwardIndicator()
+        if (navigation == MenuNavigation.FORWARD) UiSubmenuIndicator()
     }
 }

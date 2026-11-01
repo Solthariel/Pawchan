@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.thread
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -32,6 +31,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.core.ui.modalInlineBackdrop
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 
 @Composable
 internal fun PreviewWindowFrame(
@@ -55,7 +56,7 @@ internal fun PreviewWindowFrame(
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .then(if (layer == null) Modifier.background(Color.Black.copy(alpha = PREVIEW_DIM)) else Modifier)
+            .then(if (layer == null) Modifier.modalInlineBackdrop() else Modifier)
             .then(dismiss)
             .systemBarsPadding()
             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -94,9 +95,10 @@ private fun PreviewCardSurface(
             }.then(swipe)
             .onSizeChanged { measuredHeight = it.height }
             .testTag(if (active) "preview-active" else "preview-behind")
+            .then(if (active) Modifier.modalLayerSurface(AppDialogStyle.shape) else Modifier)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         shape = AppDialogStyle.shape,
-        shadowElevation = 8.dp,
+        shadowElevation = 6.dp,
         color = MaterialTheme.colorScheme.surface.copy(alpha = 1f),
     ) {
         Box(
@@ -109,5 +111,5 @@ private fun PreviewCardSurface(
     }
 }
 
-internal const val PREVIEW_DIM = 0.45f
+internal const val PREVIEW_DIM = 0.6f
 private const val PREVIEW_HEIGHT_FRACTION = 0.85f

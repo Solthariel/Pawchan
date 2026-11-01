@@ -63,6 +63,7 @@ dependencies {
     api(libs.androidx.compose.ui)
     api(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit4)

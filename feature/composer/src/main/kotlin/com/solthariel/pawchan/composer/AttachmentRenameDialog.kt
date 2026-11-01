@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
@@ -23,7 +24,10 @@ internal fun AttachmentRenameDialog(
     onDismiss: () -> Unit,
 ) {
     AttachmentFixedDialog(onDismiss) {
-        Surface(modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(), shape = AppDialogStyle.shape) {
+        Surface(
+            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth().modalLayerSurface(AppDialogStyle.shape),
+            shape = AppDialogStyle.shape,
+        ) {
             Column(
                 Modifier.padding(AppDialogStyle.contentPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,

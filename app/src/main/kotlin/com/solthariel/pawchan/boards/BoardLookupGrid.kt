@@ -46,7 +46,8 @@ private fun BoardLookupCode(
     board: BoardLookupBoard,
     select: (BoardAddress) -> Unit,
 ) {
-    val background = if (board.selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+    val colors = MaterialTheme.colorScheme
+    val background = if (board.selected) colors.secondaryContainer else Color.Transparent
     Box(
         Modifier
             .fillMaxWidth()
@@ -61,6 +62,7 @@ private fun BoardLookupCode(
     ) {
         Text(
             board.code,
+            color = if (board.selected) colors.onSecondaryContainer else colors.onSurface,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

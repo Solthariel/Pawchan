@@ -84,7 +84,7 @@ private fun CatalogWorkspace(
     menu: CatalogMenuBindings,
 ) {
     AppNavigationWorkspace(
-        actions = bottomActions,
+        actions = bottomActions.copy(onWriteClick = { actions.catalog.onNewThreadClick(presentation.board) }),
         selected = AppBottomDestination.CATALOG,
     ) {
         CatalogThreadsPane(presentation, searchQuery, onSearchQueryChange, actions, menu)

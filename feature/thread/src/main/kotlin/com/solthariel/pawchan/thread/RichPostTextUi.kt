@@ -8,6 +8,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import com.solthariel.pawchan.core.ui.DARK_POST_TEXT_COLORS
+import com.solthariel.pawchan.core.ui.LIGHT_POST_TEXT_COLORS
+import com.solthariel.pawchan.core.ui.PostTextColors
 import com.solthariel.pawchan.domain.model.PostDocument
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.domain.model.PostTextRun
@@ -18,19 +21,34 @@ import com.solthariel.pawchan.thread.vocaroo.isVocarooLink
 internal class RichPostTextUi private constructor(
     private val runs: List<PostTextRun>,
     val initialText: AnnotatedString,
+    private val darkText: AnnotatedString,
     private val replyContext: ReplyReferenceContext? = null,
 ) {
-    fun reveal(revealedSpoilers: Set<Int>): AnnotatedString =
-        render(runs, revealedSpoilers)
+    fun text(colors: PostTextColors): AnnotatedString = if (colors == DARK_POST_TEXT_COLORS) darkText else initialText
+
+    fun reveal(
+        revealedSpoilers: Set<Int>,
+        colors: PostTextColors = LIGHT_POST_TEXT_COLORS,
+    ): AnnotatedString =
+        render(runs, revealedSpoilers, colors)
             .highlightReplyReference(replyContext)
 
     fun withReplyContext(context: ReplyReferenceContext): RichPostTextUi =
-        RichPostTextUi(runs, initialText.highlightReplyReference(context), context)
+        RichPostTextUi(
+            runs,
+            initialText.highlightReplyReference(context),
+            darkText.highlightReplyReference(context),
+            context,
+        )
 
     companion object {
         fun create(document: PostDocument): RichPostTextUi {
             val runs = document.runs.toList()
-            return RichPostTextUi(runs, render(runs, emptySet()))
+            val light = render(runs, emptySet(), LIGHT_POST_TEXT_COLORS)
+            val needsDark =
+                runs.any { it.link != null || PostTextStyle.RED in it.styles || PostTextStyle.GREENTEXT in it.styles }
+            val dark = if (needsDark) render(runs, emptySet(), DARK_POST_TEXT_COLORS) else light
+            return RichPostTextUi(runs, light, dark)
         }
     }
 }
@@ -38,6 +56,7 @@ internal class RichPostTextUi private constructor(
 private fun render(
     runs: List<PostTextRun>,
     revealedSpoilers: Set<Int>,
+    colors: PostTextColors,
 ): AnnotatedString =
     buildAnnotatedString {
         runs.forEachIndexed { index, run ->
@@ -46,7 +65,7 @@ private fun render(
             val vocaroo = (run.link as? PostLink.External)?.url?.value?.takeIf { !hidden && isVocarooLink(it) }
             // Ссылка, разбитая на несколько кусков текста, даёт одну плашку.
             val continued = vocaroo != null && runs.getOrNull(index - 1)?.link == run.link
-            withStyle(run.toSpanStyle(hidden)) {
+            withStyle(run.toSpanStyle(hidden, colors)) {
                 when {
                     continued -> Unit
                     vocaroo != null -> appendVocaroo(run, vocaroo, runs, index)
@@ -105,7 +124,10 @@ private fun PostTextRun.annotation(
     }
 }
 
-private fun PostTextRun.toSpanStyle(hidden: Boolean): SpanStyle {
+private fun PostTextRun.toSpanStyle(
+    hidden: Boolean,
+    colors: PostTextColors,
+): SpanStyle {
     val decorations =
         buildList {
             if (PostTextStyle.UNDERLINE in styles) add(TextDecoration.Underline)
@@ -113,7 +135,7 @@ private fun PostTextRun.toSpanStyle(hidden: Boolean): SpanStyle {
         }
     val linked = link != null && !hidden
     return SpanStyle(
-        color = textColor(hidden, linked),
+        color = textColor(hidden, linked, colors),
         background = if (hidden) SPOILER_COLOR else Color.Unspecified,
         fontWeight = if (PostTextStyle.BOLD in styles) FontWeight.Bold else null,
         fontStyle = if (PostTextStyle.ITALIC in styles) FontStyle.Italic else null,
@@ -129,23 +151,18 @@ private fun PostTextRun.toSpanStyle(hidden: Boolean): SpanStyle {
 private fun PostTextRun.textColor(
     hidden: Boolean,
     linked: Boolean,
+    colors: PostTextColors,
 ): Color =
     when {
         hidden -> SPOILER_COLOR
-        linked -> LINK_COLOR
-        PostTextStyle.RED in styles -> RED_TEXT_COLOR
-        PostTextStyle.GREENTEXT in styles -> GREENTEXT_COLOR
+        linked -> colors.link
+        PostTextStyle.RED in styles -> colors.red
+        PostTextStyle.GREENTEXT in styles -> colors.quote
         else -> Color.Unspecified
     }
 
 internal const val SPOILER_TAG = "spoiler"
 internal const val REFERENCE_TAG = "reference"
 internal const val EXTERNAL_TAG = "external"
-internal val LINK_COLOR = Color(LINK_COLOR_ARGB)
 private val SPOILER_COLOR = Color(SPOILER_COLOR_ARGB)
-private val GREENTEXT_COLOR = Color(GREENTEXT_COLOR_ARGB)
-private val RED_TEXT_COLOR = Color(RED_TEXT_COLOR_ARGB)
-private const val LINK_COLOR_ARGB = 0xFF5677C8
 private const val SPOILER_COLOR_ARGB = 0xFF777777
-private const val GREENTEXT_COLOR_ARGB = 0xFF4E8A3A
-private const val RED_TEXT_COLOR_ARGB = 0xFFE53935

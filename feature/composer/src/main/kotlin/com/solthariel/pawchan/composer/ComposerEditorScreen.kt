@@ -106,21 +106,28 @@ private fun ComposerScreenBody(
     Column(
         modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState(), overscrollEffect = null)
-            .padding(horizontal = 16.dp),
+            .verticalScroll(rememberScrollState(), overscrollEffect = null),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            ComposerEditorFields(state, imageLoader, actions, newThread, picker)
-            ComposerStatusLine(
-                state.captcha,
-                state.status.copy(uploadBudget = composerUploadBudget(state.draft.attachments, state.rules)),
-                actions.captcha.onReloadCaptcha,
-                imageLoader,
-            )
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                ComposerEditorFields(state, imageLoader, actions, newThread, picker)
+            }
+            androidx.compose.foundation.layout.Box(
+                Modifier.padding(horizontal = com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET),
+            ) {
+                ComposerStatusLine(
+                    state.captcha,
+                    state.status.copy(uploadBudget = composerUploadBudget(state.draft.attachments, state.rules)),
+                    actions.captcha.onReloadCaptcha,
+                    imageLoader,
+                )
+            }
         }
-        ComposerCaptcha(state.captcha, state.status.progress, imageLoader, actions.captcha)
-        ComposerSubmitButton(state, newThread, actions.onSubmit)
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            ComposerCaptcha(state.captcha, state.status.progress, imageLoader, actions.captcha)
+            ComposerSubmitButton(state, newThread, actions.onSubmit)
+        }
     }
 }
 
@@ -146,20 +153,6 @@ private fun ComposerEditorFields(
         key(state.draft.resetId) {
             ComposerMediaSection(state.draft, imageLoader, enabled, picker.error, actions.fields.onChange)
         }
-        ComposerAttachmentRequirement(state.draft, newThread)
-    }
-}
-
-@Composable
-private fun ComposerAttachmentRequirement(
-    draft: ComposerDraftState,
-    newThread: Boolean,
-) {
-    if (newThread && draft.attachments.isEmpty()) {
-        Text(
-            stringResource(R.string.new_thread_attachment_required),
-            style = MaterialTheme.typography.bodySmall,
-        )
     }
 }
 
@@ -179,28 +172,5 @@ private fun ComposerSubmitButton(
         } else {
             Text(stringResource(if (newThread) R.string.new_thread_create else R.string.reply_send))
         }
-    }
-}
-
-@Composable
-private fun ComposerScreenHeader(
-    title: String,
-    state: ComposerScreenState,
-    enabled: Boolean,
-    onClose: () -> Unit,
-    onAttach: () -> Unit,
-    onChange: (ComposerDraftState) -> Unit,
-) {
-    val close = stringResource(R.string.board_dialog_close)
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onClose, modifier = Modifier.semantics { contentDescription = close }) {
-            UiIcon(UiIconKind.BACK, MaterialTheme.colorScheme.onSurface, Modifier.size(24.dp))
-        }
-        Text(title, modifier = Modifier.weight(1f), maxLines = 2, style = MaterialTheme.typography.titleMedium)
-        run {
-            ComposerIconSelector(state.draft, state.rules, enabled, onChange, compact = true)
-        }
-        ComposerPostingOptions(state.draft, state.rules, enabled && !state.draft.filesLoading, onChange)
-        if (canAttachComposerMedia(state.draft, state.rules)) ComposerAttachButton(onAttach)
     }
 }

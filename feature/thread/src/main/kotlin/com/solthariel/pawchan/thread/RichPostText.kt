@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import com.solthariel.pawchan.core.ui.postTextColors
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.thread.vocaroo.rememberVocarooInlineContent
 
@@ -41,7 +42,11 @@ internal fun RichPostText(
     val store = LocalRevealedSpoilers.current?.takeIf { spoilerKey != null }
     var ownSpoilers by rememberSaveable(model, stateSaver = SpoilerSetSaver) { mutableStateOf(emptySet<Int>()) }
     val spoilers = if (store != null && spoilerKey != null) store[spoilerKey] else ownSpoilers
-    val text = remember(model, spoilers) { if (spoilers.isEmpty()) model.initialText else model.reveal(spoilers) }
+    val colors = postTextColors(MaterialTheme.colorScheme.surface)
+    val text =
+        remember(model, spoilers, colors) {
+            if (spoilers.isEmpty()) model.text(colors) else model.reveal(spoilers, colors)
+        }
     val density = LocalDensity.current.density
     val feedback = remember(text, density) { PostLinkPressFeedback(text, LINK_TOUCH_PADDING_DP * density) }
     val selection = rememberPostTextSelection(model, text.text)
@@ -97,7 +102,13 @@ private fun RichPostBody(
     val styled = presentation.style ?: MaterialTheme.typography.bodyMedium
     val measurer = rememberTextMeasurer()
     val interactive =
-        modifier.referenceLinkSuffixes(text, LocalPostLinkAddress.current, measurer, styled) { layout.value }
+        modifier.referenceLinkSuffixes(
+            text,
+            LocalPostLinkAddress.current,
+            measurer,
+            styled,
+            postTextColors(MaterialTheme.colorScheme.surface).link,
+        ) { layout.value }
     val inline = rememberVocarooInlineContent(text, measurer, styled)
     if (!presentation.interactionsEnabled || field.selection.collapsed) {
         Text(

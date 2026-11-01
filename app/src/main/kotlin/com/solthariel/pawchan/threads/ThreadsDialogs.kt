@@ -9,6 +9,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppMenuDialog
+import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
 
 /** Меню по долгому нажатию: убрать из секции, избранное, ссылка. */
@@ -37,7 +38,7 @@ internal fun ThreadsRowMenu(
         )
         when (target.section) {
             ThreadsSection.PAGES -> {
-                ActionMenuItem("Закрыть", run { actions.pages.close(row.address) })
+                ActionMenuItem("Закрыть", run { actions.pages.close(row.address) }, icon = UiIconKind.CLOSE)
             }
 
             ThreadsSection.FAVORITES -> {
@@ -45,13 +46,18 @@ internal fun ThreadsRowMenu(
             }
 
             ThreadsSection.REPLIES -> {
-                ActionMenuItem("Убрать из ответов", run { actions.dismissReplies(row.address) })
+                ActionMenuItem(
+                    "Убрать из ответов",
+                    run { actions.dismissReplies(row.address) },
+                    icon = UiIconKind.DELETE,
+                )
             }
         }
         ActionMenuItem(
             if (favorite) "Убрать из избранного" else "В избранное",
             run { actions.setFavorite(row, !favorite) },
+            icon = if (favorite) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
         )
-        ActionMenuItem("Копировать ссылку", run { actions.copyLink(row.address) })
+        ActionMenuItem("Копировать ссылку", run { actions.copyLink(row.address) }, icon = UiIconKind.LINK)
     }
 }

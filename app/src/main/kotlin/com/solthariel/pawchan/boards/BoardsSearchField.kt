@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +39,7 @@ import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 
 @Composable
 internal fun BoardsSearchField(
@@ -55,14 +56,14 @@ internal fun BoardsSearchField(
     }
     BackHandler(onBack = close)
     Box(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT),
+        Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(APP_TOOLBAR_BUTTON_SIZE)
+                    .heightIn(min = APP_TOOLBAR_BUTTON_SIZE)
                     .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -91,32 +92,12 @@ private fun androidx.compose.foundation.layout.RowScope.BoardsSearchInput(
     state: BoardsSearchBarState,
     actions: BoardsSearchBarActions,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .weight(1f)
-                .height(34.dp)
-                .padding(horizontal = 4.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
-                    RoundedCornerShape(17.dp),
-                ).padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    com.solthariel.pawchan.core.ui.UiToolbarSearchLayout(
+        Modifier.weight(1f).padding(horizontal = 4.dp),
+        if (state.query.isNotEmpty()) ({ actions.change("") }) else null,
+        stringResource(R.string.clear_search),
     ) {
-        UiIcon(
-            UiIconKind.SEARCH,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-            Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(10.dp))
         BoardsSearchTextField(state, actions)
-        if (state.query.isNotEmpty()) {
-            CatalogIconButton(
-                kind = UiIconKind.CLOSE,
-                description = stringResource(R.string.clear_search),
-                onClick = { actions.change("") },
-            )
-        }
     }
 }
 

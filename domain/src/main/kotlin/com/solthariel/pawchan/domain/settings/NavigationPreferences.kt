@@ -1,17 +1,24 @@
 package com.solthariel.pawchan.domain.settings
 
-/** Presentation limits never remove the underlying threads. */
+/** Navigation appearance and presentation limits; neither removes underlying threads. */
 data class NavigationPreferences(
     val pages: Int = 5,
     val favorites: Int = 5,
     val replies: Int = 5,
+    val bottomBarTransparencyPercent: Int = DEFAULT_BOTTOM_BAR_TRANSPARENCY,
 ) {
     fun normalized(): NavigationPreferences =
         copy(
             pages = pages.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
             favorites = favorites.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
             replies = replies.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
+            bottomBarTransparencyPercent = bottomBarTransparencyPercent.coerceIn(0, MAX_TRANSPARENCY_PERCENT),
         )
+
+    companion object {
+        const val DEFAULT_BOTTOM_BAR_TRANSPARENCY = 20
+        const val MAX_TRANSPARENCY_PERCENT = 100
+    }
 }
 
 fun validMirrorHost(value: String): Boolean =

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
@@ -15,10 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 /** A separate scrollable screen, not an unconstrained text block inside an alert. */
 @Composable
@@ -33,13 +34,16 @@ internal fun ChangelogDialog(
     ) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT)
+                    .padding(horizontal = com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 UiToolbarButton(UiIconKind.BACK, "Назад к настройкам", onClick = onClose)
                 Text(
                     "Список изменений",
-                    Modifier.weight(1f).padding(start = 8.dp),
+                    Modifier.weight(1f).padding(start = 12.dp),
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
                 )

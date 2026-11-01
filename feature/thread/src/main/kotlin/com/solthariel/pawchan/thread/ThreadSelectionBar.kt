@@ -3,6 +3,7 @@ package com.solthariel.pawchan.thread
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,14 +28,14 @@ internal fun ThreadSelectionBar(
 ) {
     if (!tools.selecting) return
     Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ThreadToolbarButton(UiIconKind.BACK, "Отменить выделение", onClick = tools::clearSelection)
         Text(
             "Выбрано: ${tools.selected.size}",
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
-            fontSize = 18.sp,
+            modifier = Modifier.weight(1f).padding(start = 12.dp),
+            fontSize = com.solthariel.pawchan.core.ui.APP_TOOLBAR_TITLE_SIZE,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

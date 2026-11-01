@@ -1,14 +1,19 @@
 package com.solthariel.pawchan.catalog
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
@@ -29,7 +34,7 @@ internal fun CatalogToolbarRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(CATALOG_TOOLBAR_CONTENT_HEIGHT)
+                .heightIn(min = CATALOG_TOOLBAR_CONTENT_HEIGHT)
                 .padding(
                     start = if (ui.header.searchVisible) CATALOG_HORIZONTAL_INSET else CATALOG_TITLE_START_INSET,
                     end = CATALOG_HORIZONTAL_INSET,
@@ -68,7 +73,7 @@ private fun CatalogLeadingButton(
     }
 }
 
-private val CATALOG_TITLE_START_INSET = 8.dp
+private val CATALOG_TITLE_START_INSET = 16.dp
 
 @Composable
 private fun RowScope.CatalogAnimatedHeader(
@@ -110,16 +115,20 @@ private fun CatalogIdentityRow(
             modifier =
                 Modifier
                     .weight(1f)
+                    .heightIn(min = CATALOG_TOOLBAR_CONTENT_HEIGHT)
                     .then(
                         if (onChooseBoard != null) {
-                            Modifier.clickable(
-                                onClickLabel = stringResource(R.string.choose_board),
-                                onClick = onChooseBoard,
-                            )
+                            Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .clickable(
+                                    onClickLabel = stringResource(R.string.choose_board),
+                                    onClick = onChooseBoard,
+                                ).padding(horizontal = 12.dp, vertical = 2.dp)
                         } else {
                             Modifier
                         },
-                    ).padding(start = if (onChooseBoard == null) 20.dp else 0.dp),
+                    ),
             switchable = onChooseBoard != null,
         )
         CatalogIconButton(
@@ -174,5 +183,5 @@ internal data class CatalogToolbarNavigationActions(
     val onRefresh: () -> Unit,
 )
 
-private val CATALOG_TOOLBAR_CONTENT_HEIGHT = 36.dp
+private val CATALOG_TOOLBAR_CONTENT_HEIGHT = com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 private val CATALOG_HORIZONTAL_INSET = APP_TOOLBAR_HORIZONTAL_INSET

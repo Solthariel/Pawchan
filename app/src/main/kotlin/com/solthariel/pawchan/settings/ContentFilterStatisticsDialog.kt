@@ -58,7 +58,7 @@ private fun FilterStatisticsResetConfirmation(
     close: () -> Unit,
     reset: () -> Unit,
 ) {
-    androidx.compose.material3.AlertDialog(
+    com.solthariel.pawchan.core.ui.AppAlertDialog(
         onDismissRequest = close,
         title = { Text("Сбросить статистику?") },
         text = { Text("Счётчики обнулятся. Правила и настройка скрытых тредов останутся без изменений.") },

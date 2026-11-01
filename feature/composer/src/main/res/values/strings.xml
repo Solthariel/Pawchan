@@ -2,7 +2,6 @@
 <resources>
     <string name="new_thread_title">Новый тред в /%1$s/</string>
     <string name="new_thread_subject">Тема</string>
-    <string name="new_thread_attachment_required">Для нового треда требуется изображение или видео.</string>
     <string name="new_thread_create">Создать тред</string>
     <string name="play_video">▶</string>
     <string name="thread_closed">Тред закрыт</string>
@@ -13,7 +12,7 @@
     <string name="captcha_image">Капча 2ch</string>
     <string name="captcha_emoji_option">Вариант эмодзи %1$d</string>
     <string name="captcha_solved">Капча решена</string>
-    <string name="attachment_add">Прикрепить изображение или видео</string>
+    <string name="attachment_add">Добавить медиа</string>
     <string name="attachment_remove">Удалить вложение</string>
     <string name="captcha_retry">Повторить загрузку капчи</string>
     <string name="reply_error_captcha">Ответ капчи неверен. Загружена новая картинка.</string>

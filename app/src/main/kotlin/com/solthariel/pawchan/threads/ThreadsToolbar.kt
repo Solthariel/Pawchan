@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +24,7 @@ import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.library.LibrarySearchInput
+import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 
 @Composable
 internal fun ThreadsToolbar(
@@ -36,7 +37,7 @@ internal fun ThreadsToolbar(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (query != null) {
@@ -44,7 +45,7 @@ internal fun ThreadsToolbar(
             CatalogIconButton(UiIconKind.BACK, "Закрыть поиск", onClick = { onQuery(null) })
             LibrarySearchInput(query, onQuery)
         } else {
-            Text("Треды", Modifier.weight(1f).padding(start = 8.dp), style = MaterialTheme.typography.titleLarge)
+            Text("Треды", Modifier.weight(1f).padding(start = 12.dp), style = MaterialTheme.typography.titleLarge)
             CatalogIconButton(UiIconKind.SEARCH, "Поиск", onClick = { onQuery("") })
         }
         CatalogRefreshButton(isRefreshing = refreshing, enabled = !refreshing, onClick = actions.refresh)
@@ -54,11 +55,11 @@ internal fun ThreadsToolbar(
                 ActionMenuItem("Отображение списков", {
                     menuOpen = false
                     onDisplaySettings()
-                })
+                }, icon = UiIconKind.PALETTE)
                 ActionMenuItem("Закрыть все страницы", {
                     menuOpen = false
                     actions.pages.closeAll()
-                }, enabled = hasPages)
+                }, enabled = hasPages, icon = UiIconKind.CLOSE)
             }
         }
     }

@@ -18,8 +18,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
 
 @Composable
 internal fun FilterEditorWindow(

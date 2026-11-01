@@ -110,9 +110,6 @@ private fun BoardCategoryHeader(
                 .padding(horizontal = BOARD_ROW_INSET, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(20.dp)) {
-            if (row.enabled || row.expanded) UiDisclosureIndicator(row.expanded)
-        }
         Text(
             text = row.label,
             modifier = Modifier.weight(1f),
@@ -127,5 +124,8 @@ private fun BoardCategoryHeader(
                 },
             fontWeight = FontWeight.SemiBold,
         )
+        Box(Modifier.size(20.dp)) {
+            if (row.enabled || row.expanded) UiDisclosureIndicator(row.expanded)
+        }
     }
 }

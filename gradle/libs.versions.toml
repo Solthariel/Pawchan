@@ -31,6 +31,7 @@ uiautomator = "2.3.0"
 profileinstaller = "1.4.1"
 
 [libraries]
+material-color-utilities = { module = "com.materialkolor:material-color-utilities", version = "3.0.1" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }

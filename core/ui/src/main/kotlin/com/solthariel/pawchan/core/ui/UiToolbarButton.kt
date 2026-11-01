@@ -45,4 +45,4 @@ fun UiToolbarButton(
     }
 }
 
-val APP_TOOLBAR_BUTTON_SIZE = 36.dp
+val APP_TOOLBAR_BUTTON_SIZE = 48.dp

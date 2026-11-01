@@ -5,9 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.ui.KeepWindowBounds
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 @Composable
 fun ComposerFullScreenHost(

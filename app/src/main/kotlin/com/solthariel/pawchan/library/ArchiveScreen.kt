@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -45,7 +46,11 @@ internal fun ArchiveScreen(
 ) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         Row(
-            Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(
+                    min = APP_TOP_BAR_HEIGHT,
+                ).padding(horizontal = com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             UiToolbarButton(
@@ -55,7 +60,7 @@ internal fun ArchiveScreen(
             )
             Text(
                 stringResource(R.string.board_archive_title, board.board.value),
-                Modifier.weight(1f).padding(start = 8.dp),
+                Modifier.weight(1f).padding(start = 12.dp),
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

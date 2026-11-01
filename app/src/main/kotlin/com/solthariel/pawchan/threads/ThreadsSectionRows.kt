@@ -42,8 +42,8 @@ internal fun LazyListScope.threadsSectionRows(
                     current = section == ThreadsSection.PAGES && row.address == list.input.current,
                     onClick = { list.actions.open(section, row) },
                     onLongClick = { list.onMenu(ThreadsMenuTarget(section, row)) },
-                    onClose = { list.actions.pages.close(row.address) }.takeIf { section == ThreadsSection.PAGES },
-                    counterWidth = list.counterWidth.takeIf { section != ThreadsSection.PAGES },
+                    closeAction = threadRowCloseAction(section, row, list.actions),
+                    counterWidth = list.counterWidth,
                 )
             }
             if (!list.searching && rows.size > limit) {

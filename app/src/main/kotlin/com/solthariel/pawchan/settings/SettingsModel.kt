@@ -11,12 +11,12 @@ internal enum class SettingsSection(
 ) {
     GENERAL(UiIconKind.TUNE, "Общие", "Чтение, история и блокировка приложения"),
     INTERFACE(UiIconKind.PALETTE, "Интерфейс", "Тема, размер текста, значки постов"),
-    THREADS(UiIconKind.CHAT, "Треды и каталог", "Открытый тред, избранное, ответы и уведомления"),
+    THREADS(UiIconKind.FORUM, "Треды и каталог", "Открытый тред, избранное, ответы и уведомления"),
     MEDIA(UiIconKind.IMAGE, "Медиа", "Звук видео, перелистывание, галерея"),
-    POSTING(UiIconKind.TUNE, "Отправка", "Поля формы и обработка вложений по умолчанию"),
-    AUTOHIDE(UiIconKind.FILTER, "Автоскрытие", "Правила скрытия постов и тредов"),
-    NETWORK(UiIconKind.GLOBE, "Сеть", "DNS для Vocaroo, Архивача и GitHub"),
-    STORAGE(UiIconKind.TUNE, "Хранилище", "Лимит и очистка кэша, резервные копии, статистика"),
+    POSTING(UiIconKind.SEND, "Отправка", "Поля формы и обработка вложений по умолчанию"),
+    AUTOHIDE(UiIconKind.CLEANING, "Автоскрытие", "Правила скрытия постов и тредов"),
+    NETWORK(UiIconKind.PUBLIC, "Сеть", "DNS для Vocaroo, Архивача и GitHub"),
+    STORAGE(UiIconKind.STORAGE, "Хранилище", "Лимит и очистка кэша, резервные копии, статистика"),
     ABOUT(UiIconKind.INFO, "О программе", "Версия и обновления"),
 }
 

@@ -40,6 +40,23 @@ internal fun PostPreviewDialog(
     bindings: PostPreviewBindings,
     resources: PostPreviewResources,
 ) {
+    if (LocalPreviewLayer.current == null) {
+        com.solthariel.pawchan.core.ui.ModalInlineLayer {
+            PostPreviewDialogContent(target, local, appearance, bindings, resources)
+        }
+    } else {
+        PostPreviewDialogContent(target, local, appearance, bindings, resources)
+    }
+}
+
+@Composable
+private fun PostPreviewDialogContent(
+    target: PostPreviewTarget,
+    local: ThreadUiState.Content?,
+    appearance: ThreadAppearance,
+    bindings: PostPreviewBindings,
+    resources: PostPreviewResources,
+) {
     val model: PostPreviewViewModel =
         viewModel(
             key = "post-preview",

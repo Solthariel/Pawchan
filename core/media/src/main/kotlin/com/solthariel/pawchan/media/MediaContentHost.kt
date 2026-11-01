@@ -9,13 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.solthariel.pawchan.media.MediaViewerResources
 import com.solthariel.pawchan.media.video.LocalVideoPosterStore
 import com.solthariel.pawchan.media.video.VideoViewer
 import com.solthariel.pawchan.media.video.rememberVideoPosterStore
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 /**
  * Источник (тред, каталог, галерея, превью) остаётся в композиции под просмотрщиком,

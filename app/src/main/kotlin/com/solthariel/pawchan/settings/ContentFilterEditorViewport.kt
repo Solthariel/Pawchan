@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 
 /** A full-size transparent host keeps the compact surface anchored above the IME, never centered. */
 @Composable
@@ -50,7 +51,8 @@ internal fun FilterEditorViewport(
                     .widthIn(max = AppDialogStyle.maxWidth)
                     .fillMaxWidth()
                     .heightIn(max = maxHeight)
-                    .testTag("filter-editor-window"),
+                    .testTag("filter-editor-window")
+                    .modalLayerSurface(AppDialogStyle.shape),
                 shape = AppDialogStyle.shape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,

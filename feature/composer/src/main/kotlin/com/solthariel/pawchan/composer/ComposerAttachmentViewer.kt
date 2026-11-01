@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 import com.solthariel.pawchan.media.AttachmentDialogContent
 import com.solthariel.pawchan.media.AttachmentDialogLayout
 
@@ -39,7 +40,7 @@ internal fun ComposerAttachmentViewer(
 ) {
     AttachmentFixedDialog(onDismiss) {
         Surface(
-            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth().modalLayerSurface(AppDialogStyle.shape),
             color = MaterialTheme.colorScheme.background,
             shape = AppDialogStyle.shape,
         ) {

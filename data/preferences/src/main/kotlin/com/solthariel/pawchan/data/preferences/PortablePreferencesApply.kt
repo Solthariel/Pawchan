@@ -12,6 +12,7 @@ internal fun copyPortableTo(
     val merged = target.toMutablePreferences()
     writePortableValues(merged, parsed)
     target.write(merged.toAppSettings())
+    target.writeThemeColors(merged.readThemeColors())
     val global = listOf("theme", "home_board", "favorite_boards_v2", "expanded_board_categories")
     global.forEach { name ->
         val key = stringPreferencesKey(name)
@@ -27,6 +28,32 @@ internal fun writePortableValues(
     target: MutablePreferences,
     parsed: Preferences,
 ) {
+    if (parsed[stringPreferencesKey("theme")] != null) {
+        if (parsed[stringPreferencesKey("theme_palette")] == null) {
+            target.remove(stringPreferencesKey("theme_palette"))
+        }
+        if (parsed[
+                androidx.datastore.preferences.core
+                    .booleanPreferencesKey("theme_pure_black"),
+            ] == null
+        ) {
+            target.remove(
+                androidx.datastore.preferences.core
+                    .booleanPreferencesKey("theme_pure_black"),
+            )
+        }
+    }
+    if (parsed[stringPreferencesKey("theme_palette")] != null &&
+        parsed[
+            androidx.datastore.preferences.core
+                .intPreferencesKey("theme_custom_seed"),
+        ] == null
+    ) {
+        target.remove(
+            androidx.datastore.preferences.core
+                .intPreferencesKey("theme_custom_seed"),
+        )
+    }
     val schema = portableSchema().asMap()
     parsed.asMap().forEach { (key, value) ->
         val type = schema.entries.single { it.key.name == key.name }.value

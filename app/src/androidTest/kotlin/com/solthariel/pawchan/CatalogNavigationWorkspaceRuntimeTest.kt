@@ -12,10 +12,12 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
@@ -26,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
@@ -50,28 +53,29 @@ class CatalogNavigationWorkspaceRuntimeTest {
     private var libraryClicks = 0
 
     @Test
-    fun railEndsBesideTheBottomOfTheFloatingBubble() {
+    fun railAnd48DpTargetsEndAtTheWorkspaceBottom() {
         showWorkspace()
         val body = compose.onNodeWithTag(BODY_TAG).fetchSemanticsNode().boundsInRoot
         val rail = compose.onNodeWithTag(RAIL_TAG).fetchSemanticsNode().boundsInRoot
         val button = compose.onNodeWithContentDescription("Каталог").fetchSemanticsNode().boundsInRoot
         assertEquals(body.bottom, rail.bottom, 1f)
-        assertEquals(body.bottom - barHeightPx / 2f, button.center.y, 1f)
+        assertEquals(body.bottom, button.bottom, 1f)
+        assertEquals(barHeightPx * 48f / APP_BOTTOM_BAR_HEIGHT.value, button.height, 1f)
     }
 
     @Test
-    fun floatingBubbleHasTenDpInsetsOnBothSides() {
+    fun flatPanelReachesItsLeftEdgeAndLeavesTheScrollbarEdgeFree() {
         showWorkspace()
         val body = compose.onNodeWithTag(BODY_TAG).fetchSemanticsNode().boundsInRoot
         val button = compose.onNodeWithContentDescription("Каталог").fetchSemanticsNode().boundsInRoot
         val pixels = compose.onNodeWithTag(BODY_TAG).captureToImage().toPixelMap()
         val row = (button.center.y - body.top).roundToInt().coerceIn(0, pixels.height - 1)
-        val background = pixels[0, row]
-        val left = (0 until pixels.width).first { pixels[it, row] != background }
-        val right = (pixels.width - 1 downTo 0).first { pixels[it, row] != background }
-        val expectedInset = barHeightPx * EXPECTED_INSET_DP / APP_BOTTOM_BAR_HEIGHT.value
-        assertEquals(expectedInset, left.toFloat(), 1f)
-        assertEquals(expectedInset, (pixels.width - 1 - right).toFloat(), 1f)
+        val density = barHeightPx / APP_BOTTOM_BAR_HEIGHT.value
+        val lastSurfaceX = (pixels.width - FAST_SCROLL_BAR_WIDTH.value * density - 1).roundToInt()
+        assertEquals(pixels[0, row], pixels[lastSurfaceX, row])
+        assertNotEquals(pixels[0, row], pixels[pixels.width - 1, row])
+        val write = compose.onNodeWithContentDescription("Написать").fetchSemanticsNode().boundsInRoot
+        assertEquals(body.right - FAST_SCROLL_BAR_WIDTH.value * density, write.right, 1f)
     }
 
     @Test
@@ -131,8 +135,11 @@ class CatalogNavigationWorkspaceRuntimeTest {
 
     private fun showWorkspace() {
         compose.setContent {
-            MaterialTheme {
-                CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = true)) {
+            // Equal default surface/background colors cannot prove that the rail is uncovered.
+            MaterialTheme(colorScheme = lightColorScheme(background = Color.White, surface = Color.Black)) {
+                CompositionLocalProvider(
+                    LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = true),
+                ) {
                     AppNavigationWorkspace(
                         actions = AppBottomActions({}, {}, { libraryClicks++ }, {}),
                         selected = AppBottomDestination.CATALOG,
@@ -187,4 +194,3 @@ class CatalogNavigationWorkspaceRuntimeTest {
 
 private const val BODY_TAG = "floating-workspace-body"
 private const val RAIL_TAG = "floating-workspace-rail"
-private const val EXPECTED_INSET_DP = 10f

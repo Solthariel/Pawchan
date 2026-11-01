@@ -60,8 +60,8 @@ class BoardMenuRuntimeTest {
         var selected: ThemePreference? = null
         showMenu(testBoardMenu(actions = BoardPreferenceActions({}, {}, { selected = it })))
         compose.onNodeWithText("Внешний вид").performClick()
-        compose.onNodeWithText("AMOLED").performClick()
-        compose.runOnIdle { assertEquals(ThemePreference.AMOLED, selected) }
+        compose.onNodeWithText("Тёмная").performClick()
+        compose.runOnIdle { assertEquals(ThemePreference.DARK, selected) }
     }
 
     @Test

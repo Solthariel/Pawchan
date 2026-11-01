@@ -3,6 +3,7 @@ package com.solthariel.pawchan.thread
 import androidx.compose.runtime.Composable
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppMenuDialog
+import com.solthariel.pawchan.core.ui.UiIconKind
 
 @Composable
 internal fun PreviewMenuDialog(
@@ -12,9 +13,9 @@ internal fun PreviewMenuDialog(
     hasLink: Boolean = false,
 ) {
     AppMenuDialog(onClose) {
-        ActionMenuItem("Ответить", { onCommand(PostMenuCommand.REPLY) }, canReply)
-        ActionMenuItem("Цитировать", { onCommand(PostMenuCommand.QUOTE) }, canReply)
-        ActionMenuItem("Копировать текст", { onCommand(PostMenuCommand.COPY_TEXT) })
-        ActionMenuItem("Копировать ссылку", { onCommand(PostMenuCommand.COPY_LINK) }, hasLink)
+        ActionMenuItem("Ответить", { onCommand(PostMenuCommand.REPLY) }, canReply, icon = UiIconKind.REPLY)
+        ActionMenuItem("Цитировать", { onCommand(PostMenuCommand.QUOTE) }, canReply, icon = UiIconKind.QUOTE)
+        ActionMenuItem("Копировать текст", { onCommand(PostMenuCommand.COPY_TEXT) }, icon = UiIconKind.COPY)
+        ActionMenuItem("Копировать ссылку", { onCommand(PostMenuCommand.COPY_LINK) }, hasLink, icon = UiIconKind.LINK)
     }
 }

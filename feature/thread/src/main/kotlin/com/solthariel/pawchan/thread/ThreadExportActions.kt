@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
+import com.solthariel.pawchan.core.ui.postTextColors
 
 internal data class ThreadExportActions(
     val archive: (ThreadUiState.Content) -> Unit,
@@ -44,7 +45,7 @@ internal fun rememberThreadExportActions(
             border = colors.outlineVariant.toArgb(),
             text = colors.onSurface.toArgb(),
             secondaryText = colors.onSurfaceVariant.toArgb(),
-            accent = LINK_COLOR.toArgb(),
+            accent = postTextColors(colors.surface).link.toArgb(),
         )
     var html by remember { mutableStateOf<ThreadExportRequest?>(null) }
     var shot by remember { mutableStateOf<ThreadExportRequest?>(null) }

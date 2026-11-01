@@ -12,9 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.ui.KeepWindowBounds
+import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
 
 /** Keep the same window bounds while the keyboard opens or closes. */
 @Composable

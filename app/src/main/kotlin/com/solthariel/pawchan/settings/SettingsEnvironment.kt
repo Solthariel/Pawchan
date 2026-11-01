@@ -1,11 +1,8 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.BuildConfig
-import com.solthariel.pawchan.R
 import com.solthariel.pawchan.domain.settings.AppSettings
-import com.solthariel.pawchan.domain.settings.ThemePreference
 
 /** Что экран знает помимо сохранённых настроек: кэш и панель обновлений. */
 internal data class SettingsEnvironment(
@@ -79,16 +76,12 @@ private fun interfaceGroups(
     update: ((AppSettings) -> AppSettings) -> Unit,
 ): List<SettingsGroup> {
     val app = state.app
-    val themes = ThemePreference.entries
     return listOf(
+        themeSettingsGroup(state, actions),
+        bottomNavigationSettingsGroup(app, update),
         SettingsGroup(
-            "Оформление",
+            "Отображение",
             listOf(
-                SettingsItem.Choice(
-                    stringResource(R.string.theme_title),
-                    themes.map { stringResource(it.labelResource) },
-                    themes.indexOf(state.theme),
-                ) { actions.onTheme(themes[it]) },
                 SettingsItem.Choice(
                     "Оформление постов",
                     listOf("Без рамок", "Карточки"),

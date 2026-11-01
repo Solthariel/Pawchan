@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -93,7 +94,7 @@ class BoardsScrollbarRuntimeTest {
     fun boardAndFavoriteClicksStillReachTheirOwnActions() {
         showBoards(query = "/board0/")
         compose.onNodeWithText("Доска 0").performClick()
-        compose.onNodeWithText("☆").performClick()
+        compose.onNodeWithContentDescription("Добавить доску в избранное").performClick()
         compose.runOnIdle {
             assertEquals("board0", selectedBoard?.value)
             assertEquals("board0", favoriteBoard?.value)

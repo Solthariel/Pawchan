@@ -25,6 +25,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
+import com.solthariel.pawchan.core.ui.ModalInlinePanel
+import com.solthariel.pawchan.core.ui.modalLayerSurface
+import com.solthariel.pawchan.core.ui.modalPanelBounds
 
 /** The pointer observer is an ancestor of the list, not a sibling intercepting its hit path. */
 @Composable
@@ -48,18 +51,22 @@ internal fun CatalogBoardLookupLayer(
     ) {
         content()
         if (lookup?.visible == true) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = APP_TOP_BAR_HEIGHT, start = 8.dp, end = 8.dp)
-                        .onGloballyPositioned { panelBounds = it.boundsInRoot() }
-                        .testTag("board-lookup-panel"),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                shadowElevation = 4.dp,
-            ) {
-                Box(Modifier.pointerInput(Unit) { detectTapGestures {} }) { lookup.suggestions() }
+            ModalInlinePanel {
+                Surface(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = APP_TOP_BAR_HEIGHT, start = 8.dp, end = 8.dp)
+                            .onGloballyPositioned { panelBounds = it.boundsInRoot() }
+                            .testTag("board-lookup-panel")
+                            .modalPanelBounds(8.dp)
+                            .modalLayerSurface(RoundedCornerShape(8.dp)),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shadowElevation = 4.dp,
+                ) {
+                    Box(Modifier.pointerInput(Unit) { detectTapGestures {} }) { lookup.suggestions() }
+                }
             }
         }
     }

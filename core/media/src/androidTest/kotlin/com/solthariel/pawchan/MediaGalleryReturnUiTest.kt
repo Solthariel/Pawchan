@@ -5,8 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -38,16 +39,7 @@ class MediaGalleryReturnUiTest {
         val visible = mutableStateOf(true)
         var closed = 0
         var opened = 0
-        val gallery =
-            (0 until 48)
-                .map { index ->
-                    MediaAttachmentUi(
-                        MediaAttachmentSource("image-$index", "image$index.png", "https://example.org/$index.png", null),
-                        null,
-                        AttachmentViewer.IMAGE,
-                        MediaKind.IMAGE,
-                    )
-                }.toMediaGalleryContent()
+        val gallery = galleryContent()
         try {
             compose.setContent {
                 MaterialTheme {
@@ -70,14 +62,16 @@ class MediaGalleryReturnUiTest {
                     )
                 }
             }
-            compose.onNode(hasScrollAction()).performScrollToIndex(5)
+            compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex)).performScrollToIndex(5)
             compose.waitForIdle()
             var anchor = -1 to -1
             compose.runOnIdle {
                 anchor = session.list.firstVisibleItemIndex to session.list.firstVisibleItemScrollOffset
                 assertTrue("Fixture must really scroll before opening media", anchor.first > 0)
             }
-            compose.onNode(hasScrollAction()).performTouchInput { click(Offset(40f, 40f)) }
+            compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex)).performTouchInput {
+                click(Offset(40f, 40f))
+            }
             compose.runOnIdle {
                 assertEquals(1, opened)
                 assertEquals(0, closed)
@@ -94,4 +88,20 @@ class MediaGalleryReturnUiTest {
             compose.runOnIdle { loader.close() }
         }
     }
+
+    private fun galleryContent() =
+        (0 until 48)
+            .map { index ->
+                MediaAttachmentUi(
+                    MediaAttachmentSource(
+                        "image-$index",
+                        "image$index.png",
+                        "https://example.org/$index.png",
+                        null,
+                    ),
+                    null,
+                    AttachmentViewer.IMAGE,
+                    MediaKind.IMAGE,
+                )
+            }.toMediaGalleryContent()
 }

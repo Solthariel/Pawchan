@@ -45,7 +45,6 @@ internal fun AppNavigationWorkspace(
                 actions = actions,
                 selected = selected,
                 modifier = Modifier.align(Alignment.BottomCenter),
-                edgeScrollbar = true,
             )
         }
     }

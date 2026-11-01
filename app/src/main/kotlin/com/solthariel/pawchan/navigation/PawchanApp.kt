@@ -104,17 +104,20 @@ private fun AppSessionSurface(
     val theme by settings.theme.collectAsStateWithLifecycle()
     val home by settings.homeBoard.collectAsStateWithLifecycle()
     val workspaceReady by storage.workspace.ready.collectAsStateWithLifecycle()
-    PawchanTheme(preference = theme) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Box(Modifier.fillMaxSize()) {
+    val colors by settings.themeColors.collectAsStateWithLifecycle()
+    com.solthariel.pawchan.core.ui.ModalLayerHost {
+        PawchanTheme(preference = theme, colors = colors) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
                 if (workspaceReady) {
                     home?.let { loaded ->
                         CompositionLocalProvider(
                             com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
                             LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
+                            com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency provides
+                                appSettings.behavior.client.reading.navigation.bottomBarTransparencyPercent,
                             LocalComposerPreferences provides appSettings.behavior.client.composer,
                             LocalMediaPreferences provides appSettings.behavior.client.media,
                             com.solthariel.pawchan.media.LocalMediaViewEvents provides

@@ -45,10 +45,10 @@ class AttachmentApplyReopenUiTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Уникальный хеш").performClick()
-        compose.onNodeWithContentDescription("Удалить метаданные").performClick()
+        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Удалить метаданные", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Применить").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Переименовать").performClick()
+        compose.onNodeWithContentDescription("Переименовать", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Переименовать").performTextReplacement("renamed")
         Espresso.pressBack()
         compose.runOnIdle {
@@ -57,19 +57,19 @@ class AttachmentApplyReopenUiTest {
         }
         Espresso.pressBack()
         compose.onNodeWithText("Открыть вложение").performClick()
-        compose.onNodeWithContentDescription("Переименовать").performClick()
+        compose.onNodeWithContentDescription("Переименовать", useUnmergedTree = true).performClick()
         compose.onNodeWithText("renamed").assertExists()
         Espresso.pressBack()
-        compose.onNodeWithContentDescription("Уникальный хеш").assertIsOn()
-        compose.onNodeWithContentDescription("Удалить метаданные").assertIsOn()
-        compose.onNodeWithContentDescription("Спойлер").performClick()
+        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithContentDescription("Удалить метаданные", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithContentDescription("Спойлер", useUnmergedTree = true).performClick()
         Espresso.pressBack()
         compose.runOnIdle {
             assertTrue(saved.value.options.spoiler)
             assertEquals("renamed", saved.value.options.customName)
         }
         compose.onNodeWithText("Открыть вложение").performClick()
-        compose.onNodeWithContentDescription("Спойлер").assertIsOn()
-        compose.onNodeWithContentDescription("Уникальный хеш").assertIsOn()
+        compose.onNodeWithContentDescription("Спойлер", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).assertIsOn()
     }
 }

@@ -13,6 +13,7 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.SettingsRepository
+import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,9 @@ internal class SettingsViewModel(
             initialValue = ThemePreference.SYSTEM,
         )
 
+    val themeColors: StateFlow<ThemeColors> =
+        repository.themeColors.stateIn(viewModelScope, SharingStarted.Eagerly, ThemeColors())
+
     val loaded: StateFlow<AppSettings?> =
         appRepository.appSettings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -45,10 +49,22 @@ internal class SettingsViewModel(
         loaded.filterNotNull().stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     val state: StateFlow<SettingsUiState> =
-        combine(theme, app, homeBoard) { theme, app, home -> SettingsUiState(theme, app, home?.board) }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, SettingsUiState())
+        combine(theme, app, homeBoard, themeColors) { theme, app, home, colors ->
+            SettingsUiState(theme, app, home?.board, colors)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, SettingsUiState())
 
     val writeError = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
+    fun setThemeColors(colors: ThemeColors) {
+        viewModelScope.launch {
+            writeError.value =
+                if (repository.setThemeColors(colors) is DomainOutcome.Failure) {
+                    "Не удалось сохранить цвета"
+                } else {
+                    null
+                }
+        }
+    }
 
     fun setTheme(theme: ThemePreference) {
         viewModelScope.launch {
@@ -105,6 +121,7 @@ internal data class SettingsUiState(
     val theme: ThemePreference = ThemePreference.SYSTEM,
     val app: AppSettings = AppSettings(),
     val homeBoard: BoardAddress? = null,
+    val themeColors: ThemeColors = ThemeColors(),
 )
 
 internal data class SettingsActions(
@@ -114,6 +131,7 @@ internal data class SettingsActions(
     val onRestoreFilters: (suspend (List<ContentFilterRule>) -> Int?)? = null,
     val filterStatistics: ContentFilterStatisticsRepository? = null,
     val onStatistics: () -> Unit = {},
+    val onThemeColors: (ThemeColors) -> Unit = {},
 )
 
 /** Настройки вида поста для [com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences]. */

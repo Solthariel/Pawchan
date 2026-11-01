@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CatalogIconButton
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
@@ -82,7 +81,7 @@ internal fun ThreadsScreen(
         )
     val sections = rememberThreadsSectionState()
     var menu by remember { mutableStateOf<ThreadsMenuTarget?>(null) }
-    val counterWidth = rememberThreadCounterWidth(listOf(input.favorites.orEmpty(), input.replies))
+    val counterWidth = rememberThreadCounterWidth(listOf(input.pages, input.favorites.orEmpty(), input.replies))
     val unread = input.replies.sumOf { it.counter.count }
     LaunchedEffect(unread > 0) { if (unread > 0) sections.expand(ThreadsSection.REPLIES) }
     AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS) {
@@ -104,8 +103,7 @@ internal fun ThreadsScreen(
                         limits,
                         { menu = it },
                     )
-                // крестик в заголовке «Страниц» закрывает все страницы сразу, без вопроса.
-                threadsSection(ThreadsSection.PAGES, visibleInput.pages, list, actions.pages.closeAll)
+                threadsSection(ThreadsSection.PAGES, visibleInput.pages, list)
                 threadsSection(ThreadsSection.FAVORITES, visibleInput.favorites, list)
                 threadsSection(ThreadsSection.REPLIES, visibleInput.replies, list)
                 item(key = "links") { ThreadsLinks(input.copies, actions) }
@@ -125,7 +123,7 @@ internal class ThreadsListContext(
     val input: ThreadsScreenInput,
     val sections: ThreadsSectionState,
     val actions: ThreadsScreenActions,
-    /** Общая ширина ячеек счётчика в «Избранных тредах» и «Ответах». */
+    /** Общая ширина ячеек счётчика во всех трёх секциях. */
     val counterWidth: Dp,
     val searching: Boolean,
     val limits: com.solthariel.pawchan.domain.settings.NavigationPreferences,
@@ -136,19 +134,16 @@ private fun LazyListScope.threadsSection(
     section: ThreadsSection,
     rows: List<ThreadRowUi>?,
     list: ThreadsListContext,
-    onCloseAll: (() -> Unit)? = null,
 ) {
     val expanded = list.searching || section !in list.sections.collapsed
-    val total = ThreadCounter(rows.orEmpty().sumOf { it.counter.count })
+    val total = threadsSectionCounter(section, rows)
     item(key = "header-${section.name}", contentType = "threads-header") {
-        val closeAll = onCloseAll?.takeIf { expanded && !rows.isNullOrEmpty() }
         ThreadsSectionHeader(
             section,
             expanded,
             total,
             { list.sections.toggle(section) },
-            counterWidth = list.counterWidth.takeIf { section != ThreadsSection.PAGES },
-            trailing = closeAll?.let { { CatalogIconButton(UiIconKind.CLOSE, "Закрыть все", onClick = it) } },
+            counterWidth = list.counterWidth,
         )
     }
     if (expanded) {

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +48,7 @@ internal fun CatalogToolbar(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(APP_TOP_BAR_HEIGHT),
+                .heightIn(min = APP_TOP_BAR_HEIGHT),
         contentAlignment = Alignment.Center,
     ) {
         CatalogToolbarHeader(

@@ -26,7 +26,10 @@ internal fun CatalogBoardLookupToolbar(lookup: CatalogBoardLookupBindings) {
         focus.requestFocus()
         keyboard?.show()
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         UiToolbarButton(UiIconKind.BACK, "Закрыть выбор доски", onClick = lookup.onDismiss)
         UiToolbarSearchField(
             lookup.query,

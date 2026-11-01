@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.catalog
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -16,10 +15,13 @@ import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.OVAL_BUTTON_SHAPE
 import com.solthariel.pawchan.core.ui.UiBackwardIndicator
-import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.UiMenuIcon
+import com.solthariel.pawchan.core.ui.UiSubmenuIndicator
 import com.solthariel.pawchan.domain.settings.ThemePreference
+import com.solthariel.pawchan.domain.settings.displayMode
 import com.solthariel.pawchan.settings.labelResource
+import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 
 @Composable
 internal fun CatalogOverflowMenu(
@@ -55,13 +57,14 @@ private fun BoardMenuItems(
 ) {
     val prefs = menu.state.preferences
     CatalogHiddenThreadItems(menu.hiddenThreads, onClose)
-    BoardMenuItem(R.string.board_archive, onClose, menu.navigation.onArchive)
-    BoardMenuItem(R.string.new_thread_short, onClose, menu.navigation.onNewThread)
-    BoardMenuItem(R.string.board_information, onClose, menu.navigation.onInformation)
+    BoardMenuItem(R.string.board_archive, onClose, menu.navigation.onArchive, icon = UiIconKind.ARCHIVE)
+    BoardMenuItem(R.string.new_thread_short, onClose, menu.navigation.onNewThread, icon = UiIconKind.WRITE)
+    BoardMenuItem(R.string.board_information, onClose, menu.navigation.onInformation, icon = UiIconKind.INFO)
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(stringResource(R.string.board_appearance)) },
-        trailingIcon = { UiForwardIndicator() },
+        leadingIcon = { UiMenuIcon(UiIconKind.PALETTE) },
+        trailingIcon = { UiSubmenuIndicator() },
         onClick = onAppearance,
     )
     BoardMenuItem(
@@ -69,12 +72,14 @@ private fun BoardMenuItems(
         onClose,
         menu.preferences.onFavorite,
         enabled = !prefs.saving,
+        icon = if (prefs.favorite) UiIconKind.STAR_FILLED else UiIconKind.STAR,
     )
     BoardMenuItem(
         if (prefs.home) R.string.board_is_home else R.string.make_home_board,
         onClose,
         menu.preferences.onHome,
         enabled = !prefs.saving && !prefs.home,
+        icon = UiIconKind.HOME,
     )
 }
 
@@ -90,11 +95,19 @@ private fun AppearanceMenu(
         leadingIcon = { UiBackwardIndicator() },
         onClick = onBack,
     )
-    ThemePreference.entries.forEach { theme ->
+    val modes = listOf(ThemePreference.SYSTEM, ThemePreference.LIGHT, ThemePreference.DARK, ThemePreference.AMOLED)
+    modes.forEach { theme ->
         DropdownMenuItem(
             modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
             text = { Text(stringResource(theme.labelResource)) },
-            leadingIcon = { RadioButton(theme == menu.state.preferences.theme, onClick = null) },
+            leadingIcon = {
+                RadioButton(
+                    theme ==
+                        menu.state.preferences.theme
+                            .let { if (it == ThemePreference.AMOLED) it else it.displayMode() },
+                    onClick = null,
+                )
+            },
             enabled = !menu.state.preferences.saving,
             onClick = {
                 onClose()
@@ -110,10 +123,12 @@ private fun BoardMenuItem(
     onClose: () -> Unit,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    icon: UiIconKind? = null,
 ) {
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(stringResource(label)) },
+        leadingIcon = icon?.let { { UiMenuIcon(it) } },
         enabled = enabled,
         onClick = {
             onClose()

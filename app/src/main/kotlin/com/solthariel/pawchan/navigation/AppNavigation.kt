@@ -107,6 +107,7 @@ private fun NavGraphBuilder.settingsDestination(
                     settings::restoreContentFilters,
                     filterStatistics,
                     onStatistics = { navController.navigate(AppRoute.STATISTICS) { launchSingleTop = true } },
+                    onThemeColors = settings::setThemeColors,
                 ),
             bottomActions = bottomActions,
         )

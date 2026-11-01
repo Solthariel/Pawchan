@@ -30,16 +30,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.ImageLoader
 import coil3.compose.SubcomposeAsyncImage
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.core.ui.ModalScrimStrength
+import com.solthariel.pawchan.core.ui.modalLayerSurface
 import com.solthariel.pawchan.media.AttachmentCaption
 import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.BindAttachmentImagePreload
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.calculateAttachmentGridMetrics
+import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
 
 @Composable
 internal fun CatalogAttachmentPicker(
@@ -52,14 +54,14 @@ internal fun CatalogAttachmentPicker(
     BindAttachmentImagePreload(attachments, imageLoader)
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        strength = ModalScrimStrength.MEDIA,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         val dismissInteraction = remember { MutableInteractionSource() }
         BoxWithConstraints(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = PICKER_SCRIM_ALPHA))
                     .clickable(
                         interactionSource = dismissInteraction,
                         indication = null,
@@ -78,7 +80,7 @@ internal fun CatalogAttachmentPicker(
                 )
             val cellSize = metrics.cellSize.dp
             val rowWidth = cellSize * ATTACHMENT_GRID_COLUMNS.toFloat() + PICKER_GAP
-            Column(verticalArrangement = Arrangement.spacedBy(PICKER_GAP)) {
+            Column(Modifier.modalLayerSurface(), verticalArrangement = Arrangement.spacedBy(PICKER_GAP)) {
                 attachments.chunked(ATTACHMENT_GRID_COLUMNS).forEach { rowAttachments ->
                     Row(
                         modifier = Modifier.width(rowWidth),
@@ -151,7 +153,6 @@ private fun CatalogAttachmentMetadata(
 }
 
 private const val ATTACHMENT_GRID_COLUMNS = 2
-private const val PICKER_SCRIM_ALPHA = 0.72f
 private const val PLAY_BADGE_ALPHA = 0.65f
 private val PICKER_MAX_CELL_SIZE = 120.dp
 private val PICKER_GAP = 8.dp

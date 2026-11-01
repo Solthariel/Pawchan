@@ -61,6 +61,46 @@ class HomeBoardPersistenceTest {
             assertEquals(board, repository.homeBoard.first())
         }
 
+    @Test
+    fun changingAmoledToLightOrDarkDisablesBlackWithoutLosingPalette() =
+        runBlocking {
+            val repository = DataStoreSettingsRepository(InMemoryPreferencesDataStore())
+            repository.portable.replace(mapOf("theme" to "AMOLED"), null)
+            repository.setTheme(ThemePreference.LIGHT)
+            assertEquals(
+                com.solthariel.pawchan.domain.settings
+                    .ThemeColors(pureBlack = false),
+                repository.themeColors.first(),
+            )
+            repository.setTheme(ThemePreference.DARK)
+            assertEquals(false, repository.themeColors.first().pureBlack)
+        }
+
+    @Test
+    fun colorSelectionSurvivesReopeningTheStore() =
+        runBlocking {
+            val file = File(temporary.root, "colors.preferences_pb")
+            val colors =
+                com.solthariel.pawchan.domain.settings.ThemeColors(
+                    com.solthariel.pawchan.domain.settings.ThemePalette.AMBER,
+                    pureBlack = true,
+                )
+            val first = repository(file)
+            try {
+                assertEquals(DomainOutcome.Success(Unit), first.first.setThemeColors(colors))
+                first.first.setTheme(ThemePreference.AMOLED)
+            } finally {
+                first.second.cancelAndJoin()
+            }
+            val reopened = repository(file)
+            try {
+                assertEquals(colors, reopened.first.themeColors.first())
+                assertEquals(ThemePreference.AMOLED, reopened.first.theme.first())
+            } finally {
+                reopened.second.cancelAndJoin()
+            }
+        }
+
     private fun repository(file: File): Pair<DataStoreSettingsRepository, Job> {
         val job = SupervisorJob()
         val data = PreferenceDataStoreFactory.create(scope = CoroutineScope(job + Dispatchers.IO)) { file }

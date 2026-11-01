@@ -10,6 +10,7 @@ internal fun Preferences.readNavigation(): NavigationPreferences =
         this[PAGES] ?: NavigationPreferences().pages,
         this[FAVORITES] ?: NavigationPreferences().favorites,
         this[REPLIES] ?: NavigationPreferences().replies,
+        this[BOTTOM_BAR_TRANSPARENCY] ?: NavigationPreferences.DEFAULT_BOTTOM_BAR_TRANSPARENCY,
     ).normalized()
 
 internal fun MutablePreferences.writeNavigation(value: NavigationPreferences) {
@@ -17,8 +18,11 @@ internal fun MutablePreferences.writeNavigation(value: NavigationPreferences) {
     this[PAGES] = normalized.pages
     this[FAVORITES] = normalized.favorites
     this[REPLIES] = normalized.replies
+    this[BOTTOM_BAR_TRANSPARENCY] = normalized.bottomBarTransparencyPercent
 }
 
 private val PAGES = intPreferencesKey("navigation_pages_limit")
 private val FAVORITES = intPreferencesKey("navigation_favorites_limit")
 private val REPLIES = intPreferencesKey("navigation_replies_limit")
+
+private val BOTTOM_BAR_TRANSPARENCY = intPreferencesKey("navigation_bottom_bar_transparency_percent")

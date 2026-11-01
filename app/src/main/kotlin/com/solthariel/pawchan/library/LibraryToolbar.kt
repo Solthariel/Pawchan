@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +66,7 @@ internal fun LibraryToolbar(
     actions: LibraryToolbarActions,
 ) {
     Row(
-        Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (state.query != null) {
@@ -76,10 +76,11 @@ internal fun LibraryToolbar(
         } else {
             CatalogIconButton(UiIconKind.BACK, "Назад", onClick = actions.onBack)
             Text(
-                listOfNotNull(state.title, state.count?.takeIf { it > 0 }?.toString()).joinToString(" · "),
-                Modifier.weight(1f).padding(start = 4.dp),
-                style = MaterialTheme.typography.titleMedium,
+                listOfNotNull(state.title, state.count?.takeIf { it > 0 }?.toString()).joinToString(" / "),
+                Modifier.weight(1f).padding(start = 12.dp),
+                style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             CatalogIconButton(UiIconKind.SEARCH, "Поиск", onClick = { actions.onQuery("") })
         }
@@ -97,25 +98,10 @@ internal fun RowScope.LibrarySearchInput(
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    Box(
-        Modifier
-            .weight(1f)
-            .height(34.dp)
-            .padding(horizontal = 4.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(17.dp))
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        if (query.isEmpty()) {
-            Text("Поиск", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        }
-        BasicTextField(
-            query,
-            onValueChange = { onQuery(it) },
-            modifier = Modifier.fillMaxWidth().focusRequester(focus),
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        )
-    }
+    com.solthariel.pawchan.core.ui.UiToolbarSearchField(
+        query,
+        { onQuery(it) },
+        focus,
+        Modifier.weight(1f).padding(horizontal = 4.dp),
+    )
 }

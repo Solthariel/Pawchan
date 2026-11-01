@@ -10,8 +10,11 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
+import com.solthariel.pawchan.core.ui.PostTextColors
+import com.solthariel.pawchan.core.ui.postTextColors
 import com.solthariel.pawchan.domain.model.PostTextStyle
 import com.solthariel.pawchan.thread.ThreadExportPost
 import com.solthariel.pawchan.thread.ThreadShotStyle
@@ -44,10 +47,11 @@ internal fun shotBody(
     style: ThreadShotStyle,
 ): SpannableString {
     val text = SpannableString(post.document.plainText)
+    val colors = postTextColors(Color(style.surface))
     var offset = 0
     post.document.runs.forEach { run ->
         val end = offset + run.text.length
-        applyShotRunStyles(text, offset, end, run.styles)
+        applyShotRunStyles(text, offset, end, run.styles, colors)
         if (run.link != null && PostTextStyle.SPOILER !in run.styles) {
             text.setSpan(ForegroundColorSpan(style.accent), offset, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             text.setSpan(UnderlineSpan(), offset, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -62,6 +66,7 @@ private fun applyShotRunStyles(
     start: Int,
     end: Int,
     styles: Set<PostTextStyle>,
+    colors: PostTextColors,
 ) {
     if (PostTextStyle.BOLD in styles) {
         text.setSpan(StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -75,7 +80,7 @@ private fun applyShotRunStyles(
     if (PostTextStyle.STRIKETHROUGH in styles) {
         text.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
-    val color = shotRunColor(styles)
+    val color = shotRunColor(styles, colors)
     if (color != null) {
         text.setSpan(ForegroundColorSpan(color), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
@@ -84,11 +89,14 @@ private fun applyShotRunStyles(
     }
 }
 
-private fun shotRunColor(styles: Set<PostTextStyle>): Int? =
+private fun shotRunColor(
+    styles: Set<PostTextStyle>,
+    colors: PostTextColors,
+): Int? =
     when {
         PostTextStyle.SPOILER in styles -> SHOT_SPOILER_COLOR
-        PostTextStyle.RED in styles -> SHOT_RED_COLOR
-        PostTextStyle.GREENTEXT in styles -> SHOT_QUOTE_COLOR
+        PostTextStyle.RED in styles -> colors.red.toArgb()
+        PostTextStyle.GREENTEXT in styles -> colors.quote.toArgb()
         else -> null
     }
 
@@ -115,6 +123,4 @@ internal fun staticShotLayout(
         .setIncludePad(false)
         .build()
 
-private const val SHOT_QUOTE_COLOR = -0xb175c6
-private const val SHOT_RED_COLOR = 0xFFE53935.toInt()
 private const val SHOT_SPOILER_COLOR = 0xFF777777.toInt()

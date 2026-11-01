@@ -10,11 +10,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import com.solthariel.pawchan.core.ui.ModalInlineLayer
+import com.solthariel.pawchan.core.ui.modalInlineBackdrop
 
 /** Only five live window trees/models; older levels retain lightweight saveable UI state. */
 @Composable
@@ -38,25 +38,23 @@ internal fun PostPreviewStack(
     }
     val top = entries.lastOrNull() ?: return
     val motion = remember(top.id) { PreviewSwipeState() }
-    Box(
-        Modifier.fillMaxSize().drawBehind {
-            drawRect(Color.Black.copy(alpha = PREVIEW_DIM))
-        },
-    ) {
-        entries.takeLast(RETAINED_PREVIEW_WINDOWS).forEach { entry ->
-            key(entry.id) {
-                holder.SaveableStateProvider(entry.id) {
-                    PreviewEntryOwner {
-                        CompositionLocalProvider(
-                            LocalPreviewLayer provides
-                                PreviewLayer(
-                                    depth = entries.lastIndex - entries.indexOf(entry),
-                                    motion = motion,
-                                    clear = onClear,
-                                    count = entries.size.coerceAtMost(RETAINED_PREVIEW_WINDOWS),
-                                ),
-                        ) {
-                            PostPreviewDialog(entry.target, local, appearance, bindings(entry.target), resources)
+    ModalInlineLayer {
+        Box(Modifier.fillMaxSize().modalInlineBackdrop()) {
+            entries.takeLast(RETAINED_PREVIEW_WINDOWS).forEach { entry ->
+                key(entry.id) {
+                    holder.SaveableStateProvider(entry.id) {
+                        PreviewEntryOwner {
+                            CompositionLocalProvider(
+                                LocalPreviewLayer provides
+                                    PreviewLayer(
+                                        depth = entries.lastIndex - entries.indexOf(entry),
+                                        motion = motion,
+                                        clear = onClear,
+                                        count = entries.size.coerceAtMost(RETAINED_PREVIEW_WINDOWS),
+                                    ),
+                            ) {
+                                PostPreviewDialog(entry.target, local, appearance, bindings(entry.target), resources)
+                            }
                         }
                     }
                 }

@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +21,6 @@ internal class UpdateViewModel(
     private val mutableState = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
     val state: StateFlow<UpdateUiState> = mutableState.asStateFlow()
     private val entryChecks = UpdateEntryChecks()
-    private var operation: Job? = null
 
     fun checkOnEntry(
         request: UpdateCheckRequest?,
@@ -38,43 +36,41 @@ internal class UpdateViewModel(
             return
         }
         mutableState.value = UpdateUiState.Checking
-        operation =
-            viewModelScope.launch {
-                mutableState.value =
-                    runCatching { client.check() }
-                        .fold(
-                            onSuccess = { result ->
-                                currentCoroutineContext().ensureActive()
-                                if (result == null) {
-                                    UpdateUiState.UpToDate
-                                } else {
-                                    UpdateUiState.Available(result.first, result.second)
-                                }
-                            },
-                            onFailure = ::failureState,
-                        )
-            }
+        viewModelScope.launch {
+            mutableState.value =
+                runCatching { client.check() }
+                    .fold(
+                        onSuccess = { result ->
+                            currentCoroutineContext().ensureActive()
+                            if (result == null) {
+                                UpdateUiState.UpToDate
+                            } else {
+                                UpdateUiState.Available(result.first, result.second)
+                            }
+                        },
+                        onFailure = ::failureState,
+                    )
+        }
     }
 
     fun download(release: UpdatePackage) {
         val available = state.value as? UpdateUiState.Available ?: return
         if (available.release !== release) return
         mutableState.value = UpdateUiState.Downloading(release, 0)
-        operation =
-            viewModelScope.launch {
-                mutableState.value =
-                    runCatching {
-                        client.download(release) { progress ->
-                            mutableState.value = UpdateUiState.Downloading(release, progress)
-                        }
-                    }.fold(
-                        onSuccess = { file ->
-                            currentCoroutineContext().ensureActive()
-                            UpdateUiState.Ready(release, file.absolutePath)
-                        },
-                        onFailure = ::failureState,
-                    )
-            }
+        viewModelScope.launch {
+            mutableState.value =
+                runCatching {
+                    client.download(release) { progress ->
+                        mutableState.value = UpdateUiState.Downloading(release, progress)
+                    }
+                }.fold(
+                    onSuccess = { file ->
+                        currentCoroutineContext().ensureActive()
+                        UpdateUiState.Ready(release, file.absolutePath)
+                    },
+                    onFailure = ::failureState,
+                )
+        }
     }
 
     fun install(context: Context) {
@@ -85,19 +81,13 @@ internal class UpdateViewModel(
         }
     }
 
-    fun accessChanged() {
-        operation?.cancel()
-        mutableState.value = UpdateUiState.Idle
-    }
-
     override fun onCleared() {
         client.close()
     }
 
     private fun failureState(error: Throwable): UpdateUiState.Error {
         if (error is CancellationException) throw error
-        val reason = if (error is UpdateAccessRequired) UpdateError.ACCESS_REQUIRED else UpdateError.GENERAL
-        return UpdateUiState.Error(reason)
+        return UpdateUiState.Error(UpdateError.GENERAL)
     }
 
     companion object {
@@ -105,7 +95,6 @@ internal class UpdateViewModel(
             context: Context,
             configuration: UpdateConfiguration,
             dns: okhttp3.Dns = okhttp3.Dns.SYSTEM,
-            access: UpdateTokenStore? = null,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
@@ -114,7 +103,7 @@ internal class UpdateViewModel(
                         UpdateClient(
                             context,
                             configuration,
-                            privateUpdateHttpClient(dns, configuration.privateRepository, access),
+                            updateHttpClient(dns),
                         ),
                     )
                 }

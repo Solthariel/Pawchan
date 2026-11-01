@@ -50,7 +50,7 @@ internal fun AttachmentOptionTile(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val icon = attachmentTileIcon(state.label)
+    val icon = attachmentTileIcon(state.label, state.checked)
     val description = stringResource(state.label)
     val status = stringResource(if (state.checked) R.string.composer_option_on else R.string.composer_option_off)
     val tone = uiOptionColors(state.checked, state.enabled)
@@ -147,14 +147,34 @@ private fun Modifier.attachmentTileInteraction(
         ) { onClick() }
     }
 
-private fun attachmentTileIcon(label: Int): Int =
+internal fun attachmentTileIcon(
+    label: Int,
+    checked: Boolean,
+): Int =
     when (label) {
-        R.string.attachment_unique_hash -> R.drawable.ic_attachment_option_hash
-        R.string.attachment_strip_metadata -> R.drawable.ic_attachment_option_metadata
-        R.string.attachment_remove_name -> R.drawable.ic_attachment_option_no_name
-        R.string.markup_spoiler -> R.drawable.ic_attachment_option_spoiler
-        R.string.attachment_reencode -> R.drawable.ic_attachment_option_reencode
-        else -> R.drawable.ic_attachment_option_name
+        R.string.attachment_unique_hash -> {
+            if (checked) R.drawable.ic_attachment_option_hash_off else R.drawable.ic_attachment_option_hash
+        }
+
+        R.string.attachment_strip_metadata -> {
+            if (checked) R.drawable.ic_attachment_option_metadata_off else R.drawable.ic_attachment_option_metadata
+        }
+
+        R.string.attachment_remove_name -> {
+            if (checked) R.drawable.ic_attachment_option_no_name_off else R.drawable.ic_attachment_option_no_name
+        }
+
+        R.string.markup_spoiler -> {
+            if (checked) R.drawable.ic_attachment_option_spoiler_off else R.drawable.ic_attachment_option_spoiler
+        }
+
+        R.string.attachment_reencode -> {
+            R.drawable.ic_attachment_option_reencode
+        }
+
+        else -> {
+            R.drawable.ic_attachment_option_name
+        }
     }
 
 private fun attachmentTileCaption(label: Int): Int =

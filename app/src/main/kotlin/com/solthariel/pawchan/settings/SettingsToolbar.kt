@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -34,9 +35,12 @@ internal fun SettingsToolbar(
     inputDescription: String = placeholder,
     actions: @Composable RowScope.() -> Unit,
 ) {
-    Box(Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT), contentAlignment = Alignment.Center) {
         Row(
-            Modifier.fillMaxWidth().height(APP_TOOLBAR_BUTTON_SIZE).padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = APP_TOOLBAR_BUTTON_SIZE)
+                .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (back != null || search.visible) {
@@ -44,7 +48,7 @@ internal fun SettingsToolbar(
                     if (search.visible) search.close() else back?.invoke()
                 })
             } else {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(0.dp))
             }
             SettingsToolbarHeader(title, search, placeholder, inputDescription, Modifier.weight(1f))
             actions()
@@ -73,7 +77,7 @@ private fun SettingsToolbarHeader(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     title,
-                    Modifier.weight(1f).padding(start = 8.dp),
+                    Modifier.weight(1f).padding(start = 12.dp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleLarge,

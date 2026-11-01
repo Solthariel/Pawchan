@@ -5,6 +5,7 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.SettingsRepository
+import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.navigation.boardAddress
 import com.solthariel.pawchan.settings.SettingsViewModel
@@ -83,6 +84,25 @@ class SettingsViewModelTest {
                 Dispatchers.resetMain()
             }
         }
+
+    @Test
+    fun colorChangesReachRenderingAndSettingsState() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val model = SettingsViewModel(FakeSettingsRepository(), FakeAppSettingsRepository())
+                val colors = ThemeColors(com.solthariel.pawchan.domain.settings.ThemePalette.OLIVE, true)
+                model.setThemeColors(colors)
+                advanceUntilIdle()
+                assertEquals(colors, model.themeColors.value)
+                assertEquals(colors, model.state.value.themeColors)
+                assertEquals(ThemePreference.SYSTEM, model.theme.value)
+                assertEquals(null, model.writeError.value)
+                model.viewModelScope.cancel()
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
 }
 
 private class FakeAppSettingsRepository : AppSettingsRepository {
@@ -95,6 +115,13 @@ private class FakeAppSettingsRepository : AppSettingsRepository {
 }
 
 private class FakeSettingsRepository : SettingsRepository {
+    override val themeColors = MutableStateFlow(ThemeColors())
+
+    override suspend fun setThemeColors(colors: ThemeColors): DomainOutcome<Unit> {
+        themeColors.value = colors
+        return DomainOutcome.Success(Unit)
+    }
+
     override val homeBoard = MutableStateFlow<com.solthariel.pawchan.domain.model.BoardAddress?>(null)
 
     override suspend fun setHomeBoard(board: com.solthariel.pawchan.domain.model.BoardAddress): DomainOutcome<Unit> {

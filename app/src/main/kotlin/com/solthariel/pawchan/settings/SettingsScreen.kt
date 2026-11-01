@@ -27,16 +27,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.domain.settings.ThemePreference
+import com.solthariel.pawchan.domain.settings.displayMode
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomBar
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.update.UpdateCheckRequest
-import com.solthariel.pawchan.update.UpdateConfiguration
 import com.solthariel.pawchan.update.UpdatePanel
 import com.solthariel.pawchan.update.rememberUpdatePanel
 
@@ -148,32 +148,19 @@ private fun SettingsSectionList(onOpen: (SettingsSection) -> Unit) {
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
+                UiForwardIndicator()
             }
         }
     }
 }
 
-private fun releaseUpdateConfiguration(): UpdateConfiguration =
-    UpdateConfiguration(
-        manifestUrl = BuildConfig.UPDATE_MANIFEST_URL,
-        currentVersionCode = BuildConfig.VERSION_CODE.toLong(),
-        currentVersionName = BuildConfig.VERSION_NAME,
-        privateRepository = BuildConfig.PRIVATE_UPDATE_REPOSITORY,
-    )
-
 internal val ThemePreference.labelResource: Int
     get() =
-        when (this) {
-            ThemePreference.SYSTEM -> R.string.theme_system
-            ThemePreference.LIGHT -> R.string.theme_light
-            ThemePreference.DARK -> R.string.theme_dark
-            ThemePreference.AMOLED -> R.string.theme_amoled
-            ThemePreference.TOMORROW -> R.string.theme_tomorrow
-            ThemePreference.NORMIE -> R.string.theme_normie
-            ThemePreference.BURICHAN -> R.string.theme_burichan
-            ThemePreference.HARDON -> R.string.theme_hardon
-            ThemePreference.NEUTRON -> R.string.theme_neutron
-            ThemePreference.PHOTON -> R.string.theme_photon
+        when {
+            this == ThemePreference.AMOLED -> R.string.theme_amoled
+            displayMode() == ThemePreference.SYSTEM -> R.string.theme_system
+            displayMode() == ThemePreference.LIGHT -> R.string.theme_light
+            else -> R.string.theme_dark
         }
 
 private val SETTINGS_BOTTOM_PADDING = 8.dp

@@ -21,7 +21,7 @@ class NavigationIndicatorsRuntimeTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun disclosureAndForwardHaveEqualSizesAndOppositeLabelPositions() {
+    fun disclosureAndForwardHaveEqualSizesAndTrailingLabelPositions() {
         compose.setContent {
             MaterialTheme {
                 Column {
@@ -36,7 +36,7 @@ class NavigationIndicatorsRuntimeTest {
         forward.assertWidthIsEqualTo(20.dp).assertHeightIsEqualTo(20.dp)
         val heading = compose.onNodeWithText("Страницы", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val history = compose.onNodeWithText("История", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertTrue(disclosure.fetchSemanticsNode().boundsInRoot.right <= heading.left)
+        assertTrue(disclosure.fetchSemanticsNode().boundsInRoot.left >= heading.right)
         assertTrue(forward.fetchSemanticsNode().boundsInRoot.left >= history.right)
     }
 }

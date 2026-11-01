@@ -170,6 +170,13 @@ class RuntimeSmokeTest {
                     actions =
                         com.solthariel.pawchan.thread
                             .ThreadFeatureActions({}, {}, {}),
+                    navigationHost = { onWrite, content ->
+                        com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace(
+                            bottomActions().copy(onWriteClick = onWrite),
+                            null,
+                            content = content,
+                        )
+                    },
                 )
             }
         }
@@ -251,18 +258,7 @@ class RuntimeSmokeTest {
     }
 
     private fun showCatalogViewerFixture() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val image = java.io.File(context.cacheDir, "catalog-return-fixture.png")
-        val bitmap = android.graphics.Bitmap.createBitmap(2, 2, android.graphics.Bitmap.Config.ARGB_8888)
-        try {
-            image.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
-        } finally {
-            bitmap.recycle()
-        }
-        val imageUrl =
-            android.net.Uri
-                .fromFile(image)
-                .toString()
+        val imageUrl = smokeCatalogImageUrl(InstrumentationRegistry.getInstrumentation().targetContext)
         val attachments =
             listOf("one", "two", "three", "four").map { name ->
                 com.solthariel.pawchan.media.MediaAttachmentUi(

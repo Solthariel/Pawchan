@@ -12,6 +12,10 @@ import java.util.Base64
 internal fun portableSchema(): Preferences =
     mutablePreferencesOf().apply {
         write(AppSettings())
+        writeThemeColors(
+            com.solthariel.pawchan.domain.settings
+                .ThemeColors(),
+        )
 
         this[stringPreferencesKey("theme")] = "SYSTEM"
         this[stringPreferencesKey("home_board")] = ""

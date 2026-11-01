@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -20,6 +21,7 @@ import com.solthariel.pawchan.composer.ComposerTextEditor
 import com.solthariel.pawchan.domain.posting.PostingFeatures
 import com.solthariel.pawchan.domain.posting.PostingIdentityRules
 import com.solthariel.pawchan.domain.posting.PostingRules
+import com.solthariel.pawchan.feature.composer.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -69,7 +71,8 @@ class ComposerEditorUiTest {
                 Column(Modifier.width(320.dp)) { ComposerFormattingToolbar(true, false, {}, {}) }
             }
         }
-        val surfaces = compose.onAllNodesWithTag("composer-markup-surface", useUnmergedTree = true).fetchSemanticsNodes()
+        val surfaces =
+            compose.onAllNodesWithTag("composer-markup-surface", useUnmergedTree = true).fetchSemanticsNodes()
         assertEquals(10, surfaces.size)
         surfaces.forEach { assertTrue(kotlin.math.abs(it.boundsInRoot.width - it.boundsInRoot.height) < 1f) }
     }
@@ -77,8 +80,14 @@ class ComposerEditorUiTest {
     @Test
     fun attachButtonRemainsClickableIndependentlyOfTheAttachmentCount() {
         val clicks = mutableStateOf(0)
-        compose.setContent { MaterialTheme { ComposerAttachButton { clicks.value++ } } }
-        compose.onNodeWithContentDescription("Прикрепить изображение или видео").performClick().performClick()
+        var label = ""
+        compose.setContent {
+            MaterialTheme {
+                label = stringResource(R.string.attachment_add)
+                ComposerAttachButton { clicks.value++ }
+            }
+        }
+        compose.onNodeWithContentDescription(label).performClick().performClick()
         compose.runOnIdle { assertEquals(2, clicks.value) }
     }
 

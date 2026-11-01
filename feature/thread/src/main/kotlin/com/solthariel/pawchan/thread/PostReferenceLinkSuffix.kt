@@ -1,10 +1,16 @@
 package com.solthariel.pawchan.thread
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -14,6 +20,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.em
+import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.uiIconPainter
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.domain.model.PostTextRun
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -83,36 +91,70 @@ internal fun AnnotatedString.withVisualLinkSuffixes(): AnnotatedString =
             }
         }.toAnnotatedString()
 
+@Composable
 internal fun Modifier.referenceLinkSuffixes(
     text: AnnotatedString,
     context: ThreadAddress?,
     measurer: TextMeasurer,
     style: TextStyle,
+    color: Color,
     layout: () -> TextLayoutResult?,
-): Modifier =
-    drawWithContent {
+): Modifier {
+    val person = uiIconPainter(UiIconKind.PERSON)
+    val drawing =
+        remember(measurer, style, color, person) {
+            SuffixDrawing(
+                measurer,
+                style.merge(TextStyle(color = color, fontWeight = FontWeight.Medium)),
+                person,
+                ColorFilter.tint(color),
+            )
+        }
+    val markers =
+        remember(text, context) {
+            text.getStringAnnotations(LINK_SUFFIX_TAG, 0, text.length).map {
+                LinkSuffixMarker(it.start, linkSuffixLabel(it.item, context))
+            }
+        }
+    return drawWithContent {
         drawContent()
         val result = layout() ?: return@drawWithContent
-        val suffixStyle = style.merge(TextStyle(color = LINK_COLOR, fontWeight = FontWeight.Medium))
-        text.getStringAnnotations(LINK_SUFFIX_TAG, 0, text.length).forEach {
-            drawLinkSuffix(result, it.start, linkSuffixLabel(it.item, context), measurer, suffixStyle)
-        }
+        markers.forEach { drawLinkSuffix(result, it.start, it.label, drawing) }
     }
+}
+
+private data class LinkSuffixMarker(
+    val start: Int,
+    val label: String,
+)
+
+private data class SuffixDrawing(
+    val measurer: TextMeasurer,
+    val style: TextStyle,
+    val person: Painter,
+    val tint: ColorFilter,
+)
 
 private fun DrawScope.drawLinkSuffix(
     result: TextLayoutResult,
     start: Int,
     label: String,
-    measurer: TextMeasurer,
-    style: TextStyle,
+    drawing: SuffixDrawing,
 ) {
     if (start >= result.layoutInput.text.length) return
     val line = result.getLineForOffset(start)
     if (line >= result.lineCount || start >= result.getLineEnd(line, visibleEnd = true)) return
     val bounds = result.getBoundingBox(start)
-    val measured = measurer.measure(label, style)
+    val measured = drawing.measurer.measure(label, drawing.style)
     val top = result.getLineBaseline(line) - measured.firstBaseline
-    drawText(measured, topLeft = Offset(minOf(bounds.left, bounds.right), top))
+    if (label == "OP") {
+        val size = measured.size.height.toFloat()
+        translate(minOf(bounds.left, bounds.right), top) {
+            with(drawing.person) { draw(Size(size, size), colorFilter = drawing.tint) }
+        }
+    } else {
+        drawText(measured, topLeft = Offset(minOf(bounds.left, bounds.right), top))
+    }
 }
 
 private fun threadToken(thread: ThreadAddress): String {

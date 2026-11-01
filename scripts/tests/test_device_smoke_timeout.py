@@ -36,20 +36,21 @@ class DeviceSmokeCommandTest(unittest.TestCase):
                 command = [shell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(root / 'scripts' / script)]
             else:
                 command = ['sh', str(root / 'scripts' / script)]
-            result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(command, capture_output=True, timeout=10)
             return result, json.loads((root / 'arguments.json').read_text())
 
     def test_all_modules_run_with_a_real_per_test_timeout_and_no_test_filter(self):
         result, args = self.invoke(0)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('DEVICE SMOKE: PASS', result.stdout)
+        self.assertIn(b'DEVICE SMOKE: PASS', result.stdout)
         self.assertEqual([a for a in args if a.startswith(':')],
                          [f':{module}:connectedDebugAndroidTest' for module in MODULES])
         self.assertIn('-Pandroid.testInstrumentationRunnerArguments.timeout_msec=180000', args)
         self.assertIn('--warning-mode=fail', args)
+        self.assertIn('--continue', args)
         self.assertFalse(any('.class=' in a or '.log=' in a for a in args))
 
     def test_failed_gradle_never_prints_pass(self):
         result, _ = self.invoke(7)
         self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn('DEVICE SMOKE: PASS', result.stdout)
+        self.assertNotIn(b'DEVICE SMOKE: PASS', result.stdout)

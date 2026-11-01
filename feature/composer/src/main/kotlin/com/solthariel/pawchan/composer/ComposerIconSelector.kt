@@ -32,7 +32,9 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.OVAL_BUTTON_SHAPE
+import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.posting.PostingIcon
@@ -58,7 +60,7 @@ internal fun ComposerIconSelector(
                 onClick = { expanded = true },
                 enabled = enabled,
                 modifier =
-                    Modifier.semantics {
+                    Modifier.size(APP_TOOLBAR_BUTTON_SIZE).semantics {
                         contentDescription = description
                         this.selected = selected != null
                     },
@@ -67,7 +69,8 @@ internal fun ComposerIconSelector(
             }
         } else {
             TextButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                Text(selected?.name ?: "Нет иконки")
+                Text(selected?.name ?: "Нет иконки", Modifier.weight(1f))
+                UiDisclosureIndicator(expanded)
             }
         }
         DropdownMenu(
@@ -76,7 +79,7 @@ internal fun ComposerIconSelector(
             modifier =
                 Modifier
                     .heightIn(max = ICON_MENU_MAX_HEIGHT)
-                    .menuScrollbar(menuScroll),
+                    .menuScrollbar(menuScroll, MaterialTheme.colorScheme.outline),
             scrollState = menuScroll,
         ) {
             ClearPostingIconItem(selected == null) {
@@ -103,7 +106,10 @@ private fun PostingIconImage(icon: PostingIcon) {
     )
 }
 
-private fun Modifier.menuScrollbar(scroll: ScrollState): Modifier =
+private fun Modifier.menuScrollbar(
+    scroll: ScrollState,
+    color: Color,
+): Modifier =
     drawWithContent {
         drawContent()
         if (scroll.maxValue <= 0) return@drawWithContent
@@ -111,7 +117,7 @@ private fun Modifier.menuScrollbar(scroll: ScrollState): Modifier =
         val thumbHeight = (size.height * viewportFraction).coerceAtLeast(ICON_MENU_MIN_THUMB.toPx())
         val progress = scroll.value.toFloat() / scroll.maxValue
         drawRoundRect(
-            color = Color.White.copy(alpha = 0.48f),
+            color = color,
             topLeft = Offset(size.width - ICON_MENU_SCROLLBAR_WIDTH.toPx(), (size.height - thumbHeight) * progress),
             size = Size(ICON_MENU_SCROLLBAR_WIDTH.toPx(), thumbHeight),
             cornerRadius = CornerRadius(ICON_MENU_SCROLLBAR_WIDTH.toPx()),
