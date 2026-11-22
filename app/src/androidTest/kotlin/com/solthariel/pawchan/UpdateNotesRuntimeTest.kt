@@ -37,4 +37,25 @@ class UpdateNotesRuntimeTest {
         compose.onAllNodesWithText("* Первый пункт").assertCountEquals(0)
         compose.onAllNodesWithText("Изменения").assertCountEquals(0)
     }
+
+    @Test fun aboutSummaryHidesInstalledVersionButKeepsAvailableVersion() {
+        compose.setContent {
+            MaterialTheme {
+                UpdateVersionSummary("0.1.4", "0.1.5", showInstalledVersion = false)
+            }
+        }
+        compose.onNodeWithTag("update-installed-version").assertDoesNotExist()
+        compose.onNodeWithText("Установлена: 0.1.4").assertDoesNotExist()
+        compose.onNodeWithText("Доступна: 0.1.5").assertIsDisplayed()
+    }
+
+    @Test fun aboutSummaryWithoutUpdateDoesNotRepeatInstalledVersion() {
+        compose.setContent {
+            MaterialTheme {
+                UpdateVersionSummary("0.1.4", null, showInstalledVersion = false)
+            }
+        }
+        compose.onNodeWithTag("update-installed-version").assertDoesNotExist()
+        compose.onNodeWithTag("update-available-version").assertDoesNotExist()
+    }
 }

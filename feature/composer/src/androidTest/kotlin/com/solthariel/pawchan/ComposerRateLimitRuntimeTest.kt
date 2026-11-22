@@ -20,6 +20,7 @@ import com.solthariel.pawchan.composer.ComposerStatusLine
 import com.solthariel.pawchan.composer.NewThreadViewModel
 import com.solthariel.pawchan.composer.ReplyComposerController
 import com.solthariel.pawchan.composer.ReplyError
+import com.solthariel.pawchan.core.ui.AppNoticeHost
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.PostId
@@ -67,12 +68,14 @@ class ComposerRateLimitRuntimeTest {
         try {
             compose.setContent {
                 MaterialTheme {
-                    ComposerStatusLine(
-                        ComposerCaptchaState(),
-                        ComposerScreenStatus(ComposerProgressState(), failure.value, false),
-                        {},
-                        loader,
-                    )
+                    AppNoticeHost {
+                        ComposerStatusLine(
+                            ComposerCaptchaState(),
+                            ComposerScreenStatus(ComposerProgressState(), failure.value, false),
+                            {},
+                            loader,
+                        )
+                    }
                 }
             }
             compose.onNodeWithText("Сервер ограничил запросы. Повторить через", substring = true).assertIsDisplayed()

@@ -14,22 +14,17 @@ internal fun ThreadSnapshot.toCatalogThreadUi(
 ): CatalogThreadUi {
     val op = posts.firstOrNull()
     val files = posts.flatMap { it.attachments }
-    val comment =
-        op
-            ?.content
-            ?.document
-            ?.toCatalogPreview()
-            .orEmpty()
+    val text = op?.content?.document?.toCatalogText() ?: CatalogThreadTextUi("")
     return CatalogThreadUi(
         address = address,
         content =
             CatalogThreadContentUi(
                 subject = subject,
-                text = CatalogThreadTextUi(comment),
+                text = text,
                 author = op?.content?.metadata?.name,
                 date = op?.content?.metadata?.date,
                 sage = op?.content?.metadata?.sage == true,
-                displaySubject = if (subjectsEnabled == false) null else visiblePostSubject(subject, comment),
+                displaySubject = if (subjectsEnabled == false) null else visiblePostSubject(subject, text.preview),
                 note = note,
             ),
         attachments =
@@ -37,7 +32,7 @@ internal fun ThreadSnapshot.toCatalogThreadUi(
                 ?.attachments
                 .orEmpty()
                 .map(MediaAttachment::toMediaAttachmentUi)
-                .withMediaOwner(address.thread.value),
+                .withMediaOwner(address.thread.value, threadAddress = address),
         flags = CatalogThreadFlagsUi(pinned = flags.pinned, closed = flags.closed, endless = flags.endless),
         statistics =
             CatalogThreadStatisticsUi(

@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.Flow
 /** Глобальные настройки из экрана «Настройки»; значения по умолчанию — поведение до появления настройки. */
 data class AppSettings(
     val postMarkers: Boolean = true,
-    val bubblePosts: Boolean = false,
     val hideStickers: Boolean = false,
     val showDefaultName: Boolean = false,
     val textSize: Int = DEFAULT_TEXT_SIZE,
-    /** Длинные посты сворачиваются после стольких строк. */
+    /** Длинный OP сворачивается после стольких строк; 31 означает «не сворачивать». */
     val collapseLines: Int = DEFAULT_COLLAPSE_LINES,
     val behavior: AppBehavior = AppBehavior(),
+    val hideMonkeyReplies: Boolean = false,
 ) {
     val postCountEnabled: Boolean get() = behavior.postCountEnabled
     val contentFilters: List<ContentFilterRule> get() = behavior.contentFilters
@@ -28,16 +28,16 @@ data class AppSettings(
         const val DEFAULT_COLLAPSE_LINES = 20
         const val MIN_COLLAPSE_LINES = 10
         const val MAX_COLLAPSE_LINES = 30
+        const val NO_COLLAPSE = 31
     }
 }
 
-/** Поведение приложения: медиа, сохранённые копии, DNS сервисов и автоскрытие содержимого. */
+/** Поведение приложения: медиа, сохранённые копии и автоскрытие содержимого. */
 data class AppBehavior(
     val postCountEnabled: Boolean = true,
     val videoStartMuted: Boolean = false,
     /** Сохранённые копии тредов дополняются новыми постами, пока тред жив. */
     val updateSavedCopies: Boolean = true,
-    val dns: ServiceDnsPreferences = ServiceDnsPreferences(),
     val autohide: AutohidePreferences = AutohidePreferences(),
     val showHiddenThreads: Boolean = false,
     val client: ClientPreferences = ClientPreferences(),
@@ -51,30 +51,8 @@ data class AutohidePreferences(
     val resetNotice: Boolean = false,
 )
 
-/** Публичные DoH-серверы для внешних сервисов; [SYSTEM] — обычный DNS телефона. */
-enum class DnsProvider {
-    SYSTEM,
-    COMSS,
-    XBOX,
-    GEOHIDE,
-    CUSTOM,
-}
-
-/** [customUrl] — свой адрес DoH (только https), используется при [DnsProvider.CUSTOM]. */
-data class ServiceDns(
-    val provider: DnsProvider = DnsProvider.SYSTEM,
-    val customUrl: String = "",
-)
-
 interface AppSettingsRepository {
     val appSettings: Flow<AppSettings>
 
     suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings): DomainOutcome<Unit>
 }
-
-/** Независимые DNS-профили внешних сервисов, не меняющие DNS самого форума. */
-data class ServiceDnsPreferences(
-    val vocaroo: ServiceDns = ServiceDns(),
-    val arhivach: ServiceDns = ServiceDns(),
-    val github: ServiceDns = ServiceDns(),
-)

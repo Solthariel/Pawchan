@@ -3,6 +3,7 @@ package com.solthariel.pawchan.threads
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.HorizontalDivider
@@ -15,11 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
-import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
@@ -54,6 +55,7 @@ internal data class ThreadsPageActions(
 internal data class ThreadsLinkActions(
     val history: () -> Unit,
     val copies: () -> Unit,
+    val downloads: () -> Unit = {},
 )
 
 /** Экран тредов: страницы, избранные треды и ответы — сворачиваемые секции, ниже история и копии. */
@@ -62,6 +64,7 @@ internal fun ThreadsScreen(
     input: ThreadsScreenInput,
     actions: ThreadsScreenActions,
     bottomActions: AppBottomActions,
+    onBack: () -> Unit,
     limits: com.solthariel.pawchan.domain.settings.NavigationPreferences =
         com.solthariel.pawchan.domain.settings
             .NavigationPreferences(),
@@ -84,14 +87,24 @@ internal fun ThreadsScreen(
     val counterWidth = rememberThreadCounterWidth(listOf(input.pages, input.favorites.orEmpty(), input.replies))
     val unread = input.replies.sumOf { it.counter.count }
     LaunchedEffect(unread > 0) { if (unread > 0) sections.expand(ThreadsSection.REPLIES) }
-    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS) {
-        Column(Modifier.fillMaxSize()) {
-            ThreadsToolbar(input.refreshing, query, { query = it }, actions, input.pages.isNotEmpty()) {
-                displaySettings = true
-            }
+    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS, floatingTop = true) {
+        com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
+            ThreadsToolbar(
+                input.refreshing,
+                query,
+                { query = it },
+                actions,
+                input.pages.isNotEmpty(),
+                ThreadsToolbarActions(onBack) { displaySettings = true },
+            )
+        }) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp),
+                contentPadding =
+                    PaddingValues(
+                        top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                        bottom = com.solthariel.pawchan.core.ui.LocalBottomOverlayInset.current + 8.dp,
+                    ),
             ) {
                 val list =
                     ThreadsListContext(
@@ -142,7 +155,7 @@ private fun LazyListScope.threadsSection(
             section,
             expanded,
             total,
-            { list.sections.toggle(section) },
+            if (list.searching) null else ({ list.sections.toggle(section) }),
             counterWidth = list.counterWidth,
         )
     }
@@ -150,8 +163,17 @@ private fun LazyListScope.threadsSection(
         threadsSectionRows(section, rows, list)
     }
     item(key = "divider-${section.name}", contentType = "threads-divider") {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        ThreadsSectionDivider()
     }
+}
+
+@Composable
+internal fun ThreadsSectionDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = 8.dp).testTag("threads-section-divider"),
+        thickness = 1.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+    )
 }
 
 internal fun ThreadsSection.emptyText(): String =
@@ -169,5 +191,6 @@ private fun ThreadsLinks(
     Column {
         ThreadsLinkRow(UiIconKind.DOCUMENT, "История", null, actions.links.history)
         ThreadsLinkRow(UiIconKind.SAVE, "Сохранённые копии", copies, actions.links.copies)
+        ThreadsLinkRow(UiIconKind.SAVE, "Загрузки", null, actions.links.downloads)
     }
 }

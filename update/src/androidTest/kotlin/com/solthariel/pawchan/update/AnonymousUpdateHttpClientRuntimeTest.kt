@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.update
 
 import kotlinx.coroutines.runBlocking
-import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Protocol
 import okhttp3.Response
@@ -14,7 +13,7 @@ import org.junit.Test
 
 class AnonymousUpdateHttpClientRuntimeTest {
     @Test fun ordinaryClientHasNoAuthenticationInterceptorsAndKeepsTlsRedirectPolicy() {
-        val client = updateHttpClient(Dns.SYSTEM)
+        val client = updateHttpClient()
         try {
             assertTrue(client.interceptors.isEmpty())
             assertTrue(client.networkInterceptors.isEmpty())
@@ -29,7 +28,7 @@ class AnonymousUpdateHttpClientRuntimeTest {
         runBlocking {
             val url = "https://raw.githubusercontent.com/owner/repo/master/update/feed/data-v1.json".toHttpUrl()
             val client =
-                updateHttpClient(Dns.SYSTEM)
+                updateHttpClient()
                     .newBuilder()
                     .addInterceptor { chain ->
                         assertEquals(url, chain.request().url)
@@ -49,7 +48,7 @@ class AnonymousUpdateHttpClientRuntimeTest {
     @Test fun inaccessibleFeedIsAnOrdinaryFailure() =
         runBlocking {
             val client =
-                updateHttpClient(Dns.SYSTEM)
+                updateHttpClient()
                     .newBuilder()
                     .addInterceptor { chain ->
                         Response

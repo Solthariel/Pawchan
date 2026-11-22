@@ -45,12 +45,10 @@ private fun previewBindings(
     return PostPreviewBindings(
         onClose = { tools.previews = tools.previews.dropLast(1) },
         onReference = { ref ->
-            tools.previews =
-                tools.previews +
-                PostPreviewTarget(
-                    ref.thread ?: target.address ?: presentation.postContext?.address,
-                    ref.post.value,
-                )
+            tools.openPostPreview(
+                PostPreviewTarget(ref.thread ?: target.address ?: presentation.postContext?.address, ref.post.value),
+                thread,
+            )
         },
         onReplies = { id ->
             tools.previews = tools.previews + PostPreviewTarget(target.address, id, replies = true)

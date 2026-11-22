@@ -25,8 +25,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 
 @Composable
-internal fun MediaBackdrop(motion: ImageViewerMotion) {
-    Box(Modifier.fillMaxSize().drawBehind { drawRect(Color.Black, alpha = motion.backgroundAlpha) })
+internal fun MediaBackdrop(
+    motion: ImageViewerMotion,
+    opacity: Float = 1f,
+) {
+    Box(Modifier.fillMaxSize().drawBehind { drawRect(Color.Black, alpha = motion.backgroundAlpha * opacity) })
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -34,9 +37,11 @@ internal fun MediaBackdrop(motion: ImageViewerMotion) {
 internal fun MediaViewerChrome(
     motion: ImageViewerMotion,
     bottom: (@Composable () -> Unit)? = null,
+    blackChrome: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     MediaSystemBars(motion.controlsVisible)
+    val chromeColor = if (blackChrome) Color.Black.copy(alpha = VIDEO_CHROME_ALPHA) else MEDIA_CHROME_BACKGROUND
     MaterialTheme(colorScheme = MEDIA_CHROME_COLORS) {
         Box(Modifier.fillMaxSize()) {
             AnimatedVisibility(
@@ -55,7 +60,7 @@ internal fun MediaViewerChrome(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .background(MEDIA_CHROME_BACKGROUND)
+                        .background(chromeColor)
                         .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility),
                 ) { content() }
             }
@@ -65,7 +70,7 @@ internal fun MediaViewerChrome(
                 enter = fadeIn(tween(BAR_ANIMATION_MS)),
                 exit = fadeOut(tween(BAR_ANIMATION_MS)),
             ) {
-                MediaNavigationScrim()
+                MediaNavigationScrim(chromeColor)
             }
             if (bottom != null) {
                 AnimatedVisibility(
@@ -79,7 +84,7 @@ internal fun MediaViewerChrome(
                         Modifier
                             .fillMaxWidth()
                             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                            .background(MEDIA_CHROME_BACKGROUND)
+                            .background(chromeColor)
                             // Пустое место панели не должно скрывать интерфейс тапом «сквозь» неё.
                             .pointerInput(Unit) { detectTapGestures { } },
                     ) { bottom() }
@@ -89,6 +94,7 @@ internal fun MediaViewerChrome(
     }
 }
 
+private const val VIDEO_CHROME_ALPHA = 0.60f
 private const val BAR_ANIMATION_MS = 250
 
 private fun barRestoreSpec() = tween<IntOffset>(BAR_ANIMATION_MS, easing = ReferenceMediaMotion.restoreEasing)

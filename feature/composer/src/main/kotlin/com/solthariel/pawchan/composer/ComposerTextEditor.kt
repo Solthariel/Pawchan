@@ -1,18 +1,20 @@
 package com.solthariel.pawchan.composer
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -20,13 +22,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyDraft
-import com.solthariel.pawchan.domain.settings.ComposerField
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
@@ -34,34 +33,28 @@ internal fun ComposerTextEditor(
     draft: ComposerDraftState,
     rules: PostingRules?,
     enabled: Boolean,
-    showSubject: Boolean,
     actions: ComposerFieldActions,
+    onReceive: (List<Uri>, Any?) -> Unit = { _, _ -> },
 ) {
-    val hidden = LocalComposerPreferences.current.hiddenFields
-    var comment by remember { mutableStateOf(TextFieldValue(draft.comment)) }
+    val comment = rememberTextFieldState(draft.comment)
+    val latest = rememberUpdatedState(draft)
+    val change = rememberUpdatedState(actions.onChange)
     val commentFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(draft.comment) {
-        if (comment.text != draft.comment) comment = TextFieldValue(draft.comment)
+        if (comment.text.toString() != draft.comment) {
+            comment.edit {
+                replace(0, length, draft.comment)
+                selection = TextRange(draft.comment.length)
+            }
+        }
+    }
+    LaunchedEffect(comment) {
+        snapshotFlow { comment.text.toString() }.collect { text ->
+            if (latest.value.comment != text) change.value(latest.value.copy(comment = text))
+        }
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        ComposerIdentityFields(
-            draft,
-            rules,
-            enabled && !draft.filesLoading,
-            actions.onChange,
-            showIconSelector = false,
-        )
-        if (showSubject && rules?.subjectEnabled == true &&
-            ComposerField.SUBJECT !in hidden
-        ) {
-            ComposerSubjectField(draft, enabled && !draft.filesLoading, actions.onChange)
-        }
-        if (showSubject && rules?.tagsEnabled == true &&
-            ComposerField.TAG !in hidden
-        ) {
-            ComposerTagField(draft, enabled && !draft.filesLoading, actions.onChange)
-        }
         ComposerCommentField(
             comment,
             ComposerLimits(
@@ -70,17 +63,19 @@ internal fun ComposerTextEditor(
                 maxFiles = rules?.maxFiles ?: DEFAULT_MAX_FILES,
                 maxCommentLength = rules?.maxCommentLength ?: ReplyDraft.MAX_COMMENT_LENGTH,
             ),
-            enabled && !draft.filesLoading,
+            enabled && !draft.inputBlocked,
             commentFocus,
-        ) { value ->
-            comment = value
-            actions.onChange(draft.copy(comment = value.text))
-        }
-        ComposerFormattingToolbar(enabled, draft.filesLoading, actions.onClearAll) { markup ->
-            val selection = CommentEdit(comment.text, comment.selection.start, comment.selection.end)
-            val edit = applyCommentMarkup(selection, markup)
-            comment = TextFieldValue(edit.text, TextRange(edit.selectionStart, edit.selectionEnd))
-            actions.onChange(draft.copy(comment = edit.text))
+            Modifier.composerMediaReceiver(onReceive),
+            preserveAppearance = draft.filesLoading,
+        )
+        ComposerFormattingToolbar(enabled, draft.inputBlocked, actions.onClearAll) { markup ->
+            val editRange = CommentEdit(comment.text.toString(), comment.selection.start, comment.selection.end)
+            val edit = applyCommentMarkup(editRange, markup)
+            comment.edit {
+                replace(0, length, edit.text)
+                selection = TextRange(edit.selectionStart, edit.selectionEnd)
+            }
+            change.value(latest.value.copy(comment = edit.text))
             // после кнопки разметки курсор уже между тегами — сразу печатаем.
             commentFocus.requestFocus()
             keyboard?.show()
@@ -89,56 +84,13 @@ internal fun ComposerTextEditor(
 }
 
 @Composable
-private fun ComposerTagField(
-    draft: ComposerDraftState,
-    enabled: Boolean,
-    onChange: (ComposerDraftState) -> Unit,
-) {
-    OutlinedTextField(
-        value = draft.tag,
-        onValueChange = { value ->
-            if (value.length <= NewThreadDraft.MAX_TAG_LENGTH) {
-                onChange(draft.copy(options = draft.options.copy(tag = value)))
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.composer_tag)) },
-        supportingText = {
-            Text(stringResource(R.string.reply_length, draft.tag.length, NewThreadDraft.MAX_TAG_LENGTH))
-        },
-        singleLine = true,
-        enabled = enabled,
-    )
-}
-
-@Composable
-private fun ComposerSubjectField(
-    draft: ComposerDraftState,
-    enabled: Boolean,
-    onChange: (ComposerDraftState) -> Unit,
-) {
-    OutlinedTextField(
-        value = draft.subject,
-        onValueChange = { onChange(draft.copy(subject = it)) },
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.new_thread_subject)) },
-        supportingText = {
-            Text(stringResource(R.string.reply_length, draft.subject.length, NewThreadDraft.MAX_SUBJECT_LENGTH))
-        },
-        isError = draft.subject.length > NewThreadDraft.MAX_SUBJECT_LENGTH,
-        singleLine = true,
-        enabled = enabled,
-    )
-}
-
-@Composable
 internal fun ComposerCommentField(
-    value: TextFieldValue,
+    value: TextFieldState,
     limits: ComposerLimits,
     enabled: Boolean,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    onChange: (TextFieldValue) -> Unit,
+    preserveAppearance: Boolean = false,
 ) {
     val density = LocalDensity.current
     val textStyle = MaterialTheme.typography.bodyLarge
@@ -150,8 +102,7 @@ internal fun ComposerCommentField(
             maxOf(textStyle.lineHeight.toPx(), COMMENT_MIN_LINE_HEIGHT.toPx()).toSp()
         }
     OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
+        state = value,
         modifier = modifier.fillMaxWidth().heightIn(min = 120.dp).focusRequester(focusRequester),
         textStyle = textStyle.copy(lineHeight = lineHeight),
         label = { Text(stringResource(R.string.reply_comment)) },
@@ -164,6 +115,7 @@ internal fun ComposerCommentField(
         },
         isError = value.text.length > limits.maxCommentLength,
         enabled = enabled,
+        colors = composerCommentColors(preserveAppearance),
     )
 }
 

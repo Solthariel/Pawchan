@@ -22,7 +22,8 @@ internal val ComposerAttachment.preparedUpload: ReplyAttachment?
     get() {
         if (!validName) return null
         if (prepared?.source === source && prepared.options == options) return prepared.upload
-        val transforms = options.uniqueHash || options.removeMetadata || options.reencoding != null
+        val transforms =
+            options.uniqueHash || options.removeMetadata || options.reencoding != null || options.edit != null
         return if (transforms) null else source.copy(fileName = attachmentUploadName(this), spoiler = options.spoiler)
     }
 
@@ -84,7 +85,7 @@ private suspend fun prepareSelection(
     }
 }
 
-private fun prepareUploadCache(
+internal fun prepareUploadCache(
     file: ComposerAttachment,
     prepare: (ComposerAttachment) -> ReplyAttachment,
 ): ComposerAttachment {

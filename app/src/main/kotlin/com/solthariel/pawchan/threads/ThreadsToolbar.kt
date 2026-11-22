@@ -33,7 +33,7 @@ internal fun ThreadsToolbar(
     onQuery: (String?) -> Unit,
     actions: ThreadsScreenActions,
     hasPages: Boolean,
-    onDisplaySettings: () -> Unit,
+    toolbarActions: ThreadsToolbarActions,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
@@ -45,6 +45,7 @@ internal fun ThreadsToolbar(
             CatalogIconButton(UiIconKind.BACK, "Закрыть поиск", onClick = { onQuery(null) })
             LibrarySearchInput(query, onQuery)
         } else {
+            CatalogIconButton(UiIconKind.BACK, "Назад", onClick = toolbarActions.onBack)
             Text("Треды", Modifier.weight(1f).padding(start = 12.dp), style = MaterialTheme.typography.titleLarge)
             CatalogIconButton(UiIconKind.SEARCH, "Поиск", onClick = { onQuery("") })
         }
@@ -54,7 +55,7 @@ internal fun ThreadsToolbar(
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 ActionMenuItem("Отображение списков", {
                     menuOpen = false
-                    onDisplaySettings()
+                    toolbarActions.onDisplaySettings()
                 }, icon = UiIconKind.PALETTE)
                 ActionMenuItem("Закрыть все страницы", {
                     menuOpen = false
@@ -64,3 +65,8 @@ internal fun ThreadsToolbar(
         }
     }
 }
+
+internal data class ThreadsToolbarActions(
+    val onBack: () -> Unit,
+    val onDisplaySettings: () -> Unit,
+)

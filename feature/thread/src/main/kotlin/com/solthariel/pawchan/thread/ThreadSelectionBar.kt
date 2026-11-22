@@ -46,7 +46,12 @@ internal fun ThreadSelectionBar(
             tools.selected.isNotEmpty() && !tools.exporting,
             actions.screenshot,
         )
-        SelectionActionIcon(R.drawable.ic_thread_quote, "Цитировать", tools.selected.isNotEmpty(), actions.quote)
+        SelectionActionIcon(
+            R.drawable.ic_thread_quote,
+            "Цитировать",
+            tools.selected.isNotEmpty() && actions.quote != null,
+            { actions.quote?.invoke() },
+        )
         SelectionActionIcon(
             R.drawable.ic_thread_report,
             "Жалоба",

@@ -40,6 +40,14 @@ class BackupSectionsTest {
         assertEquals(mapOf("app_content_filters_v1" to "filters"), selected.settings)
     }
 
+    @Test fun otherSiteFavoritesBelongOnlyToFavoritesSection() {
+        val values = mapOf("theme" to "SYSTEM", "favorite_boards_v2" to "b", "favorite_boards_other_v1" to "4chan/b")
+        val settings = selectedBackup(values, emptyList(), WorkspaceState(), setOf(BackupSection.SETTINGS))
+        val favorites = selectedBackup(values, emptyList(), WorkspaceState(), setOf(BackupSection.FAVORITES))
+        assertEquals(mapOf("theme" to "SYSTEM"), decodeClientBackup(encodeClientBackup(settings)).settings)
+        assertEquals(values - "theme", decodeClientBackup(encodeClientBackup(favorites)).settings)
+    }
+
     @Test fun unselectedHiddenThreadsAreNotIncludedInSerializedCopy() {
         val state = WorkspaceState(marks = ThreadMarks(hidden = setOf(address)))
         val selected = ClientBackup(emptyMap(), emptyList(), state, setOf(BackupSection.SETTINGS))

@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.domain.boards
 
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import kotlinx.coroutines.flow.Flow
 
@@ -34,11 +33,11 @@ interface PostingAccessRepository {
 }
 
 interface BoardPreferencesRepository {
-    val favoriteBoards: Flow<Set<BoardId>>
+    val favoriteBoards: Flow<Set<BoardAddress>>
     val expandedBoardCategories: Flow<Set<String>>
 
     suspend fun setFavoriteBoard(
-        board: BoardId,
+        board: BoardAddress,
         favorite: Boolean,
     ): DomainOutcome<Unit>
 

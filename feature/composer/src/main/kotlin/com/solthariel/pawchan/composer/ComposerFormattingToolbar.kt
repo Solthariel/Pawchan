@@ -120,7 +120,14 @@ private fun ComposerMarkupKey(
     alignment: Alignment,
     content: @Composable () -> Unit,
 ) {
-    val color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val color =
+        if (enabled ||
+            LocalComposerImporting.current
+        ) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val focused by interaction.collectIsFocusedAsState()

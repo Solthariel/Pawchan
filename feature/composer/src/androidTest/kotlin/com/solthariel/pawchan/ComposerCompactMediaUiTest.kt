@@ -34,7 +34,7 @@ class ComposerCompactMediaUiTest {
         assertOptionsAtWidth(304.dp)
     }
 
-    @Test fun allSixCaptionsFitNarrowPhoneWidth() {
+    @Test fun allSixCaptionsStayCompactAtNarrowPhoneWidth() {
         assertOptionsAtWidth(280.dp)
     }
 
@@ -72,23 +72,24 @@ class ComposerCompactMediaUiTest {
             assertEquals(bounds.first().top, rect.top, 0.5f)
         }
         bounds.zipWithNext().forEach { (left, right) -> assertTrue(left.right <= right.left + 0.5f) }
-        val captions = listOf("Изменить\nхеш", "Удалить\nметаданные", "Убрать\nимя", "Спойлер", "Перекоди-\nровать", "Имя\nфайла")
+        val captions = listOf("Хеш", "Метаданные", "Убрать\nимя", "Спойлер", "Формат", "Имя")
         val captionBounds =
             captions.map { caption ->
                 val layouts = mutableListOf<TextLayoutResult>()
-                compose.onNodeWithText(caption).performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+                compose.onNodeWithText(caption, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
                     it(layouts)
                 }
                 assertTrue(layouts.isNotEmpty())
-                assertTrue(layouts.none { it.hasVisualOverflow })
+                assertEquals(1, layouts.single().lineCount)
                 compose
-                    .onNodeWithText(caption)
+                    .onNodeWithText(caption, useUnmergedTree = true)
                     .assertIsDisplayed()
                     .fetchSemanticsNode()
                     .boundsInRoot
             }
         captionBounds.zip(bounds).forEach { (caption, button) ->
-            assertTrue(caption.top >= button.bottom - 0.5f)
+            assertTrue(caption.top >= button.top - 0.5f)
+            assertTrue(caption.bottom <= button.bottom + 0.5f)
             assertEquals(button.center.x, caption.center.x, 0.5f)
             assertEquals(captionBounds.first().top, caption.top, 0.5f)
         }

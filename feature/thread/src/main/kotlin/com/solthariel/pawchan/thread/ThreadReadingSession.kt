@@ -19,6 +19,13 @@ interface ThreadReadingSession {
 
     fun returnPoint(address: ThreadAddress): Flow<ThreadReadingPosition?> = flowOf(null)
 
+    fun unreadReplies(address: ThreadAddress): Flow<Set<Long>> = flowOf(emptySet())
+
+    fun markVisibleReplies(
+        address: ThreadAddress,
+        postIds: Set<Long>,
+    ) = Unit
+
     fun returned(
         address: ThreadAddress,
         point: ThreadReadingPosition,

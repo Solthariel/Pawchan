@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
@@ -55,7 +56,7 @@ internal fun SettingsItemRow(item: SettingsItem) {
                 toggleState = item.checked,
             ) {
                 com.solthariel.pawchan.core.ui
-                    .CompactSwitch(checked = item.checked)
+                    .CompactSwitch(checked = item.checked, onCheckedChange = item.onChange)
             }
         }
 
@@ -112,7 +113,7 @@ private fun ChoiceRow(item: SettingsItem.Choice) {
             onDismissRequest = { open = false },
             title = { Text(item.title) },
             text = {
-                Column {
+                Column(Modifier.selectableGroup()) {
                     item.options.forEachIndexed { index, option ->
                         Row(
                             Modifier
@@ -142,12 +143,17 @@ private fun ScaleRow(item: SettingsItem.Scale) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(item.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Text(
-                settingsScaleLabel(current, item.unit),
+                if (current == item.range.last && item.endLabel != null) {
+                    item.endLabel
+                } else {
+                    settingsScaleLabel(current, item.unit)
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
         CompactSlider(
+            label = item.title,
             value = value,
             onValueChange = { value = it },
             onValueChangeFinished = { item.onChange(current) },

@@ -6,9 +6,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
 import com.solthariel.pawchan.navigation.AppDependencies
 import com.solthariel.pawchan.navigation.AppRoute
+import com.solthariel.pawchan.navigation.appComposable
 import com.solthariel.pawchan.navigation.boardArguments
 import com.solthariel.pawchan.navigation.navigateThread
 import com.solthariel.pawchan.navigation.saveableKey
@@ -18,7 +18,7 @@ internal fun NavGraphBuilder.archiveDestination(
     navController: NavController,
     dependencies: AppDependencies,
 ) {
-    composable(AppRoute.ARCHIVE, arguments = boardArguments()) { entry ->
+    appComposable(AppRoute.ARCHIVE, arguments = boardArguments()) { entry ->
         val board = requireNotNull(entry.arguments?.toBoardAddress())
         val repository = dependencies.repositories.boards.details
         val factory = remember(board, repository) { ArchiveViewModel.factory(board, repository) }

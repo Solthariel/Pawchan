@@ -7,7 +7,7 @@ import java.io.OutputStream
 import kotlin.coroutines.coroutineContext
 
 /** Caller owns streams, dispatcher and cancellation of blocking transport reads. */
-internal suspend fun copyCancellableBytes(
+suspend fun copyCancellableBytes(
     source: InputStream,
     destination: OutputStream,
     maxBytes: Long = Long.MAX_VALUE,
@@ -16,13 +16,19 @@ internal suspend fun copyCancellableBytes(
     require(maxBytes >= 0)
     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
     var total = 0L
-    while (true) {
+    try {
+        while (true) {
+            coroutineContext.ensureActive()
+            val count = source.read(buffer)
+            if (count < 0) return total
+            coroutineContext.ensureActive()
+            if (count > maxBytes - total) throw IOException(limitMessage)
+            destination.write(buffer, 0, count)
+            total += count
+        }
+    } catch (failure: IOException) {
+        // Closing a blocking stream is how transport cancellation wakes the reader.
         coroutineContext.ensureActive()
-        val count = source.read(buffer)
-        if (count < 0) return total
-        coroutineContext.ensureActive()
-        if (count > maxBytes - total) throw IOException(limitMessage)
-        destination.write(buffer, 0, count)
-        total += count
+        throw failure
     }
 }

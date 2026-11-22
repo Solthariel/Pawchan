@@ -30,9 +30,9 @@ internal fun MirrorAvailabilitySetting(
     )
     val mirrors = LocalForumMirrors.current ?: return
     val state by mirrors.state.collectAsStateWithLifecycle()
-    val presentation by produceState(MirrorAvailabilityPresentation(), state.observations) {
-        value = withContext(Dispatchers.Default) { mirrorAvailabilityPresentation(state.observations) }
+    val presentation by produceState(MirrorAvailabilityPresentation(), state.manualObservations) {
+        value = withContext(Dispatchers.Default) { mirrorAvailabilityPresentation(state.manualObservations) }
     }
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-    MirrorAvailabilityResults(presentation, state.checking, mirrors::checkAvailability)
+    MirrorAvailabilityResults(presentation, state.manualChecking, mirrors::checkAvailability)
 }

@@ -31,6 +31,7 @@ internal class AndroidCookieJar(
         url: HttpUrl,
         cookies: List<Cookie>,
     ) {
+        if (!forumCookieOriginAllowed(url, origin)) return
         cookies.forEach { cookie ->
             cookieManager.setCookie(url.toString(), cookie.toString())
         }
@@ -39,6 +40,7 @@ internal class AndroidCookieJar(
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
+        if (!forumCookieOriginAllowed(url, origin)) return emptyList()
         val header = cookieManager.getCookie(url.toString())
         return parseCookieHeader(header, url)
     }
@@ -49,6 +51,11 @@ internal class AndroidCookieJar(
             origin,
         ).any { cookie -> cookie.name == USERCODE_AUTH_COOKIE && cookie.value.isNotBlank() }
 }
+
+internal fun forumCookieOriginAllowed(
+    url: HttpUrl,
+    origin: HttpUrl,
+): Boolean = url.isHttps && url.host == origin.host && url.port == origin.port
 
 internal fun parseCookieHeader(
     header: String?,

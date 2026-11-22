@@ -29,4 +29,20 @@ class AnonymousUpdatePanelTest {
         compose.onNodeWithText("GitHub token — Contents: Read").assertDoesNotExist()
         compose.onNodeWithText("Проверить обновления").assertIsDisplayed()
     }
+
+    @Test fun aboutUpdatePanelKeepsCheckActionWithoutRepeatingVersion() {
+        compose.setContent {
+            MaterialTheme {
+                UpdatePanel(
+                    rememberUpdatePanel(releaseUpdateConfiguration().copy(manifestUrl = "")),
+                    showInstalledVersion = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Установлена: ${BuildConfig.VERSION_NAME}").assertDoesNotExist()
+        compose.onNodeWithText("Обновления").assertIsDisplayed()
+        compose.onNodeWithText("Проверить обновления").performClick()
+        compose.onNodeWithText("Проверить обновления").assertIsDisplayed()
+        compose.onNodeWithText("Установлена: ${BuildConfig.VERSION_NAME}").assertDoesNotExist()
+    }
 }

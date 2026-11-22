@@ -38,6 +38,9 @@ internal class CatalogViewModel(
     private val mutableState = MutableStateFlow<CatalogUiState>(CatalogUiState.Loading)
     private var sourceState: CatalogUiState = CatalogUiState.Loading
     private var searchQuery = ""
+    private var selectedTag: String? = null
+    private val mutableTags = MutableStateFlow<List<String>>(emptyList())
+    val tags: StateFlow<List<String>> = mutableTags.asStateFlow()
     private var showHidden = false
     private var revealFiltered = false
     private var hiddenThreads = emptySet<ThreadAddress>()
@@ -116,6 +119,12 @@ internal class CatalogViewModel(
                             .keepContentOnRefreshFailure(previous)
                     }
                 if (sourceState is CatalogUiState.Content) {
+                    mutableTags.value =
+                        (sourceState as CatalogUiState.Content)
+                            .threads
+                            .mapNotNull { it.content.text.tag }
+                            .distinct()
+                            .sorted()
                     if (outcome is com.solthariel.pawchan.domain.model.DomainOutcome.Success && resetScroll) {
                         refreshRevision++
                     }
@@ -140,6 +149,11 @@ internal class CatalogViewModel(
         presentSourceState()
     }
 
+    fun selectTag(tag: String?) {
+        selectedTag = tag
+        presentSourceState()
+    }
+
     fun setSearchQuery(query: String) {
         searchQuery = query
         presentSourceState(SEARCH_DEBOUNCE_MILLIS)
@@ -149,6 +163,7 @@ internal class CatalogViewModel(
         presentationJob?.cancel()
         val state = sourceState
         val query = searchQuery
+        val tag = selectedTag
         val hidden = hiddenThreads
         val engine = filterEngine
         val revealed = revealFiltered
@@ -160,7 +175,7 @@ internal class CatalogViewModel(
                 }
                 mutableState.value =
                     withContext(uiDispatcher) {
-                        state.filtered(query, hidden, engine, revealed, placeholders)
+                        state.filtered(query, hidden, engine, revealed, placeholders, tag)
                     }
             }
     }
@@ -190,6 +205,7 @@ private fun CatalogUiState.filtered(
     engine: com.solthariel.pawchan.domain.filter.ContentFilterEngine,
     reveal: Boolean,
     placeholders: Boolean,
+    tag: String?,
 ): CatalogUiState =
     if (this is CatalogUiState.Content) {
         val now = currentEpochSeconds()
@@ -202,7 +218,7 @@ private fun CatalogUiState.filtered(
                 }.toMap()
         val matched = threads.filter { it.address in reasons }
         val searched =
-            threads.matching(query).map { row ->
+            threads.matching(query).filter { tag == null || it.content.text.tag == tag }.map { row ->
                 val age = catalogThreadAge(row.age.createdAtEpochSeconds, now)
                 val reason = reasons[row.address]?.takeUnless { reveal }
                 row.copy(
@@ -220,6 +236,7 @@ private fun CatalogUiState.filtered(
                     hits = catalogFilterHits(matched, reasons, hidden, reveal),
                 ),
             threads = if (placeholders) searched else searched.filterNot { it.hidden },
+            selectedTag = tag,
         ).withViewerMedia()
     } else {
         this

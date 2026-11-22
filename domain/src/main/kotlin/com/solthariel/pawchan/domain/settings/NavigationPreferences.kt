@@ -6,6 +6,7 @@ data class NavigationPreferences(
     val favorites: Int = 5,
     val replies: Int = 5,
     val bottomBarTransparencyPercent: Int = DEFAULT_BOTTOM_BAR_TRANSPARENCY,
+    val topBarTransparencyPercent: Int = DEFAULT_TOP_BAR_TRANSPARENCY,
 ) {
     fun normalized(): NavigationPreferences =
         copy(
@@ -13,10 +14,12 @@ data class NavigationPreferences(
             favorites = favorites.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
             replies = replies.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
             bottomBarTransparencyPercent = bottomBarTransparencyPercent.coerceIn(0, MAX_TRANSPARENCY_PERCENT),
+            topBarTransparencyPercent = topBarTransparencyPercent.coerceIn(0, MAX_TRANSPARENCY_PERCENT),
         )
 
     companion object {
         const val DEFAULT_BOTTOM_BAR_TRANSPARENCY = 20
+        const val DEFAULT_TOP_BAR_TRANSPARENCY = 0
         const val MAX_TRANSPARENCY_PERCENT = 100
     }
 }

@@ -6,15 +6,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
@@ -22,6 +25,7 @@ import com.solthariel.pawchan.settings.SettingsActions
 import com.solthariel.pawchan.settings.SettingsScreen
 import com.solthariel.pawchan.settings.SettingsUiState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -61,6 +65,18 @@ class SettingsToolbarUiTest {
         compose.onNodeWithText("О программе").performScrollTo().assertIsDisplayed()
         val after = compose.onNodeWithContentDescription("Меню настроек").fetchSemanticsNode().boundsInRoot
         assertEquals(before, after)
+    }
+
+    @Test
+    fun lastSettingsRowCanScrollAboveTheFloatingNavigation() {
+        showSettings(compact = true)
+        compose.onNodeWithTag("settings-body-scroll").performSemanticsAction(SemanticsActions.ScrollBy) { action ->
+            action(0f, 10000f)
+        }
+        compose.waitForIdle()
+        val last = compose.onNodeWithText("О программе").fetchSemanticsNode().boundsInRoot
+        val nav = compose.onNodeWithContentDescription("Настройки").fetchSemanticsNode().boundsInRoot
+        assertTrue("Last settings item must not be covered by navigation", last.bottom <= nav.top)
     }
 
     @Test

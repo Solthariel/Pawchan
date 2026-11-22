@@ -31,6 +31,11 @@ internal data class PostPreviewState(
     val remote: Boolean = false,
 )
 
+internal fun postPreviewIsMissing(
+    state: PostPreviewState,
+    target: PostPreviewTarget,
+): Boolean = state.failure == null && state.content != null && state.posts.isEmpty() && !target.replies
+
 internal class PostPreviewViewModel(
     private val repository: ThreadRepository?,
     rules: Flow<List<ContentFilterRule>> = flowOf(emptyList()),

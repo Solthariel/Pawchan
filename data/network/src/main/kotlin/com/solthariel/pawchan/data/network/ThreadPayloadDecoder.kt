@@ -81,7 +81,7 @@ private fun ThreadPostDto.toDomain(
             address = PostAddress(thread, postId),
             content =
                 PostContent(
-                    document = PostDocumentParser.parse(comment),
+                    document = PostDocumentParser.parseDvach(comment),
                     metadata = toPostMetadata(),
                     rating = toPostRating(likesEnabled),
                     details = toPostDetails(),

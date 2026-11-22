@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
@@ -56,17 +57,29 @@ class AppNavigationChromeRuntimeTest {
     }
 
     @Test
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     fun contentReceivesTheNavigationOverlayInset() {
         var observed: Dp = (-1).dp
+        var expected: Dp = (-1).dp
         compose.setContent {
             MaterialTheme {
                 AppNavigationWorkspace(AppBottomActions({}, {}, {}, {}), AppBottomDestination.BOARDS) {
                     val inset = LocalBottomOverlayInset.current
-                    SideEffect { observed = inset }
+                    val density = androidx.compose.ui.platform.LocalDensity.current
+                    val systemInset =
+                        with(density) {
+                            androidx.compose.foundation.layout.WindowInsets.navigationBarsIgnoringVisibility
+                                .getBottom(density)
+                                .toDp()
+                        }
+                    SideEffect {
+                        observed = inset
+                        expected = APP_BOTTOM_BAR_HEIGHT + systemInset
+                    }
                 }
             }
         }
-        compose.runOnIdle { assertEquals(APP_BOTTOM_BAR_HEIGHT, observed) }
+        compose.runOnIdle { assertEquals(expected, observed) }
     }
 
     @Test

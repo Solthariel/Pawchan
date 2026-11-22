@@ -51,62 +51,69 @@ fun MediaContentHost(
     val attachment = visibleSelection.attachment
     val session = rememberViewerSession(visibleSelection)
     val navigation = session.navigation
-    PreservedMediaContent(
-        visible = attachment == null || attachment.viewer == AttachmentViewer.NONE,
-        content = content,
-        viewer = {
-            MediaViewerWindow(onClose) {
-                val chrome = remember { MediaChromeState() }
-                val posters = rememberVideoPosterStore()
-                MediaRotationScope {
-                    CompositionLocalProvider(
-                        LocalMediaChromeState provides chrome,
-                        LocalMediaPickerPlayback provides mediaSave.pickerPlayback,
-                        LocalViewerAutoPlay provides session.autoPlay,
-                        LocalVideoPosterStore provides posters,
-                    ) {
-                        when (attachment?.viewer) {
-                            AttachmentViewer.IMAGE -> {
-                                ImageViewer(
-                                    image = attachment,
-                                    imageLoader = mediaLoaders.imageLoader,
-                                    onDownload = { mediaSave.request(attachment) },
-                                    onMenu = onMenu?.viewerMenu(attachment),
-                                    onClose = onClose,
-                                    navigation = navigation,
-                                )
-                            }
+    val origins = remember { MediaThumbnailOriginStore() }
+    CompositionLocalProvider(LocalMediaThumbnailOrigin provides origins) {
+        PreservedMediaContent(
+            visible = attachment == null || attachment.viewer == AttachmentViewer.NONE,
+            content = content,
+            viewer = {
+                MediaViewerWindow(onClose, replacesPageScrim = attachment?.viewer == AttachmentViewer.VIDEO) {
+                    val chrome = remember { MediaChromeState() }
+                    val posters = rememberVideoPosterStore()
+                    MediaRotationScope {
+                        CompositionLocalProvider(
+                            LocalMediaChromeState provides chrome,
+                            LocalMediaPickerPlayback provides mediaSave.pickerPlayback,
+                            LocalViewerAutoPlay provides session.autoPlay,
+                            LocalVideoPosterStore provides posters,
+                        ) {
+                            when (attachment?.viewer) {
+                                AttachmentViewer.IMAGE -> {
+                                    MediaImageOpening(attachment) {
+                                        ImageViewer(
+                                            image = attachment,
+                                            imageLoader = mediaLoaders.imageLoader,
+                                            onDownload = { mediaSave.request(attachment) },
+                                            onMenu = onMenu?.viewerMenu(attachment),
+                                            onClose = onClose,
+                                            navigation = navigation,
+                                        )
+                                    }
+                                }
 
-                            AttachmentViewer.VIDEO -> {
-                                VideoViewer(
-                                    video = attachment,
-                                    loaders = mediaLoaders,
-                                    onDownload = { mediaSave.request(attachment) },
-                                    onMenu = onMenu?.viewerMenu(attachment),
-                                    onClose = onClose,
-                                    navigation = navigation,
-                                )
-                            }
+                                AttachmentViewer.VIDEO -> {
+                                    VideoViewer(
+                                        video = attachment,
+                                        loaders = mediaLoaders,
+                                        onDownload = { mediaSave.request(attachment) },
+                                        onMenu = onMenu?.viewerMenu(attachment),
+                                        onClose = onClose,
+                                        navigation = navigation,
+                                    )
+                                }
 
-                            AttachmentViewer.NONE, null -> {
-                                Unit
+                                AttachmentViewer.NONE, null -> {
+                                    Unit
+                                }
                             }
                         }
                     }
                 }
-            }
-        },
-    )
+            },
+        )
+    }
 }
 
 @Composable
-private fun MediaViewerWindow(
+internal fun MediaViewerWindow(
     onClose: () -> Unit,
+    replacesPageScrim: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+        replacesPageScrim = replacesPageScrim,
     ) {
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         SideEffect {

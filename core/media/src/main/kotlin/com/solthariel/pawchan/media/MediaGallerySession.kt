@@ -16,6 +16,15 @@ class MediaGallerySession internal constructor(
     internal var selecting by mutableStateOf(false)
     internal var selected by mutableStateOf(emptySet<String>())
 
+    /** Те же элементы и порядок, которые сейчас показаны в сетке галереи. */
+    fun viewerItems(
+        gallery: MediaGalleryContent,
+        hideStickers: Boolean,
+    ): List<MediaAttachmentUi> {
+        val visible = if (hideStickers) gallery.withoutStickers ?: MediaGalleryContent() else gallery
+        return filter.group(visible).items
+    }
+
     internal fun toggleSelection() {
         selecting = !selecting
         selected = emptySet()

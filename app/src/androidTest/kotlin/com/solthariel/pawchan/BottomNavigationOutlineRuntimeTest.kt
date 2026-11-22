@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -39,62 +38,23 @@ import kotlin.math.roundToInt
 
 class BottomNavigationOutlineRuntimeTest {
     @get:Rule val compose = createComposeRule()
-    private val bubbles = mutableStateOf(false)
     private var density = 1f
     private var clicks = 0
 
-    @Test fun plainDarkPanelHasFlatTranslucentSurface() = checkSurface(false, false)
+    @Test fun plainDarkPanelHasFlatTranslucentSurface() = checkSurface(false)
 
-    @Test fun bubbleDarkPanelUsesTheSameFlatSurface() = checkSurface(true, false)
-
-    @Test fun plainLightPanelHasFlatTranslucentSurface() = checkSurface(false, true)
-
-    @Test fun bubbleLightPanelUsesTheSameFlatSurface() = checkSurface(true, true)
+    @Test fun plainLightPanelHasFlatTranslucentSurface() = checkSurface(true)
 
     @Test
-    fun changingModeDoesNotMoveOrResizeAnyButton() {
+    fun allButtonsStillDispatchTheirActions() {
         show()
-        val before = buttonBounds()
-        compose.runOnIdle { bubbles.value = true }
-        compose.waitForIdle()
-        assertEquals(before, buttonBounds())
-        compose.runOnIdle { bubbles.value = false }
-        compose.waitForIdle()
-        assertEquals(before, buttonBounds())
-    }
-
-    @Test
-    fun allButtonsStillDispatchTheSameActionsInBothModes() {
-        show()
-        repeat(2) { mode ->
-            compose.runOnIdle { bubbles.value = mode == 1 }
-            compose.waitForIdle()
-            listOf("Каталог", "Треды", "Доски", "Настройки", "Написать").forEach {
-                compose.onNodeWithContentDescription(it).performClick()
-            }
+        listOf("Каталог", "Треды", "Доски", "Настройки", "Написать").forEach {
+            compose.onNodeWithContentDescription(it).performClick()
         }
-        compose.runOnIdle { assertEquals(10, clicks) }
+        compose.runOnIdle { assertEquals(5, clicks) }
     }
 
-    @Test
-    fun activeTabPixelsRemainIdenticalWhenPostModeChanges() {
-        show()
-        val before = compose.onNodeWithContentDescription("Каталог").captureToImage().toPixelMap()
-        compose.runOnIdle { bubbles.value = true }
-        compose.waitForIdle()
-        val after = compose.onNodeWithContentDescription("Каталог").captureToImage().toPixelMap()
-        assertEquals(before.width, after.width)
-        assertEquals(before.height, after.height)
-        for (y in 0 until before.height) {
-            for (x in 0 until before.width) assertEquals(before[x, y], after[x, y])
-        }
-    }
-
-    private fun checkSurface(
-        bubble: Boolean,
-        light: Boolean,
-    ) {
-        bubbles.value = bubble
+    private fun checkSurface(light: Boolean) {
         show(light)
         val colors = if (light) lightColorScheme() else darkColorScheme()
         val bar = compose.onNodeWithTag("navigation-bar").fetchSemanticsNode().boundsInRoot
@@ -120,7 +80,7 @@ class BottomNavigationOutlineRuntimeTest {
             density = LocalDensity.current.density
             MaterialTheme(colorScheme = if (light) lightColorScheme() else darkColorScheme()) {
                 CompositionLocalProvider(
-                    LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = bubbles.value),
+                    LocalPostDisplayPreferences provides PostDisplayPreferences(),
                 ) {
                     Box(
                         Modifier

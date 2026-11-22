@@ -116,6 +116,7 @@ public class ProgressiveSourceHostTest {
         try {
             source.start(); await(() -> source.getProgress() >= 64);
             File file = source.getFile(); source.close(); source.deleteFile();
+            await(() -> !file.exists());
             assertFalse(file.exists());
         } finally { release.countDown(); server.stop(0); directory.delete(); }
     }

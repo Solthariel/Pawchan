@@ -7,10 +7,12 @@ import com.solthariel.pawchan.data.drafts.ArchiveMediaStore
 import com.solthariel.pawchan.data.drafts.ArchiveMediaUpdater
 import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.data.network.DvachHttpClient
-import com.solthariel.pawchan.domain.settings.AppSettingsRepository
+import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
+import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
+import com.solthariel.pawchan.domain.proxy.ProxyService
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
-import com.solthariel.pawchan.infrastructure.dns.withArhivachDns
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.IOException
@@ -19,7 +21,7 @@ import java.io.IOException
 internal class ArchiveMediaWorker(
     context: Context,
     parameters: WorkerParameters,
-    private val settings: AppSettingsRepository,
+    private val settings: DataStoreSettingsRepository,
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
         val behavior = settings.appSettings.first().behavior
@@ -30,18 +32,37 @@ internal class ArchiveMediaWorker(
         ) {
             return Result.retry()
         }
+        return downloadArchiveMedia(clientSettings.mirror, wifiOnly)
+    }
+
+    private suspend fun downloadArchiveMedia(
+        mirror: String,
+        wifiOnly: Boolean,
+    ): Result {
+        val router =
+            try {
+                workerProxyRoutes(
+                    settings,
+                    mirror,
+                    setOf(ProxyService.DVACH, ProxyService.ARCHIVE),
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: IOException) {
+                return Result.retry()
+            }
         val client =
             DvachHttpClient
                 .create(AndroidCookieJar())
                 .newBuilder()
+                .viaProxyRouter(router)
                 .addInterceptor(
                     com.solthariel.pawchan.data.network
-                        .MirrorRoutingInterceptor(clientSettings.mirror),
+                        .MirrorRoutingInterceptor(mirror, onRouteHost = router::registerMirror),
                 ).apply { if (wifiOnly) addNetworkInterceptor(BackgroundWifiInterceptor(applicationContext)) }
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .build()
-                .withArhivachDns(behavior.dns.arhivach)
         val repository = FileWorkspaceRepository(File(applicationContext.filesDir, "workspace"))
         val media = ArchiveMediaStore(File(applicationContext.filesDir, "archive-media"), client)
         return try {

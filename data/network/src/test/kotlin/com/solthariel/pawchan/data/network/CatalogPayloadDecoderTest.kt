@@ -122,6 +122,15 @@ class CatalogPayloadDecoderTest {
         )
     }
 
+    @Test
+    fun decodesThreadTagsAndOmitsEmptyTags() {
+        val tagged = fixture("catalog-minimal.json").replace("\"num\": 42", "\"num\": 42, \"tags\": \"2chbrows\"")
+        val catalog = requireNotNull(decoder.decode(tagged))
+        assertEquals("2chbrows", catalog.threadTags[catalog.threads.single().address])
+        val empty = requireNotNull(decoder.decode(fixture("catalog-minimal.json")))
+        assertTrue(empty.threadTags.isEmpty())
+    }
+
     private fun fixture(name: String): String =
         requireNotNull(javaClass.getResource("/fixtures/$name"))
             .readText()

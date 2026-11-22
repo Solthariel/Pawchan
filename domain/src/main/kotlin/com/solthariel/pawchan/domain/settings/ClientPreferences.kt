@@ -27,6 +27,7 @@ enum class ReencodeFormat { ORIGINAL, JPEG, PNG }
 data class ComposerPreferences(
     val hiddenFields: Set<ComposerField> = emptySet(),
     val attachments: AttachmentDefaults = AttachmentDefaults(),
+    val defaultSage: Boolean = false,
 )
 
 data class AttachmentDefaults(
@@ -63,4 +64,5 @@ data class ReadingPreferences(
     val restoreLastScreen: Boolean = true,
     val rememberPosition: Boolean = true,
     val navigation: NavigationPreferences = NavigationPreferences(),
+    val typography: TypographyPreferences = TypographyPreferences(),
 )

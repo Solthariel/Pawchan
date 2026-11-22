@@ -45,11 +45,17 @@ internal fun rememberThreadSelectionActions(
             if (!changed) tools.notice = "Не удалось показать скрытый пост"
         }
     }
-    return ThreadSelectionActions(quote, { if (content != null) exports.screenshot(content) }, report, showHidden)
+    return ThreadSelectionActions(quote.takeIf { presentation.repliesEnabled && content?.closed == false }, {
+        if (content !=
+            null
+        ) {
+            exports.screenshot(content)
+        }
+    }, report, showHidden)
 }
 
 internal data class ThreadSelectionActions(
-    val quote: () -> Unit,
+    val quote: (() -> Unit)?,
     val screenshot: () -> Unit,
     val report: (() -> Unit)?,
     val showHidden: (ThreadPostUi) -> Unit = {},

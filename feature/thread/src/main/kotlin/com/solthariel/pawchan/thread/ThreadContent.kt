@@ -1,9 +1,7 @@
 package com.solthariel.pawchan.thread
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -12,11 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
-import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
+import com.solthariel.pawchan.core.ui.threadPostListPadding
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
 import kotlinx.coroutines.launch
@@ -27,26 +23,17 @@ internal fun ThreadContent(
     list: LazyListState,
     bindings: ThreadContentBindings,
 ) {
-    val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
     val loading = rememberThumbnailLoading(bindings.loader, list)
     val fresh = rememberThreadFreshPosts(content, list)
     val scope = rememberCoroutineScope()
     val reference: (Long) -> Unit = { id ->
-        bindings.tools.previews = bindings.tools.previews + PostPreviewTarget(null, id)
+        bindings.tools.openPostPreview(PostPreviewTarget(null, id), content)
     }
-    // Плавающая нижняя панель лежит поверх ленты: последний пост докручивается выше неё.
-    val overlay = LocalBottomOverlayInset.current
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = list,
             modifier = Modifier.fillMaxSize(),
-            contentPadding =
-                PaddingValues(
-                    start = FAST_SCROLL_CONTENT_INSET,
-                    end = FAST_SCROLL_CONTENT_INSET,
-                    bottom = overlay + 8.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(if (bubble) 8.dp else 0.dp),
+            contentPadding = threadPostListPadding(),
         ) {
             itemsIndexed(
                 content.posts,

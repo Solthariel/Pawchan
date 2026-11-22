@@ -9,13 +9,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,10 +32,14 @@ import com.solthariel.pawchan.domain.filter.isCurrentFilterMode
 internal fun ContentFilterRuleRow(
     rule: ContentFilterRule,
     count: Long? = null,
+    onEnabledChange: ((Boolean) -> Unit)? = null,
     edit: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = edit).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = edit)
+            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = if (onEnabledChange != null) 4.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -56,6 +65,27 @@ internal fun ContentFilterRuleRow(
             )
         }
         FilterRuleCounter(count)
+        if (onEnabledChange != null) FilterRuleEnabledCheckbox(rule, onEnabledChange)
+    }
+}
+
+/** Отдельная цель нажатия 48 dp: переключает правило, не открывая редактор. */
+@Composable
+private fun FilterRuleEnabledCheckbox(
+    rule: ContentFilterRule,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    val description = if (rule.enabled) "Выключить правило «${rule.label}»" else "Включить правило «${rule.label}»"
+    Box(
+        Modifier
+            .padding(start = 4.dp)
+            .size(48.dp)
+            .toggleable(rule.enabled, role = Role.Checkbox, onValueChange = onEnabledChange)
+            .testTag("filter-rule-enabled-${rule.id}")
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Checkbox(checked = rule.enabled, onCheckedChange = null)
     }
 }
 
@@ -85,7 +115,7 @@ private fun FilterRuleCounter(count: Long?) {
             .widthIn(min = 24.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, shape)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .padding(horizontal = 6.dp, vertical = 4.dp)
             .semantics { contentDescription = count?.let { "Срабатываний: $it" } ?: "Статистика загружается" },
         contentAlignment = Alignment.Center,
     ) {

@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.boards
 
 import com.solthariel.pawchan.domain.model.BoardAddress
+import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 
 /**
@@ -20,6 +21,7 @@ internal sealed interface BoardsAddressTarget {
 }
 
 internal data class BoardsAddressBindings(
+    val site: SiteId,
     val resolve: (String) -> BoardsAddressTarget?,
     val open: (BoardsAddressTarget) -> Unit,
 )

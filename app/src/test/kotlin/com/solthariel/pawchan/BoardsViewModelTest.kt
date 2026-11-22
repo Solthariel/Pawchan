@@ -7,10 +7,12 @@ import com.solthariel.pawchan.boards.boardCategories
 import com.solthariel.pawchan.boards.filterBoards
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
+import com.solthariel.pawchan.domain.boards.BoardDirectorySnapshots
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.SiteId
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,12 +46,12 @@ class BoardsViewModelTest {
                     )
                 advanceUntilIdle()
 
-                viewModel.setFavorite(boardId("b"), true)
+                viewModel.setFavorite(BoardAddress(siteId(), boardId("b")), true)
                 advanceUntilIdle()
 
                 val content = viewModel.state.value as BoardsUiState.Content
-                assertEquals(setOf("b"), content.favoriteBoards.map { it.value }.toSet())
-                assertEquals(136, content.boardSpeeds[boardId("b")])
+                assertEquals(setOf("b"), content.favoriteBoards.map { it.board.value }.toSet())
+                assertEquals(136, content.boardSpeeds[BoardAddress(siteId(), boardId("b"))])
                 assertEquals(1, preferences.favoriteWrites)
             } finally {
                 Dispatchers.resetMain()
@@ -104,13 +107,13 @@ class BoardsViewModelTest {
                 advanceUntilIdle()
 
                 var content = viewModel.state.value as BoardsUiState.Content
-                assertEquals(setOf(boardId("fg")), content.unavailableBoards)
+                assertEquals(setOf(protectedBoard.address), content.unavailableBoards)
 
                 access.grant()
                 advanceUntilIdle()
 
                 content = viewModel.state.value as BoardsUiState.Content
-                assertEquals(emptySet<BoardId>(), content.unavailableBoards)
+                assertEquals(emptySet<BoardAddress>(), content.unavailableBoards)
             } finally {
                 Dispatchers.resetMain()
             }
@@ -157,11 +160,87 @@ class BoardsViewModelTest {
                 advanceUntilIdle()
                 observed.value = mapOf(address to 1529)
                 advanceUntilIdle()
-                assertEquals(1529, (model.state.value as BoardsUiState.Content).boardSpeeds[address.board])
+                assertEquals(1529, (model.state.value as BoardsUiState.Content).boardSpeeds[address])
                 observed.value = mapOf(address to 0)
                 advanceUntilIdle()
-                assertEquals(0, (model.state.value as BoardsUiState.Content).boardSpeeds[address.board])
+                assertEquals(0, (model.state.value as BoardsUiState.Content).boardSpeeds[address])
                 assertEquals(1, requests)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test fun sameBoardCodeDoesNotMixSpeedOrAccessBetweenSites() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val first = board("g", "First", "Разное", postsPerHour = 7, requiresPostingAccess = true)
+                val second =
+                    board("g", "Second", "Разное", postsPerHour = 13).let {
+                        it.copy(address = it.address.copy(site = requireNotNull(SiteId.parse("4chan"))))
+                    }
+                val model =
+                    BoardsViewModel(
+                        FakeBoardDirectoryRepository(listOf(first, second)),
+                        FakeBoardPreferences(),
+                        FakePostingAccess(),
+                        dispatcher,
+                    )
+                advanceUntilIdle()
+                val content = model.state.value as BoardsUiState.Content
+                assertEquals(7, content.boardSpeeds[first.address])
+                assertEquals(13, content.boardSpeeds[second.address])
+                assertEquals(setOf(first.address), content.unavailableBoards)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test fun failedRefreshKeepsLoadedBoards() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                var fail = false
+                val directory =
+                    object : BoardDirectoryRepository {
+                        override suspend fun loadBoards(forceRefresh: Boolean): BoardDirectoryOutcome =
+                            if (fail) {
+                                DomainOutcome.Failure(DomainFailure.NetworkUnavailable)
+                            } else {
+                                DomainOutcome.Success(boards())
+                            }
+                    }
+                val model = BoardsViewModel(directory, FakeBoardPreferences(), FakePostingAccess(), dispatcher)
+                advanceUntilIdle()
+                fail = true
+                model.refresh()
+                advanceUntilIdle()
+                assertEquals(boards(), (model.state.value as BoardsUiState.Content).boards)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test fun backgroundSnapshotReplacesInitialFailure() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val directory =
+                    object : BoardDirectoryRepository, BoardDirectorySnapshots {
+                        override val snapshots = MutableStateFlow<List<BoardDirectoryEntry>?>(null)
+
+                        override suspend fun loadBoards(forceRefresh: Boolean): BoardDirectoryOutcome =
+                            DomainOutcome.Failure(DomainFailure.NetworkUnavailable)
+                    }
+                val model = BoardsViewModel(directory, FakeBoardPreferences(), FakePostingAccess(), dispatcher)
+                advanceUntilIdle()
+                assertTrue(model.state.value is BoardsUiState.Error)
+                directory.snapshots.value = boards()
+                advanceUntilIdle()
+                assertEquals(boards(), (model.state.value as BoardsUiState.Content).boards)
             } finally {
                 Dispatchers.resetMain()
             }
@@ -205,16 +284,16 @@ private class FakeBoardDirectoryRepository(
 }
 
 private class FakeBoardPreferences : BoardPreferencesRepository {
-    private val favorites = MutableStateFlow(emptySet<BoardId>())
+    private val favorites = MutableStateFlow(emptySet<BoardAddress>())
     private val expanded = MutableStateFlow(setOf(FAVORITES_CATEGORY_KEY))
     var favoriteWrites = 0
         private set
 
-    override val favoriteBoards: Flow<Set<BoardId>> = favorites
+    override val favoriteBoards: Flow<Set<BoardAddress>> = favorites
     override val expandedBoardCategories: Flow<Set<String>> = expanded
 
     override suspend fun setFavoriteBoard(
-        board: BoardId,
+        board: BoardAddress,
         favorite: Boolean,
     ): DomainOutcome<Unit> {
         favoriteWrites++

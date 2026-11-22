@@ -1,5 +1,7 @@
 package com.solthariel.pawchan.media.video
 
+import android.app.ActivityManager
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.media.R
+import com.solthariel.pawchan.core.ui.ModalScrimStrength
 import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.ImageViewerMotion
 import com.solthariel.pawchan.media.LocalMediaChromeState
@@ -62,14 +65,13 @@ internal fun VideoViewer(
     val player =
         remember(localSource) {
             adopted ?: pooled?.first ?: ownedVideoSession(
-                FfmpegVideoEngine(context.applicationContext, loaders.contentClient, context.cacheDir),
+                videoEngine(context.applicationContext, loaders.contentClient, context.cacheDir),
                 localSource,
             )
         }
     BindVideoSessionDiagnostics(video, player, videoSessionOrigin(adopted, pooled))
     val posterNavigation = rememberPosterNavigation(player, navigation)
     val status by key(player) { player.status.collectAsStateWithLifecycle() }
-    val hasVideoOutput by rememberVideoOutput(player)
     BindVideoPlaybackLifecycle(
         player,
         adopted = adopted != null,
@@ -85,7 +87,6 @@ internal fun VideoViewer(
             video = video,
             navigation = posterNavigation,
             state = status,
-            hasVideoOutput = hasVideoOutput,
             actions =
                 VideoSurfaceActions(
                     imageLoader = loaders.imageLoader,
@@ -102,29 +103,31 @@ internal fun VideoViewer(
 }
 
 @Composable
-private fun VideoSurface(
+internal fun VideoSurface(
     player: VideoPlaybackSession,
     video: MediaAttachmentUi,
     state: VideoPlaybackStatus,
     actions: VideoSurfaceActions,
     navigation: MediaViewerNavigation,
-    hasVideoOutput: Boolean,
 ) {
     val scope = rememberCoroutineScope()
     val localSource =
         resolvedMediaUrl(video.originalUrl)
     val context = LocalContext.current
+    val seekColors = MaterialTheme.colorScheme
     val chrome = LocalMediaChromeState.current ?: remember { MediaChromeState() }
     val motion = remember(player, video.id, video.source.ownerPostId) { ImageViewerMotion(scope, context, chrome) }
     DisposableEffect(motion) { onDispose { motion.stop() } }
+    val chromeActivity = rememberVideoChromeActivity(motion, state)
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
+                .videoChromeActivity(chromeActivity)
                 .clipToBounds()
                 .graphicsLayer { alpha = motion.windowAlpha },
     ) {
-        MediaBackdrop(motion)
+        MediaBackdrop(motion, opacity = ModalScrimStrength.MEDIA.alpha())
         MediaNeighborPages(navigation, actions.imageLoader, motion)
         // при скрытых панелях «Обновить» появляется в самом меню.
         val metadata = remember(player, video.byteSize) { videoMetadataSource(player, video.byteSize) }
@@ -135,6 +138,7 @@ private fun VideoSurface(
                     onRefresh = actions.onRetry.takeIf { hidden },
                     softwareDecoder = state.software,
                     onSoftwareDecoder = { player.setSoftware(!state.software) },
+                    onPip = actions.onPip,
                     metadata = metadata,
                     anchored = anchored,
                 ),
@@ -142,12 +146,13 @@ private fun VideoSurface(
             Unit
         }
         VideoGestureSurface(player, video, motion, navigation, actions.onClose) { menu(false) }
-        VideoPosterLayer(player, video, actions.imageLoader, motion, hasVideoOutput)
         VideoStateOverlay(state, actions.onRetry)
+        VideoEdgeProgress(state, motion.controlsVisible, seekColors, Modifier.align(Alignment.BottomCenter))
         MediaViewerChrome(
             motion,
             // Ошибка загрузки не убирает кнопки, время и переход к соседним вложениям.
-            bottom = { VideoPlaybackPanel(player, navigation, actions.onPip) },
+            bottom = { VideoPlaybackPanel(player, navigation, seekColors) },
+            blackChrome = true,
         ) {
             MediaToolbar(
                 video,
@@ -161,7 +166,7 @@ private fun VideoSurface(
     }
 }
 
-private data class VideoSurfaceActions(
+internal data class VideoSurfaceActions(
     val imageLoader: coil3.ImageLoader,
     val onRetry: () -> Unit,
     val onDownload: () -> Unit,
@@ -171,7 +176,7 @@ private data class VideoSurfaceActions(
 )
 
 @Composable
-private fun VideoStateOverlay(
+internal fun VideoStateOverlay(
     state: VideoPlaybackStatus,
     onRetry: () -> Unit,
 ) {
@@ -215,12 +220,18 @@ private fun BindNextVideoPreload(
 ) {
     val context = LocalContext.current.applicationContext
     val enabled = LocalMediaPreferences.current.preloadVideo
+    // Low-RAM phones should not keep a second mpv decoder and network stream alive.
+    val lowRam =
+        remember(context) {
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isLowRamDevice ?: true
+        }
     val url = next?.takeIf { it.viewer == AttachmentViewer.VIDEO }?.let { resolvedMediaUrl(it.originalUrl) }
-    LaunchedEffect(url, ready, enabled) {
-        if (url == null || !ready || !enabled) return@LaunchedEffect
+    LaunchedEffect(url, ready, enabled, lowRam) {
+        val preloadUrl = url ?: return@LaunchedEffect
+        if (!ready || !enabled || lowRam) return@LaunchedEffect
         delay(PRELOAD_DELAY_MS)
-        VideoSessionPool.preload(url) {
-            ownedVideoSession(FfmpegVideoEngine(context, loaders.contentClient, context.cacheDir), url)
+        VideoSessionPool.preload(preloadUrl) {
+            ownedVideoSession(videoEngine(context, loaders.contentClient, context.cacheDir), preloadUrl)
         }
     }
 }

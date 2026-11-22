@@ -40,7 +40,8 @@ internal fun CatalogBoardLookupLayer(
     val currentLookup = rememberUpdatedState(lookup)
     val bounds = rememberUpdatedState(panelBounds)
     val rootOrigin = rememberUpdatedState(origin)
-    val toolbarHeight = with(LocalDensity.current) { APP_TOP_BAR_HEIGHT.toPx() }
+    val toolbarOffset = APP_TOP_BAR_HEIGHT + com.solthariel.pawchan.core.ui.LocalFloatingTopStatusInset.current
+    val toolbarHeight = with(LocalDensity.current) { toolbarOffset.toPx() }
     Box(
         Modifier
             .fillMaxSize()
@@ -49,14 +50,14 @@ internal fun CatalogBoardLookupLayer(
                 observeBoardLookupDismissal(currentLookup, bounds, rootOrigin, toolbarHeight)
             },
     ) {
-        content()
-        if (lookup?.visible == true) {
-            ModalInlinePanel {
+        ModalInlinePanel(active = lookup?.visible == true) {
+            content()
+            if (lookup?.visible == true) {
                 Surface(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = APP_TOP_BAR_HEIGHT, start = 8.dp, end = 8.dp)
+                            .padding(top = toolbarOffset, start = 8.dp, end = 8.dp)
                             .onGloballyPositioned { panelBounds = it.boundsInRoot() }
                             .testTag("board-lookup-panel")
                             .modalPanelBounds(8.dp)

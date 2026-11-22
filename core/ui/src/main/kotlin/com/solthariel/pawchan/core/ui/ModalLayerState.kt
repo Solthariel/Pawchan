@@ -12,11 +12,13 @@ internal data class ModalLayerEntry(
     val kind: ModalLayerKind,
     val strength: ModalScrimStrength = ModalScrimStrength.STANDARD,
     val panel: ModalPanelGeometry? = null,
+    val replacesPageScrim: Boolean = false,
 )
 
 internal data class ModalPanelGeometry(
     val bounds: Rect,
     val radius: Float,
+    val additional: Rect? = null,
 )
 
 /** Owned by the UI host, never shared across activities or saved as persistent application data. */
@@ -39,7 +41,9 @@ internal class ModalLayerState(
         return index >= 0 && index < entries.lastIndex
     }
 
-    fun pageAlpha(): Float = if (dimPage()) entries.first().strength.alpha() else 0f
+    fun pageAlpha(): Float = if (dimPage() && !pageScrimReplaced) entries.first().strength.alpha() else 0f
+
+    val pageScrimReplaced: Boolean get() = entries.any { it.replacesPageScrim }
 
     fun coveredAlpha(token: Any): Float {
         val index = entries.indexOfFirst { it.token === token }
@@ -62,7 +66,30 @@ internal class ModalLayerState(
         token: Any,
         geometry: ModalPanelGeometry,
     ) {
-        entries = entries.map { if (it.token === token && it.panel != geometry) it.copy(panel = geometry) else it }
+        entries =
+            entries.map {
+                if (it.token === token) {
+                    val next = geometry.copy(additional = it.panel?.additional)
+                    if (it.panel != next) it.copy(panel = next) else it
+                } else {
+                    it
+                }
+            }
+    }
+
+    fun updateAdditionalPanel(
+        token: Any,
+        bounds: Rect,
+    ) {
+        entries =
+            entries.map {
+                if (it.token === token) {
+                    val next = (it.panel ?: ModalPanelGeometry(Rect.Zero, 0f)).copy(additional = bounds)
+                    if (it.panel != next) it.copy(panel = next) else it
+                } else {
+                    it
+                }
+            }
     }
 
     fun first(token: Any): Boolean = entries.firstOrNull()?.token === token

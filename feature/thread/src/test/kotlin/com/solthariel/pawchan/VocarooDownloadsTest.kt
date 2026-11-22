@@ -5,6 +5,11 @@ import com.solthariel.pawchan.thread.vocaroo.VocarooHttpException
 import com.solthariel.pawchan.thread.vocaroo.VocarooRequest
 import com.solthariel.pawchan.thread.vocaroo.VocarooRetryPolicy
 import com.solthariel.pawchan.thread.vocaroo.VocarooTransport
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,6 +56,46 @@ class VocarooDownloadsTest {
                 }
             assertNull(downloads(transport).fetch("abcdef") {})
             assertEquals(1, attempts)
+        }
+
+    @Test fun cancelledDownloadRemovesItsTemporaryFile() =
+        runBlocking {
+            val started = CompletableDeferred<File>()
+            val transport =
+                VocarooTransport { _, target, _ ->
+                    target.writeText("partial")
+                    started.complete(target)
+                    awaitCancellation()
+                }
+            val job = launch(Dispatchers.IO) { downloads(transport).fetch("abcdef") {} }
+            val partial = started.await()
+            assertTrue(partial.exists())
+            job.cancelAndJoin()
+            assertFalse(partial.exists())
+            assertFalse(File(directory, "abcdef.mp3").exists())
+        }
+
+    @Test fun concurrentDownloadsOfSameRecordUseSeparateTemporaryFiles() =
+        runBlocking {
+            val first = CompletableDeferred<File>()
+            val second = CompletableDeferred<File>()
+            val transport =
+                VocarooTransport { request, target, _ ->
+                    target.writeText("partial")
+                    if (request.attempt == 1 && !first.isCompleted) first.complete(target) else second.complete(target)
+                    awaitCancellation()
+                }
+            val loader = downloads(transport)
+            val a = launch(Dispatchers.IO) { loader.fetch("abcdef") {} }
+            val firstFile = first.await()
+            val b = launch(Dispatchers.IO) { loader.fetch("abcdef") {} }
+            val secondFile = second.await()
+            assertTrue(firstFile != secondFile)
+            a.cancelAndJoin()
+            assertFalse(firstFile.exists())
+            assertTrue(secondFile.exists())
+            b.cancelAndJoin()
+            assertFalse(secondFile.exists())
         }
 
     @Test fun retryPolicyKeepsPausesAndBudget() {

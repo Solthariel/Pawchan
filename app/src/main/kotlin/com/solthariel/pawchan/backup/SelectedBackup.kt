@@ -14,7 +14,7 @@ internal fun selectedBackup(
         settings.filterKeys { key ->
             when (key) {
                 "app_content_filters_v1" -> BackupSection.FILTERS in sections
-                "favorite_boards_v2" -> BackupSection.FAVORITES in sections
+                "favorite_boards_v2", "favorite_boards_other_v1" -> BackupSection.FAVORITES in sections
                 else -> BackupSection.SETTINGS in sections
             }
         },

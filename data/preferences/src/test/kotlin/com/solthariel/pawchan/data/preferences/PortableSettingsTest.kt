@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -68,6 +69,16 @@ class PortableSettingsTest {
             repository.portable.replace(mapOf("theme" to "SYSTEM"), null)
             assertEquals(ThemePreference.SYSTEM, repository.theme.first())
         }
+
+    @Test fun otherSiteFavoritesMustUseCanonicalValidAddresses() {
+        val portable = DataStorePortableSettings(memoryStore()) {}
+        portable.validate(mapOf("favorite_boards_other_v1" to "4chan/g"), emptyMap())
+        listOf("dvach/b", "4chan/../evil", "4chan/B").forEach { value ->
+            assertThrows(IllegalArgumentException::class.java) {
+                portable.validate(mapOf("favorite_boards_other_v1" to value), emptyMap())
+            }
+        }
+    }
 
     @Test(expected = IllegalArgumentException::class)
     fun invalidNumericSettingsAreRejectedBeforeMutation() {

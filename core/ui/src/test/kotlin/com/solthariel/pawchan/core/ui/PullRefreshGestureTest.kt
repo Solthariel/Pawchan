@@ -13,7 +13,7 @@ class PullRefreshGestureTest {
     @Test
     fun topEdgeRefreshIsArmedAtOneQuarterOfPhoneViewport() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         assertEquals(100f, gesture.threshold, 0f)
         assertEquals(100f, gesture.consumeEdge(100f, allowBottom = true), 0f)
         assertTrue(gesture.release(busy = false))
@@ -30,7 +30,7 @@ class PullRefreshGestureTest {
     @Test
     fun bottomEdgeUsesTheSameThresholdAndCannotDoubleSubmit() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         gesture.consumeEdge(-100f, allowBottom = true)
         assertTrue(gesture.release(busy = false))
         assertEquals(PullRefreshSide.BOTTOM, gesture.side)
@@ -41,7 +41,7 @@ class PullRefreshGestureTest {
     @Test
     fun shortPullFoldsBackWithoutRefreshing() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         gesture.consumeEdge(90f, allowBottom = true)
         assertFalse(gesture.release(busy = false))
         assertEquals(PullRefreshReleaseMode.RETRACT, gesture.release.mode)
@@ -52,7 +52,7 @@ class PullRefreshGestureTest {
     @Test
     fun reverseMotionReturnsUnusedPixelsToTheList() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         gesture.consumeEdge(100f, allowBottom = true)
         assertEquals(-100f, gesture.consumeClosing(-150f), 0f)
         assertEquals(0f, gesture.distance, 0f)
@@ -62,7 +62,7 @@ class PullRefreshGestureTest {
     @Test
     fun disabledBottomAndNonEdgeMotionCannotArmRefresh() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         assertEquals(0f, gesture.consumeEdge(-100f, allowBottom = false), 0f)
         assertEquals(0f, gesture.consumeEdge(0f, allowBottom = true), 0f)
         assertFalse(gesture.release(busy = false))
@@ -71,7 +71,7 @@ class PullRefreshGestureTest {
     @Test
     fun overpullIsClampedButAllEdgeMotionIsConsumedWithoutNativeStretch() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         assertEquals(1_000f, gesture.consumeEdge(1_000f, allowBottom = true), 0f)
         assertEquals(200f, gesture.distance, 0f)
         assertEquals(2f, gesture.strain, 0f)
@@ -79,15 +79,23 @@ class PullRefreshGestureTest {
 
     @Test
     fun tabletThresholdAndInitialSizeAreFinite() {
-        assertEquals(160f, pullRefreshThreshold(960f, tablet = true), 0f)
-        assertEquals(240f, pullRefreshThreshold(960f, tablet = false), 0f)
-        assertEquals(1f, pullRefreshThreshold(0f, tablet = false), 0f)
+        assertEquals(160f, pullRefreshThreshold(960f, tablet = true, density = 2f), 0f)
+        assertEquals(192f, pullRefreshThreshold(960f, tablet = false, density = 2f), 0f)
+        assertEquals(1f, pullRefreshThreshold(0f, tablet = false, density = 1f), 0f)
+    }
+
+    @Test
+    fun tallViewportUsesShorterPullThreshold() {
+        assertEquals(96f, pullRefreshThreshold(800f, tablet = false, density = 1f), 0f)
+        assertEquals(96f, pullRefreshThreshold(1_200f, tablet = true, density = 1f), 0f)
+        assertEquals(192f, pullRefreshThreshold(1_600f, tablet = false, density = 2f), 0f)
+        assertEquals(30f, pullRefreshThreshold(120f, tablet = false, density = 1f), 0f)
     }
 
     @Test
     fun externalRefreshPreventsAnotherEdgeRelease() {
         val gesture = PullRefreshGesture()
-        gesture.updateHeight(400, tablet = false)
+        gesture.updateHeight(400, tablet = false, density = 2f)
         gesture.consumeEdge(100f, allowBottom = true)
         assertFalse(gesture.release(busy = true))
         assertFalse(gesture.requested)

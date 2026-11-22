@@ -9,6 +9,7 @@ import okhttp3.Response
 class MirrorRoutingInterceptor(
     initialHost: String = "2ch.su",
     val recovery: MirrorRecovery? = null,
+    private val onRouteHost: (String) -> Unit = {},
 ) : Interceptor {
     @Volatile var host: String = initialHost
         set(value) {
@@ -24,6 +25,7 @@ class MirrorRoutingInterceptor(
 
     fun route(request: okhttp3.Request): okhttp3.Request {
         val selected = recovery?.state?.value?.activeHost ?: host
+        onRouteHost(selected)
         val original = request.url
         if (original.host !in SOURCE_HOSTS) return request
         val builder = request.newBuilder().url(original.newBuilder().host(selected).build())

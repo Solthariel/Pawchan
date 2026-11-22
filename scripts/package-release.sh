@@ -18,14 +18,7 @@ do
     fi
 done
 
-case "$PAWCHAN_UPDATE_MANIFEST_URL" in
-    https://?*) ;;
-    *)
-        printf '%s\n' \
-            "RELEASE PACKAGE: PAWCHAN_UPDATE_MANIFEST_URL must be an absolute HTTPS URL" >&2
-        exit 1
-        ;;
-esac
+python3 scripts/validate_update_url.py "$PAWCHAN_UPDATE_MANIFEST_URL"
 
 ./scripts/local-check.sh
 ./gradlew :app:assembleRelease \

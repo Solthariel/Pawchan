@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.runtime.Composable
-import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.domain.settings.AppSettings
 
 /** Что экран знает помимо сохранённых настроек: кэш и панель обновлений. */
@@ -9,7 +8,8 @@ internal data class SettingsEnvironment(
     val cacheSize: String?,
     val onClearCache: () -> Unit,
     val updates: @Composable () -> Unit = {},
-    val changelog: @Composable () -> Unit = { ChangelogSettings() },
+    val changelog: @Composable () -> Unit = { ChangelogSettings(showVersion = true) },
+    val openProxy: () -> Unit = {},
 )
 
 @Composable
@@ -48,7 +48,10 @@ internal fun settingsContent(
                     listOf(SettingsItem.Action("Правила автоскрытия", "Фразы и фрагменты по порядку")),
                 ),
             ),
-        SettingsSection.NETWORK to networkGroups(state.app, update),
+        SettingsSection.NETWORK to
+            listOf(
+                SettingsGroup("Прокси", listOf(SettingsItem.Action("Прокси", null, onClick = environment.openProxy))),
+            ),
         SettingsSection.STORAGE to storageGroups(state.app, update, environment) +
             listOf(
                 SettingsGroup(
@@ -78,20 +81,21 @@ private fun interfaceGroups(
     val app = state.app
     return listOf(
         themeSettingsGroup(state, actions),
+        typographySettingsGroup(app, update),
         bottomNavigationSettingsGroup(app, update),
         SettingsGroup(
             "Отображение",
             listOf(
-                SettingsItem.Choice(
-                    "Оформление постов",
-                    listOf("Без рамок", "Карточки"),
-                    if (app.bubblePosts) 1 else 0,
-                ) { selected -> update { it.copy(bubblePosts = selected == 1) } },
                 SettingsItem.Toggle(
                     "Скрывать стикеры",
                     "Текст постов остаётся",
                     app.hideStickers,
                 ) { on -> update { it.copy(hideStickers = on) } },
+                SettingsItem.Toggle(
+                    "Скрывать ответы @monkey",
+                    "Только на Дваче. Вопрос автора и ссылки на посты остаются.",
+                    app.hideMonkeyReplies,
+                ) { on -> update { it.copy(hideMonkeyReplies = on) } },
                 SettingsItem.Scale(
                     "Размер текста",
                     app.textSize,
@@ -102,9 +106,10 @@ private fun interfaceGroups(
                 SettingsItem.Scale(
                     "Строк до сворачивания",
                     app.collapseLines,
-                    AppSettings.MIN_COLLAPSE_LINES..AppSettings.MAX_COLLAPSE_LINES,
+                    AppSettings.MIN_COLLAPSE_LINES..AppSettings.NO_COLLAPSE,
                     "строк",
                     preview = false,
+                    endLabel = "Не сворачивать",
                 ) { lines -> update { it.copy(collapseLines = lines) } },
             ),
         ),
@@ -161,24 +166,28 @@ private fun mediaGroups(
         ),
     )
 
-private fun networkGroups(
-    app: AppSettings,
-    update: ((AppSettings) -> AppSettings) -> Unit,
-): List<SettingsGroup> =
-    listOf(
-        SettingsGroup("Vocaroo", vocarooDnsItems(app, update)),
-        SettingsGroup("Архивач", arhivachDnsItems(app, update)),
-        SettingsGroup("GitHub: обновления и список изменений", githubDnsItems(app, update)),
-    )
-
-private fun aboutGroups(environment: SettingsEnvironment): List<SettingsGroup> =
+internal fun aboutGroups(environment: SettingsEnvironment): List<SettingsGroup> =
     listOf(
         SettingsGroup(
             "Приложение",
             listOf(
-                SettingsItem.Action("Версия", BuildConfig.VERSION_NAME),
-                SettingsItem.Custom("Список изменений", environment.changelog),
-                SettingsItem.Custom("Обновления", environment.updates),
+                SettingsItem.Custom("Версия", environment.changelog),
+                SettingsItem.Custom("Проверить обновления", environment.updates),
+            ),
+        ),
+        SettingsGroup(
+            "Проект",
+            listOf(
+                SettingsItem.Custom("Релизы на GitHub") {
+                    AboutLink("Релизы на GitHub", "Последний релиз", RELEASE_URL)
+                },
+            ),
+        ),
+        SettingsGroup(
+            "Техническая информация",
+            listOf(
+                SettingsItem.Custom("Версии компонентов") { AboutVersions() },
+                SettingsItem.Custom("Лицензии") { AboutLicenses() },
             ),
         ),
     )

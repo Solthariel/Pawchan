@@ -3,6 +3,7 @@ package com.solthariel.pawchan.core.ui
 import android.view.WindowManager
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -39,3 +40,23 @@ fun Modifier.focusedWindowImePadding(): Modifier {
     SideEffect { if (focused) lastFocusedInset = ime }
     return padding(bottom = with(density) { (if (focused) ime else lastFocusedInset).toDp() })
 }
+
+/** IME and navigation occupy overlapping regions. Preserve background windows' last active inset. */
+@Composable
+fun Modifier.focusedWindowBottomPadding(): Modifier {
+    val density = LocalDensity.current
+    val focused = LocalWindowInfo.current.isWindowFocused
+    val bottom =
+        windowBottomOcclusion(
+            navigation = WindowInsets.navigationBars.getBottom(density),
+            ime = WindowInsets.ime.getBottom(density),
+        )
+    var lastFocusedInset by remember { mutableIntStateOf(bottom) }
+    SideEffect { if (focused) lastFocusedInset = bottom }
+    return padding(bottom = with(density) { (if (focused) bottom else lastFocusedInset).toDp() })
+}
+
+internal fun windowBottomOcclusion(
+    navigation: Int,
+    ime: Int,
+): Int = maxOf(navigation, ime)

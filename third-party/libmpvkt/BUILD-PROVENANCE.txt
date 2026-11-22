@@ -1,0 +1,37 @@
+Bundled build, arm64-v8a only. Native libmpv and dependencies are from
+mpv-android 2026-09-17 release APK, SHA-256
+0b0e0a534dd6b8d2b117f06952e0600064ad97702e48bff02543e3e32107803d.
+Source and exact commits: https://github.com/mpv-android/mpv-android/releases/tag/2026-09-17
+FFmpeg commit 094a2f8a2a5e7fa64736e067de224ce28fdf5979; libmpv commit
+0b7ed670f7c353dd3dd4f8ae0fc788a181a15aa6. FFmpeg shared objects and
+libmpv references/SONAMEs renamed with patchelf --page-size 16384 to isolate
+from Pawchan's FFmpeg; those objects were not recompiled.
+
+libmpvkt_jni.so is rebuilt from libmpv-kotlin-multiplatform v0.3.0
+(Apache-2.0, see LIBMPVKT-LICENSE.txt and LIBMPVKT-NOTICE.txt).
+Source: https://github.com/yuroyami/libmpv-kotlin-multiplatform/tree/v0.3.0
+The JNI sources are in jni-source; mpv public ISC-licensed headers are from
+libmpv commit 0b7ed670f7c353dd3dd4f8ae0fc788a181a15aa6. Pawchan adds two
+entry points for the Surface reference boundary; the upstream entries remain.
+On Linux x86_64 with NDK 29.0.14206865, set ANDROID_NDK_HOME and run
+third-party/libmpvkt/rebuild-jni-linux.sh from the project. It compiles against the bundled mpv headers, the single FFmpeg JNI header
+`jni-source/include/libavcodec/jni.h`, and the renamed mpv/FFmpeg shared objects.
+The FFmpeg JNI header is the unmodified file from the FFmpeg commit listed
+above, used by the bundled mpv build (SHA-256
+f98405ffb7ba26665cde92daef33bc4371c91aa6c85b522b36864ed289600ebc).
+It happens to be byte-identical to the former n9.0.2 header. Its copyright and
+LGPL notice are retained in the file. The old FFmpeg/dav1d bundle, other old
+headers and historical source archives are not used for this build. This is
+not needed for ordinary Android builds: the generated library is included.
+The Kotlin raw JNI API is deliberately limited to the calls used in Pawchan;
+the former surfaceHandle/releaseSurfaceHandle declarations moved to
+MpvSurfaceReferences.create/release, and unused upstream declarations were
+removed. External Kotlin consumers of those raw methods need to adapt.
+
+JNI library sha256: 32ded1bb5d02b872ebdf72b5d581e8ac5ab232469ae56fc544eedd5c3ed60730
+This is not a release: complete third-party notices and source-distribution
+compliance must be verified before distribution beyond testing.
+
+libc++_shared.so is from Android NDK 29.0.14206865 (arm64-v8a), stripped
+with that NDK llvm-strip. Android NDK/LLVM licenses apply. Bundle checksums are
+in video-ffmpeg/mpv-libraries.sha256.

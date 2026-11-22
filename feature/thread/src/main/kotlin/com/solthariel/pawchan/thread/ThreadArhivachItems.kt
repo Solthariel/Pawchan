@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.thread
 
 import androidx.compose.runtime.Composable
+import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +24,7 @@ internal fun ThreadArhivachItems(
     val state = external.state(address)
     val link = state.link
     if (link == null) {
-        ThreadMenuItem("Сохранить в Архивач") { tools.openDialog(ThreadDialog.ARHIVACH) }
+        ThreadMenuItem("Сохранить в Архивач", icon = UiIconKind.ARCHIVE) { tools.openDialog(ThreadDialog.ARHIVACH) }
     } else {
         ThreadMenuItem("Восстановить из Архивача", enabled = history != null) {
             tools.closeMenu()

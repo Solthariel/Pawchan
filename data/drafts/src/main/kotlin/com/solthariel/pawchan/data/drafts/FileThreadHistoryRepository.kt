@@ -3,6 +3,7 @@ package com.solthariel.pawchan.data.drafts
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
+import com.solthariel.pawchan.domain.thread.mergeThreadHistory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,41 +21,58 @@ import java.io.IOException
 class FileThreadHistoryRepository(
     private val directory: File,
 ) : ThreadHistoryRepository {
-    private val mutex = Mutex()
+    // Different foreground/worker instances pointing to the same directory share serialization.
+    private val mutex =
+        historyLocks[
+            Math.floorMod(
+                directory.absoluteFile
+                    .normalize()
+                    .path
+                    .hashCode(),
+                historyLocks.size,
+            ),
+        ]
 
     override suspend fun load(address: ThreadAddress): ThreadSnapshot? =
+        withContext(Dispatchers.IO) { mutex.withLock { readLocked(address) } }
+
+    private fun readLocked(address: ThreadAddress): ThreadSnapshot? {
+        val file = file(address)
+        if (!file.exists() || file.length() > MAX_THREAD_BYTES) return null
+        return try {
+            Json
+                .parseToJsonElement(file.readText())
+                .jsonObject
+                .decodeSnapshot()
+                .takeIf { it.address == address }
+        } catch (_: IOException) {
+            null
+        } catch (_: SerializationException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+    override suspend fun save(snapshot: ThreadSnapshot) {
+        withContext(Dispatchers.IO) { mutex.withLock { writeLocked(snapshot) } }
+    }
+
+    override suspend fun mergeAndSave(incoming: ThreadSnapshot): ThreadSnapshot =
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val file = file(address)
-                if (!file.exists() || file.length() > MAX_THREAD_BYTES) return@withLock null
-                try {
-                    Json
-                        .parseToJsonElement(file.readText())
-                        .jsonObject
-                        .decodeSnapshot()
-                        .takeIf { it.address == address }
-                } catch (_: IOException) {
-                    null
-                } catch (_: SerializationException) {
-                    null
-                } catch (_: IllegalArgumentException) {
-                    null
-                }
+                mergeThreadHistory(readLocked(incoming.address), incoming).also { writeLocked(it) }
             }
         }
 
-    override suspend fun save(snapshot: ThreadSnapshot) {
-        withContext(Dispatchers.IO) {
-            mutex.withLock {
-                val bytes = snapshot.encodeSnapshot().toString().toByteArray()
-                if (bytes.size > MAX_THREAD_BYTES) return@withLock
-                try {
-                    atomicWrite(file(snapshot.address), bytes)
-                    prune()
-                } catch (_: IOException) {
-                    // История — кэш: не удалось записать, значит тред просто не запомнится.
-                }
-            }
+    private suspend fun writeLocked(snapshot: ThreadSnapshot) {
+        val bytes = snapshot.encodeSnapshot().toString().toByteArray()
+        if (bytes.size > MAX_THREAD_BYTES) return
+        try {
+            atomicWrite(file(snapshot.address), bytes)
+            prune()
+        } catch (_: IOException) {
+            // Best-effort local cache; foreground reading remains available.
         }
     }
 
@@ -76,3 +94,6 @@ class FileThreadHistoryRepository(
 
 private const val MAX_THREADS = 200
 private const val MAX_THREAD_BYTES = 16 * 1024 * 1024
+
+private const val HISTORY_LOCK_COUNT = 32
+private val historyLocks = Array(HISTORY_LOCK_COUNT) { Mutex() }

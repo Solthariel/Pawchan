@@ -2,6 +2,7 @@ package com.solthariel.pawchan
 
 import com.solthariel.pawchan.composer.AttachmentEditOptions
 import com.solthariel.pawchan.composer.ComposerAttachment
+import com.solthariel.pawchan.composer.ComposerDraftActivity
 import com.solthariel.pawchan.composer.ComposerDraftState
 import com.solthariel.pawchan.composer.ReplyComposerController
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -84,7 +85,7 @@ class ComposerControllerTest {
             assertEquals(emptyList<ComposerAttachment>(), cleared.attachments)
             assertEquals(emptyList<ByteArray>(), cleared.selectedEmojiImages)
             assertNull(cleared.emojiCaptchaToken)
-            controller.updateDraft(old.copy(filesLoading = false))
+            controller.updateDraft(old.copy(activity = ComposerDraftActivity.IDLE))
             assertEquals(cleared.draft, controller.state.value.draft)
         }
 

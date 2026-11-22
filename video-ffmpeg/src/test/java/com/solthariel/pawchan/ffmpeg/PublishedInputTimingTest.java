@@ -32,7 +32,7 @@ public class PublishedInputTimingTest {
         TimingProbe probe = new TimingProbe(true, System::nanoTime, lines::add);
         java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
         try (PublishedInput input = new PublishedInput(() -> {}, () -> {}, probe)) {
-            input.open(file, new PawPlayback.RangeCallback() {
+            input.open(file, new ProgressiveReadCallback() {
                 public void onReadReady() { input.publish(0, 1); }
                 public void requestPartFromPosition(long position) { requested.countDown(); }
             });

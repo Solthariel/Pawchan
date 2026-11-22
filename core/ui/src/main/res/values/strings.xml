@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="core_ui_retry">Повторить</string>
     <string name="core_ui_challenge_open">Пройти проверку</string>
     <string name="core_ui_error_loading_data">Ошибка при загрузке данных</string>
     <string name="core_ui_fast_scrollbar">Прокрутка списка</string>
-    <string name="core_ui_error_rate_limited">Сервер ограничил частоту запросов. Подождите немного и обновите.</string>
-    <string name="core_ui_error_refresh_kept">Не удалось обновить. Показаны ранее загруженные данные.</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
     <string name="core_ui_pull_refresh_top">Обновление сверху</string>
     <string name="core_ui_pull_refresh_bottom">Обновление снизу</string>
     <string name="core_ui_thread_author">Создатель треда</string>
@@ -14,5 +15,11 @@
     <string name="core_ui_thread_closed">Тред закрыт</string>
     <string name="core_ui_thread_cyclical">Цикличный тред</string>
     <string name="core_ui_post_banned">Автор забанен</string>
+    <string name="core_ui_archive_active">Архивач: тред активен и обновляется</string>
+    <string name="core_ui_archive_maybe_deleted">Архивач: исходный тред, возможно, удалён</string>
+    <string name="core_ui_archive_saved">Архивач: тред сохранён</string>
+    <string name="core_ui_archive_lost">Архивач: тред помечен как потерянный</string>
+    <string name="core_ui_archive_queued">Архивач: тред ожидает обработки</string>
+    <string name="core_ui_archive_other">Другой статус Архивача</string>
     <string name="core_ui_copied">Скопировано</string>
 </resources>

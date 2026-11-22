@@ -1,6 +1,7 @@
 package com.solthariel.pawchan.watch
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -15,6 +16,7 @@ import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import com.solthariel.pawchan.MainActivity
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.navigation.AppRoute
 import com.solthariel.pawchan.navigation.saveableKey
@@ -53,12 +55,24 @@ internal class ThreadWatchNotifier(
                 .setContentTitle(title)
                 .setContentText(if (replies) "Новых ответов на ваши посты: $count" else text)
                 .setGroup(GROUP_KEY)
-                .setAutoCancel(true)
+                .setAutoCancel(!replies)
                 .setContentIntent(threadPendingIntent(subscription))
                 .build()
         NotificationManagerCompat
             .from(context)
-            .notify(notificationId(subscription), notification)
+            .notify(notificationTag(subscription.address), notificationId(subscription.address), notification)
+        if (replies) retireLegacyReply(subscription)
+    }
+
+    private fun retireLegacyReply(subscription: ThreadWatchSubscription) {
+        val manager = context.getSystemService<NotificationManager>() ?: return
+        val legacyIntent = threadPendingIntent(subscription)
+        val id = notificationId(subscription.address)
+        manager.activeNotifications
+            .filter {
+                it.tag == null && it.id == id && it.notification.channelId == REPLIES_CHANNEL &&
+                    it.notification.contentIntent == legacyIntent
+            }.forEach { manager.cancel(it.tag, id) }
     }
 
     private fun threadPendingIntent(subscription: ThreadWatchSubscription): PendingIntent {
@@ -70,14 +84,65 @@ internal class ThreadWatchNotifier(
             }
         return PendingIntent.getActivity(
             context,
-            notificationId(subscription),
+            notificationId(subscription.address),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
-    private fun notificationId(subscription: ThreadWatchSubscription): Int =
-        (subscription.address.saveableKey + if (replies) ":replies" else ":posts").hashCode()
+    fun updateRepliesIfActive(
+        address: ThreadAddress,
+        unread: Int,
+    ) {
+        check(replies)
+        val manager = context.getSystemService<NotificationManager>() ?: return
+        val tag = notificationTag(address)
+        val id = notificationId(address)
+        val candidates =
+            manager.activeNotifications.filter {
+                it.id == id && it.notification.channelId == REPLIES_CHANNEL
+            }
+        val legacyIntent =
+            if (candidates.any { it.tag == null }) {
+                threadPendingIntent(ThreadWatchSubscription(address, null, null, 0L))
+            } else {
+                null
+            }
+        val active =
+            candidates.filter {
+                val legacy = it.tag == null && it.notification.contentIntent == legacyIntent
+                it.tag == tag || legacy
+            }
+        if (unread <= 0) {
+            active.forEach { manager.cancel(it.tag, id) }
+        } else if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            active.forEach {
+                val notification =
+                    NotificationCompat
+                        .Builder(context, REPLIES_CHANNEL)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle(it.notification.extras.getCharSequence(Notification.EXTRA_TITLE))
+                        .setContentText("Новых ответов на ваши посты: $unread")
+                        .setContentIntent(it.notification.contentIntent)
+                        .setGroup(GROUP_KEY)
+                        .setAutoCancel(false)
+                        .setOnlyAlertOnce(true)
+                        .build()
+                NotificationManagerCompat.from(context).notify(it.tag, id, notification)
+            }
+        }
+    }
+
+    private fun notificationTag(address: ThreadAddress): String? = if (replies) "reply:${address.saveableKey}" else null
+
+    private fun notificationId(address: ThreadAddress): Int {
+        val suffix = if (replies) ":replies" else ":posts"
+        return (address.saveableKey + suffix).hashCode()
+    }
 
     companion object {
         private const val REPLIES_CHANNEL = "thread-replies"

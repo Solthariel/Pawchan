@@ -10,13 +10,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 
-/** No platform scrim may multiply the host's own scrim. Restore only the attributes owned here. */
+/** No platform scrim may multiply the host's own scrim. Dedicated opaque windows keep dim disabled on exit. */
 @Composable
-internal fun DisablePlatformDim() {
+internal fun DisablePlatformDim(restoreDim: Boolean = true) {
     val view = LocalView.current
     val window = (view.parent as? DialogWindowProvider)?.window
     val background = modalSystemBarBackground(MaterialTheme.colorScheme.background)
-    DisposableEffect(view) {
+    DisposableEffect(view, restoreDim) {
         val previous = window?.attributes?.dimAmount
         val contrast = window?.isNavigationBarContrastEnforced
         val controller = window?.let { WindowCompat.getInsetsController(it, view) }
@@ -27,10 +27,10 @@ internal fun DisablePlatformDim() {
         window?.setDimAmount(0f)
         window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         onDispose {
-            previous?.let { window.setDimAmount(it) }
+            if (restoreDim) previous?.let { window.setDimAmount(it) }
             contrast?.let { window.isNavigationBarContrastEnforced = it }
             lightNavigation?.let { controller.isAppearanceLightNavigationBars = it }
-            if (hadDim) window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            if (restoreDim && hadDim) window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
     }
     SideEffect {

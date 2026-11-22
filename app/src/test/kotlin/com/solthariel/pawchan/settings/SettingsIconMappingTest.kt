@@ -7,7 +7,7 @@ import org.junit.Test
 class SettingsIconMappingTest {
     @Test fun networkAndAutohideUseTheRequestedSymbols() {
         assertEquals(UiIconKind.PUBLIC, SettingsSection.NETWORK.icon)
-        assertEquals(UiIconKind.CLEANING, SettingsSection.AUTOHIDE.icon)
+        assertEquals(UiIconKind.FILTER, SettingsSection.AUTOHIDE.icon)
     }
 
     @Test fun mediaKeepsItsPreviousImageIcon() {

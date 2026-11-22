@@ -3,9 +3,11 @@ package com.solthariel.pawchan
 import android.widget.FrameLayout
 import com.solthariel.pawchan.media.video.VideoEngineBackend
 import com.solthariel.pawchan.media.video.VideoEvent
+import com.solthariel.pawchan.media.video.VideoOutputDetails
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import com.solthariel.pawchan.media.video.VideoStage
+import com.solthariel.pawchan.media.video.VideoTimeline
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -49,6 +51,31 @@ class VideoSessionReliabilityTest {
         }
 
     @Test
+    fun retryHardwareAfterAutomaticSoftwareFallbackPreservesPosition() =
+        runTest {
+            val engine = ReliabilityEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, "file:///movie.mp4")
+            try {
+                session.start()
+                testScheduler.runCurrent()
+                engine.listeners.last()(
+                    VideoEvent.PROGRESS,
+                    READY.copy(
+                        timeline = READY.timeline.copy(position = 4200),
+                        output = VideoOutputDetails(hardwareDecoded = false),
+                    ),
+                )
+                session.setSoftware(false)
+                testScheduler.runCurrent()
+                assertEquals(listOf(false, false), engine.software)
+                engine.listeners.last()(VideoEvent.PROGRESS, READY)
+                assertEquals(listOf(4200L), engine.seeks)
+            } finally {
+                session.close()
+            }
+        }
+
+    @Test
     fun retryKeepsTheLatestSeekRequestedWhileLoading() =
         runTest {
             val engine = ReliabilityEngine()
@@ -83,7 +110,7 @@ class VideoSessionReliabilityTest {
                 testScheduler.runCurrent()
                 assertEquals(listOf(false, true), engine.software)
                 engine.listeners.last()(VideoEvent.PLAYING, READY)
-                hardware(VideoEvent.PROGRESS, READY.copy(position = 9999))
+                hardware(VideoEvent.PROGRESS, READY.copy(timeline = READY.timeline.copy(position = 9999)))
                 assertEquals(0L, session.status.value.position)
             } finally {
                 session.close()
@@ -244,4 +271,10 @@ private class ReliabilityEngine : VideoEngineBackend {
     }
 }
 
-private val READY = VideoPlaybackStatus(stage = VideoStage.READY, duration = 10000, seekable = true, playing = true)
+private val READY =
+    VideoPlaybackStatus(
+        stage = VideoStage.READY,
+        timeline = VideoTimeline(duration = 10000),
+        seekable = true,
+        playing = true,
+    )

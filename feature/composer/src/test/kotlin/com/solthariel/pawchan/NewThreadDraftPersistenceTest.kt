@@ -62,4 +62,45 @@ class NewThreadDraftPersistenceTest {
                 Dispatchers.resetMain()
             }
         }
+
+    @Test fun failedRestoreBlocksEditingAndPreservesNewThreadDraft() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val disk = TestComposerDraftRepository()
+                val board = defaultBoardAddress()
+                val key = ComposerDraftKey(board)
+                disk.saved[key] = ComposerDraftState(comment = "saved").toStoredDraft()
+                disk.failReads = true
+                val storage = ComposerDraftCoordinator(this, disk, { testScheduler.currentTime }, dispatcher)
+                val model =
+                    NewThreadViewModel(
+                        board,
+                        FakePostingRepository(),
+                        drafts = storage,
+                        autoOpen = false,
+                        preparationDispatcher = Dispatchers.Unconfined,
+                    )
+                model.open()
+                advanceUntilIdle()
+                model.updateDraft(
+                    model.state.value.draft
+                        .copy(comment = "replacement"),
+                )
+                model.clearAll()
+                advanceUntilIdle()
+                assertEquals("saved", disk.saved[key]?.text?.comment)
+                var closed = false
+                model.close { closed = true }
+                advanceUntilIdle()
+                assertEquals(true, closed)
+                disk.failReads = false
+                model.open()
+                advanceUntilIdle()
+                assertEquals("saved", model.state.value.comment)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
 }

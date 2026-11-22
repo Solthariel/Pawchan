@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 fun ImageQualityControl(
     quality: Int,
     enabled: Boolean,
+    connected: Boolean = false,
     onChange: (Int) -> Unit,
 ) {
     var editing by rememberSaveable { mutableStateOf(false) }
@@ -18,13 +19,15 @@ fun ImageQualityControl(
     val presetIndex = presets.indexOf(quality)
     val manualQuality = if (presetIndex < 0) quality else QUALITY_MAX
     UiOptionRow("Качество") {
-        UiChoiceSegments(
-            options = presets.map { "$it%" } + "$manualQuality%",
-            selected = if (presetIndex < 0) presets.size else presetIndex,
-            enabled = enabled,
-            lastOptionDescription = "Ввести качество JPEG",
-        ) { index ->
+        val options = presets.map { "$it%" } + "$manualQuality%"
+        val selected = if (presetIndex < 0) presets.size else presetIndex
+        val select: (Int) -> Unit = { index ->
             if (index == presets.size) editing = true else onChange(presets[index])
+        }
+        if (connected) {
+            UiConnectedChoices(options, selected, enabled, "Ввести качество JPEG", select)
+        } else {
+            UiChoiceSegments(options, selected, enabled, "Ввести качество JPEG", onSelect = select)
         }
     }
     if (editing) {

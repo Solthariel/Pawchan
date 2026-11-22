@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +28,15 @@ internal fun ChangelogList(
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        releases.forEach { release ->
+        releases.forEachIndexed { index, release ->
+            if (index > 0) {
+                item(key = "divider-${release.code}", contentType = "divider") {
+                    HorizontalDivider(
+                        Modifier.testTag("changelog-divider-${release.code}"),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                }
+            }
             item(key = "version-${release.code}", contentType = "version") {
                 ChangelogReleaseHeading(release)
             }

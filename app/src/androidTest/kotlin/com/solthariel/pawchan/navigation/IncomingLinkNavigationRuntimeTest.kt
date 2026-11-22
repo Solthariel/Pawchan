@@ -1,12 +1,13 @@
 package com.solthariel.pawchan.navigation
 
+import android.net.Uri
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.solthariel.pawchan.domain.model.BoardPost
 import com.solthariel.pawchan.domain.model.PostAddress
 import com.solthariel.pawchan.domain.model.PostContent
@@ -32,6 +33,16 @@ class IncomingLinkNavigationRuntimeTest {
     @get:Rule val compose = createComposeRule()
     private lateinit var controller: NavHostController
     private lateinit var scope: CoroutineScope
+
+    @Test fun graphResolvesThreadDeepLinkWithArguments() {
+        showNavigation()
+        compose.runOnIdle {
+            controller.navigate(Uri.parse("pawchan://thread/dvach/b/123"))
+            assertEquals(defaultThreadAddress(123L), controller.currentBackStackEntry?.arguments?.toThreadAddress())
+            assertTrue(controller.popBackStack())
+            assertEquals(AppRoute.CATALOG, controller.currentBackStackEntry?.destination?.route)
+        }
+    }
 
     @Test fun aNewThreadLinkPreservesBackNavigation() {
         showNavigation()
@@ -128,10 +139,14 @@ class IncomingLinkNavigationRuntimeTest {
     private fun showNavigation() {
         compose.setContent {
             scope = rememberCoroutineScope()
-            controller = rememberNavController()
-            NavHost(controller, startDestination = AppRoute.catalog(defaultBoardAddress())) {
-                composable(AppRoute.CATALOG, arguments = boardArguments()) { Text("Каталог") }
-                composable(AppRoute.THREAD, arguments = threadArguments()) { Text("Тред") }
+            controller = rememberNavController(remember { InstantNavigator() })
+            AppAnimatedNavHost(controller, startRoute = AppRoute.catalog(defaultBoardAddress())) {
+                appComposable(AppRoute.CATALOG, arguments = boardArguments()) { Text("Каталог") }
+                appComposable(
+                    AppRoute.THREAD,
+                    arguments = threadArguments(),
+                    deepLinks = listOf(navDeepLink { uriPattern = AppRoute.THREAD_DEEP_LINK }),
+                ) { Text("Тред") }
             }
         }
         compose.waitForIdle()

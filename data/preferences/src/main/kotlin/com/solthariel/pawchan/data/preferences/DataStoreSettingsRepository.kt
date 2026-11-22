@@ -14,7 +14,6 @@ import com.solthariel.pawchan.data.maintenance.MaintenanceGate
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
@@ -48,6 +47,7 @@ class DataStoreSettingsRepository private constructor(
     AutoCloseable {
     val usage: com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository = UsageStatisticsStore(dataStore)
 
+    val proxyPreferences = ProxyPreferencesStore(dataStore)
     val notificationPrompt = NotificationPromptStore(dataStore)
     val portable: PortableSettings =
         DataStorePortableSettings(dataStore) {
@@ -60,7 +60,7 @@ class DataStoreSettingsRepository private constructor(
     private val themeOverride = MutableStateFlow<ThemePreference?>(null)
     private val homeBoardOverride = MutableStateFlow<BoardAddress?>(null)
     private val homeBoardWritten = MutableStateFlow(false)
-    private val favoriteBoardsOverride = MutableStateFlow<Set<BoardId>?>(null)
+    private val favoriteBoardsOverride = MutableStateFlow<Set<BoardAddress>?>(null)
 
     private val colorStore = ThemeColorsStore(dataStore)
     override val themeColors: Flow<ThemeColors> = colorStore.colors
@@ -86,9 +86,9 @@ class DataStoreSettingsRepository private constructor(
         return outcome
     }
 
-    override val favoriteBoards: Flow<Set<BoardId>> =
+    override val favoriteBoards: Flow<Set<BoardAddress>> =
         combine(dataStore.safeData(), favoriteBoardsOverride) { preferences, override ->
-            override ?: parseFavoriteBoards(preferences.favoriteBoardValues())
+            override ?: preferences.favoriteAddresses()
         }
 
     override val expandedBoardCategories: Flow<Set<String>> =
@@ -114,30 +114,16 @@ class DataStoreSettingsRepository private constructor(
     }
 
     override suspend fun setFavoriteBoard(
-        board: BoardId,
+        board: BoardAddress,
         favorite: Boolean,
     ): DomainOutcome<Unit> {
-        var updatedBoards = emptySet<String>()
+        var updatedBoards = emptySet<BoardAddress>()
         val outcome =
             editPreferences { preferences ->
-                val boards = preferences.favoriteBoardValues()
-                updatedBoards =
-                    if (favorite) {
-                        boards + board.value
-                    } else {
-                        boards - board.value
-                    }
-                if (updatedBoards.isEmpty()) {
-                    preferences.remove(FAVORITE_BOARDS_KEY)
-                } else {
-                    preferences[FAVORITE_BOARDS_KEY] =
-                        updatedBoards.sorted().joinToString(FAVORITE_BOARD_SEPARATOR)
-                }
-                preferences.remove(LEGACY_FAVORITE_BOARDS_KEY)
+                preferences.writeFavoriteAddress(board, favorite)
+                updatedBoards = preferences.favoriteAddresses()
             }
-        if (outcome is DomainOutcome.Success) {
-            favoriteBoardsOverride.value = parseFavoriteBoards(updatedBoards)
-        }
+        if (outcome is DomainOutcome.Success) favoriteBoardsOverride.value = updatedBoards
         return outcome
     }
 
@@ -172,7 +158,7 @@ class DataStoreSettingsRepository private constructor(
             val dataStore =
                 PreferenceDataStoreFactory.create(
                     scope = scope,
-                    migrations = listOf(PostAppearanceMigration, RemovedUsageMigration, ContentFilterResetMigration),
+                    migrations = listOf(RemovedUsageMigration, ContentFilterResetMigration),
                 ) {
                     context.applicationContext.preferencesDataStoreFile(DATASTORE_FILE)
                 }
@@ -204,6 +190,42 @@ private fun Preferences.favoriteBoardValues(): Set<String> {
     }
 }
 
+private fun Preferences.favoriteAddresses(): Set<BoardAddress> =
+    parseFavoriteBoards(favoriteBoardValues()).mapTo(linkedSetOf()) { BoardAddress(LEGACY_FAVORITE_SITE, it) } +
+        this[OTHER_FAVORITE_BOARDS_KEY]
+            .orEmpty()
+            .lineSequence()
+            .mapNotNull(::parseHomeBoard)
+            .filter { it.site != LEGACY_FAVORITE_SITE }
+            .toSet()
+
+private fun MutablePreferences.writeFavoriteAddress(
+    board: BoardAddress,
+    favorite: Boolean,
+) {
+    if (board.site == LEGACY_FAVORITE_SITE) {
+        writeFavoriteValues(FAVORITE_BOARDS_KEY, favoriteBoardValues(), board.board.value, favorite)
+        remove(LEGACY_FAVORITE_BOARDS_KEY)
+    } else {
+        val values =
+            this[OTHER_FAVORITE_BOARDS_KEY]
+                .orEmpty()
+                .split(FAVORITE_BOARD_SEPARATOR)
+                .filterTo(linkedSetOf(), String::isNotBlank)
+        writeFavoriteValues(OTHER_FAVORITE_BOARDS_KEY, values, "${board.site.value}/${board.board.value}", favorite)
+    }
+}
+
+private fun MutablePreferences.writeFavoriteValues(
+    key: Preferences.Key<String>,
+    values: Set<String>,
+    value: String,
+    favorite: Boolean,
+) {
+    val updated = if (favorite) values + value else values - value
+    if (updated.isEmpty()) remove(key) else this[key] = updated.sorted().joinToString(FAVORITE_BOARD_SEPARATOR)
+}
+
 private fun Preferences.expandedBoardCategoryValues(): Set<String> {
     val encoded = this[EXPANDED_BOARD_CATEGORIES_KEY] ?: return setOf(FAVORITES_BOARD_CATEGORY_KEY)
     return encoded
@@ -213,6 +235,12 @@ private fun Preferences.expandedBoardCategoryValues(): Set<String> {
 
 private val HOME_BOARD_KEY = stringPreferencesKey("home_board")
 private val THEME_KEY = stringPreferencesKey("theme")
+private val LEGACY_FAVORITE_SITE =
+    requireNotNull(
+        com.solthariel.pawchan.domain.model.SiteId
+            .parse("dvach"),
+    )
+private val OTHER_FAVORITE_BOARDS_KEY = stringPreferencesKey("favorite_boards_other_v1")
 private val FAVORITE_BOARDS_KEY = stringPreferencesKey("favorite_boards_v2")
 private val LEGACY_FAVORITE_BOARDS_KEY = stringSetPreferencesKey("favorite_boards")
 private val EXPANDED_BOARD_CATEGORIES_KEY = stringPreferencesKey("expanded_board_categories")

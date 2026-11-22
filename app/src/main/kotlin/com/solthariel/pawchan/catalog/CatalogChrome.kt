@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.domain.model.BoardAddress
+import com.solthariel.pawchan.navigation.LocalSelectedForum
 
 @Composable
 internal fun CatalogToolbar(
@@ -71,7 +72,9 @@ private fun CatalogToolbarHeader(
     val search = rememberCatalogSearchState(input.searchQuery, onSearchQueryChange)
     val lookup = menu.boardLookup
     if (lookup?.visible == true) {
-        CatalogBoardLookupToolbar(lookup)
+        val selectedSite = LocalSelectedForum.current?.value ?: input.board.site.value
+        val supportsTags = selectedSite == input.board.site.value && menu.capabilities.tags
+        CatalogBoardLookupToolbar(lookup, if (supportsTags) "Введите доску или тег…" else "Введите доску…")
         return
     }
     val searchVisible = search.visible
@@ -86,6 +89,7 @@ private fun CatalogToolbarHeader(
                         speed = content?.boardSpeed,
                         searchVisible = searchVisible,
                         query = input.searchQuery,
+                        speedSupported = menu.capabilities.boardSpeed,
                     ),
                 refreshing = input.state is CatalogUiState.Loading || content?.isRefreshing == true,
                 menu = CatalogMenuUi(menuVisible, { menuVisible = it }),

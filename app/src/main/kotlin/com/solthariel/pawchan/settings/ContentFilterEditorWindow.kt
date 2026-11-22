@@ -19,18 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 @Composable
 internal fun FilterEditorWindow(
-    draft: ContentFilterDraft,
     onClose: () -> Unit,
     onDelete: (() -> Unit)?,
     confirm: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
     Dialog(onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        FilterEditorViewport(onClose) { FilterEditorBody(draft, onClose, onDelete, confirm, content) }
+        FilterEditorScreen(onClose, onDelete, confirm, content)
     }
 }
 

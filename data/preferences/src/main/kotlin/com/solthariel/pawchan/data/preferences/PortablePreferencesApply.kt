@@ -13,7 +13,14 @@ internal fun copyPortableTo(
     writePortableValues(merged, parsed)
     target.write(merged.toAppSettings())
     target.writeThemeColors(merged.readThemeColors())
-    val global = listOf("theme", "home_board", "favorite_boards_v2", "expanded_board_categories")
+    val global =
+        listOf(
+            "theme",
+            "home_board",
+            "favorite_boards_v2",
+            "favorite_boards_other_v1",
+            "expanded_board_categories",
+        )
     global.forEach { name ->
         val key = stringPreferencesKey(name)
         parsed[key]?.let { value ->

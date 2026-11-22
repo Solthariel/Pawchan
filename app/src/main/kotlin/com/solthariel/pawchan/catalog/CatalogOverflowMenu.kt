@@ -57,9 +57,30 @@ private fun BoardMenuItems(
 ) {
     val prefs = menu.state.preferences
     CatalogHiddenThreadItems(menu.hiddenThreads, onClose)
-    BoardMenuItem(R.string.board_archive, onClose, menu.navigation.onArchive, icon = UiIconKind.ARCHIVE)
-    BoardMenuItem(R.string.new_thread_short, onClose, menu.navigation.onNewThread, icon = UiIconKind.WRITE)
-    BoardMenuItem(R.string.board_information, onClose, menu.navigation.onInformation, icon = UiIconKind.INFO)
+    BoardMenuItem(
+        R.string.board_archive,
+        onClose,
+        menu.navigation.onArchive,
+        enabled = menu.capabilities.boardArchive,
+        icon = UiIconKind.ARCHIVE,
+    )
+    menu.navigation.onArhivach?.let { open ->
+        BoardMenuItem(R.string.arhivach_menu, onClose, open, icon = UiIconKind.ARCHIVE)
+    }
+    BoardMenuItem(
+        R.string.new_thread_short,
+        onClose,
+        menu.navigation.onNewThread,
+        enabled = menu.capabilities.newThreads,
+        icon = UiIconKind.WRITE,
+    )
+    BoardMenuItem(
+        R.string.board_information,
+        onClose,
+        menu.navigation.onInformation,
+        enabled = menu.capabilities.boardInformation,
+        icon = UiIconKind.INFO,
+    )
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE),
         text = { Text(stringResource(R.string.board_appearance)) },

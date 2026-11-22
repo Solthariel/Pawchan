@@ -21,10 +21,9 @@ class DialogLayoutRuntimeTest {
 
     @Test fun singleFlatPostHasNoDividerAndTwoPostsHaveOnlyOne() {
         val count = mutableStateOf(1)
-        val bubbles = mutableStateOf(false)
         compose.setContent {
             MaterialTheme {
-                val preferences = PostDisplayPreferences(bubblePosts = bubbles.value)
+                val preferences = PostDisplayPreferences()
                 CompositionLocalProvider(LocalPostDisplayPreferences provides preferences) {
                     Column {
                         repeat(count.value) { index ->
@@ -38,8 +37,6 @@ class DialogLayoutRuntimeTest {
         compose.onAllNodesWithTag("post-list-divider").assertCountEquals(0)
         compose.runOnIdle { count.value = 2 }
         compose.onAllNodesWithTag("post-list-divider").assertCountEquals(1)
-        compose.runOnIdle { bubbles.value = true }
-        compose.onAllNodesWithTag("post-list-divider").assertCountEquals(0)
     }
 
     @Test fun menuAndAlertUseTheSameWindowWidthAndMinimumTouchTargets() {

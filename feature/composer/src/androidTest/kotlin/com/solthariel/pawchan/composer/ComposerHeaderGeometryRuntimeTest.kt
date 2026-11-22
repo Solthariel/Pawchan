@@ -19,34 +19,37 @@ import org.junit.Test
 class ComposerHeaderGeometryRuntimeTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun attachmentTargetEndsAtTheSameInsetAsTheSharedToolbar() {
-        var attaches = 0
+    @Test fun authorTargetOccupiesTheFreedRightEdgeWithoutAGap() {
+        var changes = 0
         var label = ""
+        var attachLabel = ""
         compose.setContent {
             MaterialTheme {
-                label = stringResource(R.string.attachment_add)
+                label = stringResource(R.string.composer_thread_author)
+                attachLabel = stringResource(R.string.attachment_add)
                 Box(Modifier.width(320.dp)) {
                     ComposerScreenHeader(
                         "Новое сообщение в /b/",
                         ComposerScreenState(
                             ComposerDraftState(),
-                            null,
+                            com.solthariel.pawchan.domain.posting
+                                .PostingRules(),
                             ComposerCaptchaState(),
                             ComposerScreenStatus(ComposerProgressState(), ComposerFailureState(), false),
                         ),
                         true,
                         {},
-                        { attaches++ },
-                        {},
+                        { changes++ },
                     )
                 }
             }
         }
+        compose.onNodeWithContentDescription(attachLabel).assertDoesNotExist()
         val target = compose.onNodeWithContentDescription(label)
         target.assertWidthIsEqualTo(48.dp).assertHeightIsEqualTo(48.dp)
         val bounds = target.fetchSemanticsNode().boundsInRoot
         assertEquals(316f * compose.density.density, bounds.right, 1f)
         target.performClick()
-        compose.runOnIdle { assertEquals(1, attaches) }
+        compose.runOnIdle { assertEquals(1, changes) }
     }
 }

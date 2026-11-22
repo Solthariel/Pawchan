@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.media.video
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -7,12 +8,14 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Rational
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.domain.model.MediaDimensions
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,24 +128,33 @@ internal fun Context.canUsePip(): Boolean = packageManager.hasSystemFeature(Pack
 
 internal fun Context.launchVideoPip(request: VideoPipRequest) {
     VideoPipHandoff.pending = request
-    startActivity(
-        Intent(this, VideoPipActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION),
-    )
+    try {
+        startActivity(
+            Intent(this, VideoPipActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION),
+        )
+    } catch (_: ActivityNotFoundException) {
+        request.restoreAfterLaunchFailure(this)
+    } catch (_: SecurityException) {
+        request.restoreAfterLaunchFailure(this)
+    } catch (_: IllegalStateException) {
+        request.restoreAfterLaunchFailure(this)
+    }
 }
 
-/** Android принимает пропорции окна PiP только в диапазоне 1:2.39 … 2.39:1. */
-internal fun MediaDimensions?.pipAspect(): Rational {
-    val width = this?.width ?: DEFAULT_WIDTH
-    val height = this?.height ?: DEFAULT_HEIGHT
-    val ratio = (width.toFloat() / height).coerceIn(1f / MAX_ASPECT, MAX_ASPECT)
+private fun VideoPipRequest.restoreAfterLaunchFailure(context: Context) {
+    if (VideoPipHandoff.pending === this) VideoPipHandoff.pending = null
+    session.inPip = false
+    Toast.makeText(context, R.string.video_pip_failed, Toast.LENGTH_SHORT).show()
+}
+
+/** Ratios are checked and clamped before constructing Android's PiP Rational. */
+internal fun MediaDimensions?.pipAspect(actual: Double? = null): Rational {
+    val ratio = videoPipAspect(actual, this?.width, this?.height)
     return Rational((ratio * ASPECT_SCALE).toInt(), ASPECT_SCALE)
 }
 
-private const val DEFAULT_WIDTH = 16
-private const val DEFAULT_HEIGHT = 9
-private const val MAX_ASPECT = 2.35f
-private const val ASPECT_SCALE = 1000
+private const val ASPECT_SCALE = 10_000
 private const val RETURN_EXPIRY_MS = 30_000L
 
 /** The permission is checked both while binding UI and again when the user clicks. */

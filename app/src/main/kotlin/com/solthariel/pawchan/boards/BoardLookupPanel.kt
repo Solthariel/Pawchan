@@ -13,10 +13,19 @@ internal fun BoardLookupPanel(
     source: BoardLookupSource,
     select: (BoardAddress) -> Unit,
     retry: () -> Unit,
+    tags: List<String> = emptyList(),
+    selectTag: (String) -> Unit = {},
 ) {
     if (content.query.isNotBlank()) {
-        BoardLookupSuggestions(content.suggestions, source, select, retry)
-    } else {
+        BoardLookupSuggestions(
+            content,
+            source,
+            select,
+            retry,
+            tags.filter { it.contains(content.query.trim().trim('/'), ignoreCase = true) },
+            selectTag,
+        )
+    } else if (source.quickBoardsReady) {
         BoardLookupQuickBoards(content, select)
     }
 }
@@ -31,9 +40,16 @@ private fun BoardLookupQuickBoards(
     val recentRows = (content.recent.size + columns - 1) / columns
     val rows = boardLookupRowBudget(favoriteRows, recentRows)
     Column(Modifier.fillMaxWidth()) {
-        BoardLookupGrid(content.favorites, columns, rows.favorites, select, "board-lookup-favorites")
+        BoardLookupGrid(
+            content.favorites,
+            columns,
+            rows.favorites,
+            select,
+            "board-lookup-favorites",
+            content.interactive,
+        )
         if (rows.favorites > 0 && rows.recent > 0) HorizontalDivider()
-        BoardLookupGrid(content.recent, columns, rows.recent, select, "board-lookup-recent")
+        BoardLookupGrid(content.recent, columns, rows.recent, select, "board-lookup-recent", content.interactive)
         if (rows.favorites + rows.recent == 0) BoardLookupMessage("Введите код или название доски")
     }
 }

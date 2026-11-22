@@ -24,11 +24,13 @@ internal fun rememberCatalogMenu(
         CatalogMenuState(preferences, information),
         BoardPreferenceActions(model::toggleFavorite, model::makeHome, model::setTheme),
         BoardMenuNavigation(
-            { navigation.onArchive(board) },
+            { navigation.archives.openArchive(board) },
             { navigation.onNewThreadClick(board) },
             model::showInformation,
+            navigation.archives.openBrowser.takeIf { repositories.capabilities(board.site).archiveBrowser },
         ),
         model::dismiss,
         CatalogHiddenThreadsMenu(),
+        capabilities = repositories.capabilities(board.site),
     )
 }

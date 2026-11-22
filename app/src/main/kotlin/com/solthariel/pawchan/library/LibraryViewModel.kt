@@ -32,7 +32,8 @@ internal class LibraryViewModel(
         loadJob?.cancel()
         loadJob =
             viewModelScope.launch {
-                mutableState.value = repository.loadEntries().toLibraryUiState()
+                val result = repository.loadEntries().toLibraryUiState()
+                mutableState.value = libraryRefreshState(mutableState.value, result)
             }
     }
 
@@ -70,9 +71,10 @@ internal class LibraryViewModel(
         address: ThreadAddress,
         subject: String?,
         favorite: Boolean,
-    ) {
-        repository.setFavorite(address, subject, favorite, nowMillis())
+    ): DomainOutcome<Unit> {
+        val result = repository.setFavorite(address, subject, favorite, nowMillis())
         refresh()
+        return result
     }
 
     companion object {

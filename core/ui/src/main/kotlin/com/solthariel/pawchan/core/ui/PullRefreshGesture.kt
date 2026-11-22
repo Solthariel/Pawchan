@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlin.math.abs
+import kotlin.math.min
 
 internal enum class PullRefreshSide { TOP, BOTTOM }
 
@@ -39,8 +40,9 @@ internal class PullRefreshGesture {
     fun updateHeight(
         height: Int,
         tablet: Boolean,
+        density: Float,
     ) {
-        threshold = pullRefreshThreshold(height.toFloat(), tablet)
+        threshold = pullRefreshThreshold(height.toFloat(), tablet, density)
     }
 
     fun consumeClosing(delta: Float): Float {
@@ -98,8 +100,12 @@ internal class PullRefreshGesture {
 internal fun pullRefreshThreshold(
     height: Float,
     tablet: Boolean,
-): Float = (height / if (tablet) TABLET_PULL_GAIN else PHONE_PULL_GAIN).coerceAtLeast(1f)
+    density: Float,
+): Float =
+    min(height / if (tablet) TABLET_PULL_GAIN else PHONE_PULL_GAIN, MAX_PULL_THRESHOLD_DP * density)
+        .coerceAtLeast(1f)
 
+private const val MAX_PULL_THRESHOLD_DP = 96f
 private const val MAX_PULL_STRAIN = 2f
 private const val PHONE_PULL_GAIN = 4f
 private const val TABLET_PULL_GAIN = 6f

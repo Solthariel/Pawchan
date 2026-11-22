@@ -23,6 +23,7 @@ import com.solthariel.pawchan.composer.ComposerProgressState
 import com.solthariel.pawchan.composer.ComposerScreenStatus
 import com.solthariel.pawchan.composer.ComposerStatusLine
 import com.solthariel.pawchan.composer.ReplyError
+import com.solthariel.pawchan.core.ui.AppNoticeHost
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -54,13 +55,15 @@ class ComposerInlineStatusUiTest {
         val reason = ("Файл слишком большой: " + "подробная причина ".repeat(30)).trimEnd()
         compose.setContent {
             MaterialTheme {
-                Box(Modifier.width(240.dp).verticalScroll(rememberScrollState())) {
-                    ComposerStatusLine(
-                        ComposerCaptchaState(),
-                        ComposerScreenStatus(ComposerProgressState(), failure.value, false),
-                        { reloaded++ },
-                        loader,
-                    )
+                AppNoticeHost {
+                    Box(Modifier.width(240.dp).verticalScroll(rememberScrollState())) {
+                        ComposerStatusLine(
+                            ComposerCaptchaState(),
+                            ComposerScreenStatus(ComposerProgressState(), failure.value, false),
+                            { reloaded++ },
+                            loader,
+                        )
+                    }
                 }
             }
         }
@@ -75,7 +78,7 @@ class ComposerInlineStatusUiTest {
         status.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         assertTrue(layouts.single().lineCount > 1)
         for (line in 0 until layouts.single().lineCount) assertFalse(layouts.single().isLineEllipsized(line))
-        assertFalse(status.fetchSemanticsNode().config.contains(SemanticsActions.OnClick))
+        assertTrue(status.fetchSemanticsNode().config.contains(SemanticsActions.OnClick))
         reload.assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, reloaded) }
         assertEquals(before.top, reload.fetchSemanticsNode().boundsInRoot.top)
@@ -94,12 +97,14 @@ class ComposerInlineStatusUiTest {
         val progress = mutableStateOf(ComposerProgressState())
         compose.setContent {
             MaterialTheme {
-                ComposerStatusLine(
-                    ComposerCaptchaState(),
-                    ComposerScreenStatus(progress.value, ComposerFailureState(ReplyError.NETWORK), false),
-                    { reloaded++ },
-                    loader,
-                )
+                AppNoticeHost {
+                    ComposerStatusLine(
+                        ComposerCaptchaState(),
+                        ComposerScreenStatus(progress.value, ComposerFailureState(ReplyError.NETWORK), false),
+                        { reloaded++ },
+                        loader,
+                    )
+                }
             }
         }
         compose.onNodeWithText("Нет соединения с 2ch").assertIsDisplayed()
@@ -111,16 +116,48 @@ class ComposerInlineStatusUiTest {
         }
     }
 
-    @Test fun acceptedStepsReplaceIdleLabelButDoNotHideAnError() {
-        val failure = mutableStateOf(ComposerFailureState())
+    @Test fun checkingKeepsAcceptedStepsAndOnlySlowChecksShowAnIndicator() {
+        val progress = mutableStateOf(ComposerProgressState())
         compose.setContent {
             MaterialTheme {
                 ComposerStatusLine(
                     ComposerCaptchaState(selectedImages = listOf(byteArrayOf(1))),
-                    ComposerScreenStatus(ComposerProgressState(), failure.value, false),
+                    ComposerScreenStatus(progress.value, ComposerFailureState(), false),
                     {},
                     loader,
                 )
+            }
+        }
+        val accepted = compose.onNodeWithContentDescription("Принято значков: 1")
+        val before = accepted.fetchSemanticsNode().boundsInRoot
+        compose.mainClock.autoAdvance = false
+        compose.runOnIdle { progress.value = ComposerProgressState(captchaSelecting = true) }
+        compose.mainClock.advanceTimeBy(100)
+        accepted.assertExists()
+        compose.onNodeWithText("Проверка капчи…").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Проверка капчи").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(600)
+        compose.onNodeWithContentDescription("Проверка капчи").assertExists()
+        assertEquals(before, accepted.fetchSemanticsNode().boundsInRoot)
+        compose.runOnIdle { progress.value = ComposerProgressState() }
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithContentDescription("Проверка капчи").assertDoesNotExist()
+        accepted.assertExists()
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test fun acceptedStepsReplaceIdleLabelButDoNotHideAnError() {
+        val failure = mutableStateOf(ComposerFailureState())
+        compose.setContent {
+            MaterialTheme {
+                AppNoticeHost {
+                    ComposerStatusLine(
+                        ComposerCaptchaState(selectedImages = listOf(byteArrayOf(1))),
+                        ComposerScreenStatus(ComposerProgressState(), failure.value, false),
+                        {},
+                        loader,
+                    )
+                }
             }
         }
         compose.onNodeWithContentDescription("Принято значков: 1").assertExists()

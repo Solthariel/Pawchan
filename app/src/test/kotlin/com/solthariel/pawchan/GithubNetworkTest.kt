@@ -2,6 +2,7 @@ package com.solthariel.pawchan
 
 import com.solthariel.pawchan.infrastructure.GithubNetwork
 import okhttp3.CookieJar
+import okhttp3.Dns
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,6 +33,6 @@ class GithubNetworkTest {
         assertEquals(emptyList<Any>(), client.networkInterceptors)
         assertEquals(null, client.cache)
         assertFalse(client.followSslRedirects)
-        assertSame(github.dns, client.dns)
+        assertSame(Dns.SYSTEM, client.dns)
     }
 }

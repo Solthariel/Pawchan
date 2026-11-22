@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
@@ -63,13 +64,16 @@ fun PostAttachment(
     actions: PostAttachmentActions,
     modifier: Modifier,
 ) {
+    val origin = rememberMediaThumbnailOrigin(attachment, thumbnailLoading, 8.dp)
     Box(
         modifier
             .aspectRatio(1f)
+            .onGloballyPositioned(origin::place)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .combinedClickable(
                 onClick = {
+                    origin.capture()
                     if (attachment.viewer == AttachmentViewer.NONE) {
                         actions.download(attachment)
                     } else {

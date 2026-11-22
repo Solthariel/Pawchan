@@ -40,4 +40,4 @@ fun UiToolbarSearchLayout(
     }
 }
 
-private const val SEARCH_ALPHA = 0.58f
+private const val SEARCH_ALPHA = 0.90f

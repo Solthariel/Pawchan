@@ -8,13 +8,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.solthariel.pawchan.PawchanApplication
 import com.solthariel.pawchan.copyfiles.CopyDocument
 import com.solthariel.pawchan.copyfiles.CopyFileDialogs
 import com.solthariel.pawchan.copyfiles.CopyFileKind
-import com.solthariel.pawchan.copyfiles.SavedCopyFileDialog
 import com.solthariel.pawchan.copyfiles.openCopyFile
 import com.solthariel.pawchan.copyfiles.rememberCopyFiles
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.navigation.AppRoute
 
 @Composable
 internal fun archiveFileExport(
@@ -23,13 +25,15 @@ internal fun archiveFileExport(
 ): () -> Unit {
     val context = LocalContext.current
     val files = rememberCopyFiles(CopyFileKind.THREAD)
+    val registry = (context.applicationContext as PawchanApplication).zipRegistry
+    val route = AppRoute.thread(address)
     var savedExternally by remember { mutableStateOf<CopyDocument?>(null) }
     val name = "thread-${address.board.board.value}-${address.thread.value}-${System.currentTimeMillis()}.zip"
     val external =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
             if (uri != null) {
                 controller.export(address, onSaved = {
-                    savedExternally =
+                    val document =
                         CopyDocument(
                             uri.toString(),
                             name,
@@ -37,6 +41,8 @@ internal fun archiveFileExport(
                             System.currentTimeMillis(),
                             -1,
                         )
+                    savedExternally = document
+                    registry.record(route, document, persistGrant = true)
                 }) { context.contentResolver.openOutputStream(uri) }
             }
         }
@@ -48,13 +54,17 @@ internal fun archiveFileExport(
             }
         }
     CopyFileDialogs(files, { openCopyFile(context, it, false) }, { open.launch(arrayOf("application/zip")) }, other)
-    savedExternally?.let { SavedCopyFileDialog(it, { savedExternally = null }, null) }
+    savedExternally?.let {
+        TransientNotice("ZIP сохранён: ${it.name}", eventKey = it, onDismiss = { savedExternally = null })
+    }
     return {
         if (files.ready) {
             if (files.tree == null) {
                 other()
             } else {
-                files.save(name) { controller.writeZip(address, it) }
+                files.save(name, onSaved = { registry.record(route, it, persistGrant = false) }) {
+                    controller.writeZip(address, it)
+                }
             }
         }
     }

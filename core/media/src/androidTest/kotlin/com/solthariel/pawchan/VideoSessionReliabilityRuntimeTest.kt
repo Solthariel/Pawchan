@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.platform.app.InstrumentationRegistry
-import com.solthariel.pawchan.media.video.FfmpegVideoEngine
+import com.solthariel.pawchan.media.video.MpvVideoEngine
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoStage
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +47,7 @@ class VideoSessionReliabilityRuntimeTest {
                 )
             }
             compose.runOnIdle {
-                val engine = FfmpegVideoEngine(context, OkHttpClient(), context.cacheDir)
+                val engine = MpvVideoEngine(context, OkHttpClient(), context.cacheDir)
                 val player = VideoPlaybackSession(engine, scope, file.toURI().toString())
                 session = player
                 engine.attach(checkNotNull(host))

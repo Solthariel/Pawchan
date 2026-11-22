@@ -37,6 +37,7 @@ class ThreadsExpansionRuntimeTest {
                     ThreadsScreenInput(emptyList(), rows, emptyList(), null, emptySet(), 0, false),
                     actions(),
                     AppBottomActions({}, {}, {}, {}),
+                    onBack = {},
                 )
             }
         }

@@ -17,7 +17,9 @@ class DvachCatalogApi private constructor(
         val result = executeDomainRequest(callFactory, CatalogRequestFactory.create(board.board), decoder::decode)
         val known = directory.knownBoardSpeed(board)
         return if (result is DomainOutcome.Success && !result.value.boardSpeedAvailable && known != null) {
-            DomainOutcome.Success(CatalogSnapshot(result.value.board, result.value.threads, known, true))
+            DomainOutcome.Success(
+                CatalogSnapshot(result.value.board, result.value.threads, known, true, result.value.threadTags),
+            )
         } else {
             result
         }

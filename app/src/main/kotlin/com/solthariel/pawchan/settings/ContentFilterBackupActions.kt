@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
@@ -37,13 +38,7 @@ internal fun rememberContentFilterBackup(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null && restore != null) state.load(uri)
         }
-    state.message?.let { text ->
-        AlertDialog(
-            onDismissRequest = { state.message = null },
-            text = { Text(text) },
-            confirmButton = { TextButton(onClick = { state.message = null }) { Text("Закрыть") } },
-        )
-    }
+    TransientNotice(state.message, onDismiss = { state.message = null })
     return ContentFilterBackupActions(
         save = { launchBackupPicker(state) { save.launch("Pawchan_autohide.txt") } },
         load = {

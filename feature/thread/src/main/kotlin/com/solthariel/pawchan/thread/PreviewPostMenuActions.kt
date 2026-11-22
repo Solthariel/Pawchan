@@ -15,6 +15,7 @@ internal fun executePreviewPostMenu(
     val address = content.address ?: return
     when (command) {
         PostMenuCommand.REPLY, PostMenuCommand.QUOTE -> {
+            if (content.closed || !actions.canReply(address)) return
             actions.prepareReply(
                 address,
                 if (command ==

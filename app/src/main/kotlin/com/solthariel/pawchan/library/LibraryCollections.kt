@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.library
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,7 +21,6 @@ import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
-import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.navigation.saveableKey
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceBinding
@@ -48,6 +46,7 @@ internal fun rememberLibraryData(): LibraryData {
 /** Что показывает список: поиск и просмотр файлов ОП-поста. */
 internal data class LibraryView(
     val query: String = "",
+    val zipRoutes: Set<String> = emptySet(),
     val openMedia: (List<MediaAttachmentUi>) -> Unit = {},
 )
 
@@ -57,7 +56,6 @@ internal fun SavedCopiesList(
     view: LibraryView,
 ) {
     val binding = data.binding ?: return
-    val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
     val query = view.query.trim()
     val copies = data.copies.filter { it.card.matches(query) }
     val list = rememberLazyListState()
@@ -70,10 +68,10 @@ internal fun SavedCopiesList(
             contentPadding =
                 PaddingValues(
                     start = 8.dp,
+                    top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
                     end = FAST_SCROLL_CONTENT_INSET,
-                    bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp,
+                    bottom = com.solthariel.pawchan.core.ui.LocalBottomOverlayInset.current + 8.dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(if (bubble) 8.dp else 0.dp),
         ) {
             if (copies.isEmpty()) item(key = "copies-empty") { LibraryEmpty("Сохранённых копий пока нет") }
             itemsIndexed(
@@ -82,7 +80,7 @@ internal fun SavedCopiesList(
                 contentType = { _, _ -> "saved-copy" },
             ) { index, item ->
                 Column {
-                    SavedCopyItem(item, binding, context)
+                    SavedCopyItem(item, binding, context, view.zipRoutes)
                     PostSeparator(index, copies.lastIndex)
                 }
             }

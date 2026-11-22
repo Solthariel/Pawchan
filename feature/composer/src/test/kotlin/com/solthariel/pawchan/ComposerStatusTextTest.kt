@@ -3,9 +3,11 @@ package com.solthariel.pawchan
 import com.solthariel.pawchan.composer.ComposerFailureState
 import com.solthariel.pawchan.composer.ComposerProgressState
 import com.solthariel.pawchan.composer.ReplyError
+import com.solthariel.pawchan.composer.captchaInvalidNotice
 import com.solthariel.pawchan.composer.composerStatusText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -15,7 +17,7 @@ class ComposerStatusTextTest {
         assertEquals("Решите капчу", text())
         assertEquals("Капча решена", composerStatusText(ComposerProgressState(), ComposerFailureState(), true).label)
         assertEquals("Загрузка капчи…", text(ComposerProgressState(captchaLoading = true)))
-        assertEquals("Проверка капчи…", text(ComposerProgressState(captchaSelecting = true)))
+        assertEquals("Решите капчу", text(ComposerProgressState(captchaSelecting = true)))
         assertEquals("Отправка…", text(ComposerProgressState(submitting = true)))
         assertEquals("Сообщение отправлено", text(ComposerProgressState(sent = true)))
     }
@@ -57,6 +59,17 @@ class ComposerStatusTextTest {
                 false,
             ).label,
         )
+    }
+
+    @Test
+    fun onlyCaptchaInvalidNoticeMovesInline() {
+        assertEquals("Капча недействительна", captchaInvalidNotice(ComposerFailureState(ReplyError.CAPTCHA)))
+        assertEquals(
+            "Капча невалидна.",
+            captchaInvalidNotice(ComposerFailureState(ReplyError.REJECTED, "Капча невалидна.")),
+        )
+        assertNull(captchaInvalidNotice(ComposerFailureState(ReplyError.REJECTED, "Тред закрыт")))
+        assertNull(captchaInvalidNotice(ComposerFailureState(ReplyError.NETWORK)))
     }
 
     @Test

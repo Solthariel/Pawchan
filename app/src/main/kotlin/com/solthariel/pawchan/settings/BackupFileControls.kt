@@ -12,6 +12,8 @@ import com.solthariel.pawchan.copyfiles.CopyFileDialogs
 import com.solthariel.pawchan.copyfiles.CopyFileKind
 import com.solthariel.pawchan.copyfiles.SavedCopyFileDialog
 import com.solthariel.pawchan.copyfiles.rememberCopyFiles
+import com.solthariel.pawchan.core.ui.NoticeAction
+import com.solthariel.pawchan.core.ui.TransientNotice
 
 @Composable
 internal fun backupFileControls(actions: ClientBackupActions): () -> Unit {
@@ -36,10 +38,14 @@ internal fun backupFileControls(actions: ClientBackupActions): () -> Unit {
             }
         }
     }
-    if (actions.canRetrySave && actions.message != null) {
-        TextButton(onClick = { save.launch("Pawchan-backup-${System.currentTimeMillis()}.pawbackup") }) {
-            Text("Сохранить в другое место…")
-        }
+    if (actions.canRetrySave) {
+        TransientNotice(
+            actions.message,
+            action =
+                NoticeAction("Сохранить в другое место…") {
+                    save.launch("Pawchan-backup-${System.currentTimeMillis()}.pawbackup")
+                },
+        )
     }
     CopyFileDialogs(files, { actions.read(it.uri.toUri()) }, other)
     actions.saved?.let { document ->

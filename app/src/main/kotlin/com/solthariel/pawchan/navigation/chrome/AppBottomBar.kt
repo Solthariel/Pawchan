@@ -4,12 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +27,7 @@ import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
 import com.solthariel.pawchan.core.ui.R as CoreUiR
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun AppBottomBar(
     actions: AppBottomActions,
@@ -32,10 +36,12 @@ internal fun AppBottomBar(
 ) {
     val surface = MaterialTheme.colorScheme.surface
     val surfaceAlpha = bottomBarSurfaceAlpha(LocalBottomBarTransparency.current)
-    Box(modifier = modifier.fillMaxWidth().navigationBarsPadding()) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        SystemNavigationBackground(surface.copy(alpha = surfaceAlpha))
         Row(
             modifier =
                 Modifier
+                    .navigationBarsPadding()
                     // Reserve the same edge on every screen, including those without a scrollbar.
                     // This keeps all five targets stable and leaves the workspace rail interactive.
                     .padding(end = FAST_SCROLL_BAR_WIDTH)
@@ -90,6 +96,18 @@ internal fun AppBottomBar(
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun BoxScope.SystemNavigationBackground(color: androidx.compose.ui.graphics.Color) {
+    Box(
+        Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .windowInsetsBottomHeight(WindowInsets.navigationBarsIgnoringVisibility)
+            .background(color),
+    )
+}
+
 internal data class AppBottomActions(
     val onBoardsClick: () -> Unit,
     val onCatalogClick: () -> Unit,
@@ -114,7 +132,7 @@ internal fun BoxScope.AppBottomBadge(count: Int) {
             .height(14.dp)
             .widthIn(min = 14.dp)
             .background(MaterialTheme.colorScheme.error, CircleShape)
-            .padding(horizontal = 3.dp),
+            .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -131,4 +149,4 @@ private const val BADGE_LIMIT = 99
 
 internal val APP_BOTTOM_BAR_HEIGHT = 56.dp
 private val BOTTOM_FADE_HEIGHT = 8.dp
-private const val BOTTOM_FADE_FRACTION = 8f / 56f
+internal val BOTTOM_FADE_FRACTION = BOTTOM_FADE_HEIGHT.value / APP_BOTTOM_BAR_HEIGHT.value

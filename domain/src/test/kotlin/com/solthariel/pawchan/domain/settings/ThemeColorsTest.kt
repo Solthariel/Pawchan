@@ -5,8 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ThemeColorsTest {
-    @Test fun newInstallUsesLavenderWithoutBlackOverride() {
-        assertEquals(ThemePalette.LAVENDER, ThemeColors().palette)
+    @Test fun newInstallUsesWallpaperWithoutBlackOverride() {
+        assertEquals(ThemePalette.SYSTEM, ThemeColors().palette)
         assertFalse(ThemeColors().pureBlack)
     }
 

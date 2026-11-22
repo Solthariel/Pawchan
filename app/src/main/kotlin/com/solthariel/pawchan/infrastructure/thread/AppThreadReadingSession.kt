@@ -37,6 +37,22 @@ internal class AppThreadReadingSession(
                 state.marks.readingReturns[address]?.let { ThreadReadingPosition(it.postId, it.offset) }
             }.distinctUntilChanged()
 
+    override fun unreadReplies(address: ThreadAddress): Flow<Set<Long>> =
+        workspace.state
+            .map { state ->
+                state.replies
+                    .filter { it.unread && it.post.address.thread == address }
+                    .map { it.post.address.post.value }
+                    .toSet()
+            }.distinctUntilChanged()
+
+    override fun markVisibleReplies(
+        address: ThreadAddress,
+        postIds: Set<Long>,
+    ) {
+        workspace.markVisibleReplies(address, postIds)
+    }
+
     override fun returned(
         address: ThreadAddress,
         point: ThreadReadingPosition,

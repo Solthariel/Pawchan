@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
 /** Shared alert layout; no empty button strip in immediate-selection dialogs. */
@@ -25,7 +24,10 @@ fun AppAlertDialog(
     properties: DialogProperties = DialogProperties(),
 ) {
     AppDialog(onDismissRequest, properties = properties) {
-        Column(Modifier.padding(AppDialogStyle.contentPadding), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(
+            Modifier.padding(AppDialogStyle.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(UiSpacing.large),
+        ) {
             title?.let { ProvideTextStyle(MaterialTheme.typography.titleLarge, it) }
             text?.let {
                 Box(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {

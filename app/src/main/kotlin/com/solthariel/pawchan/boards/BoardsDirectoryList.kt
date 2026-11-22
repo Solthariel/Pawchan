@@ -20,15 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
-import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
-import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 
 @Composable
 internal fun BoardsDirectoryList(
@@ -38,16 +38,16 @@ internal fun BoardsDirectoryList(
     modifier: Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(modifier = modifier.fillMaxWidth().testTag("boards-directory-list")) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
                     start = BOARD_LIST_START,
-                    top = 0.dp,
-                    end = FAST_SCROLL_CONTENT_INSET,
-                    bottom = APP_BOTTOM_BAR_HEIGHT + BOARDS_BOTTOM_CONTENT_GAP,
+                    top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                    end = BOARD_LIST_END,
+                    bottom = LocalBottomOverlayInset.current + BOARDS_BOTTOM_CONTENT_GAP,
                 ),
         ) {
             items(content.rows, key = { it.key }, contentType = { it.contentType }) { row ->
@@ -72,8 +72,8 @@ private fun BoardListSlot(
     val leadingGap =
         when (row) {
             is BoardListItem.Header -> if (row.leadingGap) BOARD_SECTION_GAP else 0.dp
-            is BoardListItem.Board -> if (row.position.first) BOARD_GROUP_GAP else 0.dp
-            BoardListItem.Empty -> 0.dp
+            is BoardListItem.GridRow -> BOARD_GRID_ROW_GAP
+            is BoardListItem.Empty -> 0.dp
         }
     Box(modifier = Modifier.fillMaxWidth().height(dimensions.height(row)).padding(top = leadingGap)) {
         when (row) {
@@ -81,14 +81,17 @@ private fun BoardListSlot(
                 BoardCategoryHeader(row, onExpandedChange)
             }
 
-            is BoardListItem.Board -> {
-                BoardDirectoryRow(row, actions)
+            is BoardListItem.GridRow -> {
+                BoardCardGridRow(row, actions)
             }
 
-            BoardListItem.Empty -> {
+            is BoardListItem.Empty -> {
                 Text(
-                    text = stringResource(R.string.boards_search_empty),
-                    modifier = Modifier.padding(vertical = 24.dp),
+                    text =
+                        stringResource(
+                            if (row.favoritesOnly) R.string.boards_favorites_empty else R.string.boards_search_empty,
+                        ),
+                    modifier = Modifier.padding(start = BOARD_ROW_INSET, top = 24.dp, bottom = 24.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -107,7 +110,7 @@ private fun BoardCategoryHeader(
                 .fillMaxSize()
                 .clip(RoundedCornerShape(14.dp))
                 .clickable(enabled = row.enabled) { onExpandedChange(row.categoryKey, !row.expanded) }
-                .padding(horizontal = BOARD_ROW_INSET, vertical = 6.dp),
+                .padding(start = BOARD_ROW_INSET, end = BOARD_HEADER_END_INSET, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -125,7 +128,7 @@ private fun BoardCategoryHeader(
             fontWeight = FontWeight.SemiBold,
         )
         Box(Modifier.size(20.dp)) {
-            if (row.enabled || row.expanded) UiDisclosureIndicator(row.expanded)
+            if (row.enabled) UiDisclosureIndicator(row.expanded)
         }
     }
 }

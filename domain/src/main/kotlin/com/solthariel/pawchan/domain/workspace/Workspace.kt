@@ -81,18 +81,10 @@ fun WorkspaceState.withRepliesDismissed(
             ),
     )
 
-/** Зашли в тред — все ответы в нём прочитаны, а новые посты отсчитываются от последнего. */
+/** Запоминает границу новых постов, не отмечая ответы прочитанными при входе. */
 fun WorkspaceState.visit(snapshot: ThreadSnapshot): WorkspaceState {
     val last = snapshot.posts.maxOfOrNull { it.address.post.value }
-    val read =
-        copy(
-            replies =
-                replies.map { reply ->
-                    val inThread = reply.post.address.thread == snapshot.address
-                    if (reply.unread && inThread) reply.copy(unread = false) else reply
-                },
-        )
-    return if (last == null) read else read.withSeen(snapshot.address, last)
+    return if (last == null) this else withSeen(snapshot.address, last)
 }
 
 const val SEEN_THREADS_LIMIT = 500

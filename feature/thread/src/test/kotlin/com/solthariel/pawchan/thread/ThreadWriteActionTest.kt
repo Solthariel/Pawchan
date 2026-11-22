@@ -19,6 +19,12 @@ class ThreadWriteActionTest {
         assertEquals(0, calls)
     }
 
+    @Test fun readOnlySourceHasNoWriteActionEvenWhenTheServerThreadIsOpen() {
+        var calls = 0
+        assertNull(threadWriteAction(content(false), { calls++ }, false))
+        assertEquals(0, calls)
+    }
+
     private fun content(closed: Boolean) =
         ThreadUiState.Content(
             42,

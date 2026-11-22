@@ -33,6 +33,7 @@ class ClientPreferencesStoreTest {
                 composer =
                     ComposerPreferences(
                         hiddenFields = setOf(ComposerField.EMAIL, ComposerField.SUBJECT),
+                        defaultSage = true,
                         attachments =
                             AttachmentDefaults(
                                 uniqueHash = true,

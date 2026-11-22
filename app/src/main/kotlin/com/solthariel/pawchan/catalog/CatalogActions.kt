@@ -11,6 +11,7 @@ internal data class CatalogActions(
     val threadMenuHost: CatalogThreadMenuHost? = null,
     val onToggleFiltered: () -> Unit = {},
     val onAddRule: ((CatalogThreadUi) -> Unit)? = null,
+    val onClearTag: () -> Unit = {},
 ) {
     val onThreadClick: (ThreadAddress) -> Unit
         get() = content.onThreadClick
@@ -50,7 +51,7 @@ internal data class CatalogNavigationActions(
 )
 
 internal data class BoardsActions(
-    val onFavoriteChanged: (BoardId, Boolean) -> Unit,
+    val onFavoriteChanged: (BoardAddress, Boolean) -> Unit,
     val onCategoryExpanded: (String, Boolean) -> Unit,
     val onRetry: () -> Unit,
 )

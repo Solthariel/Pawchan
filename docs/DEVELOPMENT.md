@@ -16,6 +16,16 @@ NDK 29.0.14206865 и CMake 3.22.1. Приложение рассчитано н�
 согласованности. Отдельно записать выполненные команды, результаты и ограничения.
 Фокусные тесты помогают разработке, но не заменяют полный порядок ниже.
 
+## Совместимость Gradle
+
+Wrapper закреплён на Gradle 9.6.1 с проверкой SHA-256. Gradle 9.8.2 объявляет
+`Configuration.setVisible` устаревшим; его вызывают используемые Kotlin/Android
+плагины. Версия 9.6.1 выбрана как совместимая с текущим AGP 9.4.1 и Kotlin
+2.2.10. Mockito 5.20.0 содержит Byte Buddy 1.17.7 с поддержкой Java 25;
+прежний Byte Buddy 1.15.4 не мог создавать inline-моки в тестах на Java 25.
+Требование `--warning-mode=fail` сохранено; диагностика не подавляется.
+При обновлении плагинов и wrapper полный строгий сценарий выполняется заново.
+
 ## Обязательный порядок после каждого патча
 
 После ЛЮБОГО патча, независимо от изменённого модуля, перед отправкой в GitHub
@@ -27,7 +37,7 @@ NDK 29.0.14206865 и CMake 3.22.1. Приложение рассчитано н�
 1. Завершить правки и выбрать окончательную рабочую папку с проверяемыми исходниками.
    Фокусные проверки во время разработки полезны, но не заменяют следующие этапы.
 2. Запустить полный `scripts/local-check`: debug/release и `qualityCheck` всех
-   production-модулей, включая unit-тесты и `nativeBuildToolCheck`.
+   production-модулей, включая unit-тесты.
 3. Выполнить все три отдельных Python-набора: `scripts/tests`,
    `update/publishing/tests` и `update/publishing/tools/tests`.
 4. С разрешённой ADB-отладкой на подключённом ARM64-устройстве либо совместимом
@@ -87,7 +97,7 @@ python3 -B -m unittest discover -s update/publishing/tools/tests -v
   не доказывают прохождение на телефоне. Отчёт только app не заменяет остальные модули.
 - Android JUnit XML находятся в `<module>/build/outputs/androidTest-results/connected/`,
   HTML — в `<module>/build/reports/androidTests/connected/`. JVM XML —
-  в `<module>/build/test-results/`, native tooling — в `tools/native-build/build/test-results/`.
+  в `<module>/build/test-results/`.
   Для Python сохраняется итог каждого запуска и exit code.
 - Перед телефонным прогоном записать время начала и состав исходников/патчей;
   сверить свежесть файлов, устройство, классы/методы, число tests, failures, errors
@@ -155,9 +165,10 @@ core/media, feature/composer, feature/thread и feature/applock. Наличие 
 ## Изоляция приложения при device-тестах
 
 Debug устанавливается как **Pawchan Debug**: `com.solthariel.pawchan.debug`,
-тестовый APK — `com.solthariel.pawchan.debug.test`. Рабочий release теперь называется Pawchan Dev и использует
-`com.solthariel.pawchan.dev`: он устанавливается рядом с прежним Pawchan, а не обновляет его.
-Его последующие APK требуют одного постоянного ключа подписи.
+тестовый APK — `com.solthariel.pawchan.debug.test`. Release называется Pawchan и
+использует основной package `com.solthariel.pawchan`, без суффикса. Его APK
+обновляют существующий Pawchan только при совпадении сертификата и
+подходящем versionCode; переход с прежнего `.dev` автоматически не переносит данные.
 У debug отдельные настройки, БД, файлы и PIN; данные release туда не переносятся.
 
 Перед установкой debug или connectedDebugAndroidTest задача
@@ -193,95 +204,31 @@ BUILD SUCCESSFUL недостаточно.
 и восстановления. Не копируйте команды выпуска в описание каждого мелкого патча.
 Документационный коммит сам по себе не требует новой версии APK.
 
-## Пересборка FFmpeg/dav1d и тесты её инструментов
+## Библиотеки mpv и исторический инструмент FFmpeg/dav1d
 
-Обычная Android-сборка по-прежнему проверяет и использует `video-ffmpeg/native-prebuilt`.
-Для неё не нужны Meson, Ninja, Python или пересборка FFmpeg. Не удаляйте готовые
-библиотеки из проекта.
+Debug и release включают готовые библиотеки mpv из
+`video-ffmpeg/src/main/jniLibs/arm64-v8a`. Перед сборкой Gradle сверяет их с
+`video-ffmpeg/mpv-libraries.sha256`, а после сборки проверяет состав APK.
+Устройство должно поддерживать arm64-v8a. Для сборки не нужно пересобирать mpv.
 
-Подготовка исходников и пересборка для сопровождающего реализованы отдельным
-Kotlin/JVM-приложением `tools/native-build`. У него собственный Gradle build,
-не применяющий Android-плагины. Используется проектный полный JDK 25 или новее, включая `javac`, а не только JRE.
-Тесты и статические проверки запускаются без Android SDK, NDK и скачивания
-исходников FFmpeg/dav1d; при первом запуске нужны зависимости Gradle из Maven.
+Происхождение, исходники JNI и команда его пересборки описаны в
+[BUILD-PROVENANCE.txt](../third-party/libmpvkt/BUILD-PROVENANCE.txt). Если
+пересобирается JNI-библиотека, необходимо осознанно обновить её контрольную
+сумму и заново выполнить проверки на устройстве. До распространения release
+нужно проверить комплект лицензий и соответствующих исходников mpv.
 
-```sh
-bash gradlew -p tools/native-build check --warning-mode=fail --console=plain
-```
+Исторический инструмент сборки FFmpeg/dav1d, неиспользуемые старые заголовки
+и архивы исходников удалены; они не собирали используемый mpv. Для пересборки
+JNI сохранён только необходимый заголовок FFmpeg `libavcodec/jni.h` в
+`third-party/libmpvkt/jni-source/include`, вместе с его уведомлением. Исторические
+сведения о происхождении сохранены в `docs/history/FFMPEG_NATIVE_BUILD_NOTICE.md`
+и `docs/history/ffmpeg-native-dependencies.json`. Проверка удалённого инструмента
+не входит в `qualityCheck`. Источники для распространяемых библиотек mpv
+требуют отдельной проверки перед выпуском.
 
-Эта проверка включена в корневой `qualityCheck` через `nativeBuildToolCheck`.
-Существующий `Publish signed release` выполняет её через штатную цепочку
-`package-release.sh` → `local-check.sh` → `qualityCheck`. Отдельный workflow
-не добавляется; правила и команды выпуска остаются в [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
-Локальный успех не считается выполнением публикации или GitHub Actions.
+## Release и обновления
 
-Команды из корня проекта:
-
-```sh
-# План, без скачивания исходников и запуска компиляторов.
-bash gradlew -p tools/native-build planNative --warning-mode=fail
-
-# Подготовка и проверка исходников, без компиляции.
-bash gradlew -p tools/native-build prepareNativeSources --warning-mode=fail
-
-# Пересборка: Linux x86_64, NDK 29.0.14206865, Meson, Ninja, make, pkg-config.
-# Git нужен только для резервного получения FFmpeg при недоступности архива.
-bash gradlew -p tools/native-build rebuildNative \
-  -Pnative.ndk=/path/to/android-ndk-r29 -Pnative.abis=arm64-v8a \
-  -Pnative.jobs=4 --warning-mode=fail
-
-# Проверка уже полученного bundle.
-bash gradlew -p tools/native-build verifyNativeBundle --warning-mode=fail
-```
-
-Результат: `video-ffmpeg/build/native-rebuild/bundle`, с собственным manifest,
-хешами, лицензиями и отпечатком входов. Рабочие деревья и журналы находятся рядом.
-Это НЕ `video-ffmpeg/build/native`, которым управляет обычная Gradle-сборка.
-Новый инструмент никогда автоматически не заменяет `native-prebuilt`.
-Для обновления поставляемых библиотек после реальной пересборки отдельно
-проверяют новый bundle, заменяют комплект вместе с его manifest, затем выполняют
-полный LOCAL CHECK, device smoke и проверки плеера на устройстве.
-
-Поддерживаются ABI `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`; несколько значений
-передаются через запятую. Это возможности инструмента пересборки, а не расширение
-поддержки APK: обычный проект по-прежнему ограничен ARM64.
-
-Дополнительные свойства:
-
-- `-Pnative.cache=/path/to/cache` — кеш архивов по SHA-256.
-- `-Pnative.offline=true` — не скачивать исходники и не обращаться к Git;
-  использовать проверенный кеш/подготовленное дерево либо явно переданные исходники.
-  Это не заменяет Gradle `--offline` для зависимостей самого инструмента.
-- `-Pnative.ffmpegSource=/path/to/ffmpeg` и `-Pnative.dav1dSource=/path/to/dav1d` —
-  предоставленные деревья. Вложенные `.git` исключаются; изменения содержимого
-  инвалидируют подготовленную копию. Такие деревья не выдаются за проверенные
-  официальные архивы: в bundle записываются фактические хеши деревьев.
-- Альтернативно принимаются `ANDROID_NDK_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`,
-  `NATIVE_ABIS`, `EXTERNAL_CORES`, `PAWCHAN_NATIVE_CACHE`,
-  `PAWCHAN_FFMPEG_SOURCE_DIR`, `PAWCHAN_DAV1D_SOURCE_DIR`.
-  Старые `WEBM_ARCHIVE_CACHE_DIR` и `NEKOCHAN_*_SOURCE_DIR` оставлены как алиасы.
-- `bash video-ffmpeg/scripts/build-native.sh ["arm64-v8a x86_64"]` — тонкая
-  совместимая точка входа. Старые `shared-prepare.sh`/`shared-build.sh` удалены;
-  прямой вызов их прежнего позиционного API больше не поддерживается.
-
-Версии и контрольные суммы заданы в `tools/native-build/native-dependencies.json`.
-Пути с пробелами передаются отдельными аргументами процесса, без интерпретации
-shell. Внешние/внутренние символьные ссылки и специальные файлы в предоставленных
-деревьях и архивах не принимаются; используйте обычные файлы. Это намеренное
-ограничение безопасной подготовки. NDK-путь с одиночной кавычкой также отклоняется
-из-за формата Meson cross-file.
-
-Проверяются хеши всех файлов bundle, ABI/class ELF, сегменты загрузки и выравнивание
-не менее 16 KiB. Это не проверка Android loader, полного набора DT_NEEDED, всех
-кодеков или воспроизведения. Тесты конвейера с имитацией компиляторов и тесты
-настоящих JVM-процессов явно разделены; они не заменяют NDK-пересборку и телефон.
-
-Происхождение прежних скриптов и сохранённого MOV-исправления описано в
-[NOTICE инструмента](../tools/native-build/NOTICE.md). Исторические хеши в старом
-`native-prebuilt/manifest.json` не переписываются под новый инструмент.
-
-## Закрытый рабочий выпуск
-
-Release этого рабочего репозитория — `com.solthariel.pawchan.dev`, Pawchan Dev.
-Подпись, первый переход и анонимные обновления описаны в [PRIVATE_DEV.md](PRIVATE_DEV.md).
-Отдельный Debug остаётся целью instrumented tests, не пользовательским каналом.
+Release этого рабочего репозитория — `com.solthariel.pawchan`, Pawchan.
+Подпись, переход со старого пакета `.dev` и анонимные обновления описаны в
+[RELEASE_BUILD.md](RELEASE_BUILD.md). Отдельный Debug остаётся целью
+instrumented tests, не пользовательским каналом.

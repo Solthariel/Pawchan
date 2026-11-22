@@ -70,17 +70,22 @@ class MirrorRecoveryTest {
 
     @Test fun manualCheckChecksAllWithoutSwitchingAndCloseCancelsOutstandingCalls() {
         val client = OkHttpClient()
-        val calls = mutableListOf<okhttp3.Call>()
+        val calls = java.util.Collections.synchronizedList(mutableListOf<okhttp3.Call>())
+        val started = java.util.concurrent.CountDownLatch(4)
         val recovery =
             MirrorRecovery("custom.example", { host, _ ->
-                client.newCall(Request.Builder().url("https://$host/index.json").build()).also { calls.add(it) }
+                client.newCall(Request.Builder().url("https://$host/index.json").build()).also {
+                    calls.add(it)
+                    started.countDown()
+                }
             }, {})
         recovery.checkAvailability()
         recovery.checkAvailability()
+        assertTrue(started.await(2, java.util.concurrent.TimeUnit.SECONDS))
         assertEquals(4, calls.size)
         assertEquals("custom.example", recovery.state.value.activeHost)
         recovery.close()
         assertTrue(calls.all { it.isCanceled() })
-        assertFalse(recovery.state.value.checking)
+        assertFalse(recovery.state.value.manualChecking)
     }
 }

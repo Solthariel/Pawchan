@@ -21,15 +21,6 @@ internal object VideoHandoffDiagnostics {
     ) {
         Log.d(TAG, "t=${SystemClock.elapsedRealtime()} owner=${System.identityHashCode(owner)} $message")
     }
-
-    fun engineEvent(
-        state: FfmpegVideoState,
-        event: VideoEvent,
-    ) {
-        if (event in OUTPUT_EVENTS) {
-            record(state, "engine_event=$event native=${System.identityHashCode(state.player)}")
-        }
-    }
 }
 
 @Composable
@@ -97,11 +88,3 @@ private fun alphaStep(value: Float): Int = (value * ALPHA_STEPS).roundToInt()
 
 private const val TAG = "PawchanVideoHandoff"
 private const val ALPHA_STEPS = 10
-private val OUTPUT_EVENTS =
-    setOf(
-        VideoEvent.OPENING,
-        VideoEvent.VIDEO_OUTPUT_PENDING,
-        VideoEvent.VIDEO_OUTPUT,
-        VideoEvent.ERROR,
-        VideoEvent.INCOMPLETE,
-    )

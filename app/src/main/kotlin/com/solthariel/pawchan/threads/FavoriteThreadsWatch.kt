@@ -16,7 +16,6 @@ import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
-import com.solthariel.pawchan.domain.thread.mergeThreadHistory
 import com.solthariel.pawchan.domain.workspace.withSeen
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceController
@@ -76,8 +75,7 @@ internal class FavoriteThreadsWatch(
                     val counter =
                         when (loaded) {
                             is DomainOutcome.Success -> {
-                                val merged = mergeThreadHistory(history.load(address), loaded.value)
-                                history.save(merged)
+                                val merged = history.mergeAndSave(loaded.value)
                                 val last = merged.posts.maxOfOrNull { it.address.post.value }
                                 if (last != null && seen()[address] == null) {
                                     workspace?.change { it.withSeen(address, last) }

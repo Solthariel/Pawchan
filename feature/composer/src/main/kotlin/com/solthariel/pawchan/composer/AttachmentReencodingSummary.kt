@@ -1,9 +1,15 @@
 package com.solthariel.pawchan.composer
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,22 +30,30 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun AttachmentReencodingSummary(
     file: ComposerAttachment,
-    settings: ImageReencoding,
+    settings: ImageReencoding?,
 ) {
     val source by produceState<ReencodingSource?>(null, file.id, file.source.content) {
         value = withContext(Dispatchers.IO) { readReencodingSource(file.source.content) }
     }
     val pending = remember(file, settings) { file.copy(options = file.options.copy(reencoding = settings)) }
     val name = if (pending.validName) pending.displayName else stringResource(R.string.attachment_result_invalid_name)
-    val dimensions = source?.let { reencodingDimensions(it.width, it.height, settings)?.oriented(it.orientation) }
+    val dimensions =
+        source?.let {
+            reencodingDimensions(it.width, it.height, settings ?: ImageReencoding())?.oriented(it.orientation)
+        }
     val resolution =
         dimensions?.let { "${it.width}×${it.height}" }
             ?: stringResource(R.string.attachment_result_resolution_unknown)
     val result by rememberReencodingSize(pending)
     val size = if (result.calculating) "…" else result.bytes?.let(::formatByteSizeForUi) ?: "?"
     Row(
-        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(4.dp, androidx.compose.ui.Alignment.CenterHorizontally),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
         Text(
             name,
@@ -49,13 +63,26 @@ internal fun AttachmentReencodingSummary(
             maxLines = 1,
             overflow = TextOverflow.MiddleEllipsis,
         )
+        SummaryDot()
         Text(
-            "· $resolution · $size",
+            resolution,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        SummaryDot()
+        Text(
+            size,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
         )
     }
+}
+
+@Composable
+private fun SummaryDot() {
+    Box(Modifier.size(3.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
 }
 
 internal data class ReencodingSource(

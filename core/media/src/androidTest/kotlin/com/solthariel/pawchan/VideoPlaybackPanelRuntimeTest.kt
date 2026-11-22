@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.media.MediaViewerNavigation
+import com.solthariel.pawchan.media.video.VideoOutputDetails
 import com.solthariel.pawchan.media.video.VideoPlaybackControls
 import com.solthariel.pawchan.media.video.VideoPlaybackPanel
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
@@ -64,6 +65,21 @@ class VideoPlaybackPanelRuntimeTest {
     }
 
     @Test
+    fun decoderButtonReportsActualModeAndRequestsOppositeMode() {
+        val player = TestVideoControls()
+        compose.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) { VideoPlaybackPanel(player) }
+        }
+        compose.onNodeWithContentDescription("Определение декодера").assertIsNotEnabled()
+        compose.runOnIdle { player.status.value = player.status.value.copy(output = VideoOutputDetails(hardwareDecoded = true)) }
+        compose.onNodeWithContentDescription("Аппаратный декодер. Переключить на программный").performClick()
+        compose.runOnIdle { assertEquals(true, player.status.value.attempt.software) }
+        compose.runOnIdle { player.status.value = player.status.value.copy(output = VideoOutputDetails(hardwareDecoded = false)) }
+        compose.onNodeWithContentDescription("Программный декодер. Попробовать аппаратный").performClick()
+        compose.runOnIdle { assertEquals(false, player.status.value.attempt.software) }
+    }
+
+    @Test
     fun muteIsDisabledForSilentVideoAndEnabledWhenAudioIsPresent() {
         val player = TestVideoControls()
         compose.setContent {
@@ -76,7 +92,7 @@ class VideoPlaybackPanelRuntimeTest {
     }
 }
 
-private class TestVideoControls : VideoPlaybackControls {
+internal class TestVideoControls : VideoPlaybackControls {
     override val status = MutableStateFlow(VideoPlaybackStatus(stage = VideoStage.READY))
 
     override fun togglePlay() {
@@ -84,7 +100,7 @@ private class TestVideoControls : VideoPlaybackControls {
     }
 
     override fun seekTo(position: Long) {
-        status.value = status.value.copy(position = position)
+        status.value = status.value.copy(timeline = status.value.timeline.copy(position = position))
     }
 
     override fun setSoftware(enabled: Boolean) {

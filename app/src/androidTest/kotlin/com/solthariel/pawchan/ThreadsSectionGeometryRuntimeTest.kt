@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import com.solthariel.pawchan.threads.ThreadRow
 import com.solthariel.pawchan.threads.ThreadRowCloseAction
 import com.solthariel.pawchan.threads.ThreadRowUi
 import com.solthariel.pawchan.threads.ThreadsSection
+import com.solthariel.pawchan.threads.ThreadsSectionDivider
 import com.solthariel.pawchan.threads.ThreadsSectionHeader
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -30,6 +32,24 @@ import org.junit.Test
 
 class ThreadsSectionGeometryRuntimeTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun sectionDividerMatchesPostSeparatorInsetsAndThickness() {
+        compose.setContent {
+            MaterialTheme {
+                Column(Modifier.width(320.dp)) {
+                    ThreadsSectionDivider()
+                }
+            }
+        }
+        val bounds =
+            compose
+                .onNodeWithTag("threads-section-divider")
+                .fetchSemanticsNode()
+                .boundsInRoot
+
+        assertEquals(with(compose.density) { 304.dp.toPx() }, bounds.width, HALF_PIXEL_ROUNDING)
+        assertEquals(with(compose.density) { 1.dp.toPx() }, bounds.height, HALF_PIXEL_ROUNDING)
+    }
 
     @Test fun allSectionsAlignCountersAndCloseButtonsUnderDisclosure() {
         var closes = 0

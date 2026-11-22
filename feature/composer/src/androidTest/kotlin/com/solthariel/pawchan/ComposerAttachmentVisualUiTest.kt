@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,7 +23,7 @@ class ComposerAttachmentVisualUiTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun attachmentEditorHasSummaryAndRemoveWithoutConfirmation() {
+    fun attachmentEditorHasFileControlsAndRemoveMenu() {
         var removed = 0
         val bytes = Base64.decode(PREVIEW_PNG, Base64.DEFAULT)
         val file = ComposerAttachment(ReplyAttachment("пример.png", "image/png", bytes), dimensions = "1×1")
@@ -36,14 +37,19 @@ class ComposerAttachmentVisualUiTest {
         }
         compose.onNodeWithText("Спойлер").assertIsDisplayed()
         compose.onNodeWithContentDescription("Переименовать").assertIsDisplayed()
-        compose.onNodeWithText("Удалить вложение").assertIsDisplayed()
+        compose.onNodeWithText("Готово").assertDoesNotExist()
         compose.onNodeWithText("Применить").assertDoesNotExist()
         compose.onNodeWithText("ОК").assertDoesNotExist()
         compose.onNodeWithText("Отмена").assertDoesNotExist()
-        saveComposerChromeScreenshot("attachment-editor-compact-autosave")
-        compose.onNodeWithText("Удалить вложение").performClick()
-        compose.runOnIdle { org.junit.Assert.assertEquals(1, removed) }
+        saveComposerChromeScreenshot("attachment-editor-fullscreen-file")
+        if (compose.onAllNodesWithContentDescription("Ещё").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithContentDescription("Ещё").performClick()
+            compose.onNodeWithText("Удалить вложение").performClick()
+        } else {
+            compose.onNodeWithContentDescription("Удалить вложение").performClick()
+        }
         compose.onNodeWithText("Удалить вложение?").assertDoesNotExist()
+        compose.runOnIdle { org.junit.Assert.assertEquals(1, removed) }
     }
 }
 

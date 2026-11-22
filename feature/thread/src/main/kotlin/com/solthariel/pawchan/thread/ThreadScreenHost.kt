@@ -16,7 +16,7 @@ data class ThreadMediaResources(
     val saves: MediaSaveQueue,
     /** Добавить выбранные в галерее файлы в избранное; null — избранного нет. */
     val favorite: ((List<MediaAttachmentUi>) -> Unit)? = null,
-    /** Сеть для записей Vocaroo (DoH, Cronet); null — обычный клиент медиа. */
+    /** Сеть для записей Vocaroo (Cronet); null — обычный клиент медиа. */
     val vocaroo: com.solthariel.pawchan.thread.vocaroo.VocarooTransport? = null,
 )
 

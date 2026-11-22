@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
@@ -37,11 +38,20 @@ class AppBottomRippleRuntimeTest {
             val before = target.captureToImage().toPixelMap()
             target.performTouchInput { down(center) }
             compose.mainClock.advanceTimeBy(500)
-            val pressed = target.captureToImage().toPixelMap()
             val inset = with(compose.density) { 2.dp.roundToPx() }.coerceAtLeast(1)
-            val inside = with(compose.density) { 4.dp.roundToPx() }.coerceAtLeast(1)
+            // The Material ripple may run on RenderThread, not Compose's virtual clock.
+            // Probe inside the circle but outside the 24dp icon; keep both exterior checks.
+            val x = before.width / 2
+            val y = before.height / 2 - with(compose.density) { 16.dp.roundToPx() }
+            var pressed: PixelMap = before
+            compose.waitUntil(3_000) {
+                pressed = target.captureToImage().toPixelMap()
+                pressed[x, y] != before[x, y]
+            }
+            assertNotEquals(before[x, y], pressed[x, y])
             assertEquals(before[inset, before.height / 2], pressed[inset, pressed.height / 2])
-            assertNotEquals(before[before.width / 2, inside], pressed[pressed.width / 2, inside])
+            val right = before.width - 1 - inset
+            assertEquals(before[right, before.height / 2], pressed[right, pressed.height / 2])
             target.performTouchInput { cancel() }
             compose.mainClock.advanceTimeBy(500)
         }

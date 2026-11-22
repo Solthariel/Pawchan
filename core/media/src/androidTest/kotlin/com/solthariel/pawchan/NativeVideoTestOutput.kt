@@ -1,12 +1,13 @@
 package com.solthariel.pawchan
 
 import android.graphics.Color
-import com.solthariel.pawchan.media.video.FfmpegVideoEngine
+import com.solthariel.pawchan.media.video.MpvVideoEngine
 import com.solthariel.pawchan.media.video.VideoEvent
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /** Observes the real engine, including a bounded snapshot on its very first VIDEO_OUTPUT callback. */
 internal class NativeVideoTestOutput(
@@ -18,9 +19,10 @@ internal class NativeVideoTestOutput(
     val duration = AtomicLong(0L)
     val rendered = AtomicInteger(0)
     val firstFrameValid = AtomicBoolean(false)
+    val firstFrameDetails = AtomicReference("no snapshot")
 
     fun record(
-        engine: FfmpegVideoEngine,
+        engine: MpvVideoEngine,
         type: VideoEvent,
         status: VideoPlaybackStatus,
     ) {
@@ -33,10 +35,17 @@ internal class NativeVideoTestOutput(
         duration.set(status.duration)
     }
 
-    private fun firstOutputMatchesFixture(engine: FfmpegVideoEngine): Boolean {
-        val poster = engine.posterFrame ?: return false
+    private fun firstOutputMatchesFixture(engine: MpvVideoEngine): Boolean {
+        val poster =
+            engine.posterFrame ?: run {
+                firstFrameDetails.set("surface returned no bitmap")
+                return false
+            }
         try {
             val pixel = poster.getPixel(poster.width / 2, poster.height / 2)
+            firstFrameDetails.set(
+                "${poster.width}x${poster.height} centerRGB=${Color.red(pixel)},${Color.green(pixel)},${Color.blue(pixel)}",
+            )
             val brightness = Color.red(pixel) + Color.green(pixel) + Color.blue(pixel)
             return if (name == "black_h264.mp4") brightness == 0 else brightness > 0
         } finally {

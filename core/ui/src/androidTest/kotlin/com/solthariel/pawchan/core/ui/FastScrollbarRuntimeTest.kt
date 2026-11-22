@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.core.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,11 +11,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -23,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -90,6 +96,59 @@ class FastScrollbarRuntimeTest {
                 .fetchSemanticsNode()
                 .size.width,
         )
+    }
+
+    @Test
+    fun markerColorsStayDistinctAndOwnPostWinsWhenScrollbarMarkersOverlap() {
+        compose.setContent {
+            MaterialTheme(lightColorScheme(primary = Color.Blue, tertiary = Color.Green)) {
+                state = rememberLazyListState()
+                Box(modifier = Modifier.fillMaxWidth().height(400.dp)) {
+                    LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
+                        items(1000, key = { it }, contentType = { "test-row" }) {
+                            Box(Modifier.fillMaxWidth().height(110.dp))
+                        }
+                    }
+                    PawchanFastScrollbar(
+                        state = state,
+                        markers =
+                            FastScrollMarkers(
+                                itemCount = 1000,
+                                own = listOf(0, 500),
+                                replies = listOf(501, 550, 999),
+                            ),
+                        modifier =
+                            Modifier
+                                .align(Alignment.CenterEnd)
+                                .background(Color.White)
+                                .testTag(SCROLLBAR_TAG),
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+
+        val pixels = compose.onNodeWithTag(SCROLLBAR_TAG).captureToImage().toPixelMap()
+        val markerX = pixels.width * 3 / 4
+        assertEquals(OWN_POST_MARKER_COLOR, pixels[markerX, 1])
+        assertEquals(OWN_POST_MARKER_COLOR, pixels[markerX, pixels.height / 2])
+        assertEquals(REPLY_TO_ME_MARKER_COLOR, pixels[markerX, pixels.height - 2])
+        val outerMarkerX = pixels.width * 15 / 16
+        assertEquals(OWN_POST_MARKER_COLOR, pixels[outerMarkerX, 1])
+        assertEquals(Color.White, pixels[outerMarkerX, pixels.height - 2])
+
+        val bar = compose.onNodeWithTag(SCROLLBAR_TAG)
+        bar.performTouchInput { down(center) }
+        compose.waitForIdle()
+        val activePixels = bar.captureToImage().toPixelMap()
+        val activeThumb =
+            activePixels[markerX, activePixels.height / 2 + activePixels.height / 40]
+        assertEquals(OWN_POST_MARKER_COLOR, activePixels[markerX, activePixels.height / 2])
+        assertEquals(REPLY_TO_ME_MARKER_COLOR, activePixels[markerX, activePixels.height * 55 / 100])
+        assertTrue(activeThumb.red > 0.3f)
+        assertTrue(activeThumb.green > 0.3f)
+        assertTrue(activeThumb.blue > activeThumb.red + 0.2f)
+        bar.performTouchInput { up() }
     }
 
     private fun showList(lastRowHeight: Dp = 110.dp) {

@@ -6,7 +6,6 @@ import com.solthariel.pawchan.domain.boards.BoardInformation
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.SettingsRepository
@@ -25,7 +24,7 @@ internal class FakeBoardMenuRepositories :
     override suspend fun setThemeColors(colors: ThemeColors): DomainOutcome<Unit> = write { themeColors.value = colors }
 
     override val homeBoard = MutableStateFlow<BoardAddress?>(null)
-    override val favoriteBoards = MutableStateFlow(emptySet<BoardId>())
+    override val favoriteBoards = MutableStateFlow(emptySet<BoardAddress>())
     override val expandedBoardCategories = MutableStateFlow(setOf(FAVORITES_BOARD_CATEGORY_KEY))
     var failWrites = false
     var informationHold: CompletableDeferred<Unit>? = null
@@ -39,7 +38,7 @@ internal class FakeBoardMenuRepositories :
     override suspend fun setHomeBoard(board: BoardAddress): DomainOutcome<Unit> = write { homeBoard.value = board }
 
     override suspend fun setFavoriteBoard(
-        board: BoardId,
+        board: BoardAddress,
         favorite: Boolean,
     ): DomainOutcome<Unit> =
         write {

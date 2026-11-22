@@ -39,14 +39,14 @@ internal fun ThreadsSectionHeader(
     section: ThreadsSection,
     expanded: Boolean,
     total: ThreadCounter,
-    onToggle: () -> Unit,
+    onToggle: (() -> Unit)?,
     counterWidth: Dp? = null,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .height(THREADS_HEADER_HEIGHT)
-            .clickable(onClick = onToggle)
+            .then(if (onToggle == null) Modifier else Modifier.clickable(onClick = onToggle))
             .padding(start = THREADS_ROW_START, end = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -61,12 +61,12 @@ internal fun ThreadsSectionHeader(
         val reply = section == ThreadsSection.REPLIES
         ThreadCounterColumn(total, reply, counterWidth)
         Box(Modifier.size(THREADS_TRAILING_WIDTH), contentAlignment = Alignment.Center) {
-            UiDisclosureIndicator(expanded)
+            if (onToggle != null) UiDisclosureIndicator(expanded)
         }
     }
 }
 
-/** Тред одной строкой: название и квадратик со счётчиком, долгое нажатие — меню. */
+/** Тред одной строкой: сайт, название и счётчик; долгое нажатие — меню. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun ThreadRow(
@@ -86,6 +86,7 @@ internal fun ThreadRow(
             .padding(start = THREADS_ROW_START, end = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        ThreadSourceIcon(row.source, current)
         Text(
             row.title,
             Modifier.weight(1f),
@@ -217,7 +218,7 @@ internal fun ThreadsLinkRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         com.solthariel.pawchan.core.ui
-            .UiIcon(icon, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(22.dp))
+            .UiIcon(icon, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
         Text(
             title,
             Modifier.weight(1f).padding(start = 16.dp),

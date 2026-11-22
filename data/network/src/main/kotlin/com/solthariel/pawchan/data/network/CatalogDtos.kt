@@ -32,6 +32,7 @@ internal class CatalogThreadDto {
     var date: String? = null
     var timestamp: JsonElement? = null
     var email: String? = null
+    var tags: String? = null
 
     @SerialName("posts_count")
     var postsCount: Int = 0

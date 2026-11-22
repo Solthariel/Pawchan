@@ -3,6 +3,7 @@ package com.solthariel.pawchan.media
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,18 +56,17 @@ internal fun GalleryToolbar(
         }
         Text(
             "Галерея",
-            Modifier.widthIn(max = 88.dp).padding(horizontal = 8.dp),
-            style = MaterialTheme.typography.titleMedium,
+            Modifier.padding(start = 12.dp),
+            style = MaterialTheme.typography.titleLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Row(
-            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GalleryFilter.entries.forEach { filter ->
-                GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
-                    actions.chooseFilter(filter)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                GalleryFilter.entries.forEach { filter ->
+                    GalleryFilterButton(filter, filter.group(gallery).count, filter == state.filter) {
+                        actions.chooseFilter(filter)
+                    }
                 }
             }
         }

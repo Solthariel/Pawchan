@@ -20,6 +20,7 @@ internal suspend fun checkWorkspaceReplies(
     workspace: WorkspaceRepository,
     repository: ThreadRepository,
     statistics: com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository? = null,
+    synchronization: ReplyNotificationSync? = null,
     onReplies: (ThreadAddress, Int) -> Unit = { _, _ -> },
 ): Boolean =
     try {
@@ -34,22 +35,13 @@ internal suspend fun checkWorkspaceReplies(
         for (address in threads) {
             when (val outcome = repository.loadThread(address)) {
                 is DomainOutcome.Success -> {
-                    var added = 0
-                    var fresh = emptyList<String>()
-                    workspace.update { before ->
-                        val after = before.observe(outcome.value)
-                        val known = before.replies.map { it.post.address }.toSet()
-                        fresh = after.replies.filterNot { it.post.address in known }.map { it.post.address.toString() }
-                        added = fresh.size
-                        after
-                    }
+                    val fresh = recordDiscoveredReplies(workspace, outcome.value, synchronization, onReplies)
                     fresh.forEach {
                         statistics?.record(
                             com.solthariel.pawchan.domain.statistics.UsageMetric.REPLIES_RECEIVED,
                             identity = it,
                         )
                     }
-                    if (added > 0) onReplies(address, added)
                 }
 
                 is DomainOutcome.Failure -> {
@@ -72,3 +64,27 @@ internal suspend fun checkWorkspaceReplies(
     } catch (_: IOException) {
         false
     }
+
+private suspend fun recordDiscoveredReplies(
+    workspace: WorkspaceRepository,
+    snapshot: com.solthariel.pawchan.domain.model.ThreadSnapshot,
+    synchronization: ReplyNotificationSync?,
+    onReplies: (ThreadAddress, Int) -> Unit,
+): List<String> {
+    var fresh = emptyList<String>()
+    val saveAndNotify: suspend () -> Unit = {
+        val after =
+            workspace.update { before ->
+                val updated = before.observe(snapshot)
+                val known = before.replies.map { it.post.address }.toSet()
+                fresh = updated.replies.filterNot { it.post.address in known }.map { it.post.address.toString() }
+                updated
+            }
+        if (fresh.isNotEmpty()) {
+            val unread = after.replies.count { it.unread && it.post.address.thread == snapshot.address }
+            if (unread > 0) onReplies(snapshot.address, unread)
+        }
+    }
+    if (synchronization == null) saveAndNotify() else synchronization.access(saveAndNotify)
+    return fresh
+}

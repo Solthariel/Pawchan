@@ -2,6 +2,7 @@ package com.solthariel.pawchan.core.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +40,13 @@ fun PawchanFastScrollbar(
     markers: FastScrollMarkers = FastScrollMarkers(),
     mode: FastScrollMode = FastScrollMode.CONTENT,
 ) {
-    FastScrollbarCanvas(state, modifier, itemSizes, inputGesture, markers, FastScrollbarSettings(mode))
+    val boundedModifier =
+        Modifier
+            .padding(
+                top = LocalTopOverlayInset.current,
+                bottom = LocalScrollbarBottomInset.current,
+            ).then(modifier)
+    FastScrollbarCanvas(state, boundedModifier, itemSizes, inputGesture, markers, FastScrollbarSettings(mode))
 }
 
 /** A 2dp overlay for row-based grids, without any content inset or width reservation. */
@@ -117,12 +124,12 @@ private fun FastScrollbarCanvas(
                     }
                 },
     ) {
-        if (available && markers.itemCount > 1) {
-            drawFastScrollbarMarkers(markers, markerStyle, if (mode == FastScrollMode.ITEMS) items.anchors else null)
-        }
         if (available && reveal.value > 0f) {
             val position = if (gesture.dragging) gesture.progress else progress.value
             drawFastScrollbar(style, position, reveal.value, gesture.dragging)
+        }
+        if (available && markers.itemCount > 1) {
+            drawFastScrollbarMarkers(markers, markerStyle, if (mode == FastScrollMode.ITEMS) items.anchors else null)
         }
     }
 }
@@ -176,8 +183,10 @@ private fun fastScrollbarMarkerStyle(): FastScrollbarMarkerStyle {
         FastScrollbarMarkerStyle(
             width = FAST_SCROLL_MARKER_WIDTH.toPx(),
             height = FAST_SCROLL_MARKER_HEIGHT.toPx(),
-            own = colors.primary,
-            reply = colors.tertiary,
+            ownHeight = FAST_SCROLL_OWN_MARKER_HEIGHT.toPx(),
+            replyWidth = FAST_SCROLL_REPLY_MARKER_WIDTH.toPx(),
+            own = OWN_POST_MARKER_COLOR,
+            reply = REPLY_TO_ME_MARKER_COLOR,
             reading = colors.secondary,
         )
     }
@@ -191,28 +200,37 @@ private fun DrawScope.drawFastScrollbarMarkers(
     fun marker(
         index: Int,
         color: Color,
+        width: Float,
+        height: Float,
     ) {
         val progress = anchors?.progress(index, 0) ?: (index.toFloat() / (markers.itemCount - 1).coerceAtLeast(1))
+        val left = size.width - style.width + (style.width - width) / 2f
         drawRect(
             color = color,
-            topLeft = Offset(size.width - style.width, (size.height - style.height) * progress),
-            size = Size(style.width, style.height),
+            topLeft = Offset(left, (size.height - height) * progress),
+            size = Size(width, height),
         )
     }
-    markers.own.forEach { marker(it, style.own) }
-    markers.replies.filterNot(markers.own::contains).forEach { marker(it, style.reply) }
-    markers.reading?.takeIf { it in 0 until markers.itemCount }?.let { marker(it, style.reading) }
+    markers.replies.filterNot(markers.own::contains).forEach {
+        marker(it, style.reply, style.replyWidth, style.height)
+    }
+    // Keep own posts visible when neighboring marker spans overlap on a short scrollbar.
+    markers.own.forEach { marker(it, style.own, style.width, style.ownHeight) }
+    markers.reading?.takeIf { it in 0 until markers.itemCount }?.let {
+        marker(it, style.reading, style.width, style.height)
+    }
 }
 
 @Composable
 private fun fastScrollbarStyle(width: androidx.compose.ui.unit.Dp): FastScrollbarStyle {
     val colors = MaterialTheme.colorScheme
+    val thumbColor = fastScrollbarThumbColor()
     return with(LocalDensity.current) {
         FastScrollbarStyle(
             width = width.toPx(),
             thumbHeight = FAST_SCROLL_THUMB_HEIGHT.toPx(),
-            normal = colors.onSurface.copy(alpha = NORMAL_THUMB_ALPHA),
-            pressed = colors.primary,
+            normal = thumbColor,
+            pressed = colors.primary.copy(alpha = ACTIVE_THUMB_ALPHA),
             track = colors.onSurface.copy(alpha = TRACK_ALPHA),
         )
     }
@@ -250,6 +268,8 @@ private data class FastScrollbarStyle(
 private data class FastScrollbarMarkerStyle(
     val width: Float,
     val height: Float,
+    val ownHeight: Float,
+    val replyWidth: Float,
     val own: Color,
     val reply: Color,
     val reading: Color,
@@ -262,5 +282,7 @@ private val FAST_SCROLL_TOUCH_WIDTH = 16.dp
 private val FAST_SCROLL_THUMB_HEIGHT = 48.dp
 private val FAST_SCROLL_MARKER_WIDTH = 8.dp
 private val FAST_SCROLL_MARKER_HEIGHT = 3.dp
-private const val NORMAL_THUMB_ALPHA = 0.35f
+private val FAST_SCROLL_OWN_MARKER_HEIGHT = 4.dp
+private val FAST_SCROLL_REPLY_MARKER_WIDTH = 5.dp
 private const val TRACK_ALPHA = 0.12f
+private const val ACTIVE_THUMB_ALPHA = 0.55f

@@ -79,6 +79,27 @@ class ReferenceLinkSuffixTest {
         assertTrue(text.getStringAnnotations(LINK_SUFFIX_TAG, 0, text.length).isEmpty())
     }
 
+    @Test fun localOriginalPostUsesSameVisualMarkerWithoutFabricatingAnAddress() {
+        val reference = PostLink.Reference(requireNotNull(PostId.parse(100)))
+        val document = PostDocument(listOf(PostTextRun(">>100 (OP)", link = reference)))
+        val original = RichPostTextUi.create(document, originalPostId = 100).initialText
+        val marker = original.getStringAnnotations(LINK_SUFFIX_TAG, 0, original.length).single()
+        assertEquals("OP", linkSuffixLabel(marker.item, null))
+        assertEquals(document.plainText, original.withVisualLinkSuffixes().text)
+        assertEquals(1, original.getStringAnnotations(REFERENCE_TAG, 0, original.length).size)
+        val unknown = RichPostTextUi.create(document, originalPostId = 101).initialText
+        assertTrue(unknown.getStringAnnotations(LINK_SUFFIX_TAG, 0, unknown.length).isEmpty())
+    }
+
+    @Test fun localOpSpoilerMarksOnlyAfterReveal() {
+        val reference = PostLink.Reference(requireNotNull(PostId.parse(100)))
+        val document = PostDocument(listOf(PostTextRun(">>100 (OP)", setOf(PostTextStyle.SPOILER), reference)))
+        val model = RichPostTextUi.create(document, originalPostId = 100)
+        assertTrue(model.initialText.getStringAnnotations(LINK_SUFFIX_TAG, 0, model.initialText.length).isEmpty())
+        val revealed = model.reveal(setOf(0))
+        assertEquals(1, revealed.getStringAnnotations(LINK_SUFFIX_TAG, 0, revealed.length).size)
+    }
+
     private fun thread(id: Long) = ThreadAddress(board, requireNotNull(ThreadId.parse(id)))
 
     private fun run(

@@ -25,6 +25,32 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ThreadReportControllerTest {
+    @Test fun unsupportedSourceHasNoReportingActionAndCannotSubmit() =
+        runTest {
+            var calls = 0
+            val target =
+                object : ReportingThreadRepository {
+                    override fun supportsReporting(address: ThreadAddress): Boolean = false
+
+                    override suspend fun loadThread(address: ThreadAddress): DomainOutcome.Failure =
+                        DomainOutcome.Failure(DomainFailure.UnsupportedSite)
+
+                    override suspend fun reportPost(
+                        address: ThreadAddress,
+                        post: PostId,
+                        comment: String,
+                    ): PostingOutcome<Unit> {
+                        calls++
+                        return PostingOutcome.Success(Unit)
+                    }
+                }
+            val controller = ThreadReportController(this, reportTestAddress(), target)
+            assertFalse(controller.available)
+            controller.submit(listOf(2), "Причина")
+            advanceUntilIdle()
+            assertEquals(0, calls)
+        }
+
     @Test fun eachSelectedPostIsReportedOnce() =
         runTest {
             val target = ReportTestRepository()

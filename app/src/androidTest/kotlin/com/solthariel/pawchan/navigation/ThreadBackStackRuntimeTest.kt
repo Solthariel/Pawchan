@@ -1,9 +1,10 @@
 package com.solthariel.pawchan.navigation
 
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -92,12 +93,33 @@ class ThreadBackStackRuntimeTest {
         }
     }
 
+    @Test fun archiveBrowserSystemBackAndToolbarReturnToSameCatalogEntry() {
+        showNavigation()
+        repeat(2) { attempt ->
+            val original = compose.runOnIdle { controller.currentBackStackEntry }
+            compose.runOnIdle { controller.navigate(AppRoute.archiveBrowser(defaultBoardAddress())) }
+            compose.waitForIdle()
+            if (attempt == 0) {
+                androidx.test.espresso.Espresso
+                    .pressBack()
+            } else {
+                compose.onNodeWithText("Назад").performClick()
+            }
+            compose.runOnIdle { org.junit.Assert.assertSame(original, controller.currentBackStackEntry) }
+        }
+    }
+
     private fun showNavigation() {
         compose.setContent {
-            controller = rememberNavController()
-            NavHost(controller, startDestination = AppRoute.catalog(defaultBoardAddress())) {
-                composable(AppRoute.CATALOG, arguments = boardArguments()) {}
-                composable(AppRoute.THREAD, arguments = threadArguments()) {}
+            controller = rememberNavController(remember { InstantNavigator() })
+            AppAnimatedNavHost(controller, startRoute = AppRoute.catalog(defaultBoardAddress())) {
+                appComposable(AppRoute.CATALOG, arguments = boardArguments()) {}
+                appComposable(AppRoute.ARCHIVE_BROWSER, arguments = boardArguments()) {
+                    androidx.compose.material3.Button(onClick = { controller.popBackStack() }) {
+                        androidx.compose.material3.Text("Назад")
+                    }
+                }
+                appComposable(AppRoute.THREAD, arguments = threadArguments()) {}
             }
         }
         compose.waitForIdle()

@@ -11,6 +11,7 @@ import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
 import com.solthariel.pawchan.domain.workspace.OpenThread
 import com.solthariel.pawchan.domain.workspace.WorkspaceRepository
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
+import com.solthariel.pawchan.domain.workspace.markRead
 import com.solthariel.pawchan.domain.workspace.observe
 import com.solthariel.pawchan.domain.workspace.storePost
 import com.solthariel.pawchan.domain.workspace.visit
@@ -40,6 +41,7 @@ internal class WorkspaceController(
     /** История просмотренных тредов (удалённые посты); null — не сохраняется. */
     val history: ThreadHistoryRepository? = null,
     val statistics: com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository? = null,
+    private val replyNotifications: ReplyNotificationSync? = null,
 ) {
     var readingPreferences =
         ReadingPreferences()
@@ -92,15 +94,35 @@ internal class WorkspaceController(
         }
     }
 
-    fun change(transform: (WorkspaceState) -> WorkspaceState) {
+    fun change(transform: (WorkspaceState) -> WorkspaceState) = changeState(null, transform)
+
+    internal fun changeReplies(
+        address: ThreadAddress,
+        transform: (WorkspaceState) -> WorkspaceState,
+    ) = changeState(address, transform)
+
+    private fun changeState(
+        address: ThreadAddress?,
+        transform: (WorkspaceState) -> WorkspaceState,
+    ) {
         scope.launch {
             mutex.withLock {
                 try {
                     var before = mutableState.value
+                    val update: suspend () -> WorkspaceState = {
+                        val after =
+                            repository.update { persisted ->
+                                before = persisted
+                                transform(persisted)
+                            }
+                        if (address != null) replyNotifications?.reconcile(address, after)
+                        after
+                    }
                     val after =
-                        repository.update { persisted ->
-                            before = persisted
-                            transform(persisted)
+                        if (address != null && replyNotifications != null) {
+                            replyNotifications.access(update)
+                        } else {
+                            update()
                         }
                     mutableState.value = after
                     recordWorkspaceChanges(statistics, before, after)
@@ -112,10 +134,22 @@ internal class WorkspaceController(
         }
     }
 
+    fun markVisibleReplies(
+        address: ThreadAddress,
+        ids: Set<Long>,
+    ) {
+        if (ids.isEmpty()) return
+        changeReplies(address) { state ->
+            val visible =
+                state.replies.filter { it.post.address.thread == address && it.post.address.post.value in ids }
+            state.markRead(visible.map { it.post.address }.toSet())
+        }
+    }
+
     fun observe(snapshot: ThreadSnapshot) {
         latestSnapshot = snapshot
         reading.remember(snapshot)
-        change { state ->
+        changeReplies(snapshot.address) { state ->
             val old = state.tabs.firstOrNull { it.address == snapshot.address }
             val tab = old?.copy(title = snapshot.subject) ?: OpenThread(snapshot.address, snapshot.subject)
             state

@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.AnnotatedString
 import com.solthariel.pawchan.core.ui.FastScrollGesture
+import com.solthariel.pawchan.core.ui.NO_POST_COLLAPSE
+import com.solthariel.pawchan.core.ui.PostStateMarker
 import com.solthariel.pawchan.domain.model.PostDocument
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
@@ -89,18 +91,42 @@ class PostFooterRuntimeTest {
         compose.onNodeWithText("Раскрыть").assertDoesNotExist()
     }
 
+    @Test
+    fun longReplyByOriginalPosterIsNotCollapsed() {
+        showPost(long = true, replies = null, opening = false)
+        compose.onNodeWithText("Раскрыть").assertDoesNotExist()
+    }
+
+    @Test
+    fun noCollapseSettingKeepsLongOpeningPostExpanded() {
+        showPost(long = true, replies = null, maxLines = NO_POST_COLLAPSE)
+        compose.onNodeWithText("Раскрыть").assertDoesNotExist()
+    }
+
     private fun showPost(
         long: Boolean,
         replies: String?,
+        opening: Boolean = true,
+        maxLines: Int = 2,
     ) {
-        val document = PostDocument.plain(if (long) "Длинная строка текста поста.\n".repeat(12) else "Короткий пост")
+        val document = PostDocument.plain(if (long) "Длинная строка текста поста.\n".repeat(40) else "Короткий пост")
         val post =
             ThreadPostUi(
                 1,
                 document,
                 RichPostTextUi.create(document),
-                ThreadPostMetadataUi(null, null, false, ThreadPostDisplay(index = 1, header = AnnotatedString("#1"))),
+                ThreadPostMetadataUi(
+                    null,
+                    null,
+                    false,
+                    ThreadPostDisplay(
+                        index = 1,
+                        header = AnnotatedString("#1"),
+                        markers = listOf(PostStateMarker.ORIGINAL_POSTER),
+                    ),
+                ),
                 emptyList(),
+                openingPost = opening,
             )
         compose.setContent {
             val context = LocalContext.current
@@ -112,7 +138,7 @@ class PostFooterRuntimeTest {
                     ThumbnailLoading(loader, FastScrollGesture()),
                     ThreadAttachmentActions({}, {}, {}),
                     {},
-                    ThreadPostOptions(appearance = ThreadAppearance(maxLines = 2), replyLabel = replies),
+                    ThreadPostOptions(appearance = ThreadAppearance(maxLines = maxLines), replyLabel = replies),
                 )
             }
         }

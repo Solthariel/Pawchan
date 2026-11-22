@@ -1,6 +1,8 @@
 package com.solthariel.pawchan.infrastructure
 
+import com.solthariel.pawchan.domain.library.HistoryCleanup
 import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
+import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.statistics.UsageMetric
@@ -12,8 +14,13 @@ import kotlinx.coroutines.sync.withLock
 internal class UsageThreadLibrary(
     private val delegate: ThreadLibraryRepository,
     private val usage: UsageStatisticsRepository,
-) : ThreadLibraryRepository by delegate {
+) : ThreadLibraryRepository by delegate,
+    HistoryCleanup {
     private val mutex = Mutex()
+
+    override suspend fun clearVisitHistory(): DomainOutcome<Unit> =
+        (delegate as? HistoryCleanup)?.clearVisitHistory()
+            ?: DomainOutcome.Failure(DomainFailure.StorageUnavailable)
 
     override suspend fun setFavorite(
         address: ThreadAddress,

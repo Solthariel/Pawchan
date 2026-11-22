@@ -23,6 +23,7 @@ internal fun rememberAppDependencies(
                             preferences = storage.settings,
                             postingAccess = network.stack.postingAccessRepository,
                             recent = storage.recentBoards,
+                            sources = network.stack.sources,
                         ),
                     content =
                         ContentRepositories(

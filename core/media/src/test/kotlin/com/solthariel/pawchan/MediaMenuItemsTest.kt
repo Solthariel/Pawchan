@@ -51,6 +51,16 @@ class MediaMenuItemsTest {
         assertEquals(true, MediaMenuItem.GO_TO_POST in items)
     }
 
+    @Test fun pictureInPictureOnlyAppearsForAvailableViewerAction() {
+        val video = image().copy(viewer = AttachmentViewer.VIDEO, kind = MediaKind.VIDEO)
+        val available = MediaMenuRequest(video, MediaMenuPlace.VIEWER, MediaViewerMenu(onPip = {}))
+        assertEquals(true, MediaMenuItem.PICTURE_IN_PICTURE in mediaMenuItems(available, false, false))
+        val unavailable = available.copy(viewer = MediaViewerMenu())
+        assertEquals(false, MediaMenuItem.PICTURE_IN_PICTURE in mediaMenuItems(unavailable, false, false))
+        val thumbnail = available.copy(place = MediaMenuPlace.THUMBNAIL)
+        assertEquals(false, MediaMenuItem.PICTURE_IN_PICTURE in mediaMenuItems(thumbnail, false, false))
+    }
+
     @Test fun viewerMenuStartsWithMetadataWhenAvailable() {
         val request = MediaMenuRequest(image(), MediaMenuPlace.VIEWER, MediaViewerMenu(metadata = { null }))
         assertEquals(MediaMenuItem.METADATA, mediaMenuItems(request, canCopyImage = true, canGoToPost = true).first())

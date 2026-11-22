@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,7 +27,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.data.network.proxy.ProxyRuntimeStatus
+import com.solthariel.pawchan.data.network.proxy.ProxyRuntimeStatus.DIRECT
+import com.solthariel.pawchan.domain.proxy.ProxyService
 
 @Composable
 internal fun ChallengeScreen(
@@ -36,6 +41,9 @@ internal fun ChallengeScreen(
 ) {
     BackHandler(onBack = onBack)
     val allowed = com.solthariel.pawchan.infrastructure.sites.LocalForumMirror.current
+    val proxy = LocalProxyRuntime.current
+    val states by (proxy?.states ?: EMPTY_PROXY_STATES).collectAsStateWithLifecycle()
+    val canOpen = challengeAllowedForProxy(states[ProxyService.DVACH]?.status)
     Column(
         modifier =
             Modifier
@@ -43,11 +51,17 @@ internal fun ChallengeScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding(),
     ) {
-        TextButton(onClick = onDone) {
-            Text(stringResource(R.string.challenge_done))
+        TextButton(onClick = if (canOpen) onDone else onBack) {
+            Text(if (canOpen) stringResource(R.string.challenge_done) else "Назад")
         }
         HorizontalDivider()
-        if (url != null && isAllowedChallengeUri(url.toUri(), allowed)) {
+        if (!canOpen) {
+            Text(
+                "Проверка в браузере недоступна при включённом прокси для 2ch: WebView не использует этот SOCKS5. " +
+                    "Чтобы продолжить, отключите прокси для 2ch или используйте другой способ доступа.",
+                modifier = Modifier.padding(24.dp),
+            )
+        } else if (url != null && isAllowedChallengeUri(url.toUri(), allowed)) {
             ChallengeWebView(url, allowed)
         } else {
             Text(
@@ -117,3 +131,11 @@ private fun isAllowedChallengeUri(
     val host = uri.host?.lowercase() ?: return false
     return uri.scheme == "https" && host == allowed
 }
+
+// A WebView has a separate network stack: do not open it while the app route is blocked or proxied.
+internal fun challengeAllowedForProxy(status: ProxyRuntimeStatus?): Boolean = status == null || status == DIRECT
+
+private val EMPTY_PROXY_STATES =
+    kotlinx.coroutines.flow.MutableStateFlow(
+        emptyMap<ProxyService, com.solthariel.pawchan.data.network.proxy.ProxyRuntimeState>(),
+    )

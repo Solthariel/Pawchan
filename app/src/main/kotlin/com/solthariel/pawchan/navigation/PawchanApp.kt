@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import com.solthariel.pawchan.archive.ArchiveUpdatePreference
 import com.solthariel.pawchan.archive.BindArchiveNotices
 import com.solthariel.pawchan.composer.ComposerDraftNotices
 import com.solthariel.pawchan.composer.LocalComposerPreferences
+import com.solthariel.pawchan.core.ui.AppNoticeHost
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
 import com.solthariel.pawchan.domain.settings.AppSettings
@@ -26,6 +29,8 @@ import com.solthariel.pawchan.infrastructure.AppNetworkStack
 import com.solthariel.pawchan.infrastructure.AppNetworkViewModel
 import com.solthariel.pawchan.infrastructure.AppPreferencesViewModel
 import com.solthariel.pawchan.infrastructure.AppStorageViewModel
+import com.solthariel.pawchan.infrastructure.LocalProxyCatalog
+import com.solthariel.pawchan.infrastructure.LocalProxyRuntime
 import com.solthariel.pawchan.infrastructure.MediaLoaders
 import com.solthariel.pawchan.infrastructure.media.MediaPresentationHost
 import com.solthariel.pawchan.media.LocalMediaPreferences
@@ -38,6 +43,8 @@ import com.solthariel.pawchan.watch.ThreadWatchScheduler
 import com.solthariel.pawchan.workspace.BindWorkspaceLifecycle
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceBinding
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 
 @Composable
 internal fun PawchanApp() {
@@ -53,7 +60,42 @@ internal fun PawchanApp() {
             factory = SettingsViewModel.factory(preferenceOwner.settings, preferenceOwner.settings),
         )
     val loaded by settings.loaded.collectAsStateWithLifecycle()
-    loaded?.let { initial -> LoadedPawchanApp(settings, preferenceOwner.settings, initial) }
+    val proxyLoad by produceState<ProxyStartup>(ProxyStartup.Loading, preferenceOwner.settings) {
+        value =
+            try {
+                ProxyStartup.Ready(
+                    preferenceOwner.settings.proxyPreferences.preferences
+                        .first(),
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                ProxyStartup.Failed
+            }
+    }
+    when (val state = proxyLoad) {
+        ProxyStartup.Loading -> {
+            Unit
+        }
+
+        ProxyStartup.Failed -> {
+            Text("Не удалось прочитать настройки прокси. Подключения остановлены.")
+        }
+
+        is ProxyStartup.Ready -> {
+            loaded?.let { initial -> LoadedPawchanApp(settings, preferenceOwner.settings, initial, state.preferences) }
+        }
+    }
+}
+
+private sealed interface ProxyStartup {
+    data object Loading : ProxyStartup
+
+    data object Failed : ProxyStartup
+
+    data class Ready(
+        val preferences: com.solthariel.pawchan.domain.proxy.ProxyPreferences,
+    ) : ProxyStartup
 }
 
 @Composable
@@ -61,6 +103,7 @@ private fun LoadedPawchanApp(
     settings: SettingsViewModel,
     repository: DataStoreSettingsRepository,
     initial: AppSettings,
+    initialProxies: com.solthariel.pawchan.domain.proxy.ProxyPreferences,
 ) {
     val context = LocalContext.current
     val network: AppNetworkViewModel =
@@ -69,9 +112,9 @@ private fun LoadedPawchanApp(
                 AppNetworkViewModel.factory(
                     context,
                     repository,
+                    initialProxies,
                     initial.behavior.client.storage.cacheMb,
                     initial.behavior.client.mirror,
-                    initial.behavior.dns.github,
                 ),
         )
     val storage: AppStorageViewModel =
@@ -87,8 +130,13 @@ private fun LoadedPawchanApp(
     BindWorkspaceLifecycle(storage.workspace)
     BindArchiveNotices(archives)
 
-    com.solthariel.pawchan.infrastructure.MirrorSessionHost(network.stack) {
-        AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
+    CompositionLocalProvider(
+        LocalProxyRuntime provides network.proxies,
+        LocalProxyCatalog provides network.proxyCatalog,
+    ) {
+        com.solthariel.pawchan.infrastructure.MirrorSessionHost(network.stack) {
+            AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
+        }
     }
 }
 
@@ -106,55 +154,60 @@ private fun AppSessionSurface(
     val workspaceReady by storage.workspace.ready.collectAsStateWithLifecycle()
     val colors by settings.themeColors.collectAsStateWithLifecycle()
     com.solthariel.pawchan.core.ui.ModalLayerHost {
-        PawchanTheme(preference = theme, colors = colors) {
+        PawchanTheme(preference = theme, colors = colors, typography = appSettings.behavior.client.reading.typography) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                if (workspaceReady) {
-                    home?.let { loaded ->
-                        CompositionLocalProvider(
-                            com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
-                            LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
-                            com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency provides
-                                appSettings.behavior.client.reading.navigation.bottomBarTransparencyPercent,
-                            LocalComposerPreferences provides appSettings.behavior.client.composer,
-                            LocalMediaPreferences provides appSettings.behavior.client.media,
-                            com.solthariel.pawchan.media.LocalMediaViewEvents provides
-                                remember(storage.workspace) { mediaViewEvents(storage.workspace) },
-                            LocalWorkspace provides
-                                WorkspaceBinding(
-                                    storage.workspace,
-                                    dependencies.mediaLoaders,
-                                    {},
-                                    storage.library,
-                                    archives,
-                                    storage.settings,
-                                ),
-                            com.solthariel.pawchan.media.LocalHiddenStickerEvents provides
-                                remember(storage.settings.usage) {
-                                    com.solthariel.pawchan.media.HiddenStickerEvents { identity ->
-                                        storage.settings.usage.record(
-                                            com.solthariel.pawchan.domain.statistics.UsageMetric.STICKERS_HIDDEN,
-                                            identity = identity,
-                                        )
-                                    }
-                                },
-                            LocalThumbnailLoader provides dependencies.mediaLoaders.thumbnailLoader,
-                        ) {
-                            MediaPresentationHost {
-                                PawchanNavHost(dependencies, settings, loaded.board ?: defaultBoardAddress())
+                AppNoticeHost {
+                    if (workspaceReady) {
+                        home?.let { loaded ->
+                            CompositionLocalProvider(
+                                com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
+                                LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
+                                com.solthariel.pawchan.core.ui.LocalTopBarTransparency provides
+                                    appSettings.behavior.client.reading.navigation.topBarTransparencyPercent,
+                                com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency provides
+                                    appSettings.behavior.client.reading.navigation.bottomBarTransparencyPercent,
+                                LocalComposerPreferences provides appSettings.behavior.client.composer,
+                                LocalMediaPreferences provides appSettings.behavior.client.media,
+                                com.solthariel.pawchan.media.LocalMediaViewEvents provides
+                                    remember(storage.workspace) { mediaViewEvents(storage.workspace) },
+                                LocalWorkspace provides
+                                    WorkspaceBinding(
+                                        storage.workspace,
+                                        dependencies.mediaLoaders,
+                                        {},
+                                        storage.library,
+                                        archives,
+                                        storage.settings,
+                                        dependencies.repositories.boards.sources,
+                                    ),
+                                com.solthariel.pawchan.media.LocalHiddenStickerEvents provides
+                                    remember(storage.settings.usage) {
+                                        com.solthariel.pawchan.media.HiddenStickerEvents { identity ->
+                                            storage.settings.usage.record(
+                                                com.solthariel.pawchan.domain.statistics.UsageMetric.STICKERS_HIDDEN,
+                                                identity = identity,
+                                            )
+                                        }
+                                    },
+                                LocalThumbnailLoader provides dependencies.mediaLoaders.thumbnailLoader,
+                            ) {
+                                MediaPresentationHost {
+                                    PawchanNavHost(dependencies, settings, loaded.board ?: defaultBoardAddress())
+                                }
                             }
                         }
                     }
+                    ComposerDraftNotices(storage.drafts)
                 }
-                ComposerDraftNotices(storage.drafts)
             }
         }
     }
 }
 
-/** Настройки долгоживущих сервисов: видео, обновление копий, DNS внешних сервисов. */
+/** Настройки долгоживущих сервисов: видео и обновление копий. */
 @Composable
 private fun BindAppSettingsEffects(
     appSettings: AppSettings,
@@ -167,7 +220,6 @@ private fun BindAppSettingsEffects(
     }
     val context = LocalContext.current
     androidx.compose.runtime.SideEffect {
-        stack.github.update(appSettings.behavior.dns.github)
         stack.clearCacheOnExit = appSettings.behavior.client.media.clearCacheOnExit
         loaders.mediaDownloadQueue.preferences = appSettings.behavior.client.downloads
     }
@@ -179,12 +231,6 @@ private fun BindAppSettingsEffects(
     LaunchedEffect(appSettings.behavior.client.automation) {
         ThreadWatchScheduler
             .schedule(context, appSettings.behavior.client.automation)
-    }
-    LaunchedEffect(loaders, appSettings.behavior.dns.arhivach) {
-        loaders.arhivachDns?.update(appSettings.behavior.dns.arhivach)
-    }
-    LaunchedEffect(loaders, appSettings.behavior.dns.vocaroo) {
-        loaders.vocaroo?.update(appSettings.behavior.dns.vocaroo)
     }
 }
 

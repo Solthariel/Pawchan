@@ -13,4 +13,10 @@ internal data class BoardRepositories(
     val preferences: BoardPreferencesRepository,
     val postingAccess: PostingAccessRepository,
     val recent: com.solthariel.pawchan.domain.boards.RecentBoardsRepository? = null,
-)
+    val sources: List<com.solthariel.pawchan.infrastructure.sites.ForumBoardSource> = emptyList(),
+) {
+    fun capabilities(site: com.solthariel.pawchan.domain.model.SiteId) =
+        sources.firstOrNull { it.site == site }?.capabilities
+            ?: com.solthariel.pawchan.infrastructure.sites
+                .ForumCapabilities()
+}

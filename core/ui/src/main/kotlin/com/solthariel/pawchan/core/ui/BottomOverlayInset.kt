@@ -9,3 +9,6 @@ import androidx.compose.ui.unit.dp
  * плашки и индикаторы не прячутся под ней. Ноль — панели нет или она скрыта (например, под клавиатурой).
  */
 val LocalBottomOverlayInset = staticCompositionLocalOf { 0.dp }
+
+/** System navigation area excluded from the workspace's scrollbar, not the floating app bar. */
+val LocalScrollbarBottomInset = staticCompositionLocalOf { 0.dp }

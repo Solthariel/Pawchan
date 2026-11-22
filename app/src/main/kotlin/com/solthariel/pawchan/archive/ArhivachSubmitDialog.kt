@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -43,6 +42,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.core.ui.PageLoadingIndicator
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.archive.ArchiveSubmission
@@ -108,18 +109,31 @@ internal fun ArhivachSubmitDialog(
                 singleLine = true,
                 enabled = !form.busy,
             )
-            form.message?.let { Text(it, Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.error) }
-            Button(
-                onClick = submit,
-                enabled = !form.busy && form.code.isNotBlank() && form.captcha is CaptchaState.Ready,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            ) {
-                if (form.busy) {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Отправить")
-                }
-            }
+            TransientNotice(form.message)
+            ArhivachSubmitButton(form, submit)
+        }
+    }
+}
+
+@Composable
+private fun ArhivachSubmitButton(
+    form: ArhivachSubmitForm,
+    onSubmit: () -> Unit,
+) {
+    Button(
+        onClick = onSubmit,
+        enabled = !form.busy && form.code.isNotBlank() && form.captcha is CaptchaState.Ready,
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+    ) {
+        if (form.busy) {
+            PageLoadingIndicator(
+                description = "Отправка в Архивач",
+                size = 20.dp,
+                backgroundColor = MaterialTheme.colorScheme.onSurface,
+                foregroundColor = MaterialTheme.colorScheme.surface,
+            )
+        } else {
+            Text("Отправить")
         }
     }
 }
@@ -180,7 +194,11 @@ private fun CaptchaImage(
     ) {
         when (state) {
             CaptchaState.Loading -> {
-                CircularProgressIndicator()
+                PageLoadingIndicator(
+                    description = "Загрузка капчи",
+                    backgroundColor = Color.DarkGray,
+                    foregroundColor = Color.White,
+                )
             }
 
             CaptchaState.Failed -> {

@@ -4,6 +4,7 @@ import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.domain.model.MediaAttachment
 import com.solthariel.pawchan.domain.model.MediaDimensions
 import com.solthariel.pawchan.domain.model.MediaKind
+import com.solthariel.pawchan.domain.model.ThreadAddress
 
 data class MediaAttachmentUi(
     val source: MediaAttachmentSource,
@@ -50,6 +51,12 @@ data class MediaAttachmentSource(
     val thumbnailUrl: String?,
     val ownerPostId: Long? = null,
     val downloadPrefix: String? = null,
+    val origin: MediaAttachmentOrigin? = null,
+)
+
+data class MediaAttachmentOrigin(
+    val threadAddress: ThreadAddress? = null,
+    val archiveThreadId: Long? = null,
 )
 
 enum class AttachmentViewer {

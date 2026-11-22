@@ -58,7 +58,7 @@ internal fun rememberPostTextSelection(
     val toolbar = LocalTextToolbar.current
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val selection = remember(key, owner, toolbar) { PostTextSelection(owner, toolbar) }
+    val selection = remember(key, text, owner, toolbar) { PostTextSelection(owner, toolbar) }
     LaunchedEffect(selection.range) {
         if (!selection.range.collapsed) {
             selection.focus.requestFocus()

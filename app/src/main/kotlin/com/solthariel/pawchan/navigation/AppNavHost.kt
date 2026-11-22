@@ -2,7 +2,12 @@ package com.solthariel.pawchan.navigation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -10,14 +15,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -33,6 +41,9 @@ import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
 import com.solthariel.pawchan.infrastructure.thread.AppPostLinkHost
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomBar
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.LocalSharedThreadsBar
 import com.solthariel.pawchan.settings.SettingsViewModel
 import com.solthariel.pawchan.thread.ThreadPostVoteHost
 import com.solthariel.pawchan.workspace.BindWorkspaceReplyChecks
@@ -42,6 +53,8 @@ import com.solthariel.pawchan.workspace.validRestorableRoute
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+// Последний экран читается один раз до того, как стек начнёт перезаписывать его.
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun PawchanNavHost(
     dependencies: AppDependencies,
@@ -49,7 +62,6 @@ internal fun PawchanNavHost(
     homeBoard: BoardAddress,
 ) {
     val workspace = LocalWorkspace.current
-    // Последний экран читается один раз до того, как стек начнёт перезаписывать его.
     val restoredRoute =
         remember {
             initialWorkspaceRoute(
@@ -62,9 +74,8 @@ internal fun PawchanNavHost(
             )
         }
     val baseRoute = rememberSaveable { AppRoute.catalog(restoredBaseBoard(restoredRoute, homeBoard)) }
-    val navController = rememberNavController()
+    val navController = rememberNavController(remember { InstantNavigator() })
     val backStackEntry by navController.currentBackStackEntryAsState()
-    var lastCatalogRoute by rememberSaveable { mutableStateOf(baseRoute) }
     val destinationRoute = backStackEntry?.destination?.route
     val currentCatalogRoute =
         backStackEntry
@@ -72,35 +83,108 @@ internal fun PawchanNavHost(
             ?.arguments
             ?.toBoardAddress()
             ?.let(AppRoute::catalog)
-    LaunchedEffect(currentCatalogRoute) {
-        currentCatalogRoute?.let { route -> lastCatalogRoute = route }
-    }
+    val (lastCatalogRoute, selectedForum) = rememberForumSelection(baseRoute, currentCatalogRoute)
+    val forumCatalogs = rememberForumCatalogs(baseRoute, currentCatalogRoute)
+    val catalogStates = rememberSaveableStateHolder()
+    val archiveOwner = checkNotNull(LocalViewModelStoreOwner.current)
+    val boardLists = remember { mutableStateMapOf<String, com.solthariel.pawchan.boards.BoardsListUi>() }
+    PrewarmBoardLists(dependencies, archiveOwner, boardLists)
     val lastThreadRoute = rememberLastThreadRoute(navController)
-    val motion = remember { AppNavigationMotion() }
-    val bottomActions = bottomActions(navController, motion)
+    val bottomActions =
+        bottomActions(navController) {
+            openSelectedCatalog(navController, selectedForum.value, forumCatalogs.value, lastCatalogRoute.value)
+        }
     BindWorkspaceRoute(navController, workspace?.controller)
     workspace?.let { BindWorkspaceReplyChecks(it) }
     val threadSessions = rememberThreadSessionStores(workspace?.controller)
     CompositionLocalProvider(
         LocalWorkspace provides workspace?.copy(navigate = { address -> navController.navigateThread(address) }),
         LocalThreadSessionStores provides threadSessions,
+        LocalSelectedForum provides selectedForum,
+        LocalSharedThreadsBar provides (destinationRoute in THREAD_WORKSPACE_ROUTES),
     ) {
-        AppPostLinkHost(onOpenBoard = navController::navigateBoard) {
-            ThreadPostVoteHost(dependencies.postVotes) {
-                AppAnimatedNavHost(navController, baseRoute, motion) {
-                    appDestinations(
-                        navController,
-                        dependencies,
-                        settings,
-                        bottomActions,
-                        { AppRoute.catalogBoard(lastCatalogRoute) },
-                        { lastThreadRoute.value?.let(AppRoute::threadAddress) },
-                    )
-                }
-            }
+        Box(Modifier.fillMaxSize()) {
+            AppNavigationContent(
+                navController,
+                dependencies,
+                settings,
+                bottomActions,
+                rememberCatalogSession(lastCatalogRoute, lastThreadRoute, catalogStates, archiveOwner, boardLists),
+                baseRoute,
+            )
+            if (destinationRoute in THREAD_WORKSPACE_ROUTES) SharedThreadsBar(bottomActions)
         }
     }
     BindTabNavigation(navController, destinationRoute, restoredRoute)
+}
+
+@Composable
+private fun AppNavigationContent(
+    navController: androidx.navigation.NavHostController,
+    dependencies: AppDependencies,
+    settings: SettingsViewModel,
+    bottomActions: AppBottomActions,
+    catalogSession: CatalogSession,
+    baseRoute: String,
+) {
+    AppPostLinkHost(onOpenBoard = navController::navigateBoard) {
+        ThreadPostVoteHost(dependencies.postVotes) {
+            AppAnimatedNavHost(navController, baseRoute) {
+                appDestinations(navController, dependencies, settings, bottomActions, catalogSession)
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.SharedThreadsBar(actions: AppBottomActions) {
+    AppBottomBar(
+        actions = actions,
+        selected = AppBottomDestination.THREADS,
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(
+                    WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Horizontal),
+                ),
+    )
+}
+
+private fun rememberCatalogSession(
+    lastCatalogRoute: State<String>,
+    lastThreadRoute: State<String?>,
+    catalogStates: androidx.compose.runtime.saveable.SaveableStateHolder,
+    archiveOwner: androidx.lifecycle.ViewModelStoreOwner,
+    boardLists: MutableMap<String, com.solthariel.pawchan.boards.BoardsListUi>,
+) = CatalogSession(
+    { AppRoute.catalogBoard(lastCatalogRoute.value) },
+    { lastThreadRoute.value?.let(AppRoute::threadAddress) },
+    catalogStates,
+    archiveOwner,
+    boardLists,
+)
+
+private fun openSelectedCatalog(
+    navController: androidx.navigation.NavHostController,
+    selected: String,
+    catalogs: String,
+    lastCatalog: String,
+) {
+    if (selected == "arhivach") {
+        navController.discardSuspendedCatalog()
+        navController.navigateCatalogBase()
+    } else {
+        val target =
+            forumCatalogRoute(catalogs, selected)?.let(AppRoute::catalogBoard)
+                ?: boardAddress(selected, DEFAULT_BOARD)
+        val current = AppRoute.catalogBoard(lastCatalog)
+        if (target != null && target != current) {
+            navController.navigateBoard(target)
+        } else {
+            navController.navigateCatalogTab()
+        }
+    }
 }
 
 /**
@@ -128,7 +212,7 @@ private fun BindTabNavigation(
             incoming?.consume(url)
         }
     }
-    BackHandler(enabled = destinationRoute in TAB_ROUTES) { navController.navigateCatalogBase() }
+    BackHandler(enabled = destinationRoute in TAB_ROUTES) { navController.navigateCatalogTab() }
 }
 
 /** Последний открытый тред — подсвечивается в «Страницах». */
@@ -150,13 +234,13 @@ private fun rememberLastThreadRoute(navController: androidx.navigation.NavHostCo
 
 private fun bottomActions(
     navController: androidx.navigation.NavHostController,
-    motion: AppNavigationMotion,
+    onCatalogClick: () -> Unit,
 ): AppBottomActions =
     AppBottomActions(
-        onBoardsClick = { motion.tab(navController) { navController.navigateTab(AppRoute.BOARDS) } },
-        onCatalogClick = { motion.tab(navController) { navController.navigateCatalogBase() } },
-        onLibraryClick = { motion.tab(navController) { navController.navigateTab(AppRoute.LIBRARY) } },
-        onSettingsClick = { motion.tab(navController) { navController.navigateTab(AppRoute.SETTINGS) } },
+        onBoardsClick = { navController.navigateTab(AppRoute.BOARDS) },
+        onCatalogClick = onCatalogClick,
+        onLibraryClick = { navController.navigateTab(AppRoute.LIBRARY) },
+        onSettingsClick = { navController.navigateTab(AppRoute.SETTINGS) },
     )
 
 private fun initialWorkspaceRoute(

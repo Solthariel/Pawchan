@@ -3,7 +3,9 @@ package com.solthariel.pawchan.thread.vocaroo
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.File
@@ -61,18 +63,24 @@ internal class VocarooDownloads(
         onProgress: (Float?) -> Unit,
     ): Throwable? {
         directory.mkdirs()
-        val partial = File(directory, "${request.id}.part")
+        val partial =
+            try {
+                File.createTempFile("${request.id}.", ".part", directory)
+            } catch (failure: IOException) {
+                return failure
+            }
         return try {
             withTimeout(timeoutMillis) { transport.download(request, partial, onProgress) }
+            currentCoroutineContext().ensureActive()
             val stored = partial.renameTo(file(request.id))
-            if (stored) trim() else partial.delete()
+            if (stored) trim()
             if (stored) null else IOException("Cache rename failed")
         } catch (failure: IOException) {
-            partial.delete()
             failure
         } catch (timeout: TimeoutCancellationException) {
-            partial.delete()
             timeout
+        } finally {
+            partial.delete()
         }
     }
 

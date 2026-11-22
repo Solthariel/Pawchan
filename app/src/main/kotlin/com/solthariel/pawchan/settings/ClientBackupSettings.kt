@@ -22,6 +22,7 @@ import com.solthariel.pawchan.backup.ClientBackupActions
 import com.solthariel.pawchan.backup.ClientBackupService
 import com.solthariel.pawchan.backup.DEFAULT_BACKUP_SECTIONS
 import com.solthariel.pawchan.core.ui.AppAlertDialog
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.data.maintenance.MaintenanceGate
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
 import com.solthariel.pawchan.workspace.LocalWorkspace
@@ -85,13 +86,9 @@ private fun ClientBackupControls(actions: ClientBackupActions) {
         )
     }
     BackupRestorePreview(actions, selected, { selected = it })
-    if (actions.busy && !actions.passwordNeeded) {
-        AppAlertDialog(
-            onDismissRequest = {},
-            title = { Text("Резервная копия") },
-            text = { Text("Выполняется операция…") },
-        )
-    }
+    TransientNotice(
+        "Выполняется операция с резервной копией…".takeIf { actions.busy && !actions.passwordNeeded },
+    )
 }
 
 @Composable
@@ -138,6 +135,6 @@ private fun BackupActionRows(
             Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodySmall,
         )
-        actions.message?.let { Text(it, Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium) }
+        TransientNotice(actions.message.takeUnless { actions.canRetrySave })
     }
 }

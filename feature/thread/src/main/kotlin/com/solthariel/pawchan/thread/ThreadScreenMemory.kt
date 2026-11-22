@@ -40,7 +40,21 @@ internal class ThreadScreenMemory(
         searchScroll = scope.launch { list.animateScrollToItem(positions.getValue(target)) }
     }
 
-    var opened by mutableStateOf<MediaAttachmentUi?>(null)
+    private var openedState by mutableStateOf<MediaAttachmentUi?>(null)
+    var fromGallery by mutableStateOf(false)
+        private set
+    var opened: MediaAttachmentUi?
+        get() = openedState
+        set(value) {
+            openedState = value
+            if (value == null) fromGallery = false
+        }
+
+    fun openFromGallery(item: MediaAttachmentUi) {
+        opened = item
+        fromGallery = true
+    }
+
     var syncThreadPosition: Boolean = false
 
     fun closeViewer(content: ThreadUiState.Content?) {

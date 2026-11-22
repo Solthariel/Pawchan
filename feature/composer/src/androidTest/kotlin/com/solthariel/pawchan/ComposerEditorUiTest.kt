@@ -35,15 +35,27 @@ class ComposerEditorUiTest {
     fun disabledSubjectAndNamesAreHiddenRatherThanGreyedOut() {
         compose.setContent {
             MaterialTheme {
-                ComposerTextEditor(
-                    ComposerDraftState(),
-                    PostingRules(
-                        identity = PostingIdentityRules(namesEnabled = false),
-                        features = PostingFeatures(subject = false),
+                com.solthariel.pawchan.composer.ComposerFieldsDialog(
+                    com.solthariel.pawchan.composer.ComposerScreenState(
+                        ComposerDraftState(),
+                        PostingRules(),
+                        com.solthariel.pawchan.composer
+                            .ComposerCaptchaState(),
+                        com.solthariel.pawchan.composer.ComposerScreenStatus(
+                            com.solthariel.pawchan.composer
+                                .ComposerProgressState(),
+                            com.solthariel.pawchan.composer
+                                .ComposerFailureState(),
+                            false,
+                        ),
                     ),
-                    true,
-                    true,
-                    ComposerFieldActions({}, {}),
+                    com.solthariel.pawchan.composer.availableComposerFields(
+                        PostingRules(identity = PostingIdentityRules(namesEnabled = false), features = PostingFeatures(subject = false)),
+                        true,
+                        emptySet(),
+                    ),
+                    {},
+                    {},
                 )
             }
         }
@@ -108,7 +120,6 @@ class ComposerEditorUiTest {
                     draft.value,
                     PostingRules(),
                     true,
-                    false,
                     ComposerFieldActions({ draft.value = it }, {}),
                 )
             }

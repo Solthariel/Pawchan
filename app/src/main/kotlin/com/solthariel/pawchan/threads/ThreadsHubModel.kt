@@ -47,13 +47,14 @@ internal data class ThreadCounter(
         get() = label.ifEmpty { if (running) "" else "0" }
 }
 
-/** Строка треда: только название и счётчик. */
+/** Строка треда: источник, название и счётчик. */
 internal data class ThreadRowUi(
     val address: ThreadAddress,
     val title: String,
     val counter: ThreadCounter = ThreadCounter(),
     /** Счётчик ответов вам — выделяется цветом. */
     val reply: Boolean = false,
+    val source: ThreadSourceUi = ThreadSourceUi(address.board.site.value),
 )
 
 internal fun threadTitle(

@@ -71,30 +71,52 @@ class ContentFilterEditorUiTest {
     }
 
     @Test
-    fun onePageFormKeepsSaveAndCancelOutsideTheScrollArea() {
+    fun fullScreenFormKeepsSaveAndCloseOutsideTheScrollArea() {
         val rule = newContentFilterRule(defaultBoardAddress(), "голова дай денег")
         compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}) } }
         compose.onNodeWithText("Дополнительно").assertDoesNotExist()
         compose.onNodeWithText("Проверяемый текст").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Отмена").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Закрыть правило").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
         compose.onNodeWithText("Любой вариант").assertExists()
         compose.onNodeWithText("Любой вариант").performScrollTo().performClick()
-        compose.onNodeWithText("Отмена").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Закрыть правило").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
     }
 
     @Test
-    fun existingRuleHasOnlyDeleteCancelAndSaveWithoutDuplicationMenu() {
+    fun existingRuleHasDeleteCloseAndSaveWithoutDuplicationMenu() {
         val rule = newContentFilterRule(defaultBoardAddress(), "голова")
         compose.setContent {
             MaterialTheme { ContentFilterEditor(rule, rule.id, {}, {}, onDelete = {}) }
         }
         compose.onNodeWithContentDescription("Удалить правило").assertIsDisplayed()
-        compose.onNodeWithText("Отмена").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Закрыть правило").assertIsDisplayed()
         compose.onNodeWithText("Сохранить").assertIsDisplayed()
         compose.onNodeWithContentDescription("Действия с правилом").assertDoesNotExist()
         compose.onNodeWithText("Дублировать").assertDoesNotExist()
+    }
+
+    @Test
+    fun unsavedInvalidInputClosesWithoutSavingOrConfirmation() {
+        val rule = newContentFilterRule(defaultBoardAddress(), "голова")
+        var closed = false
+        var saved = false
+        compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, { closed = true }, { saved = true }) } }
+        compose.onNodeWithContentDescription("Треды").performTextInput("invalid")
+        compose.onNodeWithContentDescription("Закрыть правило").performClick()
+        compose.onNodeWithText("Отменить изменения?").assertDoesNotExist()
+        compose.runOnIdle { assertTrue(closed && !saved) }
+    }
+
+    @Test
+    fun closeWithoutChangesDoesNotAskForConfirmation() {
+        val rule = newContentFilterRule(defaultBoardAddress(), "голова")
+        var closed = false
+        compose.setContent { MaterialTheme { ContentFilterEditor(rule, rule.id, { closed = true }, {}) } }
+        compose.onNodeWithContentDescription("Закрыть правило").performClick()
+        compose.runOnIdle { assertTrue(closed) }
+        compose.onNodeWithText("Отменить изменения?").assertDoesNotExist()
     }
 
     @Test

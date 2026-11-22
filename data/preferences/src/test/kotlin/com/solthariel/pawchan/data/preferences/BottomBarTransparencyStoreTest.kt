@@ -37,6 +37,19 @@ class BottomBarTransparencyStoreTest {
         }
     }
 
+    @Test fun topBarDefaultsClampsAndPersistsIndependently() {
+        val key = intPreferencesKey("navigation_top_bar_transparency_percent")
+        assertEquals(0, emptyPreferences().readNavigation().topBarTransparencyPercent)
+        listOf(-1 to 0, 0 to 0, 37 to 37, 100 to 100, 101 to 100).forEach { (stored, expected) ->
+            val preferences = mutablePreferencesOf(key to stored)
+            val loaded = preferences.readNavigation()
+            assertEquals(expected, loaded.topBarTransparencyPercent)
+            preferences.writeNavigation(loaded.copy(bottomBarTransparencyPercent = 55))
+            assertEquals(expected, preferences.readNavigation().topBarTransparencyPercent)
+            assertEquals(55, preferences.readNavigation().bottomBarTransparencyPercent)
+        }
+    }
+
     @Test fun changedValueSurvivesARealDataStoreReopen() =
         runBlocking {
             val file = File(temporary.root, "bottom-bar.preferences_pb")
@@ -49,7 +62,11 @@ class BottomBarTransparencyStoreTest {
                 val outcome =
                     store.updateAppSettings { app ->
                         val client = app.behavior.client
-                        val navigation = client.reading.navigation.copy(bottomBarTransparencyPercent = 37)
+                        val navigation =
+                            client.reading.navigation.copy(
+                                bottomBarTransparencyPercent = 37,
+                                topBarTransparencyPercent = 61,
+                            )
                         app.copy(
                             behavior =
                                 app.behavior.copy(
@@ -74,6 +91,7 @@ class BottomBarTransparencyStoreTest {
                         PreferenceDataStoreFactory.create(scope = CoroutineScope(nextJob + Dispatchers.IO)) { file },
                     ).appSettings.first()
                 assertEquals(37, restored.behavior.client.reading.navigation.bottomBarTransparencyPercent)
+                assertEquals(61, restored.behavior.client.reading.navigation.topBarTransparencyPercent)
             } finally {
                 nextJob.cancelAndJoin()
             }

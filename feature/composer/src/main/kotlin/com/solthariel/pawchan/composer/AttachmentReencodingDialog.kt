@@ -2,7 +2,9 @@ package com.solthariel.pawchan.composer
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +35,7 @@ internal fun AttachmentReencodingDialog(
     var settings by remember(file.id) {
         mutableStateOf(file.options.reencoding ?: file.options.previousReencoding ?: ImageReencoding())
     }
+    var resetPending by remember(file.id) { mutableStateOf(false) }
     AppDialog(onDismiss) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(AppDialogStyle.contentPadding),
@@ -45,22 +48,33 @@ internal fun AttachmentReencodingDialog(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
-            AttachmentReencodingControls(settings, enabled) { settings = it }
-            AttachmentReencodingSummary(file, settings)
+            Spacer(Modifier.height(AppDialogStyle.titleBottomSpacing - 8.dp))
+            AttachmentReencodingSummary(file, settings.takeUnless { resetPending })
+            AttachmentReencodingControls(settings, enabled, { quality ->
+                settings = settings.copy(quality = quality)
+                resetPending = false
+            }) {
+                settings = it
+                resetPending = false
+            }
             AttachmentReencodingActions(
                 enabled = enabled,
+                canConfirm = true,
                 onDismiss = onDismiss,
                 onReset = {
-                    settings = ImageReencoding()
-                    onUpdate(file.copy(options = file.options.copy(reencoding = null, previousReencoding = null)))
+                    settings = ImageReencoding(jpeg = file.format != "png")
+                    resetPending = true
                 },
                 onConfirm = {
                     onUpdate(
                         file.copy(
                             options =
                                 file.options.copy(
-                                    reencoding = settings,
-                                    previousReencoding = settings,
+                                    reencoding = settings.takeUnless { resetPending },
+                                    image =
+                                        file.options.image.copy(
+                                            previousReencoding = settings.takeUnless { resetPending },
+                                        ),
                                 ),
                         ),
                     )

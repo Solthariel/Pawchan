@@ -71,7 +71,7 @@ private fun sampleFor(
     return sample
 }
 
-private fun orientBitmap(
+internal fun orientBitmap(
     bitmap: Bitmap,
     orientation: Int,
 ): Bitmap {

@@ -24,6 +24,7 @@ fun AppearanceSlider(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, modifier = Modifier.fillMaxWidth())
         CompactSlider(
+            label = label,
             value = value.toFloat(),
             onValueChange = { onChange(it.roundToInt()) },
             valueRange = scale.range.first.toFloat()..scale.range.last.toFloat(),

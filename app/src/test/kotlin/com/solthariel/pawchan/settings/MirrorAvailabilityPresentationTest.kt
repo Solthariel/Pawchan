@@ -49,4 +49,14 @@ class MirrorAvailabilityPresentationTest {
         assertNull(activeMirrorCaption("2ch.su", "2ch.su"))
         assertEquals("Сейчас используется: 2ch.life", activeMirrorCaption("2ch.su", "2ch.life"))
     }
+
+    @Test fun partialManualSuccessIsShownAsUnstableWithAverageAndCount() {
+        val result =
+            mirrorAvailabilityPresentation(
+                listOf(MirrorObservation("2ch.su", MirrorAvailability.AVAILABLE, 1, 200, 2, 3)),
+                ZoneOffset.UTC,
+            )
+        assertEquals("Нестабильно", result.rows.single().caption)
+        assertEquals("Среднее: 200 мс, Ответов: 2 из 3", result.rows.single().responseCaption)
+    }
 }

@@ -27,10 +27,25 @@ internal fun mirrorAvailabilityPresentation(
         latest?.let { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(zone).format(Instant.ofEpochMilli(it)) }
     return MirrorAvailabilityPresentation(
         observations.map {
+            val successfulSamples = it.successfulSamples
+            val totalSamples = it.totalSamples
             MirrorStatusRow(
                 it.host,
-                it.availability.mirrorCaption(),
-                it.responseTimeMillis?.takeIf { time -> time >= 0 }?.let { time -> "HTTP-проверка: $time мс" },
+                if (successfulSamples != null && totalSamples != null &&
+                    successfulSamples in 1 until totalSamples
+                ) {
+                    "Нестабильно"
+                } else {
+                    it.availability.mirrorCaption()
+                },
+                if (totalSamples != null && successfulSamples != null) {
+                    listOfNotNull(
+                        it.responseTimeMillis?.let { time -> "Среднее: $time мс" },
+                        "Ответов: $successfulSamples из $totalSamples",
+                    ).joinToString(", ")
+                } else {
+                    it.responseTimeMillis?.takeIf { time -> time >= 0 }?.let { time -> "HTTP-проверка: $time мс" }
+                },
             )
         },
         checked?.let { "Проверено с этого устройства в $it" },

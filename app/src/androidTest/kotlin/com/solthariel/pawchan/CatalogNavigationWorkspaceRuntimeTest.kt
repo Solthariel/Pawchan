@@ -29,7 +29,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
+import com.solthariel.pawchan.core.ui.LocalScrollbarBottomInset
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
 import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
@@ -50,6 +52,7 @@ class CatalogNavigationWorkspaceRuntimeTest {
 
     private lateinit var state: LazyListState
     private var barHeightPx = 0f
+    private var systemBottomPx = 0f
     private var libraryClicks = 0
 
     @Test
@@ -58,8 +61,9 @@ class CatalogNavigationWorkspaceRuntimeTest {
         val body = compose.onNodeWithTag(BODY_TAG).fetchSemanticsNode().boundsInRoot
         val rail = compose.onNodeWithTag(RAIL_TAG).fetchSemanticsNode().boundsInRoot
         val button = compose.onNodeWithContentDescription("Каталог").fetchSemanticsNode().boundsInRoot
-        assertEquals(body.bottom, rail.bottom, 1f)
-        assertEquals(body.bottom, button.bottom, 1f)
+        val safeBottom = body.bottom - systemBottomPx
+        assertEquals(safeBottom, rail.bottom, 1f)
+        assertEquals(safeBottom, button.bottom, 1f)
         assertEquals(barHeightPx * 48f / APP_BOTTOM_BAR_HEIGHT.value, button.height, 1f)
     }
 
@@ -87,7 +91,7 @@ class CatalogNavigationWorkspaceRuntimeTest {
             val layout = state.layoutInfo
             val last = layout.visibleItemsInfo.last()
             assertEquals(99, last.index)
-            assertTrue(last.offset + last.size <= layout.viewportEndOffset - barHeightPx)
+            assertTrue(last.offset + last.size <= layout.viewportEndOffset - barHeightPx - systemBottomPx + 1f)
         }
     }
 
@@ -138,7 +142,7 @@ class CatalogNavigationWorkspaceRuntimeTest {
             // Equal default surface/background colors cannot prove that the rail is uncovered.
             MaterialTheme(colorScheme = lightColorScheme(background = Color.White, surface = Color.Black)) {
                 CompositionLocalProvider(
-                    LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = true),
+                    LocalPostDisplayPreferences provides PostDisplayPreferences(),
                 ) {
                     AppNavigationWorkspace(
                         actions = AppBottomActions({}, {}, { libraryClicks++ }, {}),
@@ -155,14 +159,16 @@ class CatalogNavigationWorkspaceRuntimeTest {
     @Composable
     private fun WorkspaceContent() {
         state = rememberLazyListState()
-        barHeightPx = with(LocalDensity.current) { APP_BOTTOM_BAR_HEIGHT.toPx() }
+        val density = LocalDensity.current
+        barHeightPx = with(density) { APP_BOTTOM_BAR_HEIGHT.toPx() }
+        systemBottomPx = with(density) { LocalScrollbarBottomInset.current.toPx() }
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxWidth().height(40.dp))
             Box(modifier = Modifier.weight(1f).fillMaxWidth().testTag(BODY_TAG)) {
                 LazyColumn(
                     state = state,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 6.dp),
+                    contentPadding = PaddingValues(bottom = LocalBottomOverlayInset.current + 6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     workspaceRows()

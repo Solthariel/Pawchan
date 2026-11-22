@@ -13,11 +13,15 @@ internal data class ThreadRefreshNotice(
 ) {
     val message: String
         get() =
-            listOfNotNull(
-                newPosts.takeIf { it > 0 }?.let { russianPlural(it, "новый пост", "новых поста", "новых постов") },
-                replies.takeIf { it > 0 }?.let { russianPlural(it, "ответ вам", "ответа вам", "ответов вам") },
-                deleted.takeIf { it > 0 }?.let { russianPlural(it, "удалён", "удалено", "удалено") },
-            ).joinToString(" · ")
+            if (replies > 0 || deleted > 0) {
+                listOfNotNull(
+                    russianPlural(newPosts, "новое", "новых", "новых"),
+                    replies.takeIf { it > 0 }?.let { russianPlural(it, "ответ", "ответа", "ответов") },
+                    deleted.takeIf { it > 0 }?.let { russianPlural(it, "удалён", "удалено", "удалено") },
+                ).joinToString(", ")
+            } else {
+                russianPlural(newPosts, "новое сообщение", "новых сообщения", "новых сообщений")
+            }
 
     fun merge(next: ThreadRefreshNotice): ThreadRefreshNotice =
         ThreadRefreshNotice(
@@ -43,7 +47,7 @@ internal class ThreadFreshPosts {
         if (prior == null) return
         val fresh =
             posts.filter { post ->
-                post.id !in prior && !post.metadata.changes.deleted && !post.metadata.changes.own
+                post.id !in prior && !post.metadata.changes.deleted
             }
         val deleted = posts.count { it.metadata.changes.deleted && prior[it.id]?.metadata?.changes?.deleted == false }
         val change =
@@ -61,8 +65,6 @@ internal class ThreadFreshPosts {
 
     fun seen(id: Long) {
         unseen.remove(id)
-        // Новые посты долистали сами — плашка больше не нужна.
-        if (unseen.isEmpty() && notice.value?.firstNew != null) dismiss()
     }
 
     fun dismiss() {

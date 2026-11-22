@@ -64,6 +64,7 @@ internal class CatalogPayloadDecoder(
                             thread.createdAtEpochSeconds,
                         )
                     },
+                threadTags = dto.threads.catalogTags(json, boardAddress),
                 boardSpeed = dto.extractBoardSpeed() ?: 0,
                 boardSpeedAvailable = dto.extractBoardSpeed() != null,
             )
@@ -78,7 +79,7 @@ private fun CatalogThreadDto.toDomain(
     board: BoardAddress,
 ): CatalogThread? {
     val address = ThreadId.parse(num)?.let { ThreadAddress(board, it) }
-    val document = PostDocumentParser.parse(comment)
+    val document = PostDocumentParser.parseDvach(comment)
     val parsedSubject = subject.decodeHtmlText().takeIf(String::isNotBlank)
     val attachments = files.orEmpty().toDomainAttachments(json)
     val statistics =
@@ -189,3 +190,14 @@ private fun MediaAttachment.isImage(): Boolean = kind == MediaKind.IMAGE || kind
 private val DVACH_SITE = requireNotNull(SiteId.parse("dvach"))
 private const val BYTES_PER_KIBIBYTE = 1024L
 private const val MAX_KIBIBYTES = Long.MAX_VALUE / BYTES_PER_KIBIBYTE
+
+private fun List<JsonElement>.catalogTags(
+    json: Json,
+    board: BoardAddress,
+): Map<ThreadAddress, String> =
+    mapNotNull { element ->
+        val dto = json.decodeElementOrNull<CatalogThreadDto>(element) ?: return@mapNotNull null
+        val id = ThreadId.parse(dto.num) ?: return@mapNotNull null
+        val tag = dto.tags?.trim()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        ThreadAddress(board, id) to tag
+    }.toMap()

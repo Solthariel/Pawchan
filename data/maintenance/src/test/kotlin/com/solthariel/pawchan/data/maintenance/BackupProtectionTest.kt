@@ -53,8 +53,22 @@ class BackupProtectionTest {
         BackupProtection.open("format=pawchan-client\nversion=2\nbookmarks=old".toByteArray(), null)
     }
 
+    @Test
+    fun oneCharacterPasswordRoundTrips() {
+        val password = "1".toCharArray()
+        val bytes = BackupProtection.seal(payload, password)
+        assertTrue(BackupProtection.isEncrypted(bytes))
+        assertArrayEquals(payload, BackupProtection.open(bytes, password))
+    }
+
     @Test(expected = IllegalArgumentException::class)
-    fun shortExportPasswordIsRejected() {
-        BackupProtection.seal(payload, "1234".toCharArray())
+    fun emptyExportPasswordIsRejected() {
+        BackupProtection.seal(payload, charArrayOf())
+    }
+
+    @Test fun longPasswordRoundTrips() {
+        val longPassword = "a".repeat(1025).toCharArray()
+        val bytes = BackupProtection.seal(payload, longPassword)
+        assertArrayEquals(payload, BackupProtection.open(bytes, longPassword))
     }
 }

@@ -22,6 +22,10 @@ class CaptchaSelectedStepsTest {
         assertTrue(showCaptchaSelection(captcha, status()))
     }
 
+    @Test fun checkingTheNextStepKeepsAcceptedImagesVisible() {
+        assertTrue(showCaptchaSelection(captcha, status(ComposerProgressState(captchaSelecting = true))))
+    }
+
     @Test fun emptyOrSolvedCaptchaStillShowsStatus() {
         assertFalse(showCaptchaSelection(ComposerCaptchaState(), status()))
         assertFalse(showCaptchaSelection(captcha.copy(satisfied = true), status()))
@@ -30,7 +34,6 @@ class CaptchaSelectedStepsTest {
     @Test fun pendingAndSubmittingStatesHavePriority() {
         listOf(
             ComposerProgressState(captchaLoading = true),
-            ComposerProgressState(captchaSelecting = true),
             ComposerProgressState(submitting = true),
             ComposerProgressState(sent = true),
         ).forEach {

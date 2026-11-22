@@ -41,6 +41,7 @@ internal fun Preferences.readClientPreferences(): ClientPreferences =
                             ComposerField.entries.firstOrNull { it.name == name }
                         }.toSet(),
                 attachments = readAttachmentDefaults(),
+                defaultSage = this[DEFAULT_SAGE] ?: false,
             ),
         media =
             MediaPreferences(
@@ -58,6 +59,7 @@ internal fun Preferences.readClientPreferences(): ClientPreferences =
         reading =
             ReadingPreferences(
                 navigation = readNavigation(),
+                typography = readTypography(),
                 restoreLastScreen = this[RESTORE_SCREEN] ?: true,
                 rememberPosition = this[READING_POSITION] ?: true,
             ),
@@ -84,6 +86,7 @@ private fun Preferences.readAttachmentDefaults(): AttachmentDefaults =
 internal fun MutablePreferences.writeClientPreferences(value: ClientPreferences) {
     this[AUTO_MIRROR] = value.connection.automaticFallback
     writeNavigation(value.reading.navigation)
+    writeTypography(value.reading.typography)
     this[MIRROR] = value.mirror.takeIf {
         com.solthariel.pawchan.domain.settings
             .validMirrorHost(it)
@@ -92,6 +95,7 @@ internal fun MutablePreferences.writeClientPreferences(value: ClientPreferences)
         value.composer.hiddenFields
             .map { it.name }
             .toSet()
+    this[DEFAULT_SAGE] = value.composer.defaultSage
     writeAttachmentDefaults(value.composer.attachments)
     writeAutomation(value.automation)
     writeDownloads(value.downloads)
@@ -118,6 +122,7 @@ private fun MutablePreferences.writeAttachmentDefaults(value: AttachmentDefaults
 }
 
 private val AUTO_MIRROR = booleanPreferencesKey("forum_auto_mirror")
+private val DEFAULT_SAGE = booleanPreferencesKey("composer_default_sage")
 private val HIDDEN_FIELDS = stringSetPreferencesKey("composer_hidden_fields")
 private val UNIQUE_HASH = booleanPreferencesKey("attachment_unique_hash")
 private val REMOVE_METADATA = booleanPreferencesKey("attachment_remove_metadata")

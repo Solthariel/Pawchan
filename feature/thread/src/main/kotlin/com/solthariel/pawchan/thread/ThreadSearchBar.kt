@@ -24,6 +24,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
@@ -51,22 +53,16 @@ internal fun ThreadSearchBar(
         focusRequester.requestFocus()
         keyboard?.show()
     }
-    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = APP_TOP_BAR_HEIGHT)
-                .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ThreadToolbarButton(UiIconKind.BACK, "Закрыть поиск", onClick = closeSearch)
-            ThreadSearchField(tools, content, focusRequester)
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) { ThreadSearchNavigation(tools, onResult) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = APP_TOP_BAR_HEIGHT)
+            .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ThreadToolbarButton(UiIconKind.BACK, "Закрыть поиск", onClick = closeSearch)
+        ThreadSearchField(tools, content, focusRequester)
+        ThreadSearchNavigation(tools, onResult)
     }
 }
 
@@ -83,7 +79,10 @@ private fun RowScope.ThreadSearchField(
         BasicTextField(
             value = tools.query,
             onValueChange = { tools.search(content, it) },
-            modifier = Modifier.weight(1f).focusRequester(focusRequester),
+            modifier =
+                Modifier.weight(1f).focusRequester(focusRequester).semantics {
+                    contentDescription = "Поиск в треде"
+                },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),

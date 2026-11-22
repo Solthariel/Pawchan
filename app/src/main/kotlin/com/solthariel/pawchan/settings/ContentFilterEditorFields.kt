@@ -46,8 +46,7 @@ internal fun FilterEditorFields(draft: ContentFilterDraft) {
         Text(filterBoundaryHint(draft.boundary), style = MaterialTheme.typography.bodySmall)
         FilterLineInput("Не скрывать, если есть…", draft.exceptions, { draft.exceptions = it })
         Text(
-            "Исключения разделяйте запятыми или переносами строк. Любое совпадение оставит пост видимым. " +
-                "Выбранный способ совпадения действует и на исключения.",
+            "Исключения разделяйте запятыми или с новой строки.",
             style = MaterialTheme.typography.bodySmall,
         )
     }

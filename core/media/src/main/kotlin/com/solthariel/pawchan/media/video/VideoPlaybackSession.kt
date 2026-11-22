@@ -144,7 +144,10 @@ internal class VideoPlaybackSession(
     }
 
     override fun setSoftware(enabled: Boolean) {
-        if (!closed && enabled != attempt.software) {
+        if (closed) return
+        val modeChanged = enabled != attempt.software
+        val retryHardware = !enabled && status.value.hardwareDecoded == false && !attempt.software
+        if (modeChanged || retryHardware) {
             pendingSeek = pendingSeek ?: status.value.position
             attempt = attempt.copy(software = enabled)
             start()

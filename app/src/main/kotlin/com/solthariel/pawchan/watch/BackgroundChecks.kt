@@ -7,6 +7,7 @@ import com.solthariel.pawchan.domain.settings.AutomationPreferences
 import com.solthariel.pawchan.domain.thread.ThreadRepository
 import com.solthariel.pawchan.domain.watch.CheckWatchedThread
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
+import com.solthariel.pawchan.workspace.ReplyNotificationSync
 import com.solthariel.pawchan.workspace.checkWorkspaceReplies
 import okhttp3.OkHttpClient
 import java.io.File
@@ -35,6 +36,7 @@ internal suspend fun runBackgroundChecks(
                 FileWorkspaceRepository(File(context.filesDir, "workspace")),
                 repository,
                 statistics,
+                ReplyNotificationSync(context),
             ) { address, count ->
                 if (automation.notifications.replies) {
                     notifier.onNewPosts(ThreadWatchSubscription(address, null, null, 0L), count)

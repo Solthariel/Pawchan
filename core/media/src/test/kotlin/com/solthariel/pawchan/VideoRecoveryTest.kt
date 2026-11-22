@@ -6,6 +6,7 @@ import com.solthariel.pawchan.media.video.VideoEngineBackend
 import com.solthariel.pawchan.media.video.VideoEvent
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
+import com.solthariel.pawchan.media.video.VideoTimeline
 import com.solthariel.pawchan.media.video.reattach
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -52,7 +53,10 @@ class VideoRecoveryTest {
             try {
                 session.start()
                 engine.opened.receive()
-                engine.emit(VideoEvent.PLAYING, VideoPlaybackStatus(playing = true, seekable = true, duration = 5000L))
+                engine.emit(
+                    VideoEvent.PLAYING,
+                    VideoPlaybackStatus(playing = true, seekable = true, timeline = VideoTimeline(duration = 5000L)),
+                )
                 session.reattach(false)
                 assertEquals(1, engine.pauses)
                 assertEquals(0L, engine.lastSeek)
@@ -78,12 +82,15 @@ class VideoRecoveryTest {
             try {
                 session.start()
                 assertFalse(engine.opened.receive())
-                engine.emit(VideoEvent.PROGRESS, VideoPlaybackStatus(position = 4200L, duration = 10000L))
+                engine.emit(
+                    VideoEvent.PROGRESS,
+                    VideoPlaybackStatus(timeline = VideoTimeline(position = 4200L, duration = 10000L)),
+                )
                 engine.emit(VideoEvent.ERROR)
                 assertTrue(engine.opened.receive())
                 engine.emit(
                     VideoEvent.PLAYING,
-                    VideoPlaybackStatus(duration = 10000L, seekable = true, playing = true),
+                    VideoPlaybackStatus(timeline = VideoTimeline(duration = 10000L), seekable = true, playing = true),
                 )
                 assertEquals(4200L, engine.lastSeek)
                 assertTrue(session.status.value.software)

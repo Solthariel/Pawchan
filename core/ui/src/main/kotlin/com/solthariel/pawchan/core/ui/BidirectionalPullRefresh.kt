@@ -2,6 +2,7 @@ package com.solthariel.pawchan.core.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -14,6 +15,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ fun BidirectionalPullRefreshBox(
     val latestRefresh = rememberUpdatedState(refreshing)
     val latestAction = rememberUpdatedState(onRefresh)
     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= TABLET_MINIMUM_WIDTH
+    val density = LocalDensity.current.density
     val connection =
         remember(gesture, options.allowBottom) {
             pullRefreshConnection(
@@ -47,11 +50,16 @@ fun BidirectionalPullRefreshBox(
             modifier
                 .fillMaxSize()
                 .clipToBounds()
-                .onSizeChanged { gesture.updateHeight(it.height, tablet) }
+                .onSizeChanged { gesture.updateHeight(it.height, tablet, density) }
                 .nestedScroll(connection),
     ) {
         content()
-        PullRefreshIndicator(gesture, visual, options.bottomInset, Modifier.matchParentSize())
+        PullRefreshIndicator(
+            gesture,
+            visual,
+            options.bottomInset,
+            Modifier.matchParentSize().padding(top = LocalTopOverlayInset.current),
+        )
     }
 }
 

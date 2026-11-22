@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterBoardStatistics
 import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
 import java.time.Instant
@@ -30,7 +31,7 @@ internal fun ContentFilterStatisticsBody(
             Text(if (statistics.storageFailure) "Статистика недоступна" else "Статистика загружается…")
         }
         if (statistics.storageFailure || resetFailed) {
-            Text("Ошибка хранения статистики: данные могут быть неполными", color = MaterialTheme.colorScheme.error)
+            TransientNotice("Ошибка хранения статистики: данные могут быть неполными")
         }
     }
 }

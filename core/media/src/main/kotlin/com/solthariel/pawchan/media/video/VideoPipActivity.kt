@@ -12,15 +12,19 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Icon
 import android.os.Bundle
+import android.util.Log
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.Lifecycle
+import com.solthariel.pawchan.core.media.BuildConfig
 import com.solthariel.pawchan.core.media.R
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -88,8 +92,6 @@ class VideoPipActivity : ComponentActivity() {
         session = player
         this.request = request
         audio = player.audio(this)
-        player.engine.attach(view)
-        player.redrawPaused()
         ContextCompat.registerReceiver(
             this,
             controls,
@@ -97,14 +99,19 @@ class VideoPipActivity : ComponentActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         receiving = true
-        setPictureInPictureParams(pipParams(player.status.value.playing))
+        updatePipParams(player.status.value)
         scope.launch {
             request.access?.changes?.collect { allowed -> if (!allowed) privacy.revoke() }
         }
         scope.launch {
-            player.status.collect { status ->
-                audio?.update(status.playing)
-                setPictureInPictureParams(pipParams(status.playing))
+            player.status
+                .map { it.playing }
+                .distinctUntilChanged()
+                .collect { audio?.update(it) }
+        }
+        scope.launch {
+            player.status.map { it.playing to it.videoAspect }.distinctUntilChanged().collect {
+                updatePipParams(player.status.value)
             }
         }
     }
@@ -123,15 +130,21 @@ class VideoPipActivity : ComponentActivity() {
             privacy.revoke()
             return
         }
-        val params = session?.let { pipParams(it.status.value.playing) }
-        val accepted =
-            try {
-                params != null && enterPictureInPictureMode(params)
-            } catch (_: IllegalStateException) {
-                false
+        val status = session?.status?.value
+        val accepted = if (status == null) false else tryEnterPip(status)
+        if (BuildConfig.DEBUG) Log.i("PawMpv", "pip accepted=$accepted")
+        if (commitPipTransfer(accepted) {
+                // Keep the viewer surface until Android has actually accepted PiP.
+                val player = session
+                val view = container
+                if (player != null && view != null) {
+                    player.engine.attach(view)
+                    player.redrawPaused()
+                }
+                request?.onShown?.invoke()
             }
-        if (accepted) {
-            request?.onShown?.invoke()
+        ) {
+            return
         } else {
             Toast.makeText(this, R.string.video_pip_failed, Toast.LENGTH_SHORT).show()
             // Просмотрщик ещё открыт: сессия возвращается ему как есть.
@@ -140,6 +153,22 @@ class VideoPipActivity : ComponentActivity() {
             finish()
         }
     }
+
+    private fun tryEnterPip(status: VideoPlaybackStatus): Boolean =
+        try {
+            enterPictureInPictureMode(pipParams(status))
+        } catch (_: IllegalArgumentException) {
+            // Like mpv-android, retry square if the device rejects the video aspect.
+            try {
+                enterPictureInPictureMode(pipParams(status, forceSquare = true))
+            } catch (_: IllegalStateException) {
+                false
+            } catch (_: IllegalArgumentException) {
+                false
+            }
+        } catch (_: IllegalStateException) {
+            false
+        }
 
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
@@ -167,6 +196,7 @@ class VideoPipActivity : ComponentActivity() {
     }
 
     private fun returnToApp() {
+        if (BuildConfig.DEBUG) Log.i("PawMpv", "pip returning to viewer")
         if (!privacy.allowed()) {
             privacy.revoke()
             return
@@ -191,6 +221,7 @@ class VideoPipActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (BuildConfig.DEBUG) Log.i("PawMpv", "pip destroyed, ownsSession=${session != null}")
         if (receiving) unregisterReceiver(controls)
         session?.close()
         session = null
@@ -198,40 +229,63 @@ class VideoPipActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun pipParams(playing: Boolean): PictureInPictureParams =
-        PictureInPictureParams
-            .Builder()
-            .setActions(pipActions(playing))
-            .setAspectRatio(request?.dimensions.pipAspect())
-            .apply { container?.videoBounds(request?.dimensions.pipAspect().toFloat())?.let(::setSourceRectHint) }
-            .build()
-
-    private fun pipActions(playing: Boolean): List<RemoteAction> =
-        listOf(
-            pipAction(CONTROL_BACK, android.R.drawable.ic_media_rew, getString(R.string.video_pip_back)),
-            if (playing) {
-                pipAction(CONTROL_PLAY, android.R.drawable.ic_media_pause, getString(R.string.video_pause))
-            } else {
-                pipAction(CONTROL_PLAY, android.R.drawable.ic_media_play, getString(R.string.video_play))
-            },
-            pipAction(CONTROL_FORWARD, android.R.drawable.ic_media_ff, getString(R.string.video_pip_forward)),
-        )
-
-    private fun pipAction(
-        control: Int,
-        icon: Int,
-        title: String,
-    ): RemoteAction {
-        val intent = Intent(ACTION_CONTROL).setPackage(packageName).putExtra(EXTRA_CONTROL, control)
-        val pending =
-            PendingIntent.getBroadcast(
-                this,
-                control,
-                intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-            )
-        return RemoteAction(Icon.createWithResource(this, icon), title, title, pending)
+    private fun updatePipParams(status: VideoPlaybackStatus) {
+        if (isFinishing || !privacy.allowed()) return
+        try {
+            setPictureInPictureParams(pipParams(status))
+        } catch (_: IllegalArgumentException) {
+            // Some Android versions impose narrower aspect limits than documented.
+            try {
+                setPictureInPictureParams(pipParams(status, forceSquare = true))
+            } catch (_: IllegalStateException) {
+                // Activity is already leaving.
+            } catch (_: IllegalArgumentException) {
+                // The system rejected even square PiP parameters.
+            }
+        } catch (_: IllegalStateException) {
+            // Activity is already leaving; no further parameter updates are useful.
+        }
     }
+
+    private fun pipParams(
+        status: VideoPlaybackStatus,
+        forceSquare: Boolean = false,
+    ): PictureInPictureParams {
+        val aspect = if (forceSquare) android.util.Rational(1, 1) else request?.dimensions.pipAspect(status.videoAspect)
+        return PictureInPictureParams
+            .Builder()
+            .setActions(pipActions(status.playing))
+            .setAspectRatio(aspect)
+            .apply { container?.videoBounds(aspect.toFloat())?.let(::setSourceRectHint) }
+            .build()
+    }
+}
+
+private fun VideoPipActivity.pipActions(playing: Boolean): List<RemoteAction> =
+    listOf(
+        pipAction(CONTROL_BACK, android.R.drawable.ic_media_rew, getString(R.string.video_pip_back)),
+        if (playing) {
+            pipAction(CONTROL_PLAY, android.R.drawable.ic_media_pause, getString(R.string.video_pause))
+        } else {
+            pipAction(CONTROL_PLAY, android.R.drawable.ic_media_play, getString(R.string.video_play))
+        },
+        pipAction(CONTROL_FORWARD, android.R.drawable.ic_media_ff, getString(R.string.video_pip_forward)),
+    )
+
+private fun VideoPipActivity.pipAction(
+    control: Int,
+    icon: Int,
+    title: String,
+): RemoteAction {
+    val intent = Intent(ACTION_CONTROL).setPackage(packageName).putExtra(EXTRA_CONTROL, control)
+    val pending =
+        PendingIntent.getBroadcast(
+            this,
+            control,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+    return RemoteAction(Icon.createWithResource(this, icon), title, title, pending)
 }
 
 /** Кадр видео внутри полноэкранного контейнера (вписан по пропорциям), в координатах окна. */

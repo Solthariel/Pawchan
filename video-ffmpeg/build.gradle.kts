@@ -1,107 +1,57 @@
-import groovy.json.JsonSlurper
-import org.gradle.api.DefaultTask
-import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
-import org.gradle.api.tasks.TaskAction
 import java.security.MessageDigest
 
 plugins {
     alias(libs.plugins.android.library)
 }
 
-abstract class VerifyNativeLibraries : DefaultTask() {
+/** Reject damaged or incomplete bundled player libraries before any Android build. */
+abstract class VerifyMpvLibraries : DefaultTask() {
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val bundleDirectory: DirectoryProperty
+    abstract val libraries: DirectoryProperty
 
-    @get:Input
-    abstract val requestedAbis: ListProperty<String>
-
-    @get:OutputFile
-    abstract val verificationStamp: RegularFileProperty
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val checksums: RegularFileProperty
 
     @TaskAction
     fun verify() {
-        val root = bundleDirectory.get().asFile
-        val manifestFile = root.resolve("manifest.json")
-        val manifest = JsonSlurper().parse(manifestFile) as Map<*, *>
-        check(manifest["ffmpeg"] == "8.1.3" && manifest["dav1d"] == "1.5.4") {
-            "Unexpected native library versions. Restore native-prebuilt from the project archive."
-        }
-        val suppliedAbis = manifest["abis"] as List<*>
-        val hashes = manifest["sha256"] as Map<*, *>
-        requestedAbis.get().forEach { abi ->
-            check(abi in suppliedAbis) {
-                "No bundled libraries for $abi. Supplied ABIs: $suppliedAbis."
+        val expected =
+            checksums.get().asFile.readLines().filter { it.isNotBlank() }.associate { line ->
+                val parts = line.split("  ", limit = 2)
+                check(parts.size == 2 && parts[0].matches(Regex("[0-9a-f]{64}"))) { "Invalid mpv checksum line" }
+                check(parts[1].matches(Regex("lib[a-zA-Z0-9_+]+\\.so"))) { "Invalid mpv library name" }
+                parts[1] to parts[0]
             }
-            val libraries = listOf("avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter")
-            val required =
-                libraries.map { "libraries/ffmpeg/$abi/lib$it.so" } +
-                    listOf("libraries/dav1d/$abi/libdav1d.so", "external/ffmpeg/include/$abi/libavformat/avformat.h")
-            required.forEach { path -> check(hashes.containsKey(path)) { "Native manifest is missing $path" } }
-        }
-        hashes.forEach { (key, expected) ->
-            val path = key as String
-            check(!path.startsWith('/') && path.split('/').none { it == ".." }) { "Invalid native path: $path" }
-            val file = root.resolve(path)
-            check(file.isFile && sha256(file.readBytes()) == expected) {
-                "Native library integrity check failed: $path. Restore native-prebuilt from the project archive."
-            }
-        }
-        val stamp = verificationStamp.get().asFile
-        stamp.parentFile.mkdirs()
-        stamp.writeText(sha256(manifestFile.readBytes()))
-    }
-
-    private fun sha256(bytes: ByteArray): String =
-        MessageDigest
-            .getInstance("SHA-256")
-            .digest(bytes)
-            .joinToString("") { "%02x".format(it) }
-}
-
-/**
- * Copies the verified FFmpeg/dav1d libraries into a generated jniLibs directory. CMake IMPORTED targets alone are not
- * a reliable way to package prebuilt libraries: AGP sometimes drops them and the APK fails at runtime.
- */
-abstract class PrepareFfmpegJniLibs : DefaultTask() {
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val bundleDirectory: DirectoryProperty
-
-    @get:Input
-    abstract val requestedAbis: ListProperty<String>
-
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
-
-    @TaskAction
-    fun copy() {
-        val output = outputDirectory.get().asFile
-        output.deleteRecursively()
-        val root = bundleDirectory.get().asFile
-        requestedAbis.get().forEach { abi ->
-            val target = output.resolve(abi).apply { mkdirs() }
-            listOf("ffmpeg", "dav1d").forEach { library ->
-                root
-                    .resolve("libraries/$library/$abi")
-                    .listFiles { file -> file.isFile && file.name.endsWith(".so") }
-                    .orEmpty()
-                    .forEach { it.copyTo(target.resolve(it.name), overwrite = true) }
-            }
-            check(target.resolve("libavutil.so").isFile && target.resolve("libdav1d.so").isFile) {
-                "FFmpeg libraries for $abi are missing in native-prebuilt."
-            }
+        val required =
+            setOf(
+                "libc++_shared.so",
+                "libmpv.so",
+                "libmpvkt_jni.so",
+                "libmpv_avcodec.so",
+                "libmpv_avdevice.so",
+                "libmpv_avfilter.so",
+                "libmpv_avformat.so",
+                "libmpv_avutil.so",
+                "libmpv_swresample.so",
+                "libmpv_swscale.so",
+            )
+        check(expected.keys == required) { "Incomplete mpv checksum manifest" }
+        required.forEach { name ->
+            val file = libraries.get().file(name).asFile
+            check(file.isFile) { "Missing mpv library: $name" }
+            val hash = MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
+            check(hash == expected.getValue(name)) { "Incorrect mpv library checksum: $name" }
         }
     }
 }
+
+val verifyMpvLibraries =
+    tasks.register<VerifyMpvLibraries>("verifyMpvLibraries") {
+        libraries.set(layout.projectDirectory.dir("src/main/jniLibs/arm64-v8a"))
+        checksums.set(layout.projectDirectory.file("mpv-libraries.sha256"))
+    }
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(verifyMpvLibraries) }
 
 val playerAbis =
     providers
@@ -112,78 +62,37 @@ val playerAbis =
         .map(String::trim)
 require(playerAbis == listOf("arm64-v8a")) { "This project bundle supports arm64-v8a only." }
 
+// The player is Kotlin-only now; it follows the same strict compiler policy as the other Android modules.
+kotlin {
+    compilerOptions {
+        allWarningsAsErrors = true
+        progressiveMode = true
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xtype-enhancement-improvements-strict-mode",
+            "-Xenhance-type-parameter-types-to-def-not-null",
+        )
+    }
+}
+
 android {
     namespace = "com.solthariel.pawchan.ffmpeg"
     compileSdk = 37
-    ndkVersion = "29.0.14206865"
     defaultConfig {
         minSdk = 30
         ndk {
             abiFilters.addAll(playerAbis)
         }
-        externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_shared" } }
         consumerProguardFiles("consumer-rules.pro")
-    }
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    packaging {
-        jniLibs {
-            pickFirsts +=
-                setOf("avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "dav1d")
-                    .map { "**/lib$it.so" }
-        }
-    }
     lint {
         abortOnError = true
         warningsAsErrors = true
     }
-}
-
-// Verified Android libraries ship with the project. No Bash/WSL is needed to build the app.
-val verifyNativeLibraries =
-    tasks.register<VerifyNativeLibraries>("verifyNativeLibraries") {
-        bundleDirectory.set(layout.projectDirectory.dir("native-prebuilt"))
-        requestedAbis.set(playerAbis)
-        verificationStamp.set(layout.buildDirectory.file("native-verified.sha256"))
-    }
-val prepareFfmpeg =
-    tasks.register<Sync>("prepareFfmpeg") {
-        dependsOn(verifyNativeLibraries)
-        inputs.property("abis", playerAbis)
-        from("native-prebuilt") {
-            playerAbis.forEach { abi ->
-                include("libraries/ffmpeg/$abi/*.so")
-                include("libraries/dav1d/$abi/*.so")
-                include("external/ffmpeg/include/$abi/**")
-            }
-        }
-        into(layout.buildDirectory.dir("native"))
-    }
-val prepareFfmpegJniLibs =
-    tasks.register<PrepareFfmpegJniLibs>("prepareFfmpegJniLibs") {
-        dependsOn(verifyNativeLibraries)
-        bundleDirectory.set(layout.projectDirectory.dir("native-prebuilt"))
-        requestedAbis.set(playerAbis)
-        outputDirectory.set(layout.buildDirectory.dir("ffmpegJniLibs"))
-    }
-androidComponents {
-    onVariants { variant ->
-        variant.sources.jniLibs?.addGeneratedSourceDirectory(
-            prepareFfmpegJniLibs,
-            PrepareFfmpegJniLibs::outputDirectory,
-        )
-    }
-}
-tasks.configureEach {
-    if (name.startsWith("configureCMake") || name == "preBuild") dependsOn(prepareFfmpeg)
 }
 
 dependencies {

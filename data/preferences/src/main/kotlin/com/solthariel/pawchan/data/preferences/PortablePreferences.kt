@@ -20,6 +20,7 @@ internal fun portableSchema(): Preferences =
         this[stringPreferencesKey("theme")] = "SYSTEM"
         this[stringPreferencesKey("home_board")] = ""
         this[stringPreferencesKey("favorite_boards_v2")] = ""
+        this[stringPreferencesKey("favorite_boards_other_v1")] = ""
         this[stringPreferencesKey("expanded_board_categories")] = FAVORITES_BOARD_CATEGORY_KEY
     }
 

@@ -36,7 +36,7 @@ internal fun ThreadPostMenuHost(
     PostMenuDialog(
         PostMenuOptions(
             post.document.plainText.isNotBlank(),
-            content.closed,
+            content.closed || !presentation.repliesEnabled,
             presentation.reports?.available == true,
             post.metadata.changes.own,
             post.metadata.hidden,

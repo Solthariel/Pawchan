@@ -41,13 +41,28 @@ class ClientBackupTest {
                 state,
             )
         val restored = decodeClientBackup(encodeClientBackup(source))
-        assertEquals(source.settings + ("favorite_boards_v2" to ""), restored.settings)
+        assertEquals(
+            source.settings + mapOf("favorite_boards_v2" to "", "favorite_boards_other_v1" to ""),
+            restored.settings,
+        )
         assertEquals(1, restored.favorites.size)
         assertEquals(0L, restored.favorites.single().lastVisitedAtEpochMillis)
         assertEquals(setOf(thread), restored.bookmarks.marks.hidden)
         assertEquals(emptyList<OpenThread>(), restored.bookmarks.tabs)
         assertEquals(emptyMap<ThreadAddress, Long>(), restored.bookmarks.marks.seen)
         assertNull(restored.bookmarks.lastRoute)
+    }
+
+    @Test fun backupKeepsOtherSiteFavoritesSeparate() {
+        val source =
+            ClientBackup(
+                mapOf("favorite_boards_v2" to "g", "favorite_boards_other_v1" to "4chan/g"),
+                emptyList(),
+                WorkspaceState(),
+            )
+        val restored = decodeClientBackup(encodeClientBackup(source))
+        assertEquals("g", restored.settings["favorite_boards_v2"])
+        assertEquals("4chan/g", restored.settings["favorite_boards_other_v1"])
     }
 
     @Test fun bookmarkMergePreservesExistingTabsAndHiddenThreads() {

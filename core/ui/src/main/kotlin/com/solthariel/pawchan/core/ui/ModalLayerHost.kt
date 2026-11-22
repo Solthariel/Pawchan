@@ -12,16 +12,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
@@ -36,14 +31,19 @@ fun ModalLayerHost(content: @Composable () -> Unit) {
     val state = remember { ModalLayerState(hosted = true) }
     CompositionLocalProvider(LocalModalLayers provides state) {
         var origin by remember { mutableStateOf(Offset.Zero) }
-        val panel = state.panel()
-        val cutout = panel?.let { RoundRect(it.bounds.translate(-origin), CornerRadius(it.radius)) }
+        val semantics =
+            if (state.pageAlpha() > 0f && state.panel() == null) {
+                Modifier.clearAndSetSemantics {}
+            } else {
+                Modifier
+            }
         Box(
             Modifier
                 .fillMaxSize()
                 .testTag("modal-layer-host")
+                .then(semantics)
                 .onGloballyPositioned { origin = it.positionInRoot() }
-                .modalDimmedPlane(state.pageAlpha(), cutout = cutout),
+                .modalHostBackdrop(state) { origin },
             content = { content() },
         )
     }
@@ -54,10 +54,11 @@ internal fun rememberModalEntry(
     state: ModalLayerState,
     kind: ModalLayerKind,
     strength: ModalScrimStrength = ModalScrimStrength.STANDARD,
+    replacesPageScrim: Boolean = false,
 ): Any {
-    val token = remember(state, kind, strength) { Any() }
+    val token = remember(state, kind, strength, replacesPageScrim) { Any() }
     DisposableEffect(state, token) {
-        state.enter(ModalLayerEntry(token, kind, strength))
+        state.enter(ModalLayerEntry(token, kind, strength, replacesPageScrim = replacesPageScrim))
         onDispose { state.leave(token) }
     }
     return token
@@ -68,29 +69,30 @@ internal fun rememberModalEntry(
 fun Modifier.modalLayerSurface(shape: Shape? = null): Modifier {
     val state = LocalModalLayers.current
     val token = LocalModalToken.current
-    return modalDimmedPlane(if (state != null && token != null) state.coveredAlpha(token) else 0f, shape)
+    val covered = state != null && token != null && state.covered(token)
+    val dim = if (state != null && token != null) state.coveredAlpha(token) else 0f
+    return modalDimmedPlane(dim, covered, shape)
 }
 
 private fun Modifier.modalDimmedPlane(
     dim: Float,
+    covered: Boolean,
     shape: Shape? = null,
-    cutout: RoundRect? = null,
 ): Modifier =
     if (dim > 0f) {
-        val semantics = if (cutout == null) clearAndSetSemantics {} else this
-        semantics.drawWithCache {
-            val path = cutout?.let { Path().apply { addRoundRect(it) } }
+        clearAndSetSemantics {}.drawWithCache {
             val outline = shape?.createOutline(size, layoutDirection, this)
             onDrawWithContent {
                 drawContent()
                 val color = Color.Black.copy(alpha = dim)
                 when {
-                    path != null -> clipPath(path, ClipOp.Difference) { drawRect(color) }
                     outline != null -> drawOutline(outline, color)
                     else -> drawRect(color)
                 }
             }
         }
+    } else if (covered) {
+        clearAndSetSemantics {}
     } else {
         this
     }

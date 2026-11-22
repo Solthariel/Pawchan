@@ -10,14 +10,14 @@ import com.solthariel.pawchan.domain.model.BoardAddress
  *
  * Уход со вкладки сохраняет её стек (`saveState`) вместе с ViewModel и прокруткой, возврат восстанавливает
  * его (`restoreState`) — каждая кнопка независима. Каталог не снимается со стека, поэтому сохраняет
- * загруженный список и прокрутку при любых переключениях. Тред при уходе закрывается без сохранения стека:
- * его снимок и позиция остаются в рабочем пространстве («Страницы»), и при возврате тред открывается
- * на том же месте без загрузки.
+ * загруженный список и прокрутку при любых переключениях. При уходе из цепочки каталога её стек
+ * сохраняется и восстанавливается при возврате на кнопку «Каталог».
  */
 internal val TAB_ROUTES = setOf(AppRoute.LIBRARY, AppRoute.BOARDS, AppRoute.SETTINGS)
 
 /** Экраны, которые не сохраняются вместе со стеком вкладки. */
-private val TRANSIENT_ROUTES = setOf(AppRoute.THREAD, AppRoute.NEW_THREAD, AppRoute.CHALLENGE)
+private val TRANSIENT_ROUTES =
+    setOf(AppRoute.THREAD, AppRoute.NEW_THREAD, AppRoute.CHALLENGE, AppRoute.DOWNLOAD_ARCHIVE)
 
 /** «Каталог» и «Назад» с корня вкладки: открывается основание стека. */
 internal fun NavController.navigateCatalogBase() {
@@ -36,15 +36,64 @@ internal fun NavController.navigateTab(route: String) {
         popBackStack(current.destination.id, inclusive = false)
         return
     }
-    navigateCatalogBase()
+    if (current == null) suspendCatalogStack() else navigateCatalogBase()
     navigate(route) {
         launchSingleTop = true
         restoreState = true
     }
 }
 
+/** Переключение на каталог восстанавливает его цепочку; повторное нажатие возвращает к корню. */
+internal fun NavController.navigateCatalogTab() {
+    val base = entryOrNull(AppRoute.CATALOG) ?: return
+    if (activeTab() == null) {
+        discardSuspendedCatalog()
+        navigateCatalogBase()
+    } else {
+        navigateCatalogBase()
+        val route = base.savedStateHandle.remove<String>(SUSPENDED_CATALOG_ROUTE)
+        if (route != null) navigate(route) { restoreState = true }
+    }
+}
+
+/** Save only the catalog-owned chain. Temporary challenge/composer destinations are not restored. */
+private fun NavController.suspendCatalogStack() {
+    val base = entryOrNull(AppRoute.CATALOG) ?: return
+    while (currentBackStackEntry?.destination?.route in CATALOG_TRANSIENT_ROUTES) {
+        if (!popBackStack()) break
+    }
+    val route = if (currentBackStackEntry?.destination?.route in CATALOG_TRANSIENT_ROUTES) null else catalogStackRoute()
+    if (route != null && popBackStack(base.destination.id, inclusive = false, saveState = true)) {
+        base.savedStateHandle[SUSPENDED_CATALOG_ROUTE] = route
+    }
+}
+
+/** The first popped destination is archive if present, otherwise a thread. */
+private fun NavController.catalogStackRoute(): String? =
+    entryOrNull(AppRoute.ARCHIVE_BROWSER)?.arguments?.toBoardAddress()?.let(AppRoute::archiveBrowser)
+        ?: entryOrNull(AppRoute.ARCHIVE)?.arguments?.toBoardAddress()?.let(AppRoute::archive)
+        ?: entryOrNull(AppRoute.THREAD)?.arguments?.toThreadAddress()?.let(AppRoute::thread)
+
+/** A board change invalidates the suspended catalog chain, including its saved ViewModels. */
+internal fun NavController.discardSuspendedCatalog() {
+    val handle = entryOrNull(AppRoute.CATALOG)?.savedStateHandle ?: return
+    val route = handle.remove<String>(SUSPENDED_CATALOG_ROUTE) ?: return
+    val pattern =
+        when {
+            route.startsWith("archive-browser/") -> AppRoute.ARCHIVE_BROWSER
+            route.startsWith("archive/") -> AppRoute.ARCHIVE
+            else -> AppRoute.THREAD
+        }
+    clearBackStack(pattern)
+}
+
+private val CATALOG_TRANSIENT_ROUTES = setOf(AppRoute.NEW_THREAD, AppRoute.CHALLENGE)
+
+private const val SUSPENDED_CATALOG_ROUTE = "suspendedCatalogRoute"
+
 /** Выбор доски заменяет основание стека; сохранённые стеки вкладок не трогаются. */
 internal fun NavController.navigateBoard(board: BoardAddress) {
+    discardSuspendedCatalog()
     navigateCatalogBase()
     val base = entryOrNull(AppRoute.CATALOG) ?: return
     if (base.arguments?.toBoardAddress() == board) return
@@ -58,6 +107,7 @@ internal fun NavController.openRestoredRoute(route: String?) {
     val onlyBase = previousBackStackEntry == null && currentBackStackEntry?.destination?.route == AppRoute.CATALOG
     if (route == null || !onlyBase) return
     when {
+        route.startsWith("archive-browser/") -> navigate(route)
         route in TAB_ROUTES -> navigateTab(route)
         route.startsWith("thread/") -> AppRoute.threadAddress(route)?.let(::navigateThread)
         route.startsWith("archive/") -> navigate(route)
@@ -74,6 +124,7 @@ internal fun restoredBaseBoard(
             AppRoute.catalogBoard(restored)
                 ?: AppRoute.threadAddress(restored)?.board
                 ?: AppRoute.catalogBoard(restored.replaceFirst("archive/", "catalog/"))
+                ?: AppRoute.catalogBoard(restored.replaceFirst("archive-browser/", "catalog/"))
         }
     return board ?: home
 }

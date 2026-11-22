@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import coil3.ImageLoader
 import com.solthariel.pawchan.catalog.CatalogActions
@@ -34,6 +35,7 @@ import com.solthariel.pawchan.composer.NewThreadCaptchaActions
 import com.solthariel.pawchan.composer.NewThreadScreen
 import com.solthariel.pawchan.composer.NewThreadUiState
 import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.infrastructure.MediaLoaders
@@ -46,9 +48,11 @@ import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import com.solthariel.pawchan.navigation.threadAddress
+import com.solthariel.pawchan.threads.ThreadSourceUi
 import com.solthariel.pawchan.ui.PawchanTheme
 import okhttp3.OkHttpClient
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -126,12 +130,25 @@ class RuntimeSmokeTest {
                     onBack = {},
                     onThreadClick = {},
                     bottomActions = bottomActions(),
+                    sources =
+                        mapOf(
+                            requireNotNull(SiteId.parse("dvach")) to
+                                ThreadSourceUi("2ch", R.drawable.forum_2ch),
+                        ),
                 )
             }
         }
 
         compose.onNodeWithText("Тред /b/").assertIsDisplayed()
         compose.onNodeWithText("Тред /po/").assertIsDisplayed()
+        val forumIcons =
+            compose
+                .onAllNodesWithContentDescription("Форум: 2ch", useUnmergedTree = true)
+                .fetchSemanticsNodes()
+        assertEquals(2, forumIcons.size)
+        val forumIcon = forumIcons.first().boundsInRoot
+        val title = compose.onNodeWithText("Тред /b/", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(with(compose.density) { 16.dp.toPx() }, title.left - forumIcon.right, 1f)
     }
 
     @Test

@@ -67,7 +67,7 @@ private fun MirrorCheckResults(
             }
         }
         Text(
-            "Время HTTP-проверки, не сетевой ping.",
+            "Среднее время успешных HTTP-проверок, не сетевой ping.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -83,7 +83,7 @@ private fun MirrorCheckRow(row: MirrorStatusRow) {
     ) {
         Text(row.host, Modifier.padding(end = 12.dp))
         Text(
-            listOfNotNull(row.caption, row.responseCaption?.removePrefix("HTTP-проверка: ")).joinToString(" · "),
+            listOfNotNull(row.caption, row.responseCaption?.removePrefix("HTTP-проверка: ")).joinToString(" — "),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

@@ -57,6 +57,7 @@ class CatalogSnapshot(
     threads: List<CatalogThread>,
     val boardSpeed: Int = 0,
     val boardSpeedAvailable: Boolean = true,
+    val threadTags: Map<ThreadAddress, String> = emptyMap(),
 ) {
     val threads: List<CatalogThread> = threads.toList()
 }

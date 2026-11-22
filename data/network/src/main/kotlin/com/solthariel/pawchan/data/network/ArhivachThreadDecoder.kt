@@ -21,7 +21,7 @@ internal fun decodeArhivachThread(
     url: String,
     html: String,
 ): ThreadSnapshot? {
-    val page = Jsoup.parse(html, url)
+    val page = Jsoup.parse(html, url).apply { outputSettings().prettyPrint(false) }
     val sources =
         page.select("a[href]").mapNotNull { source ->
             source
@@ -94,7 +94,7 @@ private fun decodeArchivePost(
     )
 }
 
-private fun Element.archiveSage(): Boolean {
+internal fun Element.archiveSage(): Boolean {
     val mail = selectFirst(".post_mail")?.attr("title").orEmpty()
     return selectFirst(".poster_sage") != null || mail.contains("sage", ignoreCase = true)
 }

@@ -17,6 +17,8 @@ class DvachThreadApi private constructor(
     private val decoder: ThreadPayloadDecoder,
 ) : ReportingThreadRepository,
     PostVoteRepository {
+    override fun supportsReporting(address: ThreadAddress): Boolean = address.board.isDvachSource()
+
     override suspend fun loadThread(address: ThreadAddress): DomainOutcome<ThreadSnapshot> {
         if (!address.board.isDvachSource()) return unsupportedDvachSource()
         val request = ThreadRequestFactory.create(address)

@@ -23,3 +23,8 @@ keystore.properties
 # Python release tooling caches
 __pycache__/
 *.py[cod]
+
+# Public synthetic TLS fixtures required by :data:network:test (never allow project signing keys).
+!data/network/src/test/resources/proxy-test.p12
+!data/network/src/test/resources/proxy-host-test.p12
+!data/network/src/test/resources/proxy-wrong-host-test.p12

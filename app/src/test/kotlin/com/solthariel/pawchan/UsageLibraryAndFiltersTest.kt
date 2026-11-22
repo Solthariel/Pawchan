@@ -3,6 +3,7 @@ package com.solthariel.pawchan
 import com.solthariel.pawchan.domain.filter.ContentFilterHit
 import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
 import com.solthariel.pawchan.domain.filter.ContentFilterStatisticsRepository
+import com.solthariel.pawchan.domain.library.HistoryCleanup
 import com.solthariel.pawchan.domain.library.ThreadLibraryEntry
 import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.model.DomainFailure
@@ -58,6 +59,19 @@ class UsageLibraryAndFiltersTest {
                 ),
                 stats.events,
             )
+        }
+
+    @Test fun historyCleanupIsDelegatedAndFailuresAreReported() =
+        runTest {
+            val delegate = CleanupLibraryFake()
+            val library = UsageThreadLibrary(delegate, UsageEvents())
+            assertEquals(DomainOutcome.Success(Unit), library.clearVisitHistory())
+            assertEquals(1, delegate.calls)
+            delegate.fail = true
+            assertEquals(DomainOutcome.Failure(DomainFailure.StorageUnavailable), library.clearVisitHistory())
+            assertEquals(2, delegate.calls)
+            val unsupported = UsageThreadLibrary(UsageLibraryFake(), UsageEvents())
+            assertEquals(DomainOutcome.Failure(DomainFailure.StorageUnavailable), unsupported.clearVisitHistory())
         }
 
     @Test fun rejectedFavoriteWriteDoesNotIncreaseCounter() =
@@ -143,4 +157,16 @@ private class FilterUsageFake(
         if (fail) DomainOutcome.Failure(DomainFailure.StorageUnavailable) else DomainOutcome.Success(Unit)
 
     override suspend fun reset(): DomainOutcome<Unit> = DomainOutcome.Success(Unit)
+}
+
+private class CleanupLibraryFake :
+    ThreadLibraryRepository by UsageLibraryFake(),
+    HistoryCleanup {
+    var calls = 0
+    var fail = false
+
+    override suspend fun clearVisitHistory(): DomainOutcome<Unit> {
+        calls++
+        return if (fail) DomainOutcome.Failure(DomainFailure.StorageUnavailable) else DomainOutcome.Success(Unit)
+    }
 }

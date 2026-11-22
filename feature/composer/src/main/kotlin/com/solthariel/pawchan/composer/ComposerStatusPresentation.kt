@@ -35,10 +35,6 @@ internal fun composerStatusText(
                 composerFailureText(failure)
             }
 
-            progress.captchaSelecting -> {
-                "Проверка капчи…"
-            }
-
             progress.captchaLoading -> {
                 "Загрузка капчи…"
             }
@@ -85,5 +81,20 @@ internal fun ComposerStatusPresentation.withUploadBudget(
         ComposerStatusPresentation(message, budget.remaining?.let { it < 0 } == true || budget.problem != null)
     } else {
         this
+    }
+}
+
+/** Move only the server's captcha-invalid notice to the existing captcha status line. */
+internal fun captchaInvalidNotice(failure: ComposerFailureState): String? {
+    val reason = failure.reason?.trim()
+    return when {
+        failure.error == ReplyError.CAPTCHA -> "Капча недействительна"
+
+        failure.error == ReplyError.REJECTED && reason?.trimEnd('.', '!', ' ')?.equals(
+            "Капча невалидна",
+            ignoreCase = true,
+        ) == true -> reason
+
+        else -> null
     }
 }

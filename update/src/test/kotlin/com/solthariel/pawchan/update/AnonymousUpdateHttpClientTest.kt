@@ -9,16 +9,36 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AnonymousUpdateHttpClientTest {
     @Test fun ordinaryClientHasNoAuthenticationInterceptorsAndKeepsTlsRedirectPolicy() {
-        val client = updateHttpClient(Dns.SYSTEM)
+        val client = updateHttpClient()
         try {
+            assertSame(Dns.SYSTEM, client.dns)
             assertTrue(client.interceptors.isEmpty())
             assertTrue(client.networkInterceptors.isEmpty())
             assertFalse(client.followSslRedirects)
+        } finally {
+            client.connectionPool.evictAll()
+            client.dispatcher.executorService.shutdown()
+        }
+    }
+
+    @Test fun clientCanBorrowProxyRoutingWithoutBorrowingCookies() {
+        val selector = java.net.ProxySelector.getDefault()
+        val guard = okhttp3.Interceptor { chain -> chain.proceed(chain.request()) }
+        val client =
+            updateHttpClient {
+                proxySelector(selector)
+                addNetworkInterceptor(guard)
+            }
+        try {
+            org.junit.Assert.assertSame(selector, client.proxySelector)
+            org.junit.Assert.assertSame(okhttp3.CookieJar.NO_COOKIES, client.cookieJar)
+            assertEquals(listOf(guard), client.networkInterceptors)
         } finally {
             client.connectionPool.evictAll()
             client.dispatcher.executorService.shutdown()
@@ -29,7 +49,7 @@ class AnonymousUpdateHttpClientTest {
         runBlocking {
             val url = "https://raw.githubusercontent.com/owner/repo/master/update/feed/data-v1.json".toHttpUrl()
             val client =
-                updateHttpClient(Dns.SYSTEM)
+                updateHttpClient()
                     .newBuilder()
                     .addInterceptor { chain ->
                         assertEquals(url, chain.request().url)
@@ -49,7 +69,7 @@ class AnonymousUpdateHttpClientTest {
     @Test fun inaccessibleFeedIsAnOrdinaryFailure() =
         runBlocking {
             val client =
-                updateHttpClient(Dns.SYSTEM)
+                updateHttpClient()
                     .newBuilder()
                     .addInterceptor { chain ->
                         Response

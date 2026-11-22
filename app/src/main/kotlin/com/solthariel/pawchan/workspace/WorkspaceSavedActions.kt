@@ -4,7 +4,7 @@ import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.domain.workspace.markRead
 
 internal fun WorkspaceController.readReplies(item: WorkspacePostUi) =
-    change { state ->
+    changeReplies(item.address) { state ->
         state.markRead(
             state.replies
                 .filter { reply ->

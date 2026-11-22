@@ -11,4 +11,5 @@ object AppDialogStyle {
     val maxWidth = 560.dp
     val screenPadding = 24.dp
     val contentPadding = 24.dp
+    val titleBottomSpacing = 16.dp
 }

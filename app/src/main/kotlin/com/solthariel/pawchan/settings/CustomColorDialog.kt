@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.domain.settings.ThemeColors
@@ -29,7 +31,9 @@ internal fun CustomColorDialog(
     onChange: (ThemeColors) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var hex by rememberSaveable { mutableStateOf(seedHex(state.themeColors.customSeed)) }
+    val systemAccent =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.primary.toArgb() else null
+    var hex by rememberSaveable { mutableStateOf(seedHex(initialCustomSeed(state.themeColors, systemAccent))) }
     val seed = parseSeedHex(hex)
     val dark =
         state.theme != ThemePreference.LIGHT &&

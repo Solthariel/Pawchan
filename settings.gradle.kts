@@ -37,8 +37,4 @@ include(":performance:target")
 include(":performance:macrobenchmark")
 
 include(":feature:thread")
-
 include(":feature:applock")
-
-// Isolated JVM tooling; not an Android application/library dependency.
-includeBuild("tools/native-build") { name = "pawchan-native-build" }

@@ -66,7 +66,6 @@ internal class MediaMenuPlatform(
                     .url(attachment.originalUrl)
                     .header("User-Agent", MEDIA_USER_AGENT)
                     .header("Accept", "image/*,*/*;q=0.8")
-                    .header("Referer", DVACH_REFERER)
                     .build()
             val file = clipboardFile(attachment.fileName)
             writeClipboardImage(client, request, file)
@@ -152,7 +151,6 @@ internal fun MediaContextMenuHost(
 }
 
 private val UNSAFE_FILE_NAME = Regex("[^A-Za-z0-9._-]")
-private const val DVACH_REFERER = "https://2ch.su/"
 private const val MEDIA_USER_AGENT =
     "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 " +
         "Chrome/124 Mobile Safari/537.36"

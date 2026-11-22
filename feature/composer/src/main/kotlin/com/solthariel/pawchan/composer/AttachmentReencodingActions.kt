@@ -13,6 +13,7 @@ import com.solthariel.pawchan.feature.composer.R
 @Composable
 internal fun AttachmentReencodingActions(
     enabled: Boolean,
+    canConfirm: Boolean,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
@@ -28,7 +29,7 @@ internal fun AttachmentReencodingActions(
         },
         dismiss = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
         confirm = {
-            TextButton(enabled = enabled, onClick = onConfirm) {
+            TextButton(enabled = enabled && canConfirm, onClick = onConfirm) {
                 Text(stringResource(R.string.attachment_reencode_apply))
             }
         },

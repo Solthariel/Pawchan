@@ -10,10 +10,10 @@ internal class ThumbnailSubscription(
     private val owner: ThumbnailLoader,
     internal val url: String,
 ) : RememberObserver {
-    private val mutableBitmap = MutableStateFlow<Bitmap?>(null)
+    private val mutableBitmap = MutableStateFlow(owner.cached(url))
     val bitmap: StateFlow<Bitmap?> = mutableBitmap
     internal val failed = MutableStateFlow(false)
-    internal var instantly = false
+    internal var instantly = mutableBitmap.value != null
         private set
     internal var task: ThumbnailTask? = null
 

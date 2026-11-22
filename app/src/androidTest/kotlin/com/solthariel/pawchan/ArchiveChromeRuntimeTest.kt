@@ -1,9 +1,11 @@
 package com.solthariel.pawchan
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.domain.boards.BoardArchiveSnapshot
@@ -26,9 +28,9 @@ class ArchiveChromeRuntimeTest {
         val state = ArchiveUiState(BoardArchiveSnapshot(emptyList(), (1..13).toList()), loading = false)
         compose.setContent { MaterialTheme { ArchiveScreen(defaultBoardAddress(), state, actions) } }
         compose.onNodeWithText("Архив /b/").assertExists()
-        compose.onNodeWithText("1 из 13").assertExists()
-        compose.onNodeWithText("Новее").assertIsNotEnabled()
-        compose.onNodeWithText("Старее").performClick()
+        compose.onNodeWithText("1 / 13").assertExists()
+        compose.onNodeWithText("← Новее").assertIsNotEnabled()
+        compose.onNodeWithText("Старее →").performClick()
         compose.onNodeWithContentDescription("Обновить").performClick()
         compose.onNodeWithContentDescription("К каталогу").performClick()
         compose.runOnIdle {
@@ -36,5 +38,19 @@ class ArchiveChromeRuntimeTest {
             assertEquals(1, back)
             assertEquals(1, next)
         }
+    }
+
+    @Test fun archivePagerShowsLoadingInsteadOfAnOldPageNumber() {
+        val actions = ArchiveActions({}, {}, {}, {}, {})
+        val state =
+            ArchiveUiState(
+                snapshot = BoardArchiveSnapshot(emptyList(), (1..13).toList()),
+                pageIndex = 1,
+                loading = true,
+            )
+        compose.setContent { MaterialTheme { ArchiveScreen(defaultBoardAddress(), state, actions) } }
+
+        compose.onNodeWithText("2 / 13").assertDoesNotExist()
+        compose.onNodeWithTag("archive-page-loading").assertIsDisplayed()
     }
 }

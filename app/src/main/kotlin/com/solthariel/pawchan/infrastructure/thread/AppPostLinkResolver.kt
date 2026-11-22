@@ -33,10 +33,22 @@ internal class AppPostLinkResolver(
         currentBoard: BoardAddress?,
     ): ForumWebLink? {
         val current = currentBoard?.let { sites[it.site] }
-        return current?.addressInput(input, currentBoard)?.takeIf { it.belongsTo(current) }
-            ?: sites.values.firstNotNullOfOrNull { adapter ->
+        val local = current?.addressInput(input, currentBoard)?.takeIf { it.belongsTo(current) }
+        return if (local != null || (currentBoard != null && !hasExplicitHost(input))) {
+            local
+        } else {
+            sites.values.firstNotNullOfOrNull { adapter ->
                 adapter.addressInput(input, null)?.takeIf { it.belongsTo(adapter) }
             }
+        }
+    }
+
+    private fun hasExplicitHost(input: String): Boolean {
+        val text = input.trim()
+        if (text.startsWith("/")) return false
+        val absolute = if (text.contains("://")) text else "https://$text"
+        val uri = parseUri(absolute)
+        return uri?.scheme in setOf("http", "https") && uri?.host?.contains('.') == true && uri.userInfo == null
     }
 
     /** Выбирается адаптер сайта треда, а не глобальное правило для всех форумов. */

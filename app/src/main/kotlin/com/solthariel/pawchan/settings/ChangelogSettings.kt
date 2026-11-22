@@ -1,5 +1,10 @@
 package com.solthariel.pawchan.settings
 
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -8,18 +13,50 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.solthariel.pawchan.BuildConfig
+import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import java.io.File
 
 @Composable
-internal fun ChangelogSettings(history: ChangelogHistoryController = rememberChangelogHistory()) {
+internal fun ChangelogSettings(
+    history: ChangelogHistoryController = rememberChangelogHistory(),
+    showVersion: Boolean = false,
+) {
     var open by remember { mutableStateOf(false) }
     val state by history.state.collectAsState()
     LaunchedEffect(open) {
         if (open) history.open()
     }
-    SettingsItemRow(SettingsItem.Action("Список изменений", null, onClick = { open = true }))
+    if (showVersion) {
+        ListItem(
+            headlineContent = {
+                val secondary = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    buildAnnotatedString {
+                        append("Версия ")
+                        withStyle(SpanStyle(color = secondary)) { append(BuildConfig.VERSION_NAME) }
+                    },
+                    Modifier.testTag("about-version"),
+                )
+            },
+            trailingContent = {
+                TextButton(onClick = { open = true }) {
+                    Text("Список изменений")
+                    UiForwardIndicator()
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    } else {
+        SettingsItemRow(SettingsItem.Action("Список изменений", null, onClick = { open = true }))
+    }
     if (open) ChangelogDialog(state.releases, state.failed) { open = false }
 }
 

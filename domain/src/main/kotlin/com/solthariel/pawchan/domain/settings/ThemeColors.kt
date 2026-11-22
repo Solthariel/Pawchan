@@ -4,7 +4,7 @@ package com.solthariel.pawchan.domain.settings
 enum class ThemePalette { SYSTEM, LAVENDER, BLUE, OLIVE, PEACH, ROSE, BURGUNDY, AMBER, GREEN, TEAL, GRAY, CUSTOM }
 
 data class ThemeColors(
-    val palette: ThemePalette = ThemePalette.LAVENDER,
+    val palette: ThemePalette = ThemePalette.SYSTEM,
     val pureBlack: Boolean = false,
     val customSeed: Int = DEFAULT_THEME_SEED,
 ) {

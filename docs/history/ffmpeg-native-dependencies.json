@@ -1,0 +1,23 @@
+{
+  "ndk": "29.0.14206865",
+  "api": 30,
+  "dependencies": [
+    {
+      "name": "dav1d",
+      "version": "1.5.4",
+      "url": "https://downloads.videolan.org/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz",
+      "sha256": "686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5"
+    },
+    {
+      "name": "ffmpeg",
+      "version": "9.0.2",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/refs/tags/n9.0.2",
+      "sha256": "6e374ed621e48faa40639307dff48ba6fe574a509977956d2cce9669b7cc27e9",
+      "git": {
+        "url": "https://github.com/FFmpeg/FFmpeg.git",
+        "ref": "refs/tags/n9.0.2",
+        "commit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8"
+      }
+    }
+  ]
+}

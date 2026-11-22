@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -187,13 +188,18 @@ private fun GalleryCell(
     callbacks: GalleryCellCallbacks,
     modifier: Modifier,
 ) {
+    val origin = rememberMediaThumbnailOrigin(attachment, loading, 12.dp)
     Box(
         modifier
             .aspectRatio(1f)
+            .onGloballyPositioned(origin::place)
             .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 onLongClick = callbacks.longClick?.let { { it(attachment) } },
-                onClick = { callbacks.click(attachment) },
+                onClick = {
+                    if (!state.selecting) origin.capture()
+                    callbacks.click(attachment)
+                },
             ),
     ) {
         DeferredThumbnail(
@@ -208,7 +214,10 @@ private fun GalleryCell(
         AttachmentCaption(attachment, Modifier.align(Alignment.BottomStart))
         if (state.selecting) {
             GallerySelectionCircle(state.selected, Modifier.align(Alignment.TopStart).padding(6.dp))
-            GalleryExpandButton({ callbacks.expand(attachment) }, Modifier.align(Alignment.TopEnd))
+            GalleryExpandButton({
+                origin.capture()
+                callbacks.expand(attachment)
+            }, Modifier.align(Alignment.TopEnd))
         }
     }
 }

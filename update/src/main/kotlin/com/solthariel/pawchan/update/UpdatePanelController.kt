@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.map
 public class UpdatePanelController internal constructor(
     internal val model: UpdateViewModel,
     internal val configuration: UpdateConfiguration,
-)
+) {
+    public fun check() = model.check(configuration)
+}
 
 /** Kept above lazy settings rows, so discovery does not depend on scrolling the panel into view. */
 @Composable
@@ -22,12 +24,12 @@ public fun rememberUpdatePanel(
     configuration: UpdateConfiguration,
     checkRequest: UpdateCheckRequest? = null,
     onUpdateAvailable: (Long) -> Unit = {},
-    dns: okhttp3.Dns = okhttp3.Dns.SYSTEM,
+    configure: (okhttp3.OkHttpClient.Builder.() -> Unit)? = null,
 ): UpdatePanelController {
     val context = LocalContext.current
     val factory =
-        remember(context, configuration, dns) {
-            UpdateViewModel.factory(context, configuration, dns)
+        remember(context, configuration, configure) {
+            UpdateViewModel.factory(context, configuration, configure)
         }
     val model: UpdateViewModel =
         viewModel(
@@ -36,8 +38,7 @@ public fun rememberUpdatePanel(
         )
     val notifyAvailable by rememberUpdatedState(onUpdateAvailable)
     LaunchedEffect(model, checkRequest) { model.checkOnEntry(checkRequest, configuration) }
-    LaunchedEffect(model, checkRequest) {
-        if (checkRequest == null) return@LaunchedEffect
+    LaunchedEffect(model) {
         model.state
             .map { (it as? UpdateUiState.Available)?.release?.versionCode }
             .distinctUntilChanged()

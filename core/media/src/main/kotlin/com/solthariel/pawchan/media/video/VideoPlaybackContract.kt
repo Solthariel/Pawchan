@@ -20,16 +20,30 @@ internal enum class VideoStage { BUFFERING, READY, ERROR }
 
 internal data class VideoPlaybackStatus(
     val stage: VideoStage = VideoStage.BUFFERING,
-    val position: Long = 0L,
-    val duration: Long = 0L,
+    val timeline: VideoTimeline = VideoTimeline(),
     val playing: Boolean = false,
     val ended: Boolean = false,
     val seekable: Boolean = false,
+    val output: VideoOutputDetails = VideoOutputDetails(),
     val attempt: VideoAttempt = VideoAttempt(),
 ) {
+    val position: Long get() = timeline.position
+    val duration: Long get() = timeline.duration
+    val hardwareDecoded: Boolean? get() = output.hardwareDecoded
+    val videoAspect: Double? get() = output.videoAspect
     val software: Boolean get() = attempt.software
     val localSource: Boolean get() = attempt.local
 }
+
+internal data class VideoTimeline(
+    val position: Long = 0L,
+    val duration: Long = 0L,
+)
+
+internal data class VideoOutputDetails(
+    val hardwareDecoded: Boolean? = null,
+    val videoAspect: Double? = null,
+)
 
 /** Скорость воспроизведения: нажатие по кнопке перебирает 1x → 1.5x → 2x → 0.5x. */
 internal enum class VideoSpeed(

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -25,19 +24,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.catalog.CatalogSearchState
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIcon
+import com.solthariel.pawchan.data.network.proxy.proxyRouter
+import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.settings.ThemePreference
 import com.solthariel.pawchan.domain.settings.displayMode
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
-import com.solthariel.pawchan.navigation.chrome.AppBottomBar
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
-import com.solthariel.pawchan.update.UpdateCheckRequest
-import com.solthariel.pawchan.update.UpdatePanel
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.update.rememberUpdatePanel
 
 /** Settings search lives in the fixed toolbar, just as in the catalog. */
@@ -49,55 +51,87 @@ internal fun SettingsScreen(
 ) {
     var section by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
+    val search = rememberCatalogSearchState(query) { query = it }
     val history = rememberChangelogHistory()
-    val aboutEntry = remember(section) { if (section == SettingsSection.ABOUT) UpdateCheckRequest() else null }
+    val aboutEntry = remember(section) { if (section == SettingsSection.ABOUT) Any() else null }
     LaunchedEffect(aboutEntry) { aboutEntry?.let(history::enter) }
+    val githubNetwork = com.solthariel.pawchan.infrastructure.LocalGithubNetwork.current
+    val router = githubNetwork.historyClient.proxyRouter()
+    val configure =
+        remember(router) {
+            { builder: okhttp3.OkHttpClient.Builder ->
+                router?.let { builder.viaProxyRouter(it) }
+                Unit
+            }
+        }
     val updates =
         rememberUpdatePanel(
             releaseUpdateConfiguration(),
-            aboutEntry,
-            history::updateFound,
-            dns = com.solthariel.pawchan.infrastructure.LocalGithubNetwork.current.dns,
+            onUpdateAvailable = history::updateFound,
+            configure = configure,
         )
     val environment =
-        rememberSettingsEnvironment { UpdatePanel(updates) }
-            .copy(changelog = { ChangelogSettings(history) })
+        rememberSettingsEnvironment { AboutUpdateRow(updates) }
+            .copy(
+                changelog = { ChangelogSettings(history, showVersion = true) },
+                openProxy = {
+                    search.close()
+                    section = SettingsSection.NETWORK
+                },
+            )
     val content = settingsContent(state, actions, environment)
     BackHandler(enabled = section != null) { section = null }
-    val search = rememberCatalogSearchState(query) { query = it }
     val openSection: (SettingsSection?) -> Unit = { next ->
         search.close()
         section = next
     }
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+    AppNavigationWorkspace(
+        actions = bottomActions.copy(onSettingsClick = { openSection(null) }),
+        selected = AppBottomDestination.SETTINGS,
+        floatingTop = true,
+    ) {
         com.solthariel.pawchan.core.ui.UiPageTransition(
             section,
             depth = { if (it == null) 0 else 1 },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxSize(),
         ) { activeSection ->
-            Column(Modifier.fillMaxSize().padding(bottom = SETTINGS_BOTTOM_PADDING)) {
-                if (activeSection == SettingsSection.AUTOHIDE) {
-                    ContentFilterSettings(state, actions) { section = null }
-                } else {
-                    SettingsToolbar(
-                        activeSection?.title ?: stringResource(R.string.settings_title),
-                        search,
-                        "Поиск настроек",
-                        { if (section != null) openSection(null) else actions.onBack() },
-                    ) {
-                        SettingsOverflowMenu(openSection)
-                    }
-                    key(activeSection, query.isNotBlank()) {
-                        SettingsBody(activeSection, query, content, openSection, Modifier.weight(1f))
-                    }
+            SettingsSectionSurface(activeSection, state, actions, search, content, openSection)
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionSurface(
+    active: SettingsSection?,
+    state: SettingsUiState,
+    actions: SettingsActions,
+    search: CatalogSearchState,
+    content: Map<SettingsSection, List<SettingsGroup>>,
+    openSection: (SettingsSection?) -> Unit,
+) {
+    when (active) {
+        SettingsSection.AUTOHIDE -> {
+            ContentFilterSettings(state, actions) { openSection(null) }
+        }
+
+        SettingsSection.NETWORK -> {
+            ProxyCatalogSettings(state.app.behavior.client.mirror) { openSection(null) }
+        }
+
+        else -> {
+            com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
+                SettingsToolbar(
+                    active?.title ?: stringResource(R.string.settings_title),
+                    search,
+                    "Поиск настроек",
+                    { if (active != null) openSection(null) else actions.onBack() },
+                ) { SettingsOverflowMenu(openSection) }
+            }) {
+                key(active, search.query.isNotBlank()) {
+                    SettingsBody(active, search.query, content, openSection, Modifier.fillMaxSize())
                 }
             }
         }
-        // Settings sections are local UI state, not NavController destinations.
-        AppBottomBar(
-            actions = bottomActions.copy(onSettingsClick = { openSection(null) }),
-            selected = AppBottomDestination.SETTINGS,
-        )
     }
 }
 
@@ -110,7 +144,16 @@ private fun SettingsBody(
     modifier: Modifier,
 ) {
     val scroll = rememberScrollState()
-    Column(modifier.fillMaxWidth().verticalScroll(scroll)) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .testTag("settings-body-scroll")
+            .verticalScroll(scroll)
+            .padding(
+                top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                bottom = LocalBottomOverlayInset.current + 8.dp,
+            ),
+    ) {
         if (query.isNotBlank()) {
             val found = searchSettings(query, content)
             if (found.isEmpty()) {
@@ -162,5 +205,3 @@ internal val ThemePreference.labelResource: Int
             displayMode() == ThemePreference.LIGHT -> R.string.theme_light
             else -> R.string.theme_dark
         }
-
-private val SETTINGS_BOTTOM_PADDING = 8.dp

@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.core.ui
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,12 +20,14 @@ fun ActionMenuItem(
     enabled: Boolean = true,
     navigation: MenuNavigation? = null,
     icon: UiIconKind? = null,
+    contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
 ) {
     TextButton(
         onClick = action,
         enabled = enabled,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+        contentPadding = contentPadding,
     ) {
         if (navigation == MenuNavigation.BACK) {
             UiBackwardIndicator()

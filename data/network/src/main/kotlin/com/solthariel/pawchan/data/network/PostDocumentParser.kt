@@ -12,15 +12,33 @@ import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 
 internal object PostDocumentParser {
-    fun parse(html: String): PostDocument {
+    /** Only the Dvach post adapter owns this HTML contract. Other sources retain ordinary divs. */
+    fun parseDvach(html: String): PostDocument = parseHtml(html, HtmlWalk(Element::toPostLink, true))
+
+    fun parse(
+        html: String,
+        linkResolver: (Element) -> PostLink? = Element::toPostLink,
+    ): PostDocument = parseHtml(html, HtmlWalk(linkResolver, false))
+
+    private fun parseHtml(
+        html: String,
+        walk: HtmlWalk,
+    ): PostDocument {
         val runs = mutableListOf<PostTextRun>()
         Jsoup
             .parseBodyFragment(html)
             .body()
             .childNodes()
-            .forEach { node -> appendNode(node, emptySet(), null, runs) }
+            .forEach { appendNode(it, emptySet(), null, runs, walk) }
         return PostDocument(runs.mergeAdjacent())
     }
+}
+
+private class HtmlWalk(
+    val resolve: (Element) -> PostLink?,
+    val dvach: Boolean,
+) {
+    var nextBlock = 1
 }
 
 private fun appendNode(
@@ -28,10 +46,11 @@ private fun appendNode(
     styles: Set<PostTextStyle>,
     link: PostLink?,
     runs: MutableList<PostTextRun>,
+    walk: HtmlWalk,
 ) {
     when (node) {
         is TextNode -> appendTextWithAutoLinks(node.text(), styles, link, runs)
-        is Element -> appendElement(node, styles, link, runs)
+        is Element -> appendElement(node, styles, link, runs, walk)
     }
 }
 
@@ -79,15 +98,28 @@ private fun appendElement(
     parentStyles: Set<PostTextStyle>,
     parentLink: PostLink?,
     runs: MutableList<PostTextRun>,
+    walk: HtmlWalk,
 ) {
     val tag = element.normalName()
+    if (walk.dvach && tag == "div" && element.hasClass("neuroslop")) {
+        val answer = mutableListOf<PostTextRun>()
+        // Retain the ordinary parser for links, formatting, <br> and spoilers inside the block.
+        // Nested markup stays part of this answer; it cannot start a second, overlapping block.
+        appendElement(element, parentStyles, parentLink, answer, HtmlWalk(walk.resolve, false))
+        if (answer.any { it.text.isNotBlank() }) {
+            if (runs.lastOrNull()?.text?.endsWith('\n') == false) runs += PostTextRun("\n", parentStyles)
+            val id = walk.nextBlock++
+            answer.forEach { runs += it.copy(monkeyBlock = id) }
+        }
+        return
+    }
     if (tag == "br") {
         runs += PostTextRun("\n", parentStyles, parentLink)
         return
     }
     val styles = parentStyles + tag.styles(element)
-    val link = if (tag == "a") element.toPostLink() ?: parentLink else parentLink
-    element.childNodes().forEach { child -> appendNode(child, styles, link, runs) }
+    val link = if (tag == "a") walk.resolve(element) ?: parentLink else parentLink
+    element.childNodes().forEach { child -> appendNode(child, styles, link, runs, walk) }
     if (tag in BLOCK_TAGS && runs.lastOrNull()?.text?.endsWith('\n') == false) {
         runs += PostTextRun("\n", parentStyles)
     }
@@ -134,13 +166,16 @@ private fun Element.toPostLink(): PostLink? {
 private fun List<PostTextRun>.mergeAdjacent(): List<PostTextRun> =
     fold(mutableListOf()) { merged, run ->
         val previous = merged.lastOrNull()
-        if (previous != null && previous.styles == run.styles && previous.link == run.link) {
+        if (previous != null && previous.canMergeWith(run)) {
             merged[merged.lastIndex] = previous.copy(text = previous.text + run.text)
         } else {
             merged += run
         }
         merged
     }
+
+private fun PostTextRun.canMergeWith(other: PostTextRun): Boolean =
+    styles == other.styles && link == other.link && monkeyBlock == other.monkeyBlock
 
 private val POST_REFERENCE = Regex(""">>(\d+)""")
 private val AUTO_LINK =

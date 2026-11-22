@@ -310,6 +310,41 @@ class CatalogViewModelTest {
             }
         }
 
+    @Test
+    fun tagSelectionFiltersOnlyTheCurrentCatalogAndCanBeCleared() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                val original = (success() as DomainOutcome.Success).value
+                val tagged =
+                    CatalogSnapshot(
+                        original.board,
+                        original.threads,
+                        threadTags =
+                            mapOf(original.threads.single().address to "2chbrows"),
+                    )
+                val model =
+                    CatalogViewModel(
+                        FakeCatalogRepository(DomainOutcome.Success(tagged)),
+                        uiDispatcher = dispatcher,
+                    )
+                advanceUntilIdle()
+                assertEquals(listOf("2chbrows"), model.tags.value)
+                model.selectTag("2chbrows")
+                advanceUntilIdle()
+                assertEquals(1, (model.state.value as CatalogUiState.Content).threads.size)
+                model.selectTag("other")
+                advanceUntilIdle()
+                assertEquals(0, (model.state.value as CatalogUiState.Content).threads.size)
+                model.selectTag(null)
+                advanceUntilIdle()
+                assertEquals(1, (model.state.value as CatalogUiState.Content).threads.size)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
     private fun success(
         subject: String = "Тестовый тред",
         comment: String = "OP",

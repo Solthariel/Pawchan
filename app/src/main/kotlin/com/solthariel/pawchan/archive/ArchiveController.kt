@@ -25,7 +25,7 @@ internal class ArchiveController(
     private val scope: CoroutineScope,
     private val workspace: WorkspaceController,
     val services: ArchiveServices,
-    private val enqueueMedia: () -> Unit,
+    private val enqueueMedia: suspend () -> Unit,
 ) {
     private val mutex = Mutex()
     val arhivach = ArhivachController(scope, workspace, services.external)
@@ -109,8 +109,8 @@ internal class ArchiveController(
                 state.copy(copies = state.copies.filterNot { it.snapshot.address == address } + copy)
             }
         val copy = requireNotNull(state.copies.firstOrNull { it.snapshot.address == address })
-        mutableNotice.value = if (copy.archive.includeMedia) "Копия сохранена, файлы загружаются" else "Копия сохранена"
-        enqueueMedia()
+        if (copy.archive.includeMedia) enqueueMedia()
+        mutableNotice.value = if (copy.archive.includeMedia) "Копия сохранена, файлы в очереди" else "Копия сохранена"
         mutableSaved.value = address
     }
 
@@ -160,6 +160,14 @@ internal class ArchiveController(
             // Shared URL-addressed media can belong to other copies; collect only unreferenced files after mutation.
             enqueueMedia()
             mutableNotice.value = "Локальная копия удалена"
+        }
+
+    fun clearAll() =
+        operation {
+            workspace.repository.update { state -> state.copy(copies = emptyList()) }
+            // Only unreferenced archive media are collected; exported ZIPs are independent.
+            enqueueMedia()
+            mutableNotice.value = "Сохранённые копии удалены"
         }
 
     fun export(

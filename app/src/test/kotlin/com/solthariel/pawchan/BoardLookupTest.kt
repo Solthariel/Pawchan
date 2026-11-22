@@ -17,13 +17,40 @@ class BoardLookupTest {
     fun favoritesAndRecentNeverDuplicateEvenIfDirectoryIsUnavailable() {
         val source =
             BoardLookupSource(
-                favorites = linkedSetOf(board("b").board, board("mobi").board),
+                favorites = linkedSetOf(board("b"), board("mobi")),
                 recent = listOf(board("b"), board("po"), board("po"), board("other", "another")),
             )
         val result = source.prepareLookup(board("b"), "")
         assertEquals(listOf("/b/", "/mobi/"), result.favorites.map { it.code })
         assertEquals(listOf("/po/"), result.recent.map { it.code })
         assertTrue(result.favorites.first().selected)
+    }
+
+    @Test
+    fun favoritesAreFilteredByFullSiteAddress() {
+        val source = BoardLookupSource(favorites = setOf(board("g"), board("g", "another")))
+        assertEquals(listOf(board("g")), source.prepareLookup(board("b"), "").favorites.map { it.address })
+        assertEquals(
+            listOf(board("g", "another")),
+            source.prepareLookup(board("b", "another"), "").favorites.map { it.address },
+        )
+    }
+
+    @Test
+    fun selectedForumControlsSearchAndQuickListsWithoutChangingTheOpenBoard() {
+        val selected = requireNotNull(SiteId.parse("4chan"))
+        val source =
+            BoardLookupSource(
+                boards = listOf(entry("b", "Двач", "test"), entry("b", "Random", "4chan")),
+                favorites = setOf(board("b"), board("b", "4chan")),
+                recent = listOf(board("a", "4chan"), board("a")),
+            )
+        val results = source.prepareLookup(board("b"), "random", selected)
+        assertEquals(listOf(board("b", "4chan")), results.suggestions.map { it.address })
+        assertTrue(results.suggestions.none { it.selected })
+        val quick = source.prepareLookup(board("b"), "", selected)
+        assertEquals(listOf(board("b", "4chan")), quick.favorites.map { it.address })
+        assertEquals(listOf(board("a", "4chan")), quick.recent.map { it.address })
     }
 
     @Test
@@ -48,7 +75,7 @@ class BoardLookupTest {
 
     @Test
     fun clearingSearchRestoresQuickGroups() {
-        val source = BoardLookupSource(boards = listOf(entry("b", "Бред")), favorites = setOf(board("b").board))
+        val source = BoardLookupSource(boards = listOf(entry("b", "Бред")), favorites = setOf(board("b")))
         assertEquals(1, source.prepareLookup(board("b"), "б").suggestions.size)
         assertTrue(source.prepareLookup(board("b"), "").suggestions.isEmpty())
         assertEquals(1, source.prepareLookup(board("b"), "").favorites.size)

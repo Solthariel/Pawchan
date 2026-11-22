@@ -1,14 +1,17 @@
 package com.solthariel.pawchan
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
+import com.solthariel.pawchan.core.ui.AppNoticeHost
 import com.solthariel.pawchan.domain.filter.ContentFilterConditionSpec
 import com.solthariel.pawchan.domain.filter.ContentFilterEngine
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
@@ -85,11 +88,11 @@ class FilterGroupsRuntimeTest {
         compose.onNodeWithText("Регулярное выражение").assertDoesNotExist()
     }
 
-    @Test fun resetNoticeHasAnExplicitDismissAction() {
+    @Test fun resetNoticeDismissesOnTap() {
         var dismissed = false
-        compose.setContent { MaterialTheme { ContentFilterResetNotice { dismissed = true } } }
-        compose.onNodeWithText("Сохранённые правила автоскрытия сброшены. Создайте их заново.").assertExists()
-        compose.onNodeWithText("Понятно").performClick()
+        compose.setContent { MaterialTheme { AppNoticeHost { ContentFilterResetNotice { dismissed = true } } } }
+        compose.onNodeWithText("Сохранённые правила автоскрытия сброшены. Создайте их заново.").assertIsDisplayed()
+        compose.onNodeWithTag("app-notice").performClick().assertDoesNotExist()
         compose.runOnIdle { assertTrue(dismissed) }
     }
 

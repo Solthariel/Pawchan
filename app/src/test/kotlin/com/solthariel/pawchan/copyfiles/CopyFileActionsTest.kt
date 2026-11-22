@@ -36,6 +36,30 @@ class CopyFileActionsTest {
             assertEquals(listOf(42.toByte()), store.bytes.toList())
         }
 
+    @Test fun successfulExportRegistersOnceButFailedExportDoesNot() =
+        runTest {
+            val store = RecordingCopyStore()
+            val actions = CopyFileActions(store, "tree", CopyFileKind.THREAD, this)
+            val saved = mutableListOf<CopyDocument>()
+            actions.save("a.zip", onSaved = { saved += it }) { it.write(1) }
+            runCurrent()
+            assertEquals(listOf(store.document), saved)
+            store.failure = IOException("full")
+            actions.save("b.zip", onSaved = { saved += it }) { it.write(2) }
+            runCurrent()
+            assertEquals(1, saved.size)
+        }
+
+    @Test fun browseWithoutSelectedFolderStillAllowsIndexedFilesToBeShown() =
+        runTest {
+            val actions = CopyFileActions(RecordingCopyStore(), null, CopyFileKind.THREAD, this)
+            actions.browse()
+            runCurrent()
+            assertTrue(actions.browsing)
+            assertTrue(actions.documents.isEmpty())
+            assertNull(actions.error)
+        }
+
     @Test fun failedSaveDoesNotPublishSuccessAndExplicitRetryWorks() =
         runTest {
             val store = RecordingCopyStore().apply { failure = IOException("full") }

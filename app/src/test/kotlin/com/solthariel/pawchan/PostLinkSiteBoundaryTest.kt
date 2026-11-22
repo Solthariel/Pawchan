@@ -31,6 +31,20 @@ class PostLinkSiteBoundaryTest {
         )
     }
 
+    @Test fun relativeInputsNeverFallBackToAnotherSite() {
+        val resolver = AppPostLinkResolver(listOf(DvachWebLinks(), FakeForumLinks()))
+        val current = otherAddress().board
+        assertNull(resolver.addressInput("b", current))
+        assertNull(resolver.addressInput("b 123", current))
+        assertNull(resolver.addressInput("/b/123", current))
+        assertEquals(
+            com.solthariel.pawchan.infrastructure.sites.ForumWebLink
+                .Thread(defaultThreadAddress(42), null),
+            resolver.addressInput("https://2ch.su/b/res/42.html", current),
+        )
+        assertNull(AppPostLinkResolver(listOf(DvachWebLinks())).addressInput("b", current))
+    }
+
     @Test fun twoRegisteredSitesKeepCollidingNumbersAndCrossReferencesIndependent() {
         val resolver = AppPostLinkResolver(listOf(DvachWebLinks(), FakeForumLinks()))
         assertEquals("https://2ch.su/b/res/42.html#7", resolver.postUrl(defaultThreadAddress(42), 7))

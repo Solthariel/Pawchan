@@ -10,17 +10,28 @@ data class PostDisplayPreferences(
     /** Часовой пояс телефона; передаётся явно для детерминированного форматирования. */
     val zone: ZoneId = ZoneId.systemDefault(),
     val showStateMarkers: Boolean = true,
-    val bubblePosts: Boolean = false,
     val hideStickers: Boolean = false,
     /** Показывать имя по умолчанию («Аноним»). */
     val showDefaultName: Boolean = false,
     /** Размер текста и порог сворачивания для вновь открытых тредов (в треде их можно поменять). */
     val textSize: Int = DEFAULT_POST_TEXT_SIZE,
     val collapseLines: Int = DEFAULT_POST_COLLAPSE_LINES,
+    val hideMonkeyReplies: Boolean = false,
 )
+
+const val MONKEY_REPLY_LABEL = "Ответ @monkey"
 
 const val DEFAULT_POST_TEXT_SIZE = 12
 const val DEFAULT_POST_COLLAPSE_LINES = 20
+
+/** Позиция ползунка после 30 строк означает отсутствие ограничения. */
+const val NO_POST_COLLAPSE = 31
+
+fun postCollapseMaxLines(
+    isOpeningPost: Boolean,
+    expanded: Boolean,
+    configuredLines: Int,
+): Int = if (isOpeningPost && !expanded && configuredLines != NO_POST_COLLAPSE) configuredLines else Int.MAX_VALUE
 
 val LocalPostDisplayPreferences = staticCompositionLocalOf { PostDisplayPreferences() }
 

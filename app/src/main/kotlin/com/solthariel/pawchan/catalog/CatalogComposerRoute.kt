@@ -11,16 +11,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.solthariel.pawchan.composer.BindComposerDraftLifecycle
 import com.solthariel.pawchan.composer.ComposerFieldActions
-import com.solthariel.pawchan.composer.ComposerFullScreenHost
 import com.solthariel.pawchan.composer.NewThreadActions
 import com.solthariel.pawchan.composer.NewThreadCaptchaActions
 import com.solthariel.pawchan.composer.NewThreadScreen
 import com.solthariel.pawchan.composer.NewThreadViewModel
+import com.solthariel.pawchan.composer.StatefulComposerFullScreenHost
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.navigation.AppDependencies
 import com.solthariel.pawchan.navigation.CatalogContentRoute
 import com.solthariel.pawchan.navigation.CatalogNavigation
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.workspace.LocalWorkspace
 
 @Composable
 internal fun CatalogRoute(
@@ -38,17 +39,16 @@ internal fun CatalogRoute(
         }
     val model: NewThreadViewModel = viewModel(key = "new-${board.site.value}-${board.board.value}", factory = factory)
     val state by model.state.collectAsStateWithLifecycle()
-    val workspace =
-        com.solthariel.pawchan.workspace.LocalWorkspace.current
-            ?.controller
+    val workspace = LocalWorkspace.current?.controller
     val close = { model.close { visible = false } }
     val underlyingNavigation =
-        remember(navigation, model) {
-            navigation.copy(onNewThreadClick = {
-                model.open()
-                visible = true
-            })
-        }
+        rememberComposerNavigation(
+            navigation,
+            model,
+            dependencies.repositories.boards
+                .capabilities(board.site)
+                .newThreads,
+        ) { visible = true }
     BindComposerDraftLifecycle(model::saveDraftNow)
     LaunchedEffect(visible) { if (visible) model.open() }
     LaunchedEffect(state.createdThread) {
@@ -61,8 +61,9 @@ internal fun CatalogRoute(
             }
         }
     }
-    ComposerFullScreenHost(
+    StatefulComposerFullScreenHost(
         visible = visible,
+        state = state,
         onClose = close,
         content = {
             CatalogContentRoute(
@@ -74,10 +75,10 @@ internal fun CatalogRoute(
                 onMediaVisibilityChanged = {},
             )
         },
-        form = {
+        form = { displayedState ->
             NewThreadScreen(
                 board.board,
-                state,
+                displayedState,
                 dependencies.mediaLoaders.imageLoader,
                 newThreadActions(
                     model,
@@ -88,6 +89,22 @@ internal fun CatalogRoute(
         },
     )
 }
+
+@Composable
+private fun rememberComposerNavigation(
+    navigation: CatalogNavigation,
+    model: NewThreadViewModel,
+    enabled: Boolean,
+    onOpen: () -> Unit,
+): CatalogNavigation =
+    remember(navigation, model, enabled, onOpen) {
+        navigation.copy(onNewThreadClick = {
+            if (enabled) {
+                model.open()
+                onOpen()
+            }
+        })
+    }
 
 internal fun newThreadActions(
     model: NewThreadViewModel,

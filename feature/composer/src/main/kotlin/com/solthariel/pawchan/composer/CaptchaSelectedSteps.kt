@@ -25,7 +25,7 @@ internal fun showCaptchaSelection(
     status: ComposerScreenStatus,
 ): Boolean =
     captcha.selectedImages.isNotEmpty() && !captcha.satisfied && !status.progress.sent && !status.progress.submitting &&
-        !status.progress.captchaLoading && !status.progress.captchaSelecting && status.failure.error == null &&
+        !status.progress.captchaLoading && status.failure.error == null &&
         status.failure.reason.isNullOrBlank()
 
 @Composable

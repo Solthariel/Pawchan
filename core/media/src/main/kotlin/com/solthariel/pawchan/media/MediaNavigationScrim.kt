@@ -9,12 +9,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 
 /** Draw the navigation-bar color over content, including side navigation in landscape. */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun MediaNavigationScrim() {
+internal fun MediaNavigationScrim(color: Color = MEDIA_CHROME_BACKGROUND) {
     val density = LocalDensity.current
     val insets = WindowInsets.navigationBarsIgnoringVisibility
     Box(
@@ -23,12 +24,12 @@ internal fun MediaNavigationScrim() {
             val left = insets.getLeft(density, layoutDirection).toFloat()
             val right = insets.getRight(density, layoutDirection).toFloat()
             if (bottom > 0f) {
-                drawRect(MEDIA_CHROME_BACKGROUND, Offset(0f, size.height - bottom), Size(size.width, bottom))
+                drawRect(color, Offset(0f, size.height - bottom), Size(size.width, bottom))
             }
             // Do not paint overlapping corner pixels twice.
-            if (left > 0f) drawRect(MEDIA_CHROME_BACKGROUND, Offset.Zero, Size(left, size.height - bottom))
+            if (left > 0f) drawRect(color, Offset.Zero, Size(left, size.height - bottom))
             if (right > 0f) {
-                drawRect(MEDIA_CHROME_BACKGROUND, Offset(size.width - right, 0f), Size(right, size.height - bottom))
+                drawRect(color, Offset(size.width - right, 0f), Size(right, size.height - bottom))
             }
         },
     )

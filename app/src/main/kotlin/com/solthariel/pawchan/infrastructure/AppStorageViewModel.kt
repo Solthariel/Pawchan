@@ -20,6 +20,7 @@ import com.solthariel.pawchan.data.preferences.PreferencesRecentBoardsRepository
 import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.watch.ThreadWatchRepository
+import com.solthariel.pawchan.workspace.ReplyNotificationSync
 import com.solthariel.pawchan.workspace.WorkspaceController
 import java.io.File
 
@@ -36,6 +37,7 @@ internal class AppStorageViewModel private constructor(
             FileWorkspaceRepository(File(draftsDirectory.parentFile, "workspace")),
             FileThreadHistoryRepository(File(draftsDirectory.parentFile, "threads")),
             statistics = settings.usage,
+            replyNotifications = ReplyNotificationSync(appContext),
         )
     private val archiveDirectory = requireNotNull(draftsDirectory.parentFile)
     private var archiveController: ArchiveController? = null

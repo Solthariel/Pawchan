@@ -11,10 +11,22 @@ import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import java.io.IOException
 
 internal class BackupTestSettings : PortableSettings {
-    var values = mapOf("theme" to "SYSTEM", "favorite_boards_v2" to "", "app_content_filters_v1" to "")
+    var values =
+        mapOf(
+            "theme" to "SYSTEM",
+            "favorite_boards_v2" to "",
+            "favorite_boards_other_v1" to "",
+            "app_content_filters_v1" to "",
+        )
     var own = emptyMap<String, String>()
 
-    override fun defaults() = mapOf("theme" to "SYSTEM", "favorite_boards_v2" to "", "app_content_filters_v1" to "")
+    override fun defaults() =
+        mapOf(
+            "theme" to "SYSTEM",
+            "favorite_boards_v2" to "",
+            "favorite_boards_other_v1" to "",
+            "app_content_filters_v1" to "",
+        )
 
     override suspend fun export() = values
 

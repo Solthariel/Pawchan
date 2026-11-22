@@ -113,6 +113,44 @@ class WorkspaceRepositoryTest {
             }
         }
 
+    @Test fun twoOwnersMergeSnapshotsWithoutDroppingPosts() =
+        runTest {
+            val directory = temporary.newFolder()
+            val a = FileThreadHistoryRepository(directory)
+            val b = FileThreadHistoryRepository(directory)
+            kotlinx.coroutines.coroutineScope {
+                listOf(a, b).forEachIndexed { index, owner ->
+                    launch(kotlinx.coroutines.Dispatchers.IO) {
+                        val sample = post()
+                        val postAddress = PostAddress(address, requireNotNull(PostId.parse(101L + index)))
+                        val row = BoardPost(postAddress, sample.content, emptyList())
+                        val snapshot = ThreadSnapshot(address, "test", ThreadFlags(false, false, false), listOf(row))
+                        owner.mergeAndSave(snapshot)
+                    }
+                }
+            }
+            assertEquals(setOf(101L, 102L), requireNotNull(a.load(address)).posts.map { it.address.post.value }.toSet())
+        }
+
+    @Test fun onlyMarkedRunsRetainTheirBlockIdentityInNewCopies() {
+        val base = post()
+        val document = PostDocument(listOf(PostTextRun("@monkey вопрос\n"), PostTextRun("ответ\n", monkeyBlock = 1)))
+        val mixed = BoardPost(base.address, base.content.copy(document = document), emptyList())
+        assertEquals(
+            document.runs,
+            mixed
+                .encodePost()
+                .decodePost()
+                .content.document.runs,
+        )
+        val plain =
+            base
+                .encodePost()
+                .decodePost()
+                .content.document
+        assertTrue(plain.runs.none { it.monkeyBlock != null })
+    }
+
     @Test fun offlineSnapshotSurvivesRestart() =
         runTest {
             val repository = FileWorkspaceRepository(temporary.newFolder())

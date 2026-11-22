@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
@@ -19,7 +20,7 @@ fun ModalWindow(
     strength: ModalScrimStrength = ModalScrimStrength.STANDARD,
     content: @Composable () -> Unit,
 ) {
-    ManagedModalWindow(onDismissRequest, properties, ModalLayerKind.WINDOW, strength, content)
+    ManagedModalWindow(onDismissRequest, properties, ModalLayerKind.WINDOW, strength, false, content)
 }
 
 /** Full-screen media/composer owns an opaque/animated background, not an extra page scrim. */
@@ -27,9 +28,18 @@ fun ModalWindow(
 fun FullScreenModalWindow(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(decorFitsSystemWindows = false),
+    replacesPageScrim: Boolean = false,
+    dimUnderlying: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    ManagedModalWindow(onDismissRequest, properties, ModalLayerKind.FULL_SCREEN, ModalScrimStrength.STANDARD, content)
+    ManagedModalWindow(
+        onDismissRequest,
+        properties,
+        ModalLayerKind.FULL_SCREEN,
+        if (dimUnderlying) ModalScrimStrength.STANDARD else ModalScrimStrength.NONE,
+        replacesPageScrim,
+        content,
+    )
 }
 
 @Composable
@@ -38,18 +48,25 @@ private fun ManagedModalWindow(
     properties: DialogProperties,
     kind: ModalLayerKind,
     strength: ModalScrimStrength,
+    replacesPageScrim: Boolean,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalModalLayers.current
     val state = inherited ?: remember { ModalLayerState(hosted = false) }
-    val token = rememberModalEntry(state, kind, strength)
-    CompositionLocalProvider(LocalModalLayers provides state, LocalModalToken provides token) {
+    val token = rememberModalEntry(state, kind, strength, replacesPageScrim)
+    CompositionLocalProvider(
+        LocalModalLayers provides state,
+        LocalModalToken provides token,
+        LocalBottomOverlayInset provides 0.dp,
+    ) {
         Dialog(onDismissRequest, properties = properties) {
-            DisablePlatformDim()
-            val fallback = !state.hosted && state.first(token) && kind == ModalLayerKind.WINDOW
+            DisablePlatformDim(restoreDim = kind != ModalLayerKind.FULL_SCREEN || strength != ModalScrimStrength.NONE)
+            val fallback =
+                !state.hosted && state.first(token) &&
+                    kind == ModalLayerKind.WINDOW && !state.pageScrimReplaced
             val backdrop = if (fallback) Modifier.background(Color.Black.copy(alpha = strength.alpha())) else Modifier
             val plane = if (kind == ModalLayerKind.FULL_SCREEN) Modifier.modalLayerSurface() else Modifier
-            Box(Modifier.fillMaxSize().then(backdrop).then(plane)) { content() }
+            Box(Modifier.fillMaxSize().then(backdrop).then(plane)) { AppNoticeHost(content) }
         }
     }
 }

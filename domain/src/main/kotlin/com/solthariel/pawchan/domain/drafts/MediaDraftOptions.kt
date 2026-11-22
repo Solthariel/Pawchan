@@ -7,7 +7,15 @@ data class MediaDraftOptions(
     val customName: String? = null,
     val reencoding: DraftImageReencoding? = null,
     val spoiler: Boolean = false,
+    val image: DraftImageOptions = DraftImageOptions(),
+) {
+    val previousReencoding: DraftImageReencoding? get() = image.previousReencoding
+    val edit: DraftImageEdit? get() = image.edit
+}
+
+data class DraftImageOptions(
     val previousReencoding: DraftImageReencoding? = null,
+    val edit: DraftImageEdit? = null,
 )
 
 data class DraftImageReencoding(

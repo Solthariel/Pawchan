@@ -18,6 +18,8 @@ data class PostPreviewResources(
 
 /** App handles persisted effects and navigation; no thread UI state crosses this port. */
 interface PostPreviewActions {
+    fun canReply(address: ThreadAddress): Boolean = true
+
     fun prepareReply(
         address: ThreadAddress,
         text: String,

@@ -14,7 +14,7 @@ fun PostSeparator(
     index: Int,
     lastIndex: Int,
 ) {
-    if (!LocalPostDisplayPreferences.current.bubblePosts && index < lastIndex) {
+    if (index < lastIndex) {
         HorizontalDivider(
             Modifier.padding(horizontal = 8.dp).testTag("post-list-divider"),
             color = MaterialTheme.colorScheme.outlineVariant,

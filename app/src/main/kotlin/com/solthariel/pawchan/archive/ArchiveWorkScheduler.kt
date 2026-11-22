@@ -11,16 +11,27 @@ import com.solthariel.pawchan.ArchiveMediaWorker
 import java.util.concurrent.TimeUnit
 
 internal object ArchiveWorkScheduler {
-    fun enqueue(context: Context) {
+    suspend fun enqueue(context: Context) {
         val request =
             OneTimeWorkRequestBuilder<ArchiveMediaWorker>()
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, ARCHIVE_RETRY_MINUTES, TimeUnit.MINUTES)
                 .build()
-        WorkManager
-            .getInstance(
-                context.applicationContext,
-            ).enqueueUniqueWork("archive-media", ExistingWorkPolicy.KEEP, request)
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                WorkManager
+                    .getInstance(context.applicationContext)
+                    .enqueueUniqueWork("archive-media", ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+                    .result
+                    .get()
+                Unit
+            } catch (failure: java.util.concurrent.ExecutionException) {
+                throw java.io.IOException("Не удалось поставить файлы копии в очередь", failure)
+            } catch (failure: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw java.io.IOException("Постановка файлов в очередь прервана", failure)
+            }
+        }
     }
 }
 

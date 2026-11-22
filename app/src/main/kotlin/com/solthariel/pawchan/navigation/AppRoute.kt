@@ -11,6 +11,8 @@ internal object AppRoute {
     const val LIBRARY = "library"
     const val HISTORY = "history"
     const val COPIES = "copies"
+    const val DOWNLOADS = "downloads"
+    const val DOWNLOAD_ARCHIVE = "download-archive/{archiveId}"
     const val SETTINGS = "settings"
     const val STATISTICS = "statistics"
     const val BOARDS = "boards"
@@ -19,6 +21,7 @@ internal object AppRoute {
     const val THREAD_ARGUMENT = "threadId"
     const val CATALOG = "catalog/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}"
     const val ARCHIVE = "archive/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}"
+    const val ARCHIVE_BROWSER = "archive-browser/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}"
     const val NEW_THREAD = "new-thread/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}"
     const val THREAD = "thread/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}/{$THREAD_ARGUMENT}"
     const val THREAD_DEEP_LINK = "pawchan://thread/{$SITE_ARGUMENT}/{$BOARD_ARGUMENT}/{$THREAD_ARGUMENT}"
@@ -54,6 +57,8 @@ internal object AppRoute {
     }
 
     fun archive(board: BoardAddress): String = "archive/${board.site.value}/${board.board.value}"
+
+    fun archiveBrowser(board: BoardAddress): String = "archive-browser/${board.site.value}/${board.board.value}"
 
     fun newThread(board: BoardAddress): String = "new-thread/${board.site.value}/${board.board.value}"
 

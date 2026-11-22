@@ -25,7 +25,12 @@ internal data class CatalogNavigation(
     val onNewThreadClick: (BoardAddress) -> Unit,
     val onBoardSelected: (BoardAddress) -> Unit,
     val onChallenge: (String) -> Unit,
-    val onArchive: (BoardAddress) -> Unit,
+    val archives: CatalogArchiveNavigation,
+)
+
+internal data class CatalogArchiveNavigation(
+    val openArchive: (BoardAddress) -> Unit,
+    val openBrowser: (() -> Unit)? = null,
 )
 
 internal data class AppDependencies(

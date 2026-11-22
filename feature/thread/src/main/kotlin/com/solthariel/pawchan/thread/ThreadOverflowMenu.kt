@@ -81,6 +81,7 @@ private fun ThreadMainMenuItems(
 
 @Composable
 private fun ThreadSearchFlagItems(tools: ThreadToolsState) {
+    ThreadMenuItem("Назад", navigation = MenuNavigation.BACK) { tools.advanced = false }
     ThreadSearchFlag.entries.forEach { flag ->
         ThreadMenuItem(flag.title) {
             tools.flag = flag
@@ -127,7 +128,7 @@ private fun ThreadContentsItems(
 }
 
 @Composable
-internal fun ThreadMenuItem(
+fun ThreadMenuItem(
     title: String,
     enabled: Boolean = true,
     navigation: MenuNavigation? = null,

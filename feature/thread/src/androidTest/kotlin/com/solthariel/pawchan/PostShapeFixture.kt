@@ -42,7 +42,6 @@ internal class PostShapeFixture(
     private val compose: ComposeContentTestRule,
 ) {
     fun show(
-        bubble: MutableState<Boolean>,
         fresh: MutableState<Boolean> = androidx.compose.runtime.mutableStateOf(false),
         selected: Boolean = false,
         hidden: Boolean = false,
@@ -62,7 +61,7 @@ internal class PostShapeFixture(
             val loader = remember { ThumbnailLoader(context, OkHttpClient()) }
             DisposableEffect(loader) { onDispose { loader.close() } }
             ThreadTestTheme(ThemePreference.DARK) {
-                CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences(bubblePosts = bubble.value)) {
+                CompositionLocalProvider(LocalPostDisplayPreferences provides PostDisplayPreferences()) {
                     Box(Modifier.background(Color.Magenta).padding(4.dp)) {
                         Box(Modifier.width(240.dp).testTag("post-shape").readingReturnMarker(marker)) {
                             if (hidden) {

@@ -22,6 +22,7 @@ import com.solthariel.pawchan.catalog.BoardMenuNavigation
 import com.solthariel.pawchan.catalog.BoardMenuPreferences
 import com.solthariel.pawchan.catalog.BoardPreferenceActions
 import com.solthariel.pawchan.catalog.CatalogBoardIdentity
+import com.solthariel.pawchan.catalog.CatalogBoardLabel
 import com.solthariel.pawchan.catalog.CatalogBoardLookupBindings
 import com.solthariel.pawchan.catalog.CatalogHeaderUi
 import com.solthariel.pawchan.catalog.CatalogMenuBindings
@@ -44,6 +45,7 @@ class CatalogHeaderRuntimeTest {
     @get:Rule val compose = createComposeRule()
     private val speed = mutableStateOf<Int?>(null)
     private val title = mutableStateOf<String?>(null)
+    private val speedSupported = mutableStateOf(true)
     private val board = BoardAddress(defaultBoardAddress().site, requireNotNull(BoardId.parse("hry")))
 
     @Test
@@ -145,11 +147,26 @@ class CatalogHeaderRuntimeTest {
         assertEquals((label.top + speed.bottom) / 2f, arrow.center.y, 1f)
     }
 
+    @Test
+    fun titleWithoutSpeedIsVerticallyCentered() {
+        title.value = "Anime & Manga"
+        speed.value = null
+        speedSupported.value = false
+        show()
+        val label = compose.onNodeWithText("/hry/ — Anime & Manga").fetchSemanticsNode().boundsInRoot
+        assertEquals(32f * compose.density.density, label.center.y, 1f)
+    }
+
     private fun show() {
         compose.setContent {
             MaterialTheme {
                 Row(Modifier.width(240.dp).height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CatalogBoardIdentity(board, title.value, speed.value, Modifier.weight(1f), switchable = true)
+                    CatalogBoardIdentity(
+                        board,
+                        CatalogBoardLabel(title.value, speed.value, speedSupported.value),
+                        Modifier.weight(1f),
+                        switchable = true,
+                    )
                 }
             }
         }

@@ -1,5 +1,7 @@
 import com.android.build.api.artifact.SingleArtifact
 import groovy.json.JsonSlurper
+import java.net.URI
+import java.util.ArrayDeque
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -29,16 +31,20 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
         check(apks.isNotEmpty()) { "No APK found in ${apkDirectory.get().asFile}" }
         val required =
             listOf(
-                "avutil",
-                "swresample",
-                "swscale",
-                "avcodec",
-                "avformat",
-                "avfilter",
-                "dav1d",
-                "pawplayback",
+                "mpv",
+                "mpvkt_jni",
+                "mpv_avcodec",
+                "mpv_avdevice",
+                "mpv_avfilter",
+                "mpv_avformat",
+                "mpv_avutil",
+                "mpv_swresample",
+                "mpv_swscale",
                 "c++_shared",
             ).map { "lib/arm64-v8a/lib$it.so" }
+        val obsolete =
+            listOf("player", "pawplayback", "avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "dav1d")
+                .map { "lib/arm64-v8a/lib$it.so" }
         apks.forEach { apk ->
             val entries =
                 ZipFile(apk).use { zip ->
@@ -48,7 +54,8 @@ abstract class VerifyApkNativeLibraries : DefaultTask() {
                         .map { it.name }
                         .toSet()
                 }
-            check("lib/arm64-v8a/libplayer.so" !in entries) { "${apk.name} contains the obsolete player engine" }
+            val unexpected = obsolete.filter(entries::contains)
+            check(unexpected.isEmpty()) { "${apk.name} contains obsolete player libraries: $unexpected" }
             val missing = required.filterNot(entries::contains)
             check(missing.isEmpty()) { "${apk.name} is missing native libraries: $missing" }
         }
@@ -157,6 +164,15 @@ val updateManifestUrl =
         .orElse(providers.environmentVariable("PAWCHAN_UPDATE_MANIFEST_URL"))
         .orElse("https://raw.githubusercontent.com/Solthariel/Pawchan/master/update/feed/data-v1.json")
         .get()
+        .also { raw ->
+            val uri = URI(raw)
+            require(
+                uri.scheme.equals("https", true) && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null &&
+                    uri.port in -1..65535 && uri.port != 0 && raw.all { it.code in 33..126 },
+            ) {
+                "Expected an absolute HTTPS update URL with a host"
+            }
+        }
 val hasReleaseSigning =
     listOf(
         releaseKeystorePath,
@@ -182,6 +198,19 @@ android {
     compileSdk = 37
 
     defaultConfig {
+        val componentVersions =
+            listOf(
+                "Gradle ${gradle.gradleVersion}",
+                "Android Gradle Plugin ${libs.versions.agp.get()}",
+                "Kotlin ${libs.versions.kotlin.get()}",
+                "Compose BOM ${libs.versions.compose.bom.get()}",
+                "mpv (mpv-android 2026-09-17)",
+                "OkHttp ${libs.versions.okhttp.get()}",
+                "Coil ${libs.versions.coil.get()}",
+                "Google Play Services Cronet ${libs.versions.play.services.cronet.get()}",
+                "Cronet API ${libs.versions.cronet.api.get()}",
+            ).joinToString("\\n")
+        buildConfigField("String", "COMPONENT_VERSIONS", "\"$componentVersions\"")
         applicationId = "com.solthariel.pawchan"
         minSdk = 30
         targetSdk = 37
@@ -217,7 +246,7 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            applicationIdSuffix = ".dev"
+            // Public release uses the canonical applicationId from defaultConfig.
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
@@ -253,7 +282,7 @@ android {
 
     packaging {
         jniLibs {
-            // Native compilation is owned by :video-ffmpeg (arm64-v8a only).
+            // Native libraries are owned by :video-ffmpeg (arm64-v8a only).
             // Filter transitive AAR libraries here so no partial non-ARM64 APK is shipped.
             excludes +=
                 setOf(
@@ -359,7 +388,6 @@ dependencies {
     implementation(project(":video-ffmpeg"))
     implementation(libs.okhttp)
     implementation(libs.okhttp.coroutines)
-    implementation(libs.okhttp.dnsoverhttps)
     implementation(libs.play.services.cronet) {
         exclude(group = "org.chromium.net", module = "cronet-api")
     }
@@ -377,10 +405,63 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit4)
+    testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.datastore.preferences)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+}
+
+/** Captures the resolved release graph, including transitives, without guessing versions from declarations. */
+abstract class ExportReleaseDependencies : DefaultTask() {
+    @get:Input
+    abstract val coordinates: org.gradle.api.provider.ListProperty<String>
+
+    @get:OutputFile
+    abstract val inventory: RegularFileProperty
+
+    @TaskAction
+    fun export() {
+        val output = inventory.get().asFile
+        output.parentFile.mkdirs()
+        output.writeText(
+            coordinates
+                .get()
+                .distinct()
+                .sorted()
+                .joinToString("\n", postfix = "\n"),
+        )
+    }
+}
+
+fun releaseCoordinates(root: org.gradle.api.artifacts.result.ResolvedComponentResult): List<String> {
+    val pending = ArrayDeque<org.gradle.api.artifacts.result.ResolvedComponentResult>()
+    val visited = mutableSetOf<org.gradle.api.artifacts.component.ComponentIdentifier>()
+    val result = mutableListOf<String>()
+    pending.add(root)
+    while (pending.isNotEmpty()) {
+        val component = pending.removeFirst()
+        if (!visited.add(component.id)) continue
+        val id = component.id
+        if (id is org.gradle.api.artifacts.component.ModuleComponentIdentifier) result.add("${id.group}:${id.module}:${id.version}")
+        component.dependencies.forEach { dependency ->
+            check(dependency is org.gradle.api.artifacts.result.ResolvedDependencyResult) { "Unresolved release dependency: $dependency" }
+            pending.add(dependency.selected)
+        }
+    }
+    return result
+}
+
+tasks.register<ExportReleaseDependencies>("exportReleaseDependencies") {
+    coordinates.set(
+        configurations
+            .named("releaseRuntimeClasspath")
+            .flatMap {
+                it.incoming.resolutionResult.rootComponent
+            }.map(::releaseCoordinates),
+    )
+    inventory.set(layout.buildDirectory.file("reports/licenses/release-coordinates.txt"))
 }

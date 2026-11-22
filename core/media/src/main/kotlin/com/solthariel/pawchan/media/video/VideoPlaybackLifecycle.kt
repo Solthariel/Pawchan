@@ -16,6 +16,8 @@ internal fun BindVideoPlaybackLifecycle(
     /** Сессия из [VideoSessionPool]: true/false — играть ли дальше; null — сессия новая. */
     pooled: Boolean? = null,
     autoPlay: Boolean = true,
+    retainOnDispose: Boolean = true,
+    initialPosition: Long = 0L,
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = LocalContext.current
@@ -52,12 +54,17 @@ internal fun BindVideoPlaybackLifecycle(
             // После закрытого окна PiP тот же файл продолжается с позиции, где его закрыли.
             val resume = VideoPipHandoff.takeResume(session.url)
             resume?.let { session.setSpeed(it.speed) }
-            session.startAt(resume?.position ?: 0L, (resume?.playing ?: autoPlay) && access?.isAllowed() != false)
+            session.startAt(
+                resume?.position ?: initialPosition,
+                (resume?.playing ?: autoPlay) && access?.isAllowed() != false,
+            )
         }
         onDispose {
             lifecycle.removeObserver(observer)
             // Сессию, переданную окну PiP, закрывает уже оно; ушли свайпом — сессия ждёт возврата в запасе.
-            if (!session.inPip) VideoSessionPool.retain(session)
+            if (!session.inPip) {
+                if (retainOnDispose) VideoSessionPool.retain(session) else session.close()
+            }
         }
     }
 }

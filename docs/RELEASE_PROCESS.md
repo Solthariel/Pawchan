@@ -5,7 +5,9 @@
 Публикации разрешены только от GitHub-аккаунта Solthariel и запускаются push-коммитом в master при изменении
 update/publishing/release-request.json. Workflow остаётся
 .github/workflows/publish-release.yml с именем **Publish signed release**.
-`run-name`, ручного workflow_dispatch, tag-trigger и дополнительных workflow нет.
+`run-name`, ручного workflow_dispatch и tag-trigger для публикации нет.
+Отдельный workflow `check-pull-request.yml` проверяет pull requests **без
+публикации, секретов и прав записи**. Его результаты не заменяют device-smoke.
 Название строки — сообщение коммита; подпись Commit … pushed by … формирует GitHub.
 Номер и статус запуска назначает GitHub: старые номера не переиспользуются,
 currently running после завершения естественно сменяется на completed/failed.
@@ -61,6 +63,10 @@ qualityCheck, release build) → проверка подписи и SHA подп
 создание постоянного целевого тега на текущем коммите → draft → проверка всех скачанных обратно файлов → promotion → атомарный Git-коммит ленты.
 На компьютере нужен Git/Python и обычная авторизация push; gh/winget/PAT не нужны.
 Ключи подписи остаются в GitHub Secrets и временной папке существующего build-step.
+Перед публикацией проверяются и соответствие APK настроенному ключу, и совпадение
+сертификата с официальным APK Pawchan 0.1.49. Несовпадение останавливает выпуск:
+иначе обновление поверх предыдущей версии может не установиться. Отпечаток сертификата
+публичный; его контроль не раскрывает закрытый ключ или пароли.
 
 ## Windows и выбранная Git-папка
 

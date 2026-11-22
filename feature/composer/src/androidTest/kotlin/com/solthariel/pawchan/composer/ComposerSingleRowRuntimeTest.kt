@@ -52,10 +52,9 @@ class ComposerSingleRowRuntimeTest(
                                 "Выбрать иконку поста",
                                 stringResource(R.string.composer_sage),
                                 stringResource(R.string.composer_thread_author),
-                                stringResource(R.string.attachment_add),
                             )
                         Box(Modifier.width(width.dp)) {
-                            ComposerScreenHeader(title, headerState(), true, {}, {}, {})
+                            ComposerScreenHeader(title, headerState(), true, {}, {})
                         }
                     }
                 }

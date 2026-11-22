@@ -6,6 +6,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import com.solthariel.pawchan.core.ui.PostStateMarker
+import com.solthariel.pawchan.core.ui.isDefaultAnonymousName
 import com.solthariel.pawchan.core.ui.visiblePostSubject
 import com.solthariel.pawchan.domain.model.BoardPost
 import com.solthariel.pawchan.domain.model.PostBadge
@@ -64,7 +65,7 @@ internal fun preparePostDisplay(
 ): ThreadPostDisplay {
     val metadata = post.content.metadata
     val details = post.content.details
-    val opener = post.address.post.value == post.address.thread.thread.value
+    val opener = isOpeningPost(post)
     val op = metadata.originalPoster || opener
     // 2ch подставляет в тему начало текста, если автор её не написал: такую тему не повторяем.
     val subject = visiblePostSubject(metadata.subject, post.content.document.plainText)
@@ -120,10 +121,6 @@ private fun postHeader(
     }
 }
 
-private fun isDefaultAnonymousName(name: String): Boolean =
-    name.trim().equals("Аноним", ignoreCase = true) ||
-        name.trim().equals("Anonymous", ignoreCase = true)
-
 internal fun compactPostDate(date: String?): String? {
     val match = date?.let(POST_DATE::find) ?: return date
     return "${match.groupValues[1]}.${match.groupValues[DATE_MONTH_GROUP]} ${match.groupValues[DATE_TIME_GROUP]}"
@@ -133,3 +130,5 @@ private val POST_DATE = Regex("(\\d{2})[/.](\\d{2})(?:[/.]\\d{2,4})?.*?(\\d{2}:\
 
 private const val DATE_MONTH_GROUP = 2
 private const val DATE_TIME_GROUP = 3
+
+internal fun isOpeningPost(post: BoardPost): Boolean = post.address.post.value == post.address.thread.thread.value

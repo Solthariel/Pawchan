@@ -41,6 +41,30 @@ class ResolveBoardSearchTest {
         assertNull(resolveBoardSearch("Общая тема", listOf(entry("a", "Общая тема"), entry("b", "Общая тема"))))
     }
 
+    @Test
+    fun selectedSiteScopesSearchAndPreservesIdentity() {
+        val dvach = requireNotNull(SiteId.parse("dvach"))
+        val fourChan = requireNotNull(SiteId.parse("4chan"))
+        val directory =
+            listOf(
+                entry("g", "Наука"),
+                entry("g", "Technology").copy(address = BoardAddress(fourChan, requireNotNull(BoardId.parse("g")))),
+            )
+        assertEquals(
+            BoardAddress(dvach, requireNotNull(BoardId.parse("g"))),
+            resolveBoardAddressSearch("Наука", directory, dvach),
+        )
+        assertEquals(
+            BoardAddress(fourChan, requireNotNull(BoardId.parse("g"))),
+            resolveBoardAddressSearch("Technology", directory, fourChan),
+        )
+        assertNull(resolveBoardAddressSearch("Наука", directory, fourChan))
+        assertEquals(
+            BoardAddress(fourChan, requireNotNull(BoardId.parse("custom"))),
+            resolveBoardAddressSearch("custom", emptyList(), fourChan),
+        )
+    }
+
     private fun entry(
         code: String,
         title: String,

@@ -2,7 +2,7 @@ package com.solthariel.pawchan.boards
 
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.SiteId
 
 internal data class BoardLookupBoard(
     val address: BoardAddress,
@@ -16,10 +16,11 @@ internal data class BoardLookupBoard(
 
 internal data class BoardLookupSource(
     val boards: List<BoardDirectoryEntry> = emptyList(),
-    val favorites: Set<BoardId> = emptySet(),
+    val favorites: Set<BoardAddress> = emptySet(),
     val recent: List<BoardAddress> = emptyList(),
     val loading: Boolean = false,
     val failed: Boolean = false,
+    val quickBoardsReady: Boolean = true,
 )
 
 internal data class BoardLookupContent(
@@ -27,13 +28,15 @@ internal data class BoardLookupContent(
     val favorites: List<BoardLookupBoard>,
     val recent: List<BoardLookupBoard>,
     val suggestions: List<BoardLookupBoard>,
+    val interactive: Boolean = true,
 )
 
 internal fun BoardLookupSource.prepareLookup(
     current: BoardAddress,
     query: String,
+    site: SiteId = current.site,
 ): BoardLookupContent {
-    val available = boards.filter { it.address.site == current.site }.distinctBy { it.address }
+    val available = boards.filter { it.address.site == site }.distinctBy { it.address }
     val byAddress = available.associateBy { it.address }
 
     fun render(address: BoardAddress) =
@@ -42,8 +45,8 @@ internal fun BoardLookupSource.prepareLookup(
             byAddress[address]?.title.orEmpty(),
             address == current,
         )
-    val favoriteAddresses = favorites.map { BoardAddress(current.site, it) }
-    val recentAddresses = recent.filter { it.site == current.site && it !in favoriteAddresses }.distinct()
+    val favoriteAddresses = favorites.filter { it.site == site }
+    val recentAddresses = recent.filter { it.site == site && it !in favoriteAddresses }.distinct()
     val needle = query.trim().trim('/').lowercase()
     val suggestions =
         if (needle.isEmpty()) {

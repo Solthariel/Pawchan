@@ -23,15 +23,7 @@ fun UiToolbarButton(
     active: Boolean = false,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier =
-            Modifier
-                .size(APP_TOOLBAR_BUTTON_SIZE)
-                .clip(CircleShape)
-                .clickable(enabled = enabled, onClick = onClick)
-                .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) {
+    UiToolbarButtonFrame(description, enabled, onClick) {
         UiIcon(
             kind = kind,
             color =
@@ -43,6 +35,24 @@ fun UiToolbarButton(
             modifier = Modifier.size(24.dp).rotate(rotationDegrees),
         )
     }
+}
+
+@Composable
+internal fun UiToolbarButtonFrame(
+    description: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .size(APP_TOOLBAR_BUTTON_SIZE)
+                .clip(CircleShape)
+                .clickable(enabled = enabled, onClick = onClick)
+                .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) { content() }
 }
 
 val APP_TOOLBAR_BUTTON_SIZE = 48.dp

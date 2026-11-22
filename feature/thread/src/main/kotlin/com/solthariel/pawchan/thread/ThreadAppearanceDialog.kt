@@ -15,6 +15,7 @@ import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.AppDialogStyle
 import com.solthariel.pawchan.core.ui.AppearanceScale
 import com.solthariel.pawchan.core.ui.AppearanceSlider
+import com.solthariel.pawchan.core.ui.NO_POST_COLLAPSE
 
 @Composable
 internal fun ThreadAppearanceDialog(
@@ -34,9 +35,13 @@ internal fun ThreadAppearanceDialog(
                 AppearanceScale(MIN_TEXT_SIZE..MAX_TEXT_SIZE, DEFAULT_THREAD_TEXT_SIZE, "sp"),
             ) { onChange(value.copy(textSize = it)) }
             AppearanceSlider(
-                "Сворачивать после: ${value.maxLines} строк",
+                if (value.maxLines == NO_POST_COLLAPSE) {
+                    "Не сворачивать"
+                } else {
+                    "Сворачивать после: ${value.maxLines} строк"
+                },
                 value.maxLines,
-                AppearanceScale(MIN_POST_LINES..MAX_POST_LINES, DEFAULT_THREAD_MAX_LINES, "строк"),
+                AppearanceScale(MIN_POST_LINES..NO_POST_COLLAPSE, DEFAULT_THREAD_MAX_LINES, "строк"),
             ) { onChange(value.copy(maxLines = it)) }
             TextButton(onClick = { onChange(ThreadAppearance()) }) { Text("По умолчанию") }
         }
@@ -46,4 +51,3 @@ internal fun ThreadAppearanceDialog(
 private const val MIN_TEXT_SIZE = 6
 private const val MAX_TEXT_SIZE = 18
 private const val MIN_POST_LINES = 10
-private const val MAX_POST_LINES = 30

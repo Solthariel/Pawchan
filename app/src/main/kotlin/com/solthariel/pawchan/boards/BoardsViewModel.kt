@@ -8,10 +8,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.solthariel.pawchan.catalog.CatalogError
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
+import com.solthariel.pawchan.domain.boards.BoardDirectorySnapshots
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
 import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
-import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.isRateLimited
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,9 +32,9 @@ internal sealed interface BoardsUiState {
 
     data class Content(
         val boards: List<BoardDirectoryEntry>,
-        val favoriteBoards: Set<BoardId>,
-        val boardSpeeds: Map<BoardId, Int>,
-        val unavailableBoards: Set<BoardId>,
+        val favoriteBoards: Set<BoardAddress>,
+        val boardSpeeds: Map<BoardAddress, Int>,
+        val unavailableBoards: Set<BoardAddress>,
         val expandedCategories: Set<String>,
         val isRefreshing: Boolean,
     ) : BoardsUiState
@@ -85,13 +87,13 @@ internal class BoardsViewModel(
                         outcome.value
                             .filter { board ->
                                 board.requiresPostingAccess && !hasPostingAccess
-                            }.mapTo(mutableSetOf()) { board -> board.address.board }
+                            }.mapTo(mutableSetOf()) { board -> board.address }
                     BoardsUiState.Content(
                         boards = outcome.value,
                         favoriteBoards = favorites,
                         boardSpeeds =
                             outcome.value.associate { board ->
-                                board.address.board to board.postsPerHour
+                                board.address to board.postsPerHour
                             },
                         unavailableBoards = unavailable,
                         expandedCategories =
@@ -115,17 +117,39 @@ internal class BoardsViewModel(
         )
 
     init {
-        refresh()
+        if (directory is BoardDirectorySnapshots) {
+            viewModelScope.launch {
+                directory.snapshots.filterNotNull().collect { boards ->
+                    directoryOutcome.value = DomainOutcome.Success(boards)
+                }
+            }
+        }
+        refresh(forceRefresh = false)
     }
 
-    fun refresh() {
+    fun refresh() = refresh(forceRefresh = true)
+
+    private fun refresh(forceRefresh: Boolean) {
         if (refreshing.value) {
             return
         }
         viewModelScope.launch {
             refreshing.value = true
             try {
-                directoryOutcome.value = directory.loadBoards(forceRefresh = directoryOutcome.value != null)
+                val result = directory.loadBoards(forceRefresh = forceRefresh)
+                when (result) {
+                    is DomainOutcome.Success -> {
+                        if (directory !is BoardDirectorySnapshots) directoryOutcome.value = result
+                    }
+
+                    is DomainOutcome.Failure -> {
+                        if (directoryOutcome.value !is DomainOutcome.Success &&
+                            (directory !is BoardDirectorySnapshots || directory.snapshots.value == null)
+                        ) {
+                            directoryOutcome.value = result
+                        }
+                    }
+                }
             } finally {
                 refreshing.value = false
             }
@@ -133,7 +157,7 @@ internal class BoardsViewModel(
     }
 
     fun setFavorite(
-        board: BoardId,
+        board: BoardAddress,
         favorite: Boolean,
     ) {
         viewModelScope.launch {
@@ -211,6 +235,11 @@ private val CATEGORY_ORDER =
         "Игры",
         "Взрослым",
         "Японская культура",
+        "Видеоигры",
+        "Интересы",
+        "Другое",
+        "Разное (18+)",
+        "Взрослым (18+)",
         "Разное",
         OTHER_CATEGORY,
         USER_BOARDS_CATEGORY,

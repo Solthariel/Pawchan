@@ -2,6 +2,8 @@ package com.solthariel.pawchan.data.drafts
 
 import com.solthariel.pawchan.domain.drafts.ComposerDraftKey
 import com.solthariel.pawchan.domain.drafts.ComposerDraftPayload
+import com.solthariel.pawchan.domain.drafts.DraftImageEdit
+import com.solthariel.pawchan.domain.drafts.DraftImageOptions
 import com.solthariel.pawchan.domain.drafts.DraftImageReencoding
 import com.solthariel.pawchan.domain.drafts.DraftMedia
 import com.solthariel.pawchan.domain.drafts.DraftText
@@ -45,7 +47,11 @@ class FileComposerDraftRepositoryTest {
                         customName = "renamed",
                         reencoding = DraftImageReencoding(),
                         spoiler = true,
-                        previousReencoding = DraftImageReencoding(quality = 87, scalePercent = 60),
+                        image =
+                            DraftImageOptions(
+                                previousReencoding = DraftImageReencoding(quality = 87, scalePercent = 60),
+                                edit = DraftImageEdit(quarterTurns = 1, mirrored = true),
+                            ),
                     ),
                     "2×4",
                     preview = byteArrayOf(3, 4),

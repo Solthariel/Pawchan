@@ -9,7 +9,6 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.domain.thread.ThreadRepository
-import com.solthariel.pawchan.domain.thread.mergeThreadHistory
 import com.solthariel.pawchan.navigation.AppRoute
 import com.solthariel.pawchan.navigation.toBoardAddress
 import com.solthariel.pawchan.navigation.toThreadAddress
@@ -17,7 +16,7 @@ import com.solthariel.pawchan.navigation.toThreadAddress
 internal fun String?.validRestorableRoute(): String? =
     this?.takeIf {
         it == AppRoute.BOARDS || it == AppRoute.LIBRARY || it == AppRoute.SETTINGS ||
-            it.matches(Regex("(?:catalog|archive)/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+")) ||
+            it.matches(Regex("(?:catalog|archive|archive-browser)/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+")) ||
             it.matches(Regex("thread/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+/[1-9][0-9]*"))
     }
 
@@ -32,6 +31,7 @@ internal fun BindWorkspaceRoute(
                 when (entry.destination.route) {
                     AppRoute.THREAD -> entry.arguments?.toThreadAddress()?.let(AppRoute::thread)
                     AppRoute.CATALOG -> entry.arguments?.toBoardAddress()?.let(AppRoute::catalog)
+                    AppRoute.ARCHIVE_BROWSER -> entry.arguments?.toBoardAddress()?.let(AppRoute::archiveBrowser)
                     AppRoute.ARCHIVE -> entry.arguments?.toBoardAddress()?.let(AppRoute::archive)
                     else -> entry.destination.route.validRestorableRoute()
                 }
@@ -46,6 +46,9 @@ internal class WorkspaceThreadRepository(
     private val arhivach: (suspend (ThreadAddress, String) -> DomainOutcome<ThreadSnapshot>)? = null,
 ) : com.solthariel.pawchan.domain.thread.ReportingThreadRepository,
     com.solthariel.pawchan.domain.thread.CachedThreadRepository {
+    override fun supportsReporting(address: ThreadAddress): Boolean =
+        (remote as? com.solthariel.pawchan.domain.thread.ReportingThreadRepository)?.supportsReporting(address) == true
+
     override suspend fun isThreadDeleted(address: ThreadAddress): Boolean = remote.isThreadDeleted(address)
 
     override suspend fun cachedThread(address: ThreadAddress): ThreadSnapshot? {
@@ -69,8 +72,7 @@ internal class WorkspaceThreadRepository(
         val history = workspace?.history
         return when (val outcome = remote.loadThread(address)) {
             is DomainOutcome.Success -> {
-                val merged = mergeThreadHistory(history?.load(address), outcome.value)
-                history?.save(merged)
+                val merged = history?.mergeAndSave(outcome.value) ?: outcome.value
                 DomainOutcome.Success(merged)
             }
 

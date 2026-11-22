@@ -59,6 +59,18 @@ internal class ThreadToolsState(
     private var job: Job? = null
     private var generation = 0
 
+    fun openPostPreview(
+        target: PostPreviewTarget,
+        local: ThreadUiState.Content?,
+    ) {
+        val isLocal = local != null && (target.address == null || target.address == local.address)
+        if (isLocal && !target.replies && target.postId !in requireNotNull(local).presentation.postPositions) {
+            notice = "Сообщение не найдено"
+        } else {
+            previews = previews + target
+        }
+    }
+
     fun search(
         content: ThreadUiState.Content?,
         input: String = query,

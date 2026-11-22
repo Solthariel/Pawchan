@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.Data
@@ -16,10 +17,19 @@ import com.solthariel.pawchan.PawchanApplication
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.DownloadPreferences
+import com.solthariel.pawchan.downloads.DownloadOrigin
+import com.solthariel.pawchan.downloads.DownloadRecord
+import com.solthariel.pawchan.downloads.DownloadStatus
+import com.solthariel.pawchan.media.AttachmentViewer
+import com.solthariel.pawchan.media.MediaAttachmentOrigin
+import com.solthariel.pawchan.media.MediaAttachmentSource
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.MediaSaveQueue
+import com.solthariel.pawchan.navigation.AppRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.UUID
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 internal class MediaDownloadQueue(
@@ -91,34 +101,94 @@ internal class MediaDownloadQueue(
                 null
             }
         val lease = tree?.let { permissions?.useDirectory(it.toString()) }
+        var committed = false
         try {
-            val operation = workManager.enqueue(createMediaDownloadRequest(attachment, destination))
-            operation.result.addListener(
-                { lease?.let { permissions?.closeAfterCommit(it) } },
-                java.util.concurrent.Executor { it.run() },
-            )
-        } catch (failure: IllegalStateException) {
-            lease?.close()
-            throw failure
-        } catch (failure: IllegalArgumentException) {
-            lease?.close()
-            throw failure
+            enqueueRecorded(attachment, destination)
+            committed = true
+        } finally {
+            if (committed) lease?.let { permissions?.closeAfterCommit(it) } else lease?.close()
         }
     }
+
+    private fun enqueueRecorded(
+        attachment: MediaAttachmentUi,
+        destination: Uri,
+    ) {
+        val request = createMediaDownloadRequest(attachment, destination, suggestedName(attachment))
+        val history = (appContext as? PawchanApplication)?.downloadHistory
+        history?.insert(
+            DownloadRecord(
+                request.id.toString(),
+                attachment.originalUrl,
+                destination.toString(),
+                suggestedName(attachment),
+                DownloadOrigin(
+                    attachment.source.origin
+                        ?.threadAddress
+                        ?.let(AppRoute::thread),
+                    attachment.source.origin?.archiveThreadId,
+                    attachment.source.ownerPostId?.takeIf { it > 0 },
+                ),
+                System.currentTimeMillis(),
+                DownloadStatus.QUEUED,
+            ),
+        )
+        var committed = false
+        var uncertain = false
+        try {
+            workManager.enqueue(request).result.get()
+            committed = true
+        } catch (failure: InterruptedException) {
+            uncertain = true
+            Thread.currentThread().interrupt()
+            throw failure
+        } finally {
+            if (!committed && !uncertain) history?.remove(request.id.toString())
+        }
+    }
+
+    fun retry(record: DownloadRecord): Boolean {
+        if (record.status != DownloadStatus.FAILED && record.status != DownloadStatus.CANCELLED) return false
+        return try {
+            (appContext as? PawchanApplication)?.downloadHistory?.setStatus(record.id, record.status)
+            val source =
+                MediaAttachmentSource(
+                    id = record.url,
+                    fileName = record.name,
+                    originalUrl = record.url,
+                    thumbnailUrl = null,
+                    ownerPostId = record.origin.postId,
+                    origin =
+                        MediaAttachmentOrigin(
+                            threadAddress = record.origin.threadRoute?.let(AppRoute::threadAddress),
+                            archiveThreadId = record.origin.archiveId,
+                        ),
+                )
+            enqueue(MediaAttachmentUi(source, null, AttachmentViewer.NONE), record.destination.toUri())
+        } catch (_: android.database.sqlite.SQLiteException) {
+            false
+        }
+    }
+
+    override fun enqueueInFolder(
+        attachment: MediaAttachmentUi,
+        tree: Uri,
+    ): Boolean = enqueue(attachment, tree.buildUpon().fragment("pawchan-pending-${UUID.randomUUID()}").build())
 
     override fun enqueue(
         attachment: MediaAttachmentUi,
         destination: Uri,
     ): Boolean =
         try {
+            val grant = destination.buildUpon().fragment(null).build()
             try {
                 appContext.contentResolver.takePersistableUriPermission(
-                    destination,
+                    grant,
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
             } catch (failure: SecurityException) {
                 if (appContext.checkUriPermission(
-                        destination,
+                        grant,
                         android.os.Process.myPid(),
                         android.os.Process.myUid(),
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
@@ -131,6 +201,10 @@ internal class MediaDownloadQueue(
             true
         } catch (_: SecurityException) {
             false
+        } catch (_: ExecutionException) {
+            false
+        } catch (_: android.database.sqlite.SQLiteException) {
+            false
         } catch (_: IllegalArgumentException) {
             false
         } catch (_: IllegalStateException) {
@@ -141,22 +215,25 @@ internal class MediaDownloadQueue(
 internal fun createMediaDownloadInput(
     attachment: MediaAttachmentUi,
     destination: Uri,
+    displayName: String = attachment.fileName,
 ): Data =
     Data
         .Builder()
         .putString(MediaDownloadWorker.URL_KEY, attachment.originalUrl)
         .putString(MediaDownloadWorker.DESTINATION_KEY, destination.toString())
+        .putString(MediaDownloadWorker.NAME_KEY, displayName)
         .build()
 
 private fun createMediaDownloadRequest(
     attachment: MediaAttachmentUi,
     destination: Uri,
+    displayName: String,
 ): OneTimeWorkRequest =
     OneTimeWorkRequestBuilder<MediaDownloadWorker>()
         .addTag("neko-media")
         .addTag("media-name:${attachment.fileName}")
         .addTag("media-destination:$destination")
-        .setInputData(createMediaDownloadInput(attachment, destination))
+        .setInputData(createMediaDownloadInput(attachment, destination, displayName))
         .setConstraints(
             Constraints
                 .Builder()

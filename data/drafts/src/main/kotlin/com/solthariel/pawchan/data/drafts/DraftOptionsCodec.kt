@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.data.drafts
 
+import com.solthariel.pawchan.domain.drafts.DraftImageOptions
 import com.solthariel.pawchan.domain.drafts.DraftImageReencoding
 import com.solthariel.pawchan.domain.drafts.MediaDraftOptions
 import com.solthariel.pawchan.domain.posting.PostingOptions
@@ -39,6 +40,7 @@ internal fun encodeMediaOptions(options: MediaDraftOptions): JsonObject =
         put("spoiler", options.spoiler)
         options.reencoding?.let { put("reencoding", encodeReencoding(it)) }
         options.previousReencoding?.let { put("previousReencoding", encodeReencoding(it)) }
+        options.edit?.let { put("edit", encodeImageEdit(it)) }
     }
 
 internal fun decodeMediaOptions(root: JsonObject): MediaDraftOptions =
@@ -49,7 +51,11 @@ internal fun decodeMediaOptions(root: JsonObject): MediaDraftOptions =
         customName = (root["name"] as? JsonPrimitive)?.contentOrNull,
         spoiler = root.flag("spoiler"),
         reencoding = (root["reencoding"] as? JsonObject)?.let(::decodeReencoding),
-        previousReencoding = (root["previousReencoding"] as? JsonObject)?.let(::decodeReencoding),
+        image =
+            DraftImageOptions(
+                previousReencoding = (root["previousReencoding"] as? JsonObject)?.let(::decodeReencoding),
+                edit = root["edit"]?.let { decodeImageEdit(it as? JsonObject ?: error("Invalid image edit")) },
+            ),
     )
 
 internal fun JsonObject.string(key: String): String =

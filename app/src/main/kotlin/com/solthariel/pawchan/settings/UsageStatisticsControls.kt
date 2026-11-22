@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -14,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.UiChoiceSegments
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
@@ -25,14 +25,7 @@ internal fun UsagePeriodOptions(
     select: (Int) -> Unit,
 ) {
     Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-        listOf("Сегодня", "Месяц", "Всё время").forEachIndexed { index, title ->
-            FilterChip(
-                selected == index,
-                onClick = { select(index) },
-                label = { Text(title) },
-                modifier = Modifier.padding(end = 8.dp),
-            )
-        }
+        UiChoiceSegments(listOf("Сегодня", "Месяц", "Всё время"), selected, true, wrapLabels = true, onSelect = select)
     }
 }
 

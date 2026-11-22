@@ -24,20 +24,22 @@ internal fun ContentFilterStatisticsDialog(
     var resetting by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    AlertDialog(
-        onDismissRequest = close,
-        title = { Text("Статистика автоскрытия") },
-        text = { ContentFilterStatisticsBody(statistics, failed) },
-        confirmButton = { TextButton(onClick = close) { Text("Закрыть") } },
-        dismissButton = {
-            TextButton(
-                enabled = repository != null && statistics.available && !resetting,
-                onClick = { confirm = true },
-            ) {
-                Text("Сбросить")
-            }
-        },
-    )
+    if (!confirm) {
+        AlertDialog(
+            onDismissRequest = close,
+            title = { Text("Статистика автоскрытия") },
+            text = { ContentFilterStatisticsBody(statistics, failed) },
+            confirmButton = { TextButton(onClick = close) { Text("Закрыть") } },
+            dismissButton = {
+                TextButton(
+                    enabled = repository != null && statistics.available && !resetting,
+                    onClick = { confirm = true },
+                ) {
+                    Text("Сбросить")
+                }
+            },
+        )
+    }
     if (confirm) {
         FilterStatisticsResetConfirmation({ confirm = false }) {
             confirm = false

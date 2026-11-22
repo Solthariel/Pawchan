@@ -43,6 +43,7 @@ internal fun postingGroups(
                 }
             },
         ),
+        sageDefaultsGroup(preferences.defaultSage, update),
         SettingsGroup(
             "Новые вложения по умолчанию",
             listOf(
@@ -69,6 +70,21 @@ internal fun postingGroups(
         imageEncodingGroup(files, changeFiles),
     )
 }
+
+private fun sageDefaultsGroup(
+    enabled: Boolean,
+    update: ((AppSettings) -> AppSettings) -> Unit,
+): SettingsGroup =
+    SettingsGroup(
+        "Ответы",
+        listOf(
+            SettingsItem.Toggle("Sage по умолчанию", "Если поддерживается сайтом", enabled) { on ->
+                update { current ->
+                    current.withClient { it.copy(composer = it.composer.copy(defaultSage = on)) }
+                }
+            },
+        ),
+    )
 
 private fun ComposerField.fieldLabel(): String =
     when (this) {

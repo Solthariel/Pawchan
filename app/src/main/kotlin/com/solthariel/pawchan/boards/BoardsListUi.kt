@@ -3,7 +3,7 @@ package com.solthariel.pawchan.boards
 import com.solthariel.pawchan.core.ui.FastScrollItemSizes
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
-import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.BoardAddress
 import kotlin.math.roundToInt
 
 internal data class BoardsListUi(
@@ -27,60 +27,51 @@ internal sealed interface BoardListItem {
         override val contentType: String = "board-category-header"
     }
 
-    data class Board(
+    data class GridRow(
         override val key: String,
-        val entry: BoardDirectoryEntry,
-        val favorite: Boolean,
-        val postsPerHour: Int?,
-        val unavailable: Boolean,
-        val position: BoardGroupPosition,
+        val boards: List<Board>,
     ) : BoardListItem {
-        val codeLabel: String = "/${entry.address.board.value}/"
-        override val contentType: String = "board-directory-row"
+        override val contentType: String = "board-grid-row"
     }
 
-    data object Empty : BoardListItem {
+    data class Empty(
+        val favoritesOnly: Boolean,
+    ) : BoardListItem {
         override val key: String = "boards-empty"
         override val contentType: String = "boards-empty"
     }
-}
 
-internal enum class BoardGroupPosition {
-    SINGLE,
-    FIRST,
-    MIDDLE,
-    LAST,
-    ;
-
-    val first: Boolean
-        get() = this == FIRST || this == SINGLE
-    val last: Boolean
-        get() = this == LAST || this == SINGLE
+    data class Board(
+        val entry: BoardDirectoryEntry,
+        val favorite: Boolean,
+        val unavailable: Boolean,
+    ) {
+        val codeLabel: String = "/${entry.address.board.value}/"
+    }
 }
 
 /** Called on Dispatchers.Default, never from the scrolling item content. */
 internal fun BoardsUiState.Content.prepareBoardsList(
     query: String,
-    favoriteLabel: String,
     dimensions: BoardListDimensions,
     pixelDensity: Float,
+    favoritesOnly: Boolean = false,
+    categoryFilter: String? = null,
 ): BoardsListUi {
-    val visible = filterBoards(boards, query)
     val searching = query.isNotBlank()
+    val visible =
+        filterBoards(boards, query).filter { board ->
+            !favoritesOnly || board.address in favoriteBoards
+        }
+    val source = this
     val rows =
         buildList<BoardListItem> {
-            if (!searching) {
-                appendCategory(
-                    BoardCategoryUi(favoriteLabel, boards.filter { it.address.board in favoriteBoards }),
-                    this@prepareBoardsList,
-                    searching = false,
-                    categoryKey = FAVORITES_CATEGORY_KEY,
-                )
+            val categories =
+                boardCategories(visible).filter { categoryFilter.isNullOrEmpty() || it.title == categoryFilter }
+            for (category in categories) {
+                source.appendCategory(this, category, searching, favoritesOnly, categoryFilter != null)
             }
-            for (category in boardCategories(visible)) {
-                appendCategory(category, this@prepareBoardsList, searching, category.title)
-            }
-            if (visible.isEmpty()) add(BoardListItem.Empty)
+            if (categories.isEmpty()) add(BoardListItem.Empty(favoritesOnly = favoritesOnly && !searching))
         }
     val heights =
         IntArray(rows.size) { index ->
@@ -89,56 +80,51 @@ internal fun BoardsUiState.Content.prepareBoardsList(
     return BoardsListUi(rows, dimensions, FastScrollItemSizes(heights))
 }
 
-private fun MutableList<BoardListItem>.appendCategory(
+private fun BoardsUiState.Content.appendCategory(
+    rows: MutableList<BoardListItem>,
     category: BoardCategoryUi,
-    state: BoardsUiState.Content,
     searching: Boolean,
-    categoryKey: String,
+    favoritesOnly: Boolean,
+    chipMode: Boolean,
 ) {
-    val expanded = (searching || categoryKey in state.expandedCategories) && category.boards.isNotEmpty()
-    add(
-        BoardListItem.Header(
-            categoryKey = categoryKey,
-            label = "${category.title}  ${category.boards.size}",
-            expanded = expanded,
-            enabled = !searching && category.boards.isNotEmpty(),
-            leadingGap = isNotEmpty(),
-        ),
-    )
+    val expanded =
+        (chipMode || searching || favoritesOnly || category.title in expandedCategories) && category.boards.isNotEmpty()
+    if (!chipMode) {
+        rows.add(
+            BoardListItem.Header(
+                categoryKey = category.title,
+                label = "${category.title}  ${category.boards.size}",
+                expanded = expanded,
+                enabled = !searching && !favoritesOnly && category.boards.isNotEmpty(),
+                leadingGap = rows.isNotEmpty(),
+            ),
+        )
+    }
     if (!expanded) return
-    for ((index, entry) in category.boards.withIndex()) {
-        add(state.boardListItem(categoryKey, entry, boardGroupPosition(index, category.boards.lastIndex)))
+
+    category.boards.chunked(BOARD_GRID_COLUMNS).forEachIndexed { rowIndex, entries ->
+        val cards =
+            entries.map { entry ->
+                BoardListItem.Board(
+                    entry = entry,
+                    favorite = entry.address in favoriteBoards,
+                    unavailable = entry.address in unavailableBoards,
+                )
+            }
+        val first = cards.first()
+        rows.add(
+            BoardListItem.GridRow(
+                key = "board-grid:${category.title}:$rowIndex:${first.entry.address.board.value}",
+                boards = cards,
+            ),
+        )
     }
 }
 
-private fun BoardsUiState.Content.boardListItem(
-    categoryKey: String,
-    entry: BoardDirectoryEntry,
-    position: BoardGroupPosition,
-): BoardListItem.Board =
-    BoardListItem.Board(
-        key = "board:$categoryKey:${entry.address.site.value}/${entry.address.board.value}",
-        entry = entry,
-        favorite = entry.address.board in favoriteBoards,
-        postsPerHour = boardSpeeds[entry.address.board],
-        unavailable = entry.address.board in unavailableBoards,
-        position = position,
-    )
-
-private fun boardGroupPosition(
-    index: Int,
-    lastIndex: Int,
-): BoardGroupPosition =
-    when {
-        lastIndex == 0 -> BoardGroupPosition.SINGLE
-        index == 0 -> BoardGroupPosition.FIRST
-        index == lastIndex -> BoardGroupPosition.LAST
-        else -> BoardGroupPosition.MIDDLE
-    }
-
 internal data class BoardListActions(
-    val onBoardSelected: (BoardId) -> Unit,
-    val onFavoriteChanged: (BoardId, Boolean) -> Unit,
+    val onBoardSelected: (BoardAddress) -> Unit,
+    val onFavoriteChanged: (BoardAddress, Boolean) -> Unit,
 )
 
+internal const val BOARD_GRID_COLUMNS = 3
 internal const val FAVORITES_CATEGORY_KEY = FAVORITES_BOARD_CATEGORY_KEY

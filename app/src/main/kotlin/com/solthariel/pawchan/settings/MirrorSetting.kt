@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppAlertDialog
@@ -86,7 +88,16 @@ private fun CustomMirrorDialog(
             OutlinedTextField(
                 input,
                 { onInput(it.trim().lowercase()) },
-                label = { Text("Домен без https://") },
+                label = {
+                    Text(
+                        if (validMirrorHost(input)) "Домен без https://" else "Нужен домен вида example.org",
+                        maxLines = 1,
+                    )
+                },
+                modifier =
+                    Modifier.semantics {
+                        if (!validMirrorHost(input)) error("Введите домен без https://, пути и пробелов")
+                    },
                 singleLine = true,
                 isError = !validMirrorHost(input),
             )

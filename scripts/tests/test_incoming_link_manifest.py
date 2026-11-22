@@ -6,12 +6,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ANDROID = "{http://schemas.android.com/apk/res/android}"
-EXPECTED_HOSTS = {"2ch.hk", "2ch.su", "2ch.life", "2ch.org"}
+EXPECTED_DVACH_HOSTS = {"2ch.hk", "2ch.su", "2ch.life", "2ch.org"}
+EXPECTED_FOURCHAN_HOSTS = {"boards.4chan.org", "boards.4channel.org"}
+EXPECTED_HOSTS = EXPECTED_DVACH_HOSTS | EXPECTED_FOURCHAN_HOSTS
 POLICY = "app/src/main/kotlin/com/solthariel/pawchan/infrastructure/sites/DvachLinkHosts.kt"
+FOURCHAN_POLICY = "app/src/main/kotlin/com/solthariel/pawchan/infrastructure/sites/FourChanWebLinks.kt"
 
 
-def declared_link_hosts(text):
-    match = re.search(r"\bDVACH_LINK_HOSTS\s*=\s*setOf\(([^)]*)\)", text)
+def declared_link_hosts(text, symbol="DVACH_LINK_HOSTS"):
+    match = re.search(r"\b" + re.escape(symbol) + r"\s*=\s*setOf\(([^)]*)\)", text)
     if match is None:
         raise ValueError("Missing explicit web-link alias set")
     return re.findall(r'"([^"\n]+)"', match.group(1))
@@ -33,7 +36,10 @@ def manifest_web_filters(text):
 class IncomingLinkManifestTests(unittest.TestCase):
     def setUp(self):
         self.manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8-sig")
-        self.hosts = declared_link_hosts((ROOT / POLICY).read_text(encoding="utf-8-sig"))
+        self.dvach_hosts = declared_link_hosts((ROOT / POLICY).read_text(encoding="utf-8-sig"))
+        self.fourchan_hosts = declared_link_hosts(
+            (ROOT / FOURCHAN_POLICY).read_text(encoding="utf-8-sig"), "BOARD_HOSTS")
+        self.hosts = self.dvach_hosts + self.fourchan_hosts
 
     def assert_manifest_contract(self, text):
         filters = manifest_web_filters(text)
@@ -50,6 +56,8 @@ class IncomingLinkManifestTests(unittest.TestCase):
         self.assertEqual({"http", "https"}, schemes)
 
     def test_checked_in_manifest_matches_the_explicit_alias_policy(self):
+        self.assertEqual(EXPECTED_DVACH_HOSTS, set(self.dvach_hosts))
+        self.assertEqual(EXPECTED_FOURCHAN_HOSTS, set(self.fourchan_hosts))
         self.assertEqual(EXPECTED_HOSTS, set(self.hosts))
         self.assertEqual(len(self.hosts), len(set(self.hosts)))
         self.assert_manifest_contract(self.manifest)
@@ -59,8 +67,14 @@ class IncomingLinkManifestTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.assert_manifest_contract(old)
 
+    def test_missing_enabled_fourchan_board_origin_is_detected(self):
+        for host in EXPECTED_FOURCHAN_HOSTS:
+            declaration = f'                <data android:host="{host}" />\n'
+            with self.subTest(host=host), self.assertRaises(AssertionError):
+                self.assert_manifest_contract(self.manifest.replace(declaration, ""))
+
     def test_extra_or_wildcard_hosts_are_detected(self):
-        for host in ("2ch.pm", "*.2ch.hk", "evil.example"):
+        for host in ("2ch.pm", "*.2ch.hk", "evil.example", "*.4chan.org", "boards.4chan.org.evil.test", "i.4cdn.org"):
             changed = self.manifest.replace('android:host="2ch.hk"', f'android:host="{host}"')
             with self.subTest(host=host), self.assertRaises(AssertionError):
                 self.assert_manifest_contract(changed)

@@ -31,13 +31,14 @@ internal fun BoardLookupGrid(
     rows: Int,
     select: (BoardAddress) -> Unit,
     tag: String,
+    enabled: Boolean = true,
 ) {
     if (rows == 0) return
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
         modifier = Modifier.fillMaxWidth().height(BOARD_LOOKUP_ROW_HEIGHT * rows).testTag(tag),
     ) {
-        items(boards, key = { it.key }) { board -> BoardLookupCode(board, select) }
+        items(boards, key = { it.key }) { board -> BoardLookupCode(board, select, enabled) }
     }
 }
 
@@ -45,6 +46,7 @@ internal fun BoardLookupGrid(
 private fun BoardLookupCode(
     board: BoardLookupBoard,
     select: (BoardAddress) -> Unit,
+    enabled: Boolean,
 ) {
     val colors = MaterialTheme.colorScheme
     val background = if (board.selected) colors.secondaryContainer else Color.Transparent
@@ -55,7 +57,7 @@ private fun BoardLookupCode(
             .semantics {
                 contentDescription = board.description
                 selected = board.selected
-            }.clickable { select(board.address) }
+            }.clickable(enabled = enabled) { select(board.address) }
             .padding(horizontal = 4.dp, vertical = 4.dp)
             .background(background, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center,

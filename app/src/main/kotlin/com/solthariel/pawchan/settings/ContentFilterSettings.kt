@@ -38,7 +38,7 @@ internal fun ContentFilterSettings(
         .collectAsStateWithLifecycle(ContentFilterStatistics(available = false))
     val menu =
         ContentFilterMenuActions({ editing = "new" }, backup, { statisticsVisible = true }, { helpVisible = true })
-    Column(Modifier.fillMaxSize()) {
+    com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
         ContentFilterToolbar(onBack, search, menu)
         if (state.app.behavior.contentFilterResetNotice) {
             ContentFilterResetNotice {
@@ -47,11 +47,15 @@ internal fun ContentFilterSettings(
                 }
             }
         }
+    }) {
         ContentFilterRulesList(
             visible,
             statistics,
             if (rules.isEmpty()) "Правил пока нет" else "Подходящих правил нет",
-            Modifier.weight(1f),
+            Modifier.fillMaxSize(),
+            setEnabled = { id, enabled ->
+                actions.onUpdate { app -> app.withContentFilters(app.contentFilters.withRuleEnabled(id, enabled)) }
+            },
         ) { editing = it }
     }
     if (helpVisible) AutohideHelpDialog { helpVisible = false }
@@ -109,3 +113,9 @@ private fun ContentFilterSettingsEditor(
             },
     )
 }
+
+/** Меняет только флаг включения; порядок и остальные поля правил сохраняются. */
+internal fun List<ContentFilterRule>.withRuleEnabled(
+    id: String,
+    enabled: Boolean,
+): List<ContentFilterRule> = map { if (it.id == id && it.enabled != enabled) it.copy(enabled = enabled) else it }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_CONTENT_INSET
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
 
@@ -21,9 +22,18 @@ internal fun ContentFilterRulesList(
     statistics: ContentFilterStatistics,
     emptyMessage: String,
     modifier: Modifier,
+    setEnabled: ((String, Boolean) -> Unit)? = null,
     edit: (String) -> Unit,
 ) {
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                bottom = LocalBottomOverlayInset.current + 8.dp,
+            ),
+    ) {
         SettingsGroupFrame(horizontalInset = FAST_SCROLL_CONTENT_INSET) {
             if (rules.isEmpty()) {
                 Text(
@@ -36,7 +46,8 @@ internal fun ContentFilterRulesList(
                 if (index > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
                 val count =
                     statistics.rules[rule.id].orZeroWhenAvailable(statistics.available && !statistics.storageFailure)
-                ContentFilterRuleRow(rule, count) { edit(rule.id) }
+                val toggle = setEnabled?.let { change -> { enabled: Boolean -> change(rule.id, enabled) } }
+                ContentFilterRuleRow(rule, count, toggle) { edit(rule.id) }
             }
         }
     }

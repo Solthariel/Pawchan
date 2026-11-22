@@ -1,5 +1,6 @@
 package com.solthariel.pawchan
 
+import com.solthariel.pawchan.composer.ComposerDraftRevision
 import com.solthariel.pawchan.composer.ComposerDraftState
 import com.solthariel.pawchan.composer.appendReplyInsertion
 import com.solthariel.pawchan.domain.posting.PostingOptions
@@ -34,7 +35,7 @@ class ReplyInsertionTest {
                 subject = "subject",
                 comment = "abc",
                 email = "mail",
-                resetId = 9,
+                revision = ComposerDraftRevision(resetId = 9),
                 options = PostingOptions("name", sage = true),
             )
         assertEquals(draft.copy(comment = "abc\nx"), appendReplyInsertion(draft, "x", 5))

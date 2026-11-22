@@ -21,11 +21,11 @@ import org.junit.Test
 import java.io.IOException
 
 class ThemeColorsStoreTest {
-    @Test fun missingAndUnknownPaletteUseLegacyFallback() {
+    @Test fun missingAndUnknownPaletteUseSystemDefault() {
         val theme = stringPreferencesKey("theme")
         val palette = stringPreferencesKey("theme_palette")
         assertEquals(ThemeColors(), emptyPreferences().readThemeColors())
-        assertEquals(ThemeColors(ThemePalette.BLUE), mutablePreferencesOf(theme to "TOMORROW").readThemeColors())
+        assertEquals(ThemeColors(), mutablePreferencesOf(theme to "TOMORROW").readThemeColors())
         assertEquals(ThemeColors(), mutablePreferencesOf(palette to "BROKEN").readThemeColors())
     }
 
@@ -111,9 +111,9 @@ class ThemeColorsStoreTest {
             val data = ColorMemoryStore(mutablePreferencesOf(stringPreferencesKey("theme_palette") to "ROSE"))
             val portable = DataStorePortableSettings(data) {}
             portable.replace(mapOf("theme" to "AMOLED"), null)
-            assertEquals(ThemeColors(ThemePalette.LAVENDER, true), data.data.first().readThemeColors())
+            assertEquals(ThemeColors(), data.data.first().readThemeColors())
             portable.replace(mapOf("theme" to "TOMORROW"), null)
-            assertEquals(ThemeColors(ThemePalette.BLUE), data.data.first().readThemeColors())
+            assertEquals(ThemeColors(), data.data.first().readThemeColors())
         }
 
     @Test fun badBackupPaletteIsRejectedBeforeMutation() =

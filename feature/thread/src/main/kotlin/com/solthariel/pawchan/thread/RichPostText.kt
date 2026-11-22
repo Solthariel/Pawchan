@@ -3,6 +3,7 @@ package com.solthariel.pawchan.thread
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.postTextColors
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.thread.vocaroo.rememberVocarooInlineContent
@@ -43,10 +45,12 @@ internal fun RichPostText(
     var ownSpoilers by rememberSaveable(model, stateSaver = SpoilerSetSaver) { mutableStateOf(emptySet<Int>()) }
     val spoilers = if (store != null && spoilerKey != null) store[spoilerKey] else ownSpoilers
     val colors = postTextColors(MaterialTheme.colorScheme.surface)
+    val hideMonkey = model.hasMonkeyReply && LocalPostDisplayPreferences.current.hideMonkeyReplies
     val text =
-        remember(model, spoilers, colors) {
-            if (spoilers.isEmpty()) model.text(colors) else model.reveal(spoilers, colors)
+        remember(model, spoilers, colors, hideMonkey) {
+            if (spoilers.isEmpty()) model.text(colors, hideMonkey) else model.reveal(spoilers, colors, hideMonkey)
         }
+    if (hideMonkey && text.isBlank()) return
     val density = LocalDensity.current.density
     val feedback = remember(text, density) { PostLinkPressFeedback(text, LINK_TOUCH_PADDING_DP * density) }
     val selection = rememberPostTextSelection(model, text.text)
@@ -99,15 +103,17 @@ private fun RichPostBody(
     val visual = remember(text) { text.withVisualLinkSuffixes() }
     val layout = remember(text) { mutableStateOf<TextLayoutResult?>(null) }
     val field = TextFieldValue(visual, selection.range)
-    val styled = presentation.style ?: MaterialTheme.typography.bodyMedium
+    val styled = LocalTextStyle.current.merge(presentation.style ?: MaterialTheme.typography.bodyMedium)
     val measurer = rememberTextMeasurer()
+    val accent = postTextColors(MaterialTheme.colorScheme.surface).link
+    val blockDecorated = modifier.monkeyReplyChrome(text, accent) { layout.value }
     val interactive =
-        modifier.referenceLinkSuffixes(
+        blockDecorated.referenceLinkSuffixes(
             text,
             LocalPostLinkAddress.current,
             measurer,
             styled,
-            postTextColors(MaterialTheme.colorScheme.surface).link,
+            accent,
         ) { layout.value }
     val inline = rememberVocarooInlineContent(text, measurer, styled)
     if (!presentation.interactionsEnabled || field.selection.collapsed) {

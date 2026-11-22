@@ -20,9 +20,15 @@ data class MediaViewerSelection(
             total = if (index < 0) 1 else items.size,
             previousItem = previous,
             nextItem = next,
+            group = MediaViewerGroup(items, onSelect),
         )
     }
 }
+
+data class MediaViewerGroup(
+    val items: List<MediaAttachmentUi>,
+    val onSelect: (MediaAttachmentUi) -> Unit,
+)
 
 data class MediaViewerNavigation(
     val previous: (() -> Unit)? = null,
@@ -31,4 +37,5 @@ data class MediaViewerNavigation(
     val total: Int = 1,
     val previousItem: MediaAttachmentUi? = null,
     val nextItem: MediaAttachmentUi? = null,
+    val group: MediaViewerGroup? = null,
 )

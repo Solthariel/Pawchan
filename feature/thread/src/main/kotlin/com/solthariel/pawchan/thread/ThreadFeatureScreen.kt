@@ -18,6 +18,7 @@ data class ThreadFeatureActions(
     val onChallenge: (String) -> Unit,
     val onReply: (ThreadReplyRequest) -> Unit,
     val watcherToggle: @Composable (Boolean, () -> Unit) -> (() -> Unit) = { _, toggle -> toggle },
+    val repliesEnabled: Boolean = true,
 )
 
 @Composable
@@ -40,9 +41,11 @@ fun ThreadFeatureScreen(
     val watcher by session.watcher.state.collectAsStateWithLifecycle()
     val toggle = actions.watcherToggle(watcher.enabled, session::toggleWatcher)
     val reply: (String?) -> Unit = { insertion ->
-        actions.onReply(ThreadReplyRequest((state as? ThreadUiState.Content)?.closed != false, insertion))
+        if (actions.repliesEnabled) {
+            actions.onReply(ThreadReplyRequest((state as? ThreadUiState.Content)?.closed != false, insertion))
+        }
     }
-    navigationHost(threadWriteAction(state, actions.onReply)) {
+    navigationHost(threadWriteAction(state, actions.onReply, actions.repliesEnabled)) {
         ThreadScreen(
             state = state,
             actions =
@@ -60,6 +63,7 @@ fun ThreadFeatureScreen(
             presentation =
                 ThreadPresentation(
                     watcherState = watcher,
+                    repliesEnabled = actions.repliesEnabled,
                     reports = session.reports,
                     postContext =
                         ThreadPostContext(

@@ -62,7 +62,12 @@ internal class ReplyMonitorViewModel(
     private suspend fun checkReplies(notify: Boolean) {
         val source = repository ?: return
         val notifier = ThreadWatchNotifier(getApplication(), replies = true)
-        checkWorkspaceReplies(workspace.repository, source, workspace.statistics) { address, count ->
+        checkWorkspaceReplies(
+            workspace.repository,
+            source,
+            workspace.statistics,
+            ReplyNotificationSync(getApplication()),
+        ) { address, count ->
             if (notify) {
                 notifier.onNewPosts(
                     ThreadWatchSubscription(address, null, null, 0L),

@@ -1,13 +1,21 @@
 package com.solthariel.pawchan.data.network
 
+import com.solthariel.pawchan.data.network.proxy.ScopedProxySelector
 import com.solthariel.pawchan.domain.network.ForumMirrors
 import com.solthariel.pawchan.domain.network.MirrorAvailability
 import com.solthariel.pawchan.domain.network.MirrorObservation
 import com.solthariel.pawchan.domain.network.MirrorState
 import com.solthariel.pawchan.domain.settings.ForumConnectionPreferences
 import com.solthariel.pawchan.domain.settings.validMirrorHost
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import java.util.concurrent.CompletableFuture
 
@@ -16,13 +24,16 @@ class MirrorRecovery internal constructor(
     initialHost: String,
     private val probe: (String, (MirrorObservation) -> Unit) -> Call,
     private val closeProbe: () -> Unit,
+    private val manualDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ForumMirrors,
     AutoCloseable {
     private val lock = Any()
+    private val manualScope = CoroutineScope(SupervisorJob() + manualDispatcher)
     private val mutableState = MutableStateFlow(MirrorState(initialHost))
     override val state = mutableState.asStateFlow()
     private var preferences = ForumConnectionPreferences(initialHost)
     private var round: MirrorCheckRound? = null
+    private var manualRound: MirrorCheckRound? = null
     private var lastFailureAt = 0L
     private var closed = false
 
@@ -51,7 +62,7 @@ class MirrorRecovery internal constructor(
 
     override fun checkAvailability() =
         synchronized(lock) {
-            if (!closed && round == null) startRound(null)
+            if (!closed && manualRound == null) startManualRound()
         }
 
     internal fun recover(failedHost: String): CompletableFuture<String?> =
@@ -72,6 +83,41 @@ class MirrorRecovery internal constructor(
             }
             startRound(failedHost).result
         }
+
+    private fun startManualRound() {
+        val hosts = (listOf(state.value.activeHost) + MIRROR_HOSTS).distinct()
+        val check = MirrorCheckRound(null, hosts.size)
+        manualRound = check
+        mutableState.value = state.value.copy(manualChecking = true, manualObservations = emptyList())
+        manualScope.launch {
+            repeat(MANUAL_SAMPLES) {
+                synchronized(lock) {
+                    if (manualRound !== check || closed) return@launch
+                    hosts.forEach { host ->
+                        check.calls.add(
+                            probe(host) { observation ->
+                                synchronized(lock) {
+                                    if (manualRound === check && !closed) check.observations.add(observation)
+                                }
+                            },
+                        )
+                    }
+                }
+                delay(MANUAL_INTERVAL_MILLIS)
+            }
+            synchronized(lock) {
+                if (manualRound !== check || closed) return@launch
+                manualRound = null
+                check.calls.forEach(Call::cancel)
+                val observations =
+                    hosts.map { host ->
+                        summarizeManualMirror(host, check.observations.filter { it.host == host }, MANUAL_SAMPLES)
+                    }
+                mutableState.value = state.value.copy(manualChecking = false, manualObservations = observations)
+                check.result.complete(null)
+            }
+        }
+    }
 
     private fun startRound(failedHost: String?): MirrorCheckRound {
         val hosts = (listOf(state.value.activeHost) + MIRROR_HOSTS).distinct().filter { it != failedHost }
@@ -109,7 +155,12 @@ class MirrorRecovery internal constructor(
             check.result.complete(null)
             check.calls.forEach(Call::cancel)
         }
-        mutableState.value = state.value.copy(checking = false)
+        manualRound?.let { check ->
+            manualRound = null
+            check.result.complete(null)
+            check.calls.forEach(Call::cancel)
+        }
+        mutableState.value = state.value.copy(checking = false, manualChecking = false)
     }
 
     override fun close() {
@@ -117,12 +168,16 @@ class MirrorRecovery internal constructor(
             closed = true
             cancelRound()
         }
+        manualScope.cancel()
         closeProbe()
     }
 
     companion object {
-        fun create(initialHost: String): MirrorRecovery {
-            val probe = MirrorProbe()
+        fun create(
+            initialHost: String,
+            router: ScopedProxySelector? = null,
+        ): MirrorRecovery {
+            val probe = MirrorProbe(router)
             return MirrorRecovery(initialHost, probe::start, probe::close)
         }
     }
@@ -139,3 +194,5 @@ private class MirrorCheckRound(
 
 private val MIRROR_HOSTS = listOf("2ch.su", "2ch.org", "2ch.life")
 private const val FAILURE_ROUND_COOLDOWN = 30_000L
+private const val MANUAL_SAMPLES = 3
+private const val MANUAL_INTERVAL_MILLIS = 1_000L

@@ -42,14 +42,15 @@ internal fun CatalogContentRoute(
     bottomActions: AppBottomActions,
     onMediaVisibilityChanged: (Boolean) -> Unit = {},
 ) {
-    val boardLookup = rememberCatalogBoardLookup(board, dependencies, navigation.onBoardSelected)
+    val loaders = dependencies.mediaLoaders
+    val viewModel = rememberCatalogViewModel(board, dependencies)
+    val boardLookup = rememberRouteLookup(board, dependencies, navigation, viewModel)
     val filters =
         com.solthariel.pawchan.settings
             .rememberQuickContentFilter(dependencies.appSettings)
     var openedAttachment by remember(board) { mutableStateOf<MediaAttachmentUi?>(null) }
     var mediaMenu by remember(board) { mutableStateOf<MediaMenuRequest?>(null) }
     LaunchedEffect(openedAttachment) { onMediaVisibilityChanged(openedAttachment != null) }
-    val viewModel = rememberCatalogViewModel(board, dependencies)
     val state by viewModel.state.collectAsStateWithLifecycle()
     BindCatalogAgeUpdates(viewModel)
     BindCatalogRouteEffects(challengeRetryToken, viewModel)
@@ -77,21 +78,20 @@ internal fun CatalogContentRoute(
             ).copy(
                 threadMenuHost = rememberCatalogThreadMenuHost(dependencies.library),
                 onToggleFiltered = viewModel::toggleFilteredThreads,
+                onClearTag = { viewModel.selectTag(null) },
                 onAddRule =
                     filters?.let { tools ->
                         { thread -> tools.add(catalogRuleSelection(thread)) }
                     },
             )
         CatalogScreen(
-            presentation =
-                CatalogPresentation(
-                    board,
-                    state,
-                    dependencies.mediaLoaders.imageLoader,
-                    dependencies.mediaLoaders.thumbnailLoader,
-                ),
+            presentation = CatalogPresentation(board, state, loaders.imageLoader, loaders.thumbnailLoader),
             actions = catalogActions,
             bottomActions = bottomActions,
+            onBoardSwipe =
+                boardLookup.onAdjacentForum.takeIf {
+                    openedAttachment == null && !boardLookup.visible
+                },
             menu =
                 rememberCatalogMenu(board, dependencies.repositories.boards, navigation)
                     .copy(boardLookup = boardLookup),
@@ -207,3 +207,14 @@ private fun catalogRouteActions(
                 },
             ),
     )
+
+@Composable
+private fun rememberRouteLookup(
+    board: BoardAddress,
+    dependencies: AppDependencies,
+    navigation: CatalogNavigation,
+    model: CatalogViewModel,
+): com.solthariel.pawchan.catalog.CatalogBoardLookupBindings {
+    val tags by model.tags.collectAsStateWithLifecycle()
+    return rememberCatalogBoardLookup(board, dependencies, navigation.onBoardSelected, tags, model::selectTag)
+}

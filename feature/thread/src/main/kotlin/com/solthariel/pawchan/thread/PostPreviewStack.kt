@@ -28,6 +28,24 @@ internal fun PostPreviewStack(
 ) {
     val path = remember { PreviewStackPath() }
     val entries = remember(targets) { path.reconcile(targets) }
+    val shared = remember(entries) { entries.map { SharedPreviewEntry(it.id, it.target) } }
+    SharedPostPreviewStack(shared, onClear) { target ->
+        PostPreviewDialog(target, local, appearance, bindings(target), resources)
+    }
+}
+
+/** Uses the same stacked window behavior for any source with locally available posts. */
+data class SharedPreviewEntry<T>(
+    val id: String,
+    val target: T,
+)
+
+@Composable
+fun <T> SharedPostPreviewStack(
+    entries: List<SharedPreviewEntry<T>>,
+    onClear: () -> Unit,
+    content: @Composable (T) -> Unit,
+) {
     val holder = rememberSaveableStateHolder()
     val known = remember { mutableSetOf<String>() }
     LaunchedEffect(entries) {
@@ -53,7 +71,7 @@ internal fun PostPreviewStack(
                                         count = entries.size.coerceAtMost(RETAINED_PREVIEW_WINDOWS),
                                     ),
                             ) {
-                                PostPreviewDialog(entry.target, local, appearance, bindings(entry.target), resources)
+                                content(entry.target)
                             }
                         }
                     }

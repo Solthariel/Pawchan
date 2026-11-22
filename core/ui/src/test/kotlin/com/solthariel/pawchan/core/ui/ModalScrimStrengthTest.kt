@@ -29,6 +29,28 @@ class ModalScrimStrengthTest {
         assertEquals(0f, state.pageAlpha(), 0f)
     }
 
+    @Test fun videoBackdropReplacesPickerPageScrimAndRestoresItOnClose() {
+        val state = ModalLayerState(true)
+        val picker = ModalLayerEntry(Any(), ModalLayerKind.WINDOW, ModalScrimStrength.MEDIA)
+        val video = ModalLayerEntry(Any(), ModalLayerKind.FULL_SCREEN, replacesPageScrim = true)
+        state.enter(picker)
+        assertEquals(0.9f, state.pageAlpha(), 0f)
+        state.enter(video)
+        assertEquals(0f, state.pageAlpha(), 0f)
+        assertEquals(0.6f, state.coveredAlpha(picker.token), 0f)
+        state.leave(video.token)
+        assertEquals(0.9f, state.pageAlpha(), 0f)
+        assertEquals(0f, state.coveredAlpha(picker.token), 0f)
+    }
+
+    @Test fun ordinaryFullscreenDoesNotReplaceAnExistingPageScrim() {
+        val state = ModalLayerState(true)
+        val picker = ModalLayerEntry(Any(), ModalLayerKind.WINDOW, ModalScrimStrength.MEDIA)
+        state.enter(picker)
+        state.enter(ModalLayerEntry(Any(), ModalLayerKind.FULL_SCREEN))
+        assertEquals(0.9f, state.pageAlpha(), 0f)
+    }
+
     @Test fun childStrengthAffectsOnlyTheImmediatelyLowerPlane() {
         val state = ModalLayerState(true)
         val parent = ModalLayerEntry(Any(), ModalLayerKind.WINDOW)

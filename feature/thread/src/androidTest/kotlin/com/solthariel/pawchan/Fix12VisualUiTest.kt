@@ -36,6 +36,8 @@ class Fix12VisualUiTest {
         sliders[1].performSemanticsAction(SemanticsActions.SetProgress) { it(25f) }
         compose.onNodeWithText("Текст поста: 14 sp").assertIsDisplayed()
         compose.onNodeWithText("Сворачивать после: 25 строк").assertIsDisplayed()
+        sliders[1].performSemanticsAction(SemanticsActions.SetProgress) { it(31f) }
+        compose.onNodeWithText("Не сворачивать").assertIsDisplayed()
         compose.onNodeWithText("По умолчанию").performClick()
         compose.onNodeWithText("Текст поста: 12 sp").assertIsDisplayed()
         compose.onNodeWithText("Сворачивать после: 20 строк").assertIsDisplayed()

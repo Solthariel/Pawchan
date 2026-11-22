@@ -1,16 +1,12 @@
 package com.solthariel.pawchan.composer
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
@@ -18,26 +14,54 @@ internal fun AttachmentOptionsPanel(
     file: ComposerAttachment,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    onEditorAction: ((Int) -> Unit)? = null,
+    editorState: AttachmentOptionsEditorState = AttachmentOptionsEditorState(),
     onUpdate: (ComposerAttachment) -> Unit,
 ) {
-    val items =
-        buildList {
-            if (file.format != null) add(R.string.attachment_unique_hash)
-            if (file.canStripMetadata) add(R.string.attachment_strip_metadata)
-            add(R.string.attachment_remove_name)
-            add(R.string.markup_spoiler)
-            if (file.canReencode) add(R.string.attachment_reencode)
-            add(R.string.attachment_rename)
-        }
-    Row(
-        modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
+    val items = attachmentOptionLabels(file, onEditorAction != null, editorState.showNameRemoval)
+    AttachmentControlRow(items.size, modifier, centeredLikeSix = onEditorAction != null && file.video) {
         items.forEach { label ->
-            AttachmentPanelItem(file, label, enabled, Modifier.weight(1f), onUpdate)
+            key(label) {
+                if (
+                    onEditorAction != null &&
+                    label in setOf(R.string.attachment_edit_image, R.string.attachment_rename)
+                ) {
+                    AttachmentOptionTile(
+                        AttachmentTileState(
+                            label,
+                            label == R.string.attachment_rename &&
+                                (file.options.customName != null || file.options.removeFileName),
+                            enabled && (label != R.string.attachment_edit_image || editorState.imageEditEnabled),
+                            action = true,
+                        ),
+                        Modifier.weight(1f),
+                        { onEditorAction(label) },
+                    )
+                } else {
+                    val staysOnNameTab = editorState.showNameRemoval && label == R.string.attachment_remove_name
+                    val onOtherAction =
+                        onEditorAction?.takeUnless { staysOnNameTab }?.let { action -> { action(label) } }
+                    AttachmentPanelItem(file, label, enabled, Modifier.weight(1f), onUpdate, onOtherAction)
+                }
+            }
         }
     }
 }
+
+private fun attachmentOptionLabels(
+    file: ComposerAttachment,
+    inEditor: Boolean,
+    showNameRemovalInEditor: Boolean,
+): List<Int> =
+    buildList {
+        if (inEditor && file.canReencode) add(R.string.attachment_edit_image)
+        if (file.format != null) add(R.string.attachment_unique_hash)
+        if (file.canStripMetadata || file.options.edit != null) add(R.string.attachment_strip_metadata)
+        if (!inEditor || showNameRemovalInEditor) add(R.string.attachment_remove_name)
+        add(R.string.markup_spoiler)
+        if (file.canReencode) add(R.string.attachment_reencode)
+        add(R.string.attachment_rename)
+    }
 
 @Composable
 private fun AttachmentPanelItem(
@@ -46,18 +70,25 @@ private fun AttachmentPanelItem(
     enabled: Boolean,
     modifier: Modifier,
     onUpdate: (ComposerAttachment) -> Unit,
+    onOtherAction: (() -> Unit)?,
 ) {
     when (label) {
         R.string.attachment_reencode -> {
-            AttachmentReencodingOption(file, enabled, modifier, onUpdate)
+            AttachmentReencodingOption(file, enabled, modifier, onUpdate, onOtherAction)
         }
 
         R.string.attachment_rename -> {
-            AttachmentRenameOption(file, enabled, modifier, onUpdate)
+            AttachmentRenameOption(file, enabled, modifier, onUpdate, onOtherAction != null)
         }
 
         else -> {
-            AttachmentOption(label, attachmentOptionChecked(file, label), enabled, modifier) { value ->
+            AttachmentOption(
+                label,
+                attachmentOptionChecked(file, label),
+                enabled && !attachmentOptionForced(file, label),
+                modifier,
+            ) { value ->
+                onOtherAction?.invoke()
                 val options = file.options
                 val updated =
                     when (label) {
@@ -72,13 +103,13 @@ private fun AttachmentPanelItem(
     }
 }
 
-private fun attachmentOptionChecked(
+internal fun attachmentOptionChecked(
     file: ComposerAttachment,
     label: Int,
 ): Boolean =
     when (label) {
-        R.string.attachment_unique_hash -> file.options.uniqueHash
-        R.string.attachment_strip_metadata -> file.options.removeMetadata
+        R.string.attachment_unique_hash -> file.options.uniqueHash || file.options.edit != null
+        R.string.attachment_strip_metadata -> file.options.removeMetadata || file.options.edit != null
         R.string.attachment_remove_name -> file.options.removeFileName
         else -> file.options.spoiler
     }
@@ -100,12 +131,14 @@ private fun AttachmentReencodingOption(
     enabled: Boolean,
     modifier: Modifier,
     onUpdate: (ComposerAttachment) -> Unit,
+    onOpen: (() -> Unit)?,
 ) {
     var settingsOpen by remember(file.id) { mutableStateOf(false) }
     AttachmentOptionTile(
         AttachmentTileState(R.string.attachment_reencode, file.options.reencoding != null, enabled, action = true),
         modifier,
     ) {
+        onOpen?.invoke()
         settingsOpen = true
     }
     if (settingsOpen) {
@@ -119,6 +152,7 @@ private fun AttachmentRenameOption(
     enabled: Boolean,
     modifier: Modifier,
     onUpdate: (ComposerAttachment) -> Unit,
+    combinedName: Boolean,
 ) {
     var open by remember(file.id) { mutableStateOf(false) }
     val originalBase = file.source.fileName.substringBeforeLast('.', file.source.fileName)
@@ -127,11 +161,19 @@ private fun AttachmentRenameOption(
     AttachmentOptionTile(
         AttachmentTileState(
             R.string.attachment_rename,
-            renamed,
-            enabled && !file.options.removeFileName,
+            renamed || (combinedName && file.options.removeFileName),
+            enabled && (combinedName || !file.options.removeFileName),
             action = true,
         ),
         modifier,
     ) { open = true }
     if (open) AttachmentRenameDialog(file, enabled, onUpdate) { open = false }
+}
+
+internal fun attachmentOptionForced(
+    file: ComposerAttachment,
+    label: Int,
+): Boolean {
+    val forced = setOf(R.string.attachment_unique_hash, R.string.attachment_strip_metadata)
+    return file.options.edit != null && label in forced
 }

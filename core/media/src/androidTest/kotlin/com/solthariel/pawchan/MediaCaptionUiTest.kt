@@ -36,7 +36,7 @@ class MediaCaptionUiTest {
         assertTrue(left.right < right.left)
         assertEquals(layout.size.width.toFloat(), layout.getLineRight(0), 1f)
         val density = compose.density.density
-        assertEquals(caption.right - 3f * density, right.right, 1f)
+        assertEquals(caption.right - 4f * density, right.right, 1f)
     }
 
     @Test

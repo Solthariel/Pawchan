@@ -33,6 +33,8 @@ data class ArchiveState(
 
 /** Сторонний архив тредов (Архивач): добавление с капчей, загрузка копии, проверка доступности. */
 interface ExternalThreadArchive {
+    fun supports(address: ThreadAddress): Boolean = true
+
     /** Картинка капчи; каждый вызов — новый код в той же сессии. */
     suspend fun captcha(): DomainOutcome<ByteArray> = DomainOutcome.Failure(DomainFailure.InvalidResponse)
 

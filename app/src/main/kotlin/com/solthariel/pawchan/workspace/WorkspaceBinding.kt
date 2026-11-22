@@ -12,6 +12,7 @@ internal data class WorkspaceBinding(
     val library: com.solthariel.pawchan.domain.library.ThreadLibraryRepository,
     val archives: com.solthariel.pawchan.archive.ArchiveController? = null,
     val appSettings: com.solthariel.pawchan.domain.settings.AppSettingsRepository? = null,
+    val sources: List<com.solthariel.pawchan.infrastructure.sites.ForumBoardSource> = emptyList(),
 )
 
 /** Открыть тред из ссылки/адреса; [post] — прокрутить к посту, null — к позиции чтения. */

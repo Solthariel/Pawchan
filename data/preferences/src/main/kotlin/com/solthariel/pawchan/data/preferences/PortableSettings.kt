@@ -61,6 +61,15 @@ internal class DataStorePortableSettings(
                 },
             )
         }
+        values["favorite_boards_other_v1"]?.let { boards ->
+            require(
+                boards.lineSequence().filter { it.isNotBlank() }.all { raw ->
+                    val address = parseHomeBoard(raw)
+                    address != null && address.site.value != "dvach" &&
+                        raw == "${address.site.value}/${address.board.value}"
+                },
+            )
+        }
         values["theme"]?.let { theme -> require(ThemePreference.entries.any { it.name == theme }) }
     }
 

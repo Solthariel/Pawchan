@@ -77,6 +77,7 @@ internal data class ThreadPostUi(
     val metadata: ThreadPostMetadataUi,
     val attachments: List<MediaAttachmentUi>,
     val attachmentRows: List<List<MediaAttachmentUi>> = attachments.chunked(MEDIA_ATTACHMENT_COLUMNS),
+    val openingPost: Boolean = false,
 ) {
     val mediaDisplay =
         com.solthariel.pawchan.media
@@ -135,6 +136,7 @@ internal fun DomainOutcome<ThreadSnapshot>.toThreadUiState(isFavorite: Boolean =
                         value.posts.zip(value.liveOrdinals()) { post, index ->
                             ThreadPostUi(
                                 id = post.address.post.value,
+                                openingPost = isOpeningPost(post),
                                 document = post.content.document,
                                 richText = RichPostTextUi.create(post.content.document),
                                 metadata =
@@ -158,6 +160,7 @@ internal fun DomainOutcome<ThreadSnapshot>.toThreadUiState(isFavorite: Boolean =
                                         ).withMediaOwner(
                                             post.address.post.value,
                                             postDownloadPrefix(post.address),
+                                            threadAddress = value.address,
                                         ),
                             )
                         },

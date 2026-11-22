@@ -14,7 +14,7 @@ object BackupProtection {
     private val magic = "PAWBAK".toByteArray(Charsets.US_ASCII) + byteArrayOf(ENVELOPE_VERSION.toByte())
     private const val ENVELOPE_VERSION = 3
     private const val SALT_OFFSET = 12
-    const val MIN_PASSWORD_CHARS = 10
+    const val MIN_PASSWORD_CHARS = 1
     private const val ITERATIONS = 600_000
     private const val SALT_BYTES = 16
     private const val NONCE_OFFSET = SALT_OFFSET + SALT_BYTES
@@ -23,7 +23,6 @@ object BackupProtection {
     private const val KEY_BITS = 256
     private const val HEADER_BYTES = 40
     const val MAX_FILE_BYTES = 32 * 1024 * 1024
-    const val MAX_PASSWORD_CHARS = 1024
 
     fun isEncrypted(bytes: ByteArray): Boolean {
         validateEnvelope(bytes)
@@ -36,9 +35,7 @@ object BackupProtection {
     ): ByteArray {
         require(archive.size <= MAX_FILE_BYTES - HEADER_BYTES - TAG_BITS / Byte.SIZE_BITS)
         if (password == null) return header(false) + archive
-        require(password.size in MIN_PASSWORD_CHARS..MAX_PASSWORD_CHARS) {
-            "Пароль должен содержать от 10 до 1024 символов"
-        }
+        require(password.isNotEmpty()) { "Пароль не должен быть пустым" }
         val header = header(true)
         val cipher = cipher(Cipher.ENCRYPT_MODE, header, password)
         return header + cipher.doFinal(archive)
@@ -84,7 +81,6 @@ object BackupProtection {
         header: ByteArray,
         password: CharArray,
     ): Cipher {
-        require(password.size <= MAX_PASSWORD_CHARS)
         val specification = PBEKeySpec(password, header.copyOfRange(SALT_OFFSET, NONCE_OFFSET), ITERATIONS, KEY_BITS)
         val key =
             try {

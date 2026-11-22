@@ -2,6 +2,9 @@ package com.solthariel.pawchan.catalog
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,7 +12,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
+import com.solthariel.pawchan.boards.BoardSwipeDirection
+import com.solthariel.pawchan.boards.forumSwipeGesture
 import com.solthariel.pawchan.core.ui.BidirectionalPullRefreshBox
 import com.solthariel.pawchan.core.ui.LoadErrorPane
 import com.solthariel.pawchan.core.ui.PullRefreshOptions
@@ -28,6 +34,7 @@ internal fun CatalogScreen(
     actions: CatalogActions,
     bottomActions: AppBottomActions,
     menu: CatalogMenuBindings,
+    onBoardSwipe: ((BoardSwipeDirection) -> Unit)? = null,
 ) {
     val filtered = presentation.state as? CatalogUiState.Content
     val imageLoader = presentation.imageLoader
@@ -56,11 +63,11 @@ internal fun CatalogScreen(
         )
     CatalogWorkspace(
         presentation = presentation,
-        searchQuery = searchQuery,
-        onSearchQueryChange = { searchQuery = it },
+        search = CatalogSearch(searchQuery) { searchQuery = it },
         actions = screenActions,
         bottomActions = bottomActions,
         menu = menu.copy(hiddenThreads = hiddenMenu),
+        onBoardSwipe = onBoardSwipe.takeIf { !attachmentsSession.visible && searchQuery.isBlank() },
     )
     CatalogMenuDialogs(menu)
     if (attachmentsSession.visible) {
@@ -77,17 +84,26 @@ internal fun CatalogScreen(
 @Composable
 private fun CatalogWorkspace(
     presentation: CatalogPresentation,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
+    search: CatalogSearch,
     actions: CatalogScreenActions,
     bottomActions: AppBottomActions,
     menu: CatalogMenuBindings,
+    onBoardSwipe: ((BoardSwipeDirection) -> Unit)?,
 ) {
     AppNavigationWorkspace(
-        actions = bottomActions.copy(onWriteClick = { actions.catalog.onNewThreadClick(presentation.board) }),
+        actions =
+            bottomActions.copy(
+                onWriteClick =
+                    if (menu.capabilities.newThreads) {
+                        { actions.catalog.onNewThreadClick(presentation.board) }
+                    } else {
+                        null
+                    },
+            ),
         selected = AppBottomDestination.CATALOG,
+        floatingTop = true,
     ) {
-        CatalogThreadsPane(presentation, searchQuery, onSearchQueryChange, actions, menu)
+        CatalogThreadsPane(presentation, search.query, search.onChange, actions, menu, onBoardSwipe)
     }
 }
 
@@ -98,13 +114,14 @@ private fun CatalogThreadsPane(
     onSearchQueryChange: (String) -> Unit,
     actions: CatalogScreenActions,
     menu: CatalogMenuBindings,
+    onBoardSwipe: ((BoardSwipeDirection) -> Unit)?,
 ) {
     val updateSearchQuery = { query: String ->
         onSearchQueryChange(query)
         actions.catalog.onSearchQueryChange(query)
     }
     CatalogBoardLookupLayer(menu.boardLookup) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        com.solthariel.pawchan.core.ui.FloatingTopChrome(opaque = menu.boardLookup?.visible == true, toolbar = {
             CatalogToolbar(
                 input =
                     CatalogToolbarInput(
@@ -116,14 +133,24 @@ private fun CatalogThreadsPane(
                 actions = actions.catalog,
                 menu = menu,
             )
+            (presentation.state as? CatalogUiState.Content)?.selectedTag?.let { tag ->
+                FilterChip(
+                    selected = true,
+                    onClick = actions.catalog.onClearTag,
+                    label = { Text("$tag ×") },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            }
             RefreshFailureNotice(
                 (presentation.state as? CatalogUiState.Content)?.refreshFailure,
                 actions.catalog.onChallenge,
             )
+        }) {
             CatalogBody(
                 presentation = presentation,
                 actions = actions,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
+                onBoardSwipe = onBoardSwipe,
             )
         }
     }
@@ -134,6 +161,7 @@ private fun CatalogBody(
     presentation: CatalogPresentation,
     actions: CatalogScreenActions,
     modifier: Modifier,
+    onBoardSwipe: ((BoardSwipeDirection) -> Unit)?,
 ) {
     val refreshing =
         presentation.state is CatalogUiState.Loading ||
@@ -142,7 +170,7 @@ private fun CatalogBody(
         refreshing = refreshing,
         onRefresh = actions.catalog.onRefresh,
         options = PullRefreshOptions(allowBottom = true, bottomInset = APP_REFRESH_BOTTOM_INSET),
-        modifier = modifier,
+        modifier = modifier.forumSwipeGesture(onBoardSwipe),
     ) {
         when (val state = presentation.state) {
             CatalogUiState.Loading -> {
@@ -189,4 +217,9 @@ private data class CatalogScreenActions(
     val catalog: CatalogActions,
     val chooseAttachments: (List<MediaAttachmentUi>) -> Unit,
     val threadMenu: (CatalogThreadUi) -> Unit,
+)
+
+private data class CatalogSearch(
+    val query: String,
+    val onChange: (String) -> Unit,
 )

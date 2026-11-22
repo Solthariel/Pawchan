@@ -89,6 +89,25 @@ class LibraryViewModelTest {
             }
         }
 
+    @Test
+    fun favoriteByAddressReportsStorageFailure() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val address = requireNotNull(threadAddress("dvach", "po", 42L))
+                val model = LibraryViewModel(FakeLibraryRepository(entry(address, false), failWrites = true))
+                advanceUntilIdle()
+                assertEquals(
+                    DomainOutcome.Failure(DomainFailure.StorageUnavailable),
+                    model.setFavoriteAddress(address, "Тестовый тред", true),
+                )
+                advanceUntilIdle()
+                assertEquals(false, (model.state.value as LibraryUiState.Content).entries.single().favorite)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
     private fun entry(
         address: ThreadAddress,
         favorite: Boolean,

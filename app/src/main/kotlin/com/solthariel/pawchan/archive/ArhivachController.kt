@@ -56,6 +56,8 @@ internal class ArhivachController(
         }
     }
 
+    fun supports(address: ThreadAddress): Boolean = external.supports(address)
+
     suspend fun captcha(): DomainOutcome<ByteArray> = external.captcha()
 
     suspend fun submit(

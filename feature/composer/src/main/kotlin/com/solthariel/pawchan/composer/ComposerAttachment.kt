@@ -37,9 +37,13 @@ internal typealias AttachmentEditOptions = com.solthariel.pawchan.domain.drafts.
 internal typealias ImageReencoding = com.solthariel.pawchan.domain.drafts.DraftImageReencoding
 
 internal fun attachmentUploadName(file: ComposerAttachment): String {
+    val encoding = file.options.reencoding
     val extension =
-        file.options.reencoding?.let { if (it.jpeg) "jpg" else "png" }
-            ?: file.source.fileName.substringAfterLast('.', "")
+        when {
+            file.options.edit != null -> if (imageEditIsJpeg(file.format, encoding)) "jpg" else "png"
+            encoding != null -> if (encoding.jpeg) "jpg" else "png"
+            else -> file.source.fileName.substringAfterLast('.', "")
+        }
     val base =
         when {
             file.options.removeFileName -> "file"

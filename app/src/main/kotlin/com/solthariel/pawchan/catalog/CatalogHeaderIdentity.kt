@@ -24,17 +24,17 @@ import com.solthariel.pawchan.domain.model.BoardAddress
 @Composable
 internal fun CatalogBoardIdentity(
     board: BoardAddress,
-    title: String?,
-    boardSpeed: Int?,
+    label: CatalogBoardLabel,
     modifier: Modifier,
     switchable: Boolean = false,
     expanded: Boolean = false,
 ) {
-    val label = if (title.isNullOrBlank()) "/${board.board.value}/" else "/${board.board.value}/ — $title"
+    val title = label.title
+    val boardLabel = if (title.isNullOrBlank()) "/${board.board.value}/" else "/${board.board.value}/ — $title"
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
-                text = label,
+                text = boardLabel,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -42,24 +42,21 @@ internal fun CatalogBoardIdentity(
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 22.sp),
             )
-            val speed = boardSpeed?.takeIf { it > 0 }
-            Text(
-                text =
-                    if (speed == null) {
-                        "\u00a0"
-                    } else {
-                        pluralStringResource(R.plurals.number_posts_per_hour, speed, speed)
-                    },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontSize = APP_TOOLBAR_SUBTITLE_SIZE,
-                        lineHeight = 16.sp,
-                    ),
-            )
+            val speed = label.speed?.takeIf { it > 0 }
+            if (speed != null || label.speedSupported) {
+                Text(
+                    text = speed?.let { pluralStringResource(R.plurals.number_posts_per_hour, it, it) } ?: "\u00a0",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontSize = APP_TOOLBAR_SUBTITLE_SIZE,
+                            lineHeight = 16.sp,
+                        ),
+                )
+            }
         }
         if (switchable) UiDisclosureIndicator(expanded)
     }

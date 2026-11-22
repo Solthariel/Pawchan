@@ -1,0 +1,62 @@
+name: Check pull request
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pawchan-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Source checks and Android build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python tests (tooling and publishing)
+        run: |
+          python3 -m unittest discover -s scripts/tests
+          python3 -m unittest discover -s update/publishing/tests
+          python3 -m unittest discover -s update/publishing/tools/tests
+
+      - name: Set up Java 25
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache-jdk: false
+
+      - name: Accept Android SDK licenses
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --licenses > /dev/null
+          result=${PIPESTATUS[1]}
+          set -o pipefail
+          exit "$result"
+
+      - name: Install required SDK, NDK and CMake
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+
+      - name: Run full local check
+        run: |
+          chmod +x gradlew scripts/*.sh
+          ./scripts/local-check.sh

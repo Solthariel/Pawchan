@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.thread
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,10 +20,12 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.core.ui.PostSeparator
 import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.PostLink
@@ -68,6 +68,17 @@ private fun PostPreviewDialogContent(
     val active = (LocalPreviewLayer.current?.depth ?: 0) == 0
     LaunchedEffect(active) { if (!active) menuPost = null }
     LaunchedEffect(target, local) { model.load(target, local) }
+    val missing = postPreviewIsMissing(state, target)
+    val context = LocalContext.current
+    LaunchedEffect(missing, active) {
+        if (missing && active) {
+            bindings.onClose()
+            android.widget.Toast
+                .makeText(context, "Сообщение не найдено", android.widget.Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
+    if (missing) return
     PostPreviewWindow(
         state,
         target,
@@ -90,25 +101,33 @@ internal fun PostPreviewWindow(
     onMenu: (ThreadPostUi) -> Unit,
 ) {
     val holder = rememberSaveableStateHolder()
-    PreviewWindowFrame(bindings.onClose) {
-        PostSelectionHost(Modifier.fillMaxWidth()) {
-            holder.SaveableStateProvider("${target.address}/${target.postId}/${target.replies}") {
-                val openThread =
-                    bindings.onOpenThread?.let { open ->
-                        target.address?.let { address -> { open(address, target.postId) } }
-                    }
-                Column {
-                    Box(Modifier.weight(1f, fill = false)) {
-                        PreviewContent(state, presentation, bindings, onRetry, onMenu, target.replies)
-                    }
-                    openThread?.let {
-                        TextButton(onClick = it, modifier = Modifier.align(Alignment.End).padding(end = 4.dp)) {
-                            Text("Открыть тред")
-                        }
+    SharedPostPreviewWindow(bindings.onClose) {
+        holder.SaveableStateProvider("${target.address}/${target.postId}/${target.replies}") {
+            val openThread =
+                bindings.onOpenThread?.let { open ->
+                    target.address?.let { address -> { open(address, target.postId) } }
+                }
+            Column {
+                Box(Modifier.weight(1f, fill = false)) {
+                    PreviewContent(state, presentation, bindings, onRetry, onMenu, target.replies)
+                }
+                openThread?.let {
+                    TextButton(onClick = it, modifier = Modifier.align(Alignment.End).padding(end = 4.dp)) {
+                        Text("Открыть тред")
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SharedPostPreviewWindow(
+    onClose: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    PreviewWindowFrame(onClose) {
+        PostSelectionHost(Modifier.fillMaxWidth(), content)
     }
 }
 
@@ -121,7 +140,6 @@ private fun PreviewContent(
     onMenu: (ThreadPostUi) -> Unit,
     replies: Boolean,
 ) {
-    val bubble = com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences.current.bubblePosts
     val list = rememberLazyListState()
     val thumbnails = rememberThumbnailLoading(presentation.thumbnails, list)
     when {
@@ -133,7 +151,10 @@ private fun PreviewContent(
         }
 
         state.content == null -> {
-            CircularProgressIndicator(Modifier.padding(12.dp).testTag("preview-loading"))
+            PageLoadingIndicator(
+                description = "Загрузка предпросмотра поста",
+                modifier = Modifier.padding(12.dp).testTag("preview-loading"),
+            )
         }
 
         state.posts.isEmpty() -> {
@@ -148,10 +169,6 @@ private fun PreviewContent(
                 LazyColumn(
                     modifier = Modifier.testTag("preview-list"),
                     state = list,
-                    verticalArrangement =
-                        Arrangement.spacedBy(
-                            if (bubble) 8.dp else 0.dp,
-                        ),
                     contentPadding =
                         androidx.compose.foundation.layout
                             .PaddingValues(8.dp),

@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.composer.AttachmentOption
 import com.solthariel.pawchan.composer.AttachmentRenameControls
+import com.solthariel.pawchan.composer.AttachmentRenameDialog
 import com.solthariel.pawchan.composer.ComposerAttachment
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.feature.composer.R
@@ -52,12 +54,41 @@ class AttachmentEditorUiTest {
     fun filenameIsEditableWithoutRenameCheckboxAndCanBeRestored() {
         val file = mutableStateOf(ComposerAttachment(ReplyAttachment("original.png", "image/png", byteArrayOf(1))))
         compose.setContent { MaterialTheme { AttachmentRenameControls(file.value, true) { file.value = it } } }
-        compose.onNodeWithText("original").performTextClearance()
-        compose.onNodeWithText("Переименовать").performTextInput("newname")
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("newname")
         compose.runOnIdle { assertEquals("newname", file.value.options.customName) }
         compose.onNodeWithContentDescription("Вернуть исходное имя").performClick()
         compose.onNodeWithText("original").assertIsDisplayed()
         compose.runOnIdle { assertEquals(null, file.value.options.customName) }
+    }
+
+    @Test
+    fun renameCancelDiscardsAndSaveCommitsDraft() {
+        val initial = ComposerAttachment(ReplyAttachment("original.png", "image/png", byteArrayOf(1)))
+        val file = mutableStateOf(initial)
+        val open = mutableStateOf(true)
+        compose.setContent {
+            MaterialTheme {
+                if (open.value) AttachmentRenameDialog(file.value, true, { file.value = it }) { open.value = false }
+            }
+        }
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("newname")
+        compose.runOnIdle { assertEquals(null, file.value.options.customName) }
+        val cancel =
+            androidx.test.platform.app.InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(android.R.string.cancel)
+        compose.onNodeWithText(cancel).performClick()
+        compose.runOnIdle {
+            assertEquals(null, file.value.options.customName)
+            open.value = true
+        }
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("saved")
+        compose.onNodeWithText("Сохранить").performClick()
+        compose.runOnIdle { assertEquals("saved", file.value.options.customName) }
     }
 
     @Test

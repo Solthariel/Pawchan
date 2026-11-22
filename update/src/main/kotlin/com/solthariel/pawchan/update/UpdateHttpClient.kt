@@ -1,12 +1,12 @@
 package com.solthariel.pawchan.update
 
-import okhttp3.Dns
 import okhttp3.OkHttpClient
 
-/** An isolated, anonymous client; borrows DNS but owns its HTTP resources. */
-internal fun updateHttpClient(dns: Dns): OkHttpClient =
+/** An isolated, anonymous client that owns its HTTP resources. */
+internal fun updateHttpClient(configure: (OkHttpClient.Builder.() -> Unit)? = null): OkHttpClient =
     OkHttpClient
         .Builder()
-        .dns(dns)
-        .followSslRedirects(false)
+        .apply {
+            configure?.invoke(this)
+        }.followSslRedirects(false)
         .build()

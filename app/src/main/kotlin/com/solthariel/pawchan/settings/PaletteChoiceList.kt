@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -38,7 +39,7 @@ internal fun PaletteChoiceList(
         state.themeColors.palette
             .currentPalette()
             .takeIf { it in available } ?: ThemePalette.LAVENDER
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         available.forEach { palette ->
             val color =
                 when (palette) {

@@ -6,6 +6,7 @@ import com.solthariel.pawchan.media.video.VideoEvent
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import com.solthariel.pawchan.media.video.VideoStage
+import com.solthariel.pawchan.media.video.VideoTimeline
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,7 +25,11 @@ class VideoIncompleteTest {
                 assertEquals(1, engine.opens)
                 engine.listener(
                     VideoEvent.INCOMPLETE,
-                    VideoPlaybackStatus(stage = VideoStage.READY, position = 12920, duration = 12957, seekable = true),
+                    VideoPlaybackStatus(
+                        stage = VideoStage.READY,
+                        timeline = VideoTimeline(position = 12920, duration = 12957),
+                        seekable = true,
+                    ),
                 )
                 assertEquals(1, engine.opens)
                 assertEquals(VideoStage.READY, session.status.value.stage)
@@ -51,7 +56,11 @@ class VideoIncompleteTest {
                 testScheduler.runCurrent()
                 engine.listener(
                     VideoEvent.PLAYING,
-                    VideoPlaybackStatus(stage = VideoStage.READY, position = 200, playing = true),
+                    VideoPlaybackStatus(
+                        stage = VideoStage.READY,
+                        timeline = VideoTimeline(position = 200),
+                        playing = true,
+                    ),
                 )
                 assertTrue(session.status.value.playing)
                 assertFalse(session.status.value.seekable)
@@ -59,7 +68,12 @@ class VideoIncompleteTest {
                 assertEquals(-1L, engine.seek)
                 engine.listener(
                     VideoEvent.PROGRESS,
-                    VideoPlaybackStatus(stage = VideoStage.READY, duration = 12957, playing = true, seekable = true),
+                    VideoPlaybackStatus(
+                        stage = VideoStage.READY,
+                        timeline = VideoTimeline(duration = 12957),
+                        playing = true,
+                        seekable = true,
+                    ),
                 )
                 session.seekTo(5000)
                 assertEquals(5000L, engine.seek)
@@ -76,7 +90,10 @@ class VideoIncompleteTest {
             try {
                 session.start()
                 testScheduler.runCurrent()
-                engine.listener(VideoEvent.ENDED, VideoPlaybackStatus(position = 1200, duration = 1200, ended = true))
+                engine.listener(
+                    VideoEvent.ENDED,
+                    VideoPlaybackStatus(timeline = VideoTimeline(position = 1200, duration = 1200), ended = true),
+                )
                 assertTrue(session.status.value.ended)
                 assertEquals(1, engine.opens)
             } finally {

@@ -4,12 +4,14 @@ package com.solthariel.pawchan.core.ui
 enum class ModalScrimStrength {
     STANDARD,
     MEDIA,
+    NONE,
     ;
 
-    internal fun alpha(): Float =
+    fun alpha(): Float =
         when (this) {
             STANDARD -> MODAL_SCRIM_ALPHA
             MEDIA -> MEDIA_SCRIM_ALPHA
+            NONE -> 0f
         }
 }
 

@@ -3,9 +3,12 @@ package com.solthariel.pawchan.data.network
 import com.solthariel.pawchan.domain.archive.ArchiveSubmission
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
+import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
+import kotlinx.coroutines.test.runTest
+import okhttp3.Call
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,6 +26,18 @@ class ArhivachDecoderTest {
     private val html = """<a href="https://2ch.su/b/res/100.html">Источник</a>
         <div class="post" id="post_100"><div class="post_comment">Hello &gt;&gt;101</div></div>
         <div class="post" id="post_101"><div class="post_comment">Reply</div></div>"""
+
+    @Test fun externalArchiveRejectsUnsupportedSitesWithoutNetwork() =
+        runTest {
+            val api = ArhivachApi(Call.Factory { error("Unsupported source must not make requests") })
+            assertTrue(api.supports(address))
+            listOf("4chan", "unknown").forEach { site ->
+                val other = address.copy(board = address.board.copy(site = requireNotNull(SiteId.parse(site))))
+                assertFalse(api.supports(other))
+                assertTrue(api.add(other, "code") is ArchiveSubmission.Rejected)
+                assertTrue(api.load(other, url) is DomainOutcome.Failure)
+            }
+        }
 
     @Test fun acceptsOnlyHttpsCanonicalThreadUrls() {
         assertTrue(validArhivachUrl(url))
@@ -77,6 +92,16 @@ class ArhivachDecoderTest {
                 .content.document.plainText,
         )
         assertNull(decodeArhivachThread(address, url, html.replace("post_101", "post_100")))
+    }
+
+    @Test fun errorPageWithIncidentalLinkIsNotAnAcceptedArchive() {
+        val page = """<a href="/thread/77/">Соседний тред</a>"""
+        assertTrue(decodeFormSubmission(503, null, page) is ArchiveSubmission.Rejected)
+        assertTrue(decodeFormSubmission(200, null, page) is ArchiveSubmission.Rejected)
+        assertEquals(
+            ArchiveSubmission.Accepted("https://arhivach.vc/thread/77/"),
+            decodeFormSubmission(302, "/thread/77/", ""),
+        )
     }
 
     @Test fun formSubmissionRecognizesRedirectLinkCaptchaAndErrors() {

@@ -6,7 +6,6 @@ import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.thread.ThreadRepository
-import com.solthariel.pawchan.domain.thread.mergeThreadHistory
 import com.solthariel.pawchan.domain.workspace.withSeen
 import java.io.File
 import java.io.IOException
@@ -29,7 +28,7 @@ internal suspend fun refreshBackgroundFavorites(
             if (repository.isThreadDeleted(entry.address)) continue
             when (val result = repository.loadThread(entry.address)) {
                 is DomainOutcome.Success -> {
-                    history.save(mergeThreadHistory(history.load(entry.address), result.value))
+                    history.mergeAndSave(result.value)
                     val last = result.value.posts.maxOfOrNull { it.address.post.value }
                     workspace.update { state ->
                         if (last != null && state.marks.seen[entry.address] == null) {

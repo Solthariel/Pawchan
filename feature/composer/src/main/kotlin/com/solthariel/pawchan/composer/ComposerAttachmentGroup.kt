@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -178,9 +179,14 @@ internal fun ComposerAttachmentPreview(
     modifier: Modifier,
 ) {
     Box(modifier, contentAlignment = Alignment.Center) {
-        if (file.preview != null) {
+        val edit = file.options.edit
+        if (edit != null) {
+            ComposerEditedPreview(file.source.content, edit, file.displayName, Modifier.fillMaxSize())
+        } else if (file.preview != null) {
+            val context = LocalContext.current
+            val request = remember(context, file.id, file.preview) { composerThumbnailRequest(context, file) }
             AsyncImage(
-                model = file.preview,
+                model = request,
                 imageLoader = imageLoader,
                 contentDescription = file.displayName,
                 modifier = Modifier.fillMaxSize(),
@@ -191,7 +197,7 @@ internal fun ComposerAttachmentPreview(
             Text(
                 stringResource(R.string.play_video),
                 color = Color.White,
-                modifier = Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp)).padding(3.dp),
+                modifier = Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp)).padding(4.dp),
             )
         }
     }
@@ -209,8 +215,8 @@ internal fun calculateComposerStripMetrics(
 ): ComposerStripMetrics {
     require(itemCount in 1..MAX_MEDIA_FILES && availableWidth >= 0f)
     val rows = if (itemCount > MEDIA_COLUMNS) 2 else 1
-    val totalHeight = ((availableWidth - MEDIA_GAP * (MEDIA_COLUMNS - 1)) / MEDIA_COLUMNS).coerceAtLeast(0f)
-    val cellHeight = ((totalHeight - MEDIA_GAP * (rows - 1)) / rows).coerceAtLeast(0f)
+    val cellHeight = ((availableWidth - MEDIA_GAP * (MEDIA_COLUMNS - 1)) / MEDIA_COLUMNS).coerceAtLeast(0f)
+    val totalHeight = cellHeight * rows + MEDIA_GAP * (rows - 1)
     return ComposerStripMetrics(rows, totalHeight, cellHeight)
 }
 

@@ -7,9 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -18,7 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.solthariel.pawchan.composer.AttachmentOptionsPanel
@@ -69,14 +67,14 @@ class ComposerReencodingUiTest {
         compose.runOnIdle { assertEquals(original.options, file.value.options) }
     }
 
-    @Test fun resetClearsImmediatelyAndKeepsDialogOpenWithDefaults() {
+    @Test fun resetIsPendingAndBackPreservesAppliedSettings() {
         val original =
             image().let {
                 it.copy(
                     options =
                         it.options.copy(
                             reencoding = ImageReencoding(jpeg = false, scaleDivisor = 2),
-                            previousReencoding = ImageReencoding(quality = 85),
+                            image = it.options.image.copy(previousReencoding = ImageReencoding(quality = 85)),
                             customName = "renamed",
                             spoiler = true,
                             uniqueHash = true,
@@ -92,21 +90,41 @@ class ComposerReencodingUiTest {
         compose.onNodeWithContentDescription("Сбросить перекодирование").performClick()
         compose.onNodeWithText("Настройки перекодирования").assertIsDisplayed()
         compose.runOnIdle {
-            assertEquals(original.options.copy(reencoding = null, previousReencoding = null), file.value.options)
+            assertEquals(original.options, file.value.options)
         }
         compose.onNodeWithText("JPEG").assertIsSelected()
-        compose.onNodeWithContentDescription("Ввести качество JPEG").assertIsDisplayed()
+        compose.onNodeWithText("100%").assertIsDisplayed()
         compose.onNodeWithText("1×").assertIsSelected()
         changeQuality(55f)
         closeSettingsWithSystemBack()
-        compose.onNodeWithContentDescription("Перекодировать изображение").assert(
-            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Выключено"),
-        )
+        compose.runOnIdle { assertEquals(original.options, file.value.options) }
         openSettings()
-        compose.onNodeWithText("JPEG").assertIsSelected()
-        compose.onNodeWithContentDescription("Ввести качество JPEG").assertIsDisplayed()
-        compose.onNodeWithText("1×").assertIsSelected()
-        compose.runOnIdle { assertNull(file.value.options.reencoding) }
+        compose.onNodeWithText("PNG").assertIsSelected()
+        compose.onNodeWithText("2×").assertIsSelected()
+    }
+
+    @Test fun resetAndApplyClearsSettings() {
+        val original = image().let { it.copy(options = it.options.copy(reencoding = ImageReencoding(quality = 85))) }
+        val file = showPanel(original)
+        openSettings()
+        compose.onNodeWithContentDescription("Сбросить перекодирование").performClick()
+        compose.runOnIdle { assertEquals(original.options, file.value.options) }
+        compose.onNodeWithText("Применить").performClick()
+        compose.runOnIdle {
+            assertNull(file.value.options.reencoding)
+            assertNull(file.value.options.previousReencoding)
+        }
+    }
+
+    @Test fun resetShowsTheOriginalFormatInPendingSummary() {
+        val source = ComposerAttachment(ReplyAttachment("image.png", "image/png", byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10)))
+        val original = source.copy(options = source.options.copy(reencoding = ImageReencoding()))
+        showPanel(original)
+        openSettings()
+        compose.onNodeWithText("image.jpg", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Сбросить перекодирование").performClick()
+        compose.onNodeWithText("image.png", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("PNG").assertIsSelected()
     }
 
     @Test fun resetAllowsApplyingNewSettingsWithoutReopening() {
@@ -126,14 +144,14 @@ class ComposerReencodingUiTest {
         }
     }
 
-    @Test fun qualityPresetsApplyExactlyAndPngHidesQuality() {
+    @Test fun customQualityAppliesExactlyAndPngHidesQuality() {
         val file = showPanel()
         openSettings()
-        compose.onNodeWithText("75%").performClick().assertIsSelected()
+        changeQuality(75f)
         compose.onNodeWithText("PNG").performClick()
-        compose.onNodeWithContentDescription("Ввести качество JPEG").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Качество JPEG").assertDoesNotExist()
         compose.onNodeWithText("JPEG").performClick()
-        compose.onNodeWithText("75%").assertIsSelected()
+        compose.onNodeWithText("75%").assertIsDisplayed()
         compose.onNodeWithText("Применить").performClick()
         compose.runOnIdle {
             assertEquals(
@@ -142,6 +160,8 @@ class ComposerReencodingUiTest {
                     ?.quality,
             )
         }
+        openSettings()
+        compose.onNodeWithText("75%").assertIsDisplayed()
     }
 
     private fun showPanel(initial: ComposerAttachment = image()): MutableState<ComposerAttachment> {
@@ -174,9 +194,9 @@ class ComposerReencodingUiTest {
     }
 
     private fun changeQuality(quality: Float) {
-        compose.onNodeWithContentDescription("Ввести качество JPEG").performClick()
-        compose.onNodeWithText("Значение").performTextReplacement(quality.toInt().toString())
-        compose.onNodeWithTag("number-confirm").performClick()
+        compose
+            .onNodeWithContentDescription("Качество JPEG")
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(quality) }
     }
 
     private fun image() = ComposerAttachment(ReplyAttachment("image.jpg", "image/jpeg", byteArrayOf(-1, -40)))

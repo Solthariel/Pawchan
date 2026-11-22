@@ -63,6 +63,8 @@ class ThumbnailLoaderRuntimeTest {
                 withContext(Dispatchers.Main) {
                     targets.forEach { it.onForgotten() }
                     val memoryTarget = loader.subscription(url)
+                    assertSame("Memory hit must be present on the first composition", first, memoryTarget.bitmap.value)
+                    assertTrue(memoryTarget.instantly)
                     memoryTarget.onRemembered()
                     assertSame(first, memoryTarget.bitmap.value)
                     assertTrue(memoryTarget.instantly)

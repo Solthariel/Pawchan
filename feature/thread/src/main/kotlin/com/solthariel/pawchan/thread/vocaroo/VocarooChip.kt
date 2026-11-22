@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.PostLink
@@ -108,10 +108,9 @@ private fun VocarooChipIcon(
 ) {
     val accent = MaterialTheme.colorScheme.primary
     if (active && state.preparing) {
-        CircularProgressIndicator(
-            Modifier.fillMaxHeight(ICON_FRACTION).aspectRatio(1f),
-            color = accent,
-            strokeWidth = 2.dp,
+        PageLoadingIndicator(
+            description = "Загрузка Vocaroo",
+            modifier = Modifier.fillMaxHeight(ICON_FRACTION).aspectRatio(1f),
         )
     } else {
         val kind = if (active && state.playing) UiIconKind.PAUSE else UiIconKind.PLAY

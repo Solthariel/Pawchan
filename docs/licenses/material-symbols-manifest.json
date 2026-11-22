@@ -840,6 +840,70 @@
       "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/cleaning_services/materialsymbolsrounded/cleaning_services_24px.svg",
       "sourceSha256": "b7d575d9e5568d03f7af4ce232bf2ab9c121cdf81f805c375af590dfc75e1820",
       "vectorSha256": "e0f980ca9a1be45f84eb68c52e2e8e82f55604d50616ca88ab0a0e13d57cfbe3"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_undo.xml",
+      "symbol": "undo",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/undo/materialsymbolsrounded/undo_24px.svg",
+      "sourceSha256": "dcd97edcb0f867c19ccff7032e8cebf08a0737898d1d480efdbc6e9468a7ee76",
+      "vectorSha256": "67eb809dbd4ee0431081c25da17db4c523c772f50cb919024cefc010d57fcabf"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_redo.xml",
+      "symbol": "redo",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/redo/materialsymbolsrounded/redo_24px.svg",
+      "sourceSha256": "ff096bea20898aecf61578df7c73f176e2cbed8b6378d9017e7789ad271535cf",
+      "vectorSha256": "42a0452ef6ff8d36d38eb0c1dc89e7c08af99d7c75b42995e6610824d914a437"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_back.xml",
+      "symbol": "arrow_back",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/arrow_back/materialsymbolsrounded/arrow_back_24px.svg",
+      "sourceSha256": "b9b58d54e13e0e3693a10d997c1001ec270c12eaa935f993cee1d8c916236ceb",
+      "vectorSha256": "136dd11d5f7b22effc69a41a0c109fe465b12ba1e0461eca1917b7fd0067a64a"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_crop.xml",
+      "symbol": "aspect_ratio",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/aspect_ratio/materialsymbolsrounded/aspect_ratio_24px.svg",
+      "sourceSha256": "45e3d8e2d2cee713a06a8ec7822322910c77e336c8bc5d3b43e17f2f0ab40526",
+      "vectorSha256": "30def8f0f696ad58cdf541385145002cbb6bded61e9beb8e093c28614cd21466"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_rotate.xml",
+      "symbol": "rotate_left",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/rotate_left/materialsymbolsrounded/rotate_left_24px.svg",
+      "sourceSha256": "b4dbee83a3378a9ebab8cc548bc74b468ccc1c8e96322dac0d8a91fa0c4b631f",
+      "vectorSha256": "cbe2614593b992c65bab53ca6f2c5a711df9153152a6b0692b068252aaed2cb0"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_flip.xml",
+      "symbol": "flip",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/flip/materialsymbolsrounded/flip_24px.svg",
+      "sourceSha256": "999789fb2faa0c13d8a96062af2eb5a234c68bbfa239b82740fb8ce2c3455aaa",
+      "vectorSha256": "eb129a66c93db012d3db3f56978a8931bae63fd4128807b59c03145b02bcb30e"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_draw.xml",
+      "symbol": "draw",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/draw/materialsymbolsrounded/draw_24px.svg",
+      "sourceSha256": "0a9cc24d93e79a0823bb37d25b9b88633e161fe81937b7a4484bc746e5845da6",
+      "vectorSha256": "48e6239274e7e99d7012e3ec2ed7a579f9825019727296a255dccec93855b456"
+    },
+    {
+      "resource": "feature/composer/src/main/res/drawable/ic_editor_redact.xml",
+      "symbol": "ink_eraser",
+      "fill": 0,
+      "source": "https://raw.githubusercontent.com/google/material-design-icons/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web/ink_eraser/materialsymbolsrounded/ink_eraser_24px.svg",
+      "sourceSha256": "34dec00748e5ae7876e920edff3edbb03bbab96bad8f820aba4686a5ae43aee3",
+      "vectorSha256": "d8ed5da57c28bbfb2c9170cf124e221d23590140034dbc0634689f8fc5338242"
     }
   ]
 }

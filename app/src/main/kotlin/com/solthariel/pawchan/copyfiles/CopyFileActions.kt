@@ -30,14 +30,17 @@ internal class CopyFileActions(
     fun browse() {
         browsing = true
         documents = emptyList()
-        execute { documents = store.list(requireNotNull(tree), kind) }
+        execute { documents = tree?.let { store.list(it, kind) }.orEmpty() }
     }
 
     fun save(
         name: String,
+        onSaved: (CopyDocument) -> Unit = {},
         writer: suspend (OutputStream) -> Unit,
     ) = execute {
-        saved = store.write(requireNotNull(tree), kind, name, writer)
+        val document = store.write(requireNotNull(tree), kind, name, writer)
+        saved = document
+        onSaved(document)
     }
 
     fun closeList() {

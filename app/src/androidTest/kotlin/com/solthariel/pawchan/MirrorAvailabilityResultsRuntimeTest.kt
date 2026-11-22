@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,7 +32,7 @@ class MirrorAvailabilityResultsRuntimeTest {
         compose.onNodeWithText("Проверить зеркала").performClick()
         compose.onNodeWithText("Проверка зеркал").assertIsDisplayed()
         compose.onNodeWithText("2ch.su").assertIsDisplayed()
-        compose.onNodeWithText("Доступно · 123 мс").assertIsDisplayed()
+        compose.onNode(hasText("Доступно", substring = true) and hasText("123 мс", substring = true)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(1, requests) }
         compose.onNodeWithText("Закрыть").performClick()
         compose.onNodeWithText("2ch.su").assertDoesNotExist()

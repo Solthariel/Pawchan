@@ -87,7 +87,7 @@ private fun RatingButton(
             .clip(RoundedCornerShape(4.dp))
             .clickable(enabled = state.enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = "$label: ${state.count}" }
-            .padding(horizontal = 3.dp),
+            .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

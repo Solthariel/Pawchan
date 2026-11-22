@@ -43,6 +43,7 @@ internal data class PostMenuOptions(
     val own: Boolean,
     val hidden: Boolean,
     val hasLink: Boolean = false,
+    val storageActions: Boolean = true,
 )
 
 @Composable
@@ -101,15 +102,17 @@ private fun PostMenuMain(
         icon = UiIconKind.COPY,
     )
     ActionMenuItem("Пожаловаться", { onCommand(PostMenuCommand.REPORT) }, options.canReport, icon = UiIconKind.WARNING)
-    TextButton(
-        onClick = { onCommand(PostMenuCommand.OWN) },
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-    ) {
-        UiMenuIcon(UiIconKind.PERSON)
-        Spacer(Modifier.width(12.dp))
-        Text("Моё сообщение", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        Checkbox(options.own, onCheckedChange = null)
+    if (options.storageActions) {
+        TextButton(
+            onClick = { onCommand(PostMenuCommand.OWN) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+        ) {
+            UiMenuIcon(UiIconKind.PERSON)
+            Spacer(Modifier.width(12.dp))
+            Text("Моё сообщение", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Checkbox(options.own, onCheckedChange = null)
+        }
     }
     if (canAddRule) {
         ActionMenuItem(
@@ -118,7 +121,7 @@ private fun PostMenuMain(
             icon = UiIconKind.FILTER,
         )
     }
-    if (!options.hidden) {
+    if (options.storageActions && !options.hidden) {
         ActionMenuItem(
             "Скрыть",
             { onPage(PostMenuPage.HIDE) },

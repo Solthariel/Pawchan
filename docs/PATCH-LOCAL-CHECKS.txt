@@ -1,0 +1,7 @@
+Вариант 0.1.52: исправления + ответы @monkey
+
+scripts/tests: 128 OK
+update/publishing/tests: 15 OK
+update/publishing/tools/tests: 120 OK
+Итого: 263/263 локальных Python-тестов. Независимо сверена DOM-структура HTML-примера №2773740 с помощью html.parser и lxml: один блок .neuroslop с 5 абзацами, снаружи остались ссылка >>2773736 и полный вопрос пользователя. Это не исполнение Kotlin-парсера или рендера Android.
+Проверены структура проекта, синтаксис Python/XML/JSON/YAML и shell-шагов ручного workflow, git diff --check. SHA-256 исходного ZIP: 3041f6baff8bcb479416a4037a0bbc4d6edfdafa4b00c180d58ffea81b422195. APK, новые JVM/Compose-тесты, запуск на телефоне и пересборка JNI здесь не выполнялись: Android SDK/NDK и кэша сборки нет.

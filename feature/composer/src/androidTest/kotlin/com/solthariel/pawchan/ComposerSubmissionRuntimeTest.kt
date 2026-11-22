@@ -18,6 +18,7 @@ import com.solthariel.pawchan.composer.ComposerUploadBudget
 import com.solthariel.pawchan.composer.NewThreadViewModel
 import com.solthariel.pawchan.composer.ReplyComposerController
 import com.solthariel.pawchan.composer.ReplyError
+import com.solthariel.pawchan.core.ui.AppNoticeHost
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.PostId
@@ -59,17 +60,19 @@ class ComposerSubmissionRuntimeTest {
         try {
             compose.setContent {
                 MaterialTheme {
-                    ComposerStatusLine(
-                        ComposerCaptchaState(satisfied = true),
-                        ComposerScreenStatus(
-                            ComposerProgressState(),
-                            ComposerFailureState(ReplyError.SUBMISSION_UNCONFIRMED),
-                            false,
-                            ComposerUploadBudget(null, "Размер ещё рассчитывается"),
-                        ),
-                        { reloads++ },
-                        loader,
-                    )
+                    AppNoticeHost {
+                        ComposerStatusLine(
+                            ComposerCaptchaState(satisfied = true),
+                            ComposerScreenStatus(
+                                ComposerProgressState(),
+                                ComposerFailureState(ReplyError.SUBMISSION_UNCONFIRMED),
+                                false,
+                                ComposerUploadBudget(null, "Размер ещё рассчитывается"),
+                            ),
+                            { reloads++ },
+                            loader,
+                        )
+                    }
                 }
             }
             compose.onNodeWithText("Отправка не подтверждена.", substring = true).assertIsDisplayed()

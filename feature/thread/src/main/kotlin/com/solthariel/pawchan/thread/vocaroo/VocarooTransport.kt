@@ -20,7 +20,7 @@ data class VocarooRequest(
 )
 
 /**
- * Сеть для записей Vocaroo. Приложение даёт свой транспорт (DoH, Cronet, журнал соединений);
+ * Сеть для записей Vocaroo. Приложение даёт свой транспорт (Cronet, журнал соединений);
  * тред знает только этот интерфейс и не зависит от сетевого слоя.
  */
 fun interface VocarooTransport {
@@ -32,7 +32,7 @@ fun interface VocarooTransport {
     )
 }
 
-/** Обычный OkHttp-транспорт; [client] уже настроен приложением (DNS, таймауты, журнал). */
+/** Обычный OkHttp-транспорт; [client] уже настроен приложением (таймауты, журнал). */
 class OkHttpVocarooTransport(
     private val client: OkHttpClient,
 ) : VocarooTransport {
@@ -64,10 +64,14 @@ class OkHttpVocarooTransport(
                         response: Response,
                     ) {
                         try {
-                            response.use { store(it, target, onProgress) }
-                            continuation.resume(Unit)
+                            response.use {
+                                if (continuation.isActive) store(it, target, onProgress)
+                            }
+                            if (continuation.isActive) continuation.resume(Unit)
                         } catch (failure: IOException) {
                             continuation.resumeWithException(failure)
+                        } finally {
+                            if (continuation.isCancelled) target.delete()
                         }
                     }
                 },

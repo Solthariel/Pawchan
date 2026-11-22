@@ -2,12 +2,12 @@
 
 ## Владельцы
 
-- [video-ffmpeg](../../video-ffmpeg) — PawPlayback, decoder thread/JNI, FFmpeg/dav1d.
-  Open/pump/release принадлежат одному decoder thread; Main не делает decode/join.
+- [video-ffmpeg](../../video-ffmpeg) — JNI-мост libmpv и прогрессивный источник.
+  Native-вызовы mpv выполняются на собственном worker-потоке.
 - [core/media](../../core/media) — viewer session, playback/recovery и PiP handoff.
   App предоставляет borrowed HTTP/loaders и право показа; viewer их не закрывает.
 - Сеть остаётся у ProgressiveSource с borrowed OkHttpClient. URL/cookies/заголовки
-  не передаются в native; custom AVIO читает подтверждённые диапазоны session-owned файла.
+  не передаются в native; mpv stream callback читает подтверждённые диапазоны session-owned файла.
 - Сессия, переданная в PiP, принадлежит PiP, не закрывается viewer. Непринятый
   handoff освобождается по таймауту. Подробные обязательства —
   [контракт модулей](../contracts/MODULE_BOUNDARIES.md).
@@ -26,9 +26,8 @@ PiP лишь до deadline. Screen-off закрывает PiP. Это не ос�
 
 ## Что остаётся риском
 
-FFmpeg hardware decoder не равнозначен прямому MediaCodec-to-Surface pipeline:
-преобразование/копирование кадра может влиять на CPU, энергию и задержку.
-Карта документации не доказывает отсутствие регрессии или исправление плеера.
+Режим AUTO может использовать программный декодер; кнопка показывает фактический
+режим, когда он известен. Плавность, расход энергии и совместимость зависят от устройства.
 
 На устройстве проверять codecs/fallback, seek около EOF и при недокачанном файле,
 повторные seek, pause/play, 0.5–2x, A/V sync, Bluetooth/audio focus, PiP и отзыв

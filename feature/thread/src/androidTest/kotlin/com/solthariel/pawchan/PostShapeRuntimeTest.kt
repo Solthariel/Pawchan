@@ -12,39 +12,18 @@ class PostShapeRuntimeTest {
     @get:Rule val compose = createComposeRule()
     private val fixture = PostShapeFixture(compose)
 
-    @Test fun plainFreshPostFillsItsSquareCorner() = checkCorner(bubble = false, fresh = true)
+    @Test fun plainFreshPostFillsItsSquareCorner() = checkCorner(fresh = true)
 
-    @Test fun bubbleFreshPostLeavesItsRoundedCornerClear() = checkCorner(bubble = true, fresh = true)
+    @Test fun plainSelectedPostFillsItsSquareCorner() = checkCorner(selected = true)
 
-    @Test fun plainSelectedPostFillsItsSquareCorner() = checkCorner(bubble = false, selected = true)
+    @Test fun plainHiddenPostFillsItsSquareCorner() = checkCorner(hidden = true)
 
-    @Test fun bubbleSelectedPostLeavesItsRoundedCornerClear() = checkCorner(bubble = true, selected = true)
-
-    @Test fun plainHiddenPostFillsItsSquareCorner() = checkCorner(bubble = false, hidden = true)
-
-    @Test fun bubbleHiddenPostLeavesItsRoundedCornerClear() = checkCorner(bubble = true, hidden = true)
-
-    @Test fun readingMarkerDoesNotOverflowBubbleCorners() = checkCorner(bubble = true, marker = true)
-
-    @Test fun readingMarkerPreservesPlainCorners() = checkCorner(bubble = false, marker = true)
-
-    @Test
-    fun changingDisplayModeUpdatesTheFreshOverlayWithoutRecreatingThePost() {
-        val bubble = mutableStateOf(true)
-        fixture.show(bubble, fresh = mutableStateOf(true))
-        assertEquals(Color.Magenta, fixture.pixels()[0, 0])
-        compose.runOnIdle { bubble.value = false }
-        compose.waitForIdle()
-        assertNotEquals(Color.Magenta, fixture.pixels()[0, 0])
-        compose.runOnIdle { bubble.value = true }
-        compose.waitForIdle()
-        assertEquals(Color.Magenta, fixture.pixels()[0, 0])
-    }
+    @Test fun readingMarkerPreservesPlainCorners() = checkCorner(marker = true)
 
     @Test
     fun freshFadeChangesOnlyColorAndFinishesAtTheOriginalSurface() {
         val fresh = mutableStateOf(false)
-        fixture.show(mutableStateOf(false), fresh)
+        fixture.show(fresh)
         val base = fixture.pixels()[0, 0]
         compose.mainClock.autoAdvance = false
         compose.runOnIdle { fresh.value = true }
@@ -68,20 +47,15 @@ class PostShapeRuntimeTest {
     }
 
     private fun checkCorner(
-        bubble: Boolean,
         fresh: Boolean = false,
         selected: Boolean = false,
         hidden: Boolean = false,
         marker: Boolean = false,
     ) {
-        fixture.show(mutableStateOf(bubble), mutableStateOf(fresh), selected, hidden, marker)
+        fixture.show(mutableStateOf(fresh), selected, hidden, marker)
         val pixels = fixture.pixels()
-        if (bubble) {
-            assertEquals(Color.Magenta, pixels[0, 0])
-        } else {
-            assertNotEquals(Color.Magenta, pixels[0, 0])
-            assertEquals(pixels[pixels.width / 2, 0], pixels[0, 0])
-        }
+        assertNotEquals(Color.Magenta, pixels[0, 0])
+        assertEquals(pixels[pixels.width / 2, 0], pixels[0, 0])
         assertNotEquals(Color.Magenta, pixels[pixels.width / 2, pixels.height / 2])
     }
 }

@@ -5,12 +5,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -20,8 +16,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.em
-import com.solthariel.pawchan.core.ui.UiIconKind
-import com.solthariel.pawchan.core.ui.uiIconPainter
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.domain.model.PostTextRun
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -43,11 +37,21 @@ internal data class LinkSuffixRange(
 internal fun linkSuffixRange(
     run: PostTextRun,
     hidden: Boolean,
+    originalPostId: Long? = null,
 ): LinkSuffixRange? {
     val reference = run.link as? PostLink.Reference
-    val thread = reference?.thread
-    if (hidden || thread == null) return null
+    if (hidden || reference == null) return null
+    val thread = reference.thread
     return when {
+        thread == null -> {
+            val isOriginal = originalPostId != null && reference.post.value == originalPostId
+            if (isOriginal && run.text.endsWith(OP_SOURCE_SUFFIX)) {
+                LinkSuffixRange((run.text.length - OP_MARKER_LENGTH) until run.text.length, LINK_SUFFIX_LOCAL_OP)
+            } else {
+                null
+            }
+        }
+
         run.text.endsWith(OP_SOURCE_SUFFIX) && reference.post.value == thread.thread.value -> {
             LinkSuffixRange((run.text.length - OP_MARKER_LENGTH) until run.text.length, threadToken(thread))
         }
@@ -67,7 +71,9 @@ internal fun linkSuffixLabel(
     value: String,
     context: ThreadAddress?,
 ): String {
-    val differentThread = value == LINK_SUFFIX_DIFFERENT_THREAD || (context != null && value != threadToken(context))
+    val differentThread =
+        value == LINK_SUFFIX_DIFFERENT_THREAD ||
+            (value != LINK_SUFFIX_LOCAL_OP && context != null && value != threadToken(context))
     return if (differentThread) "DT" else "OP"
 }
 
@@ -100,14 +106,11 @@ internal fun Modifier.referenceLinkSuffixes(
     color: Color,
     layout: () -> TextLayoutResult?,
 ): Modifier {
-    val person = uiIconPainter(UiIconKind.PERSON)
     val drawing =
-        remember(measurer, style, color, person) {
+        remember(measurer, style, color) {
             SuffixDrawing(
                 measurer,
                 style.merge(TextStyle(color = color, fontWeight = FontWeight.Medium)),
-                person,
-                ColorFilter.tint(color),
             )
         }
     val markers =
@@ -131,8 +134,6 @@ private data class LinkSuffixMarker(
 private data class SuffixDrawing(
     val measurer: TextMeasurer,
     val style: TextStyle,
-    val person: Painter,
-    val tint: ColorFilter,
 )
 
 private fun DrawScope.drawLinkSuffix(
@@ -145,16 +146,10 @@ private fun DrawScope.drawLinkSuffix(
     val line = result.getLineForOffset(start)
     if (line >= result.lineCount || start >= result.getLineEnd(line, visibleEnd = true)) return
     val bounds = result.getBoundingBox(start)
+    val left = minOf(bounds.left, bounds.right)
+    val baseline = result.getLineBaseline(line)
     val measured = drawing.measurer.measure(label, drawing.style)
-    val top = result.getLineBaseline(line) - measured.firstBaseline
-    if (label == "OP") {
-        val size = measured.size.height.toFloat()
-        translate(minOf(bounds.left, bounds.right), top) {
-            with(drawing.person) { draw(Size(size, size), colorFilter = drawing.tint) }
-        }
-    } else {
-        drawText(measured, topLeft = Offset(minOf(bounds.left, bounds.right), top))
-    }
+    drawText(measured, topLeft = Offset(left, baseline - measured.firstBaseline))
 }
 
 private fun threadToken(thread: ThreadAddress): String {
@@ -163,6 +158,7 @@ private fun threadToken(thread: ThreadAddress): String {
 }
 
 internal const val LINK_SUFFIX_DIFFERENT_THREAD = "different-thread"
+internal const val LINK_SUFFIX_LOCAL_OP = "local-op"
 private const val OP_SOURCE_SUFFIX = " (OP)"
 private const val DIFFERENT_THREAD_SOURCE_SUFFIX = " →"
 private const val OP_MARKER_LENGTH = 4

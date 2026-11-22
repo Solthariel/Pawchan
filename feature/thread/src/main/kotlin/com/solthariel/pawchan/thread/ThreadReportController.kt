@@ -25,13 +25,13 @@ internal class ThreadReportController(
     private val mutableState = MutableStateFlow(ThreadReportState())
     private var job: Job? = null
     val state = mutableState.asStateFlow()
-    val available: Boolean get() = repository != null
+    val available: Boolean get() = repository?.supportsReporting(address) == true
 
     fun submit(
         ids: List<Long>,
         comment: String,
     ) {
-        val target = repository ?: return
+        val target = repository?.takeIf { it.supportsReporting(address) } ?: return
         if (job?.isActive == true || comment.isBlank() || ids.isEmpty()) return
         job =
             scope.launch {

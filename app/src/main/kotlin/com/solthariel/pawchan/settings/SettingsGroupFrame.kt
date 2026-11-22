@@ -13,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.UiSpacing
 
 @Composable
 internal fun SettingsGroupFrame(
     modifier: Modifier = Modifier,
-    horizontalInset: Dp = 12.dp,
+    horizontalInset: Dp = UiSpacing.medium,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -34,7 +35,7 @@ internal fun SettingsGroupFrame(
 internal fun SettingsGroupHeading(title: String) {
     Text(
         title,
-        Modifier.padding(start = 28.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+        Modifier.padding(start = 28.dp, end = UiSpacing.large, top = UiSpacing.large, bottom = 6.dp),
         color = MaterialTheme.colorScheme.primary,
         style = MaterialTheme.typography.labelLarge,
     )

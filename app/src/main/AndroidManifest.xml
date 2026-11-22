@@ -38,6 +38,8 @@
                 <data android:host="2ch.su" />
                 <data android:host="2ch.life" />
                 <data android:host="2ch.org" />
+                <data android:host="boards.4chan.org" />
+                <data android:host="boards.4channel.org" />
                 <data android:pathPrefix="/" />
             </intent-filter>
         </activity>

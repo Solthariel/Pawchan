@@ -88,7 +88,7 @@ class BoardLookupGestureRuntimeTest {
         val board = defaultBoardAddress()
         val source =
             BoardLookupSource(
-                favorites = (0 until count).map { requireNotNull(BoardId.parse("f$it")) }.toSet(),
+                favorites = (0 until count).map { board.copy(board = requireNotNull(BoardId.parse("f$it"))) }.toSet(),
             )
         val prepared = source.prepareLookup(board, "")
         compose.setContent {

@@ -32,17 +32,23 @@ private fun incomingUri(url: String): URI? =
 private fun incomingWebLink(uri: URI): ForumWebLink? {
     val defaultPort = if (uri.scheme.equals("http", true)) HTTP_PORT else HTTPS_PORT
     val portAllowed = uri.port == -1 || uri.port == defaultPort
-    if (uri.host?.lowercase() !in DVACH_LINK_HOSTS || !portAllowed) return null
-    val https = URI("https", null, uri.host.lowercase(), -1, uri.path, uri.query, uri.fragment)
-    return DvachWebLinks().webLink(https)
+    val host = uri.host
+    if (!portAllowed || uri.rawPath != uri.path || host == null) return null
+    val https = URI("https", null, host.lowercase(), -1, uri.path, uri.query, uri.fragment)
+    return com.solthariel.pawchan.infrastructure.sites
+        .appForumWebLinks()
+        .firstNotNullOfOrNull { it.webLink(https) }
 }
 
 private fun incomingNotificationLink(uri: URI): ForumWebLink? {
     if (uri.host != "thread" || uri.port != -1) return null
     return AppRoute
         .threadAddress("thread${uri.path}")
-        ?.takeIf { it.site.value == "dvach" }
-        ?.let { ForumWebLink.Thread(it, null, replies = uri.rawQuery == "replies=1") }
+        ?.takeIf { address ->
+            com.solthariel.pawchan.infrastructure.sites
+                .appForumWebLinks()
+                .any { it.site == address.site }
+        }?.let { ForumWebLink.Thread(it, null, replies = uri.rawQuery == "replies=1") }
 }
 
 private const val HTTP_PORT = 80

@@ -91,7 +91,6 @@ class ThreadCompactDialogsUiTest {
         val first = previewPost(2, "Первый ответ")
         val second = previewPost(3, "Второй ответ")
         val posts = mutableStateOf(listOf(first))
-        val bubbles = mutableStateOf(false)
         val content =
             ThreadUiState
                 .Content(
@@ -104,7 +103,7 @@ class ThreadCompactDialogsUiTest {
                 ).withPostNavigation()
         compose.setContent {
             ThreadTestTheme(ThemePreference.DARK) {
-                val preferences = PostDisplayPreferences(bubblePosts = bubbles.value)
+                val preferences = PostDisplayPreferences()
                 CompositionLocalProvider(LocalPostDisplayPreferences provides preferences) {
                     PostPreviewWindow(
                         PostPreviewState(content, posts.value),
@@ -120,8 +119,6 @@ class ThreadCompactDialogsUiTest {
         compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(0)
         compose.runOnIdle { posts.value = listOf(first, second) }
         compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(1)
-        compose.runOnIdle { bubbles.value = true }
-        compose.onAllNodesWithTag("post-list-divider", useUnmergedTree = true).assertCountEquals(0)
     }
 
     @Test

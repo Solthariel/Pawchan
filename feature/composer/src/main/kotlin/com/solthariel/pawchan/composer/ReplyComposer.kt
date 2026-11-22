@@ -3,27 +3,29 @@ package com.solthariel.pawchan.composer
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import coil3.ImageLoader
-import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
 fun ReplyComposer(
-    board: BoardId?,
     state: ReplyComposerState,
     imageLoader: ImageLoader,
     actions: ReplyActions,
 ) {
     ComposerEditorScreen(
         title =
-            board?.let { stringResource(R.string.new_message_title, it.value) }
-                ?: stringResource(R.string.composer_reply_title),
+            stringResource(R.string.composer_reply_title),
         newThread = false,
         state =
             ComposerScreenState(
                 state.draft,
                 state.rules,
                 state.captchaState,
-                ComposerScreenStatus(state.progress, state.failure, state.canSubmit),
+                ComposerScreenStatus(
+                    state.progress,
+                    state.failure,
+                    state.canSubmit,
+                    canRequestSubmit = state.canRequestSubmit,
+                ),
             ),
         imageLoader = imageLoader,
         actions =

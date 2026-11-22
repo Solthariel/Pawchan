@@ -20,8 +20,10 @@ import com.solthariel.pawchan.domain.watch.CheckWatchedThread
 import com.solthariel.pawchan.domain.watch.ThreadWatchRepository
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.domain.workspace.StoredPost
+import com.solthariel.pawchan.domain.workspace.StoredReply
 import com.solthariel.pawchan.domain.workspace.WorkspaceRepository
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
+import com.solthariel.pawchan.domain.workspace.markRead
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import com.solthariel.pawchan.watch.BackgroundWatchRunResult
 import com.solthariel.pawchan.watch.ThreadWatchBackgroundRunner
@@ -111,6 +113,35 @@ class BackgroundCheckPassTest {
             )
         }
 
+    @Test
+    fun notificationsCountUnreadRepliesWithoutRevivingAlreadyReadOnes() =
+        runTest {
+            val second = post(44)
+            val third = post(45)
+            var current = ThreadSnapshot(address, null, ThreadFlags(false, false, false), listOf(own, reply, second))
+            val loadCurrent = { DomainOutcome.Success(current) }
+            val source =
+                object : ThreadRepository {
+                    override suspend fun loadThread(address: ThreadAddress): SnapshotResult = loadCurrent()
+                }
+            val workspace =
+                PassWorkspace(
+                    WorkspaceState(
+                        posts = listOf(StoredPost(own, null, own = true)),
+                        replies = listOf(StoredReply(reply, null)),
+                    ),
+                )
+            val counts = mutableListOf<Int>()
+            assertTrue(checkWorkspaceReplies(workspace, source) { _, count -> counts += count })
+            assertEquals(listOf(2), counts)
+            workspace.state = workspace.state.markRead(setOf(reply.address))
+            assertTrue(checkWorkspaceReplies(workspace, source) { _, count -> counts += count })
+            assertEquals(listOf(2), counts)
+            current = ThreadSnapshot(address, null, ThreadFlags(false, false, false), listOf(own, reply, second, third))
+            assertTrue(checkWorkspaceReplies(workspace, source) { _, count -> counts += count })
+            assertEquals(listOf(2, 2), counts)
+        }
+
     private fun post(id: Long): BoardPost =
         BoardPost(
             PostAddress(address, requireNotNull(PostId.parse(id))),
@@ -132,3 +163,5 @@ private class PassWorkspace(
         return state
     }
 }
+
+private typealias SnapshotResult = DomainOutcome<ThreadSnapshot>

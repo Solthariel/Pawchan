@@ -7,6 +7,7 @@ import com.solthariel.pawchan.domain.filter.ContentFilterHit
 import com.solthariel.pawchan.domain.model.CatalogSnapshot
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
+import com.solthariel.pawchan.domain.model.PostDocument
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.isRateLimited
 import com.solthariel.pawchan.media.MediaAttachmentUi
@@ -21,6 +22,7 @@ internal sealed interface CatalogUiState {
         val refresh: CatalogRefreshState = CatalogRefreshState(),
         val viewerMediaGroups: Map<Long, List<MediaAttachmentUi>> = emptyMap(),
         val contentFilters: CatalogFilterPresentation = CatalogFilterPresentation(),
+        val selectedTag: String? = null,
     ) : CatalogUiState {
         val isRefreshing: Boolean get() = refresh.loading
         val refreshFailure: RefreshFailure? get() = refresh.failure
@@ -125,6 +127,8 @@ internal data class CatalogThreadContentUi(
 internal data class CatalogThreadTextUi(
     val preview: String,
     val plainText: String = preview,
+    val tag: String? = null,
+    val authorPreview: String? = null,
 )
 
 internal data class CatalogThreadFlagsUi(
@@ -176,10 +180,21 @@ internal fun DomainOutcome<CatalogSnapshot>.toUiState(nowEpochSeconds: Long = cu
         }
     }
 
-internal fun com.solthariel.pawchan.domain.model.PostDocument.toCatalogPreview(): String {
+internal fun PostDocument.toCatalogText(tag: String? = null): CatalogThreadTextUi =
+    CatalogThreadTextUi(toCatalogPreview(), plainText, tag, if (hasMonkeyReply) toCatalogPreview(true) else null)
+
+internal fun PostDocument.toCatalogPreview(hideMonkeyReplies: Boolean = false): String {
     var previousWasLineBreak = false
+    var previousBlock: Int? = null
     return buildString {
         runs.forEach { run ->
+            val block = run.monkeyBlock
+            if (block != null && hideMonkeyReplies) return@forEach
+            if (block != null && block != previousBlock) {
+                append(com.solthariel.pawchan.core.ui.MONKEY_REPLY_LABEL).append(": ")
+                previousWasLineBreak = false
+            }
+            previousBlock = block
             run.text.forEach { character ->
                 val normalizedCharacter = if (character == '\r') '\n' else character
                 if (normalizedCharacter != '\n' || !previousWasLineBreak) {

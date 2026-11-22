@@ -27,4 +27,5 @@ internal data class ThreadPresentation(
     val watcherState: ThreadWatcherUiState = ThreadWatcherUiState(),
     val reports: ThreadReportController? = null,
     val postContext: ThreadPostContext? = null,
+    val repliesEnabled: Boolean = true,
 )

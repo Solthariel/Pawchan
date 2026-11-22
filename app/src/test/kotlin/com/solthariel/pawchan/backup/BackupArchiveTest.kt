@@ -25,7 +25,12 @@ class BackupArchiveTest {
         val metadata = BackupMetadata(123L, "0.1.0")
         val source =
             ClientBackup(
-                mapOf("theme" to "SYSTEM", "favorite_boards_v2" to "b", "app_content_filters_v1" to ""),
+                mapOf(
+                    "theme" to "SYSTEM",
+                    "favorite_boards_v2" to "b",
+                    "favorite_boards_other_v1" to "",
+                    "app_content_filters_v1" to "",
+                ),
                 listOf(entry(42L, true, 200L)),
                 WorkspaceState(),
                 BackupSection.entries.toSet(),
@@ -35,6 +40,13 @@ class BackupArchiveTest {
         val restored = decodeClientBackup(encodeClientBackup(source))
         assertEquals(source, restored)
         assertEquals(0, backupCounts(restored)[BackupSection.FILTERS])
+    }
+
+    @Test fun olderFavoritesPayloadRestoresLegacyBoardsAndClearsOtherSites() {
+        val payload = mapOf("favorites.json" to """{"boards":"b","threads":[]}""")
+        val restored = readBackupPayload(payload, BackupMetadata(123L, "0.1.0"))
+        assertEquals("b", restored.settings["favorite_boards_v2"])
+        assertEquals("", restored.settings["favorite_boards_other_v1"])
     }
 
     @Test fun unselectedOwnMarkersDoNotLeakIntoArchive() {

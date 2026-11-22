@@ -1,33 +1,24 @@
 package com.solthariel.pawchan.composer
 
-import android.widget.MediaController
-import android.widget.VideoView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.window.DialogProperties
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
-import com.solthariel.pawchan.core.ui.AppDialogStyle
-import com.solthariel.pawchan.core.ui.modalLayerSurface
-import com.solthariel.pawchan.media.AttachmentDialogContent
-import com.solthariel.pawchan.media.AttachmentDialogLayout
+import com.solthariel.pawchan.core.ui.FullScreenModalWindow
+import com.solthariel.pawchan.core.ui.KeepWindowBounds
+import com.solthariel.pawchan.core.ui.focusedWindowImePadding
+import com.solthariel.pawchan.media.LocalVideoAttachmentPreview
 
 @Composable
 internal fun ComposerAttachmentViewer(
@@ -38,41 +29,73 @@ internal fun ComposerAttachmentViewer(
     onUpdate: (ComposerAttachment) -> Unit,
     onRemove: () -> Unit,
 ) {
-    AttachmentFixedDialog(onDismiss) {
-        Surface(
-            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth().modalLayerSurface(AppDialogStyle.shape),
-            color = MaterialTheme.colorScheme.background,
-            shape = AppDialogStyle.shape,
+    PreparedAttachmentViewer(file, onDismiss) {
+        ComposerAttachmentViewerWindow(file, imageLoader, enabled, onDismiss, onUpdate, onRemove)
+    }
+}
+
+@Composable
+private fun ComposerAttachmentViewerWindow(
+    file: ComposerAttachment,
+    imageLoader: ImageLoader,
+    enabled: Boolean,
+    onDismiss: () -> Unit,
+    onUpdate: (ComposerAttachment) -> Unit,
+    onRemove: () -> Unit,
+) {
+    val draft = remember(file.id) { AttachmentViewerDraft(file.options) }
+    val scope = rememberCoroutineScope()
+    val saving = remember(file.id, scope) { AttachmentSaveState(scope, kotlinx.coroutines.Dispatchers.Default) }
+    val pending = file.copy(options = draft.currentOptions)
+    val close = {
+        if (enabled && !saving.busy) {
+            if (draft.editor.inGesture) draft.editor.finish()
+            val current = file.copy(options = draft.currentOptions)
+            if (!current.validName) draft.selectTab(AttachmentEditorTab.NAME)
+            if (draft.changed || !current.validName) {
+                saving.save(current) { prepared ->
+                    onUpdate(prepared)
+                    onDismiss()
+                }
+            } else {
+                onDismiss()
+            }
+        }
+    }
+    FullScreenModalWindow(
+        onDismissRequest = close,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+        dimUnderlying = false,
+    ) {
+        AttachmentViewerWindow()
+        KeepWindowBounds()
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .systemBarsPadding()
+                .focusedWindowImePadding(),
         ) {
-            AttachmentDialogLayout(
-                AttachmentDialogContent(
-                    header = { Box(Modifier.fillMaxWidth()) },
-                    footer = {
-                        AttachmentEditorFooter(
-                            file,
-                            enabled,
-                            onUpdate,
-                            onRemove,
-                        )
-                    },
-                    media = { ComposerViewerMedia(file, imageLoader) },
-                    aspectRatio = file.aspectRatio,
-                    previewHeightLimit = 240.dp,
-                ),
-                Modifier.padding(12.dp),
-            )
+            AttachmentViewerHeader(enabled && !saving.busy, close, onRemove, draft)
+            Box(Modifier.weight(1f)) {
+                AttachmentEditorContent(pending, imageLoader, draft, enabled && !saving.busy)
+                AttachmentSaveStatus(saving)
+            }
         }
     }
 }
 
 @Composable
-private fun ComposerViewerMedia(
+internal fun ComposerViewerMedia(
     file: ComposerAttachment,
     imageLoader: ImageLoader,
 ) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        if (file.video && file.sourceUri != null) {
-            ComposerLocalVideo(file.sourceUri)
+        val edit = file.options.edit
+        if (edit != null) {
+            ComposerEditedPreview(file.source.content, edit, file.displayName, Modifier.fillMaxSize())
+        } else if (file.video) {
+            LocalVideoAttachmentPreview(file.id, file.displayName, file.source.content, file.dimensions)
         } else {
             AsyncImage(
                 model = file.source.content,
@@ -83,37 +106,4 @@ private fun ComposerViewerMedia(
             )
         }
     }
-}
-
-@Composable
-private fun ComposerLocalVideo(uri: String) {
-    val context = LocalContext.current
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val video =
-        remember(uri, context, lifecycle) {
-            VideoView(context).apply {
-                val controls = MediaController(context)
-                controls.setAnchorView(this)
-                setMediaController(controls)
-                setOnPreparedListener {
-                    // Render the initial frame without autoplaying in attachment settings.
-                    seekTo(1)
-                    pause()
-                    if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) controls.show()
-                }
-                setVideoURI(uri.toUri())
-            }
-        }
-    DisposableEffect(video, lifecycle) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) video.pause()
-            }
-        lifecycle.addObserver(observer)
-        onDispose {
-            lifecycle.removeObserver(observer)
-            video.stopPlayback()
-        }
-    }
-    AndroidView(factory = { video }, modifier = Modifier.fillMaxSize(), onRelease = { it.stopPlayback() })
 }

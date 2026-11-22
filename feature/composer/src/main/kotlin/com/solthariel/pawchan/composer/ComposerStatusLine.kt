@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -13,12 +13,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.feature.composer.R
@@ -36,8 +38,17 @@ internal fun ComposerStatusLine(
     val expired = remaining == 0L
     val reloadLabel = stringResource(R.string.captcha_retry)
     // Статус по центру строки: слева пустое место той же ширины, что таймер с кнопкой справа.
-    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-        Spacer(Modifier.width(STATUS_SIDE_WIDTH))
+    Row(
+        Modifier.fillMaxWidth().then(
+            Modifier.height(
+                48.dp *
+                    androidx.compose.ui.platform.LocalDensity.current.fontScale
+                        .coerceAtLeast(1f),
+            ),
+        ),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        CaptchaPendingIndicator(status.progress.captchaSelecting && !expired)
         ComposerStatusBody(captcha, status, imageLoader, expired, cooldown)
         Row(
             // A multiline failure must not push the reload button below the visible viewport.
@@ -80,6 +91,22 @@ private fun RowScope.ComposerStatusBody(
             },
             status.progress,
         )
+    // Snapshot a cooldown notice once, then emit a new one when the deadline expires.
+    // The changing countdown must not restart the transient notice every second.
+    val captchaNotice = captchaInvalidNotice(status.failure).takeIf { display.failed }
+    val notice =
+        remember(status.failure, display.failed, status.uploadBudget?.status, cooldown == 0L) {
+            display.label.takeIf { display.failed && captchaNotice == null }
+        }
+    TransientNotice(notice, eventKey = status.failure to status.uploadBudget?.status)
+    val inlineLabel =
+        if (captchaNotice != null) {
+            captchaNotice
+        } else if (display.failed) {
+            composerStatusText(status.progress, ComposerFailureState(), captcha.satisfied).label
+        } else {
+            display.label
+        }
     if (!expired && status.uploadBudget?.status == null && showCaptchaSelection(captcha, status)) {
         Box(Modifier.weight(1f), contentAlignment = androidx.compose.ui.Alignment.Center) {
             CaptchaSelectedSteps(captcha.selectedImages, imageLoader, Modifier)
@@ -89,10 +116,10 @@ private fun RowScope.ComposerStatusBody(
             if (expired && !display.failed && captchaIdle) {
                 stringResource(R.string.captcha_expired)
             } else {
-                display.label
+                inlineLabel
             },
             Modifier.weight(1f),
-            maxLines = if (display.failed) Int.MAX_VALUE else 2,
+            maxLines = 2,
             textAlign = TextAlign.Center,
             color = if (display.failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
         )

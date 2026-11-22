@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
@@ -52,7 +52,11 @@ internal fun ChangelogDialog(
                 ChangelogList(releases, Modifier.weight(1f))
             } else {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    if (failed) Text("Не удалось прочитать список изменений") else CircularProgressIndicator()
+                    if (failed) {
+                        Text("Не удалось прочитать список изменений")
+                    } else {
+                        PageLoadingIndicator(description = "Загрузка списка изменений")
+                    }
                 }
             }
         }

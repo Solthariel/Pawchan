@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,8 @@ import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.BindAttachmentImagePreload
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.calculateAttachmentGridMetrics
+import com.solthariel.pawchan.media.rememberMediaThumbnailOrigin
+import com.solthariel.pawchan.media.thumbnail.LocalThumbnailLoader
 import com.solthariel.pawchan.core.ui.ModalWindow as Dialog
 
 @Composable
@@ -110,13 +113,21 @@ private fun CatalogAttachmentCell(
     onSelected: (MediaAttachmentUi) -> Unit,
     onLongPress: (MediaAttachmentUi) -> Unit,
 ) {
+    val origin = rememberMediaThumbnailOrigin(attachment, LocalThumbnailLoader.current, PICKER_CORNER_RADIUS)
     Box(
         modifier =
             Modifier
                 .size(cellSize)
+                .onGloballyPositioned(origin::place)
                 .clip(RoundedCornerShape(PICKER_CORNER_RADIUS))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .combinedClickable(onClick = { onSelected(attachment) }, onLongClick = { onLongPress(attachment) }),
+                .combinedClickable(
+                    onClick = {
+                        origin.capture()
+                        onSelected(attachment)
+                    },
+                    onLongClick = { onLongPress(attachment) },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         SubcomposeAsyncImage(

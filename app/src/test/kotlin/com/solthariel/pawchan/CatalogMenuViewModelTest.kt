@@ -38,7 +38,7 @@ class CatalogMenuViewModelTest {
                             com.solthariel.pawchan.domain.model.BoardId
                                 .parse("biz"),
                         ),
-                    ).board,
+                    ),
                 ),
                 repos.favoriteBoards.value,
             )

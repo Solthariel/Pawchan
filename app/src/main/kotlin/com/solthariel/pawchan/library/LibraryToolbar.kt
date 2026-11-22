@@ -57,6 +57,7 @@ internal data class LibraryToolbarActions(
     val onRefresh: (() -> Unit)? = null,
     val history: Boolean = false,
     val onHistoryCleared: () -> Unit = {},
+    val extraMenu: (@Composable () -> Unit)? = null,
 )
 
 /** Верхняя панель списка: назад, заголовок со счётчиком, поиск и обновить; поиск — поле на месте заголовка. */
@@ -76,7 +77,7 @@ internal fun LibraryToolbar(
         } else {
             CatalogIconButton(UiIconKind.BACK, "Назад", onClick = actions.onBack)
             Text(
-                listOfNotNull(state.title, state.count?.takeIf { it > 0 }?.toString()).joinToString(" / "),
+                state.title,
                 Modifier.weight(1f).padding(start = 12.dp),
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
@@ -84,10 +85,11 @@ internal fun LibraryToolbar(
             )
             CatalogIconButton(UiIconKind.SEARCH, "Поиск", onClick = { actions.onQuery("") })
         }
-        if (actions.history) HistoryOverflowMenu(actions.onHistoryCleared)
         actions.onRefresh?.let { refresh ->
             CatalogRefreshButton(isRefreshing = state.refreshing, enabled = !state.refreshing, onClick = refresh)
         }
+        if (actions.history) HistoryOverflowMenu(actions.onHistoryCleared)
+        actions.extraMenu?.invoke()
     }
 }
 

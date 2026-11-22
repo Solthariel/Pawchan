@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,12 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
+import com.solthariel.pawchan.core.ui.TransientNotice
+import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.model.ThreadAddress
-import com.solthariel.pawchan.navigation.chrome.APP_BOTTOM_BAR_HEIGHT
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.navigation.saveableKey
+import com.solthariel.pawchan.threads.ThreadSourceIcon
+import com.solthariel.pawchan.threads.ThreadSourceUi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,8 +47,16 @@ internal fun HistoryScreen(
     onThreadClick: (ThreadAddress) -> Unit,
     bottomActions: AppBottomActions,
     onHistoryCleared: () -> Unit = {},
+    sources: Map<SiteId, ThreadSourceUi> = emptyMap(),
 ) {
     var query by rememberSaveable { mutableStateOf<String?>(null) }
+    var refreshNotice by remember { mutableStateOf<String?>(null) }
+    val refreshFailures = (state as? LibraryUiState.Content)?.refreshFailures ?: 0
+    LaunchedEffect(refreshFailures) {
+        if (refreshFailures > 0) {
+            refreshNotice = "Не удалось обновить историю"
+        }
+    }
     val entries =
         remember(state, query) {
             (state as? LibraryUiState.Content)
@@ -52,8 +64,8 @@ internal fun HistoryScreen(
                 ?.filter { it.lastVisitedAtEpochMillis > 0 && it.matches(query.orEmpty().trim()) }
                 ?.sortedByDescending { it.lastVisitedAtEpochMillis }
         }
-    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS) {
-        Column(Modifier.fillMaxSize()) {
+    AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS, floatingTop = true) {
+        com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
             LibraryToolbar(
                 LibraryToolbarState("История", entries?.size, query, false),
                 LibraryToolbarActions(
@@ -63,13 +75,41 @@ internal fun HistoryScreen(
                     onHistoryCleared = onHistoryCleared,
                 ),
             )
+        }) {
             when {
-                state == LibraryUiState.Error -> LibraryEmpty("Не удалось загрузить историю")
-                entries == null -> LibraryEmpty("Загрузка…")
-                entries.isEmpty() -> LibraryEmpty("История пуста")
-                else -> HistoryList(entries, onThreadClick)
+                state == LibraryUiState.Error ||
+                    (
+                        state is LibraryUiState.Content && state.refreshFailures > 0 &&
+                            state.entries.none { it.lastVisitedAtEpochMillis > 0 }
+                    ) -> {
+                    HistoryEmpty("Ошибка при загрузке данных")
+                }
+
+                entries == null -> {
+                    HistoryEmpty("Загрузка…")
+                }
+
+                entries.isEmpty() -> {
+                    HistoryEmpty("История пуста")
+                }
+
+                else -> {
+                    HistoryList(entries, onThreadClick, sources)
+                }
             }
         }
+    }
+    TransientNotice(
+        refreshNotice,
+        eventKey = refreshFailures,
+        onDismiss = { refreshNotice = null },
+    )
+}
+
+@Composable
+private fun HistoryEmpty(message: String) {
+    Box(Modifier.padding(start = 8.dp, top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current)) {
+        LibraryEmpty(message)
     }
 }
 
@@ -77,6 +117,7 @@ internal fun HistoryScreen(
 private fun HistoryList(
     entries: List<LibraryEntryUi>,
     onThreadClick: (ThreadAddress) -> Unit,
+    sources: Map<SiteId, ThreadSourceUi>,
 ) {
     val list = rememberLazyListState()
     val format = remember { SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()) }
@@ -84,7 +125,11 @@ private fun HistoryList(
         LazyColumn(
             state = list,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = APP_BOTTOM_BAR_HEIGHT + 8.dp),
+            contentPadding =
+                PaddingValues(
+                    top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                    bottom = com.solthariel.pawchan.core.ui.LocalBottomOverlayInset.current + 8.dp,
+                ),
         ) {
             items(entries, key = { it.address.saveableKey }, contentType = { "history-row" }) { entry ->
                 Row(
@@ -95,6 +140,10 @@ private fun HistoryList(
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    ThreadSourceIcon(
+                        source = sources[entry.address.board.site] ?: ThreadSourceUi(entry.address.board.site.value),
+                        current = false,
+                    )
                     Text(
                         entry.subject?.takeIf(String::isNotBlank) ?: "Тред №${entry.threadId}",
                         Modifier.weight(1f),

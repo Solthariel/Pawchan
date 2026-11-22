@@ -4,8 +4,14 @@ package com.solthariel.pawchan.thread
 internal fun threadWriteAction(
     state: ThreadUiState,
     onReply: (ThreadReplyRequest) -> Unit,
+): (() -> Unit)? = threadWriteAction(state, onReply, true)
+
+internal fun threadWriteAction(
+    state: ThreadUiState,
+    onReply: (ThreadReplyRequest) -> Unit,
+    repliesEnabled: Boolean,
 ): (() -> Unit)? =
-    if (state is ThreadUiState.Content && !state.closed) {
+    if (repliesEnabled && state is ThreadUiState.Content && !state.closed) {
         { onReply(ThreadReplyRequest(closed = false, insertion = null)) }
     } else {
         null

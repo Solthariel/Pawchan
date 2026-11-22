@@ -50,6 +50,25 @@ class WorkspaceTest {
         assertEquals(1, read.replies.size)
     }
 
+    @Test fun readingOneReplyKeepsOtherRepliesAndOtherThreadsUnread() {
+        val own = post(101)
+        val first = post(102, PostLink.Reference(own.address.post))
+        val second = post(103, PostLink.Reference(own.address.post))
+        val otherThread = address.copy(thread = requireNotNull(ThreadId.parse(200)))
+        val other = BoardPost(PostAddress(otherThread, requireNotNull(PostId.parse(201))), second.content, emptyList())
+        val state =
+            WorkspaceState()
+                .storePost(own, "title", own = true)
+                .observe(snapshot(own, first, second))
+                .copy(replies = listOf(StoredReply(first, null), StoredReply(second, null), StoredReply(other, null)))
+        val visited = state.visit(snapshot(own, first, second))
+        assertTrue(visited.replies.all { it.unread })
+        val result = visited.markRead(setOf(first.address))
+        assertFalse(result.replies.first { it.post.address == first.address }.unread)
+        assertTrue(result.replies.first { it.post.address == second.address }.unread)
+        assertTrue(result.replies.first { it.post.address == other.address }.unread)
+    }
+
     @Test fun explicitDifferentThreadReferenceDoesNotCountAsReply() {
         val own = post(101)
         val other = address.copy(thread = requireNotNull(ThreadId.parse(200)))
@@ -82,7 +101,7 @@ class WorkspaceTest {
         )
     }
 
-    @Test fun visitReadsRepliesAndRemembersLastPost() {
+    @Test fun visitKeepsRepliesUnreadAndRemembersLastPost() {
         val own = post(101)
         val reply = post(102, PostLink.Reference(own.address.post))
         val visited =
@@ -90,7 +109,7 @@ class WorkspaceTest {
                 .storePost(own, "title", own = true)
                 .observe(snapshot(own, reply))
                 .visit(snapshot(own, reply))
-        assertFalse(visited.replies.single().unread)
+        assertTrue(visited.replies.single().unread)
         assertEquals(102L, visited.marks.seen[address])
     }
 

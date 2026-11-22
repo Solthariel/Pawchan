@@ -1,5 +1,7 @@
 package com.solthariel.pawchan.composer
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,16 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,11 +35,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.uiOptionColors
 import com.solthariel.pawchan.feature.composer.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AttachmentOptionTile(
     state: AttachmentTileState,
@@ -54,41 +48,41 @@ internal fun AttachmentOptionTile(
     val description = stringResource(state.label)
     val status = stringResource(if (state.checked) R.string.composer_option_on else R.string.composer_option_off)
     val tone = uiOptionColors(state.checked, state.enabled)
-    val foreground = tone.foreground
+    val foreground by animateColorAsState(
+        tone.foreground,
+        tween(TILE_TRANSITION_MS),
+        label = "attachment-control-color",
+    )
     val interactionSource = remember { MutableInteractionSource() }
-    // Keep Row parent data on the direct child, outside TooltipBox's internal wrapper.
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        TooltipBox(
-            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text(description) } },
-            state = rememberTooltipState(),
+    // Apply the caller's weight to the direct Column child of the row.
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .attachmentTileInteraction(state, interactionSource, onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = description
+                if (!state.action || state.checked || state.label == R.string.attachment_rename) {
+                    stateDescription = status
+                }
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(EDITOR_CONTROL_HEIGHT),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .attachmentTileInteraction(state, interactionSource, onClick)
-                    .semantics {
-                        contentDescription = description
-                        stateDescription = status
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                AttachmentOptionIcon(state, icon, foreground, interactionSource)
-            }
+            AttachmentOptionIcon(state, icon, foreground, interactionSource)
         }
         Text(
             text = stringResource(attachmentTileCaption(state.label)),
             modifier = Modifier.fillMaxWidth(),
-            color = tone.caption,
+            color = LocalContentColor.current.copy(alpha = if (state.enabled) 1f else 0.55f),
             style = MaterialTheme.typography.labelSmall,
-            autoSize = TextAutoSize.StepBased(minFontSize = 7.sp, maxFontSize = 9.sp, stepSize = 0.5.sp),
-            lineHeight = 11.sp,
-            letterSpacing = 0.sp,
             textAlign = TextAlign.Center,
-            minLines = 2,
-            maxLines = 2,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
     }
 }
@@ -110,7 +104,7 @@ private fun AttachmentOptionIcon(
             .background(tone.background)
             .border(
                 1.dp,
-                tone.foreground,
+                foreground,
                 RoundedCornerShape(10.dp),
             )
             // Keep press/focus feedback inside the fixed tile, not the wider touch target.
@@ -172,8 +166,12 @@ internal fun attachmentTileIcon(
             R.drawable.ic_attachment_option_reencode
         }
 
+        R.string.attachment_edit_image -> {
+            R.drawable.ic_attachment_edit_image
+        }
+
         else -> {
-            R.drawable.ic_attachment_option_name
+            EDITOR_TILE_ICONS[label] ?: R.drawable.ic_attachment_option_name
         }
     }
 
@@ -184,5 +182,21 @@ private fun attachmentTileCaption(label: Int): Int =
         R.string.attachment_remove_name -> R.string.attachment_no_name_short
         R.string.markup_spoiler -> R.string.attachment_spoiler_short
         R.string.attachment_reencode -> R.string.attachment_reencode_short
-        else -> R.string.attachment_name_short
+        R.string.attachment_edit_image -> R.string.attachment_edit_image
+        R.string.attachment_rename -> R.string.attachment_name_short
+        R.string.editor_back -> R.string.editor_back_short
+        else -> label
     }
+
+private const val TILE_TRANSITION_MS = 160
+
+private val EDITOR_TILE_ICONS =
+    mapOf(
+        R.string.editor_back to R.drawable.ic_editor_back,
+        R.string.editor_crop to R.drawable.ic_editor_crop,
+        R.string.editor_rotate to R.drawable.ic_editor_rotate,
+        R.string.editor_flip to R.drawable.ic_editor_flip,
+        R.string.editor_draw to R.drawable.ic_editor_draw,
+        R.string.editor_redact to R.drawable.ic_editor_redact,
+        R.string.editor_compare to R.drawable.ic_editor_compare,
+    )

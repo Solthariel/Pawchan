@@ -12,6 +12,9 @@ interface ThreadHistoryRepository {
 
     suspend fun save(snapshot: ThreadSnapshot)
 
+    suspend fun mergeAndSave(incoming: ThreadSnapshot): ThreadSnapshot =
+        mergeThreadHistory(load(incoming.address), incoming).also { save(it) }
+
     suspend fun erase(address: ThreadAddress)
 }
 

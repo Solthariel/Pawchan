@@ -25,6 +25,35 @@ public final class PublishedInputTest {
             assertEquals(-2, (int) result.get(1, TimeUnit.SECONDS));
         } finally { thread.shutdownNow(); file.delete(); }
     }
+    @Test public void seekCancellationWakesReadAndCanBeAcknowledged() throws Exception {
+        File file = File.createTempFile("paw-seek", ".bin");
+        Files.write(file.toPath(), new byte[]{7,8,9,10});
+        CountDownLatch waiting = new CountDownLatch(1);
+        AtomicInteger resumed = new AtomicInteger();
+        ExecutorService thread = Executors.newSingleThreadExecutor();
+        try (PublishedInput input = new PublishedInput(waiting::countDown, resumed::incrementAndGet)) {
+            input.open(file, callback()); input.publish(2, 4);
+            Future<Integer> read = thread.submit(() -> input.read(2, new byte[2], 2));
+            assertTrue(waiting.await(1, TimeUnit.SECONDS));
+            input.setReadCancelled(true);
+            assertEquals(-3, (int) read.get(1, TimeUnit.SECONDS));
+            assertEquals(1, resumed.get()); assertFalse(input.getInterrupted());
+            assertEquals(-3, input.read(0, new byte[2], 2));
+            input.setReadCancelled(false);
+            byte[] available = new byte[2];
+            assertEquals(2, input.read(0, available, 2));
+            assertArrayEquals(new byte[]{7,8}, available);
+        } finally { thread.shutdownNow(); file.delete(); }
+    }
+    @Test public void seekCancellationCannotUndoPermanentInterrupt() throws Exception {
+        File file = File.createTempFile("paw-seek-close", ".bin");
+        try (PublishedInput input = new PublishedInput(() -> {}, () -> {})) {
+            input.open(file, callback());
+            input.setReadCancelled(true); input.interrupt(); input.setReadCancelled(false);
+            assertEquals(-2, input.read(0, new byte[1], 1));
+            assertTrue(input.getInterrupted());
+        } finally { file.delete(); }
+    }
     @Test public void publishedBytesResumeWithoutFalseEof() throws Exception {
         File file = File.createTempFile("paw-input", ".bin"); Files.write(file.toPath(), new byte[]{7,8,9});
         CountDownLatch waiting = new CountDownLatch(1); AtomicInteger resumed = new AtomicInteger();
@@ -58,7 +87,7 @@ public final class PublishedInputTest {
             assertTrue(input.complete());
         } finally { file.delete(); }
     }
-    private static PawPlayback.RangeCallback callback() {
-        return new PawPlayback.RangeCallback() { public void onReadReady() {} public void requestPartFromPosition(long offset) {} };
+    private static ProgressiveReadCallback callback() {
+        return new ProgressiveReadCallback() { public void onReadReady() {} public void requestPartFromPosition(long offset) {} };
     }
 }

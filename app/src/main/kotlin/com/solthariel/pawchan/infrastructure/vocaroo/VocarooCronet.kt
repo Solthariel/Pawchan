@@ -3,21 +3,13 @@ package com.solthariel.pawchan.infrastructure.vocaroo
 import android.content.Context
 import android.util.Log
 import com.google.android.gms.net.CronetProviderInstaller
-import com.solthariel.pawchan.thread.vocaroo.VocarooHttpException
 import com.solthariel.pawchan.thread.vocaroo.VocarooRequest
 import com.solthariel.pawchan.thread.vocaroo.VocarooTransport
-import com.solthariel.pawchan.thread.vocaroo.copyVocarooBody
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.job
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.chromium.net.CronetEngine
 import org.chromium.net.CronetProvider
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -33,11 +25,13 @@ internal class VocarooCronet(
     @Volatile
     private var current: CronetEngine? = null
     private val started = AtomicBoolean(false)
+    private val lifecycleLock = Any()
+    private var closed = false
 
     /** Ждёт установки провайдера не дольше [waitMillis]; null — Cronet недоступен. */
     suspend fun ready(waitMillis: Long): Boolean {
         start()
-        return withTimeoutOrNull(waitMillis) { engine.await() } != null
+        return withTimeoutOrNull(waitMillis) { engine.await() } != null && current != null
     }
 
     override suspend fun download(
@@ -48,34 +42,38 @@ internal class VocarooCronet(
         val cronet = current ?: throw java.io.IOException("Cronet unavailable")
         val label = "record=${request.id} attempt=${request.attempt} cronet"
         val started = System.nanoTime()
-        withContext(Dispatchers.IO) {
-            val connection = cronet.openConnection(URL(request.url)) as HttpURLConnection
-            val cancel = currentCoroutineContext().job.invokeOnCompletion { connection.disconnect() }
-            try {
-                Log.i(TAG, "$label start ${request.url}")
-                connection.setRequestProperty("User-Agent", CRONET_USER_AGENT)
-                val code = connection.responseCode
-                Log.i(TAG, "$label http $code after ${elapsedMillis(started)}ms")
-                if (code !in HttpURLConnection.HTTP_OK until HttpURLConnection.HTTP_MULT_CHOICE) {
-                    throw VocarooHttpException(code)
-                }
-                val total = connection.contentLengthLong
-                connection.inputStream.use { copyVocarooBody(it, total, target, onProgress) }
-                Log.i(TAG, "$label body ${target.length()}B, total ${elapsedMillis(started)}ms")
-            } catch (failure: java.io.IOException) {
-                val reason = "${failure.javaClass.simpleName}: ${failure.message}"
-                Log.w(TAG, "$label failed after ${elapsedMillis(started)}ms: $reason")
-                throw failure
-            } finally {
-                cancel.dispose()
-                connection.disconnect()
-            }
+        Log.i(TAG, "$label start ${request.url}")
+        try {
+            downloadWithCronet(
+                target = target,
+                onProgress = onProgress,
+                createRequest = { callback, executor ->
+                    cronet
+                        .newUrlRequestBuilder(request.url, callback, executor)
+                        .addHeader("User-Agent", CRONET_USER_AGENT)
+                        .build()
+                },
+            )
+            Log.i(TAG, "$label body ${target.length()}B, total ${elapsedMillis(started)}ms")
+        } catch (failure: java.io.IOException) {
+            val reason = "${failure.javaClass.simpleName}: ${failure.message}"
+            Log.w(TAG, "$label failed after ${elapsedMillis(started)}ms: $reason")
+            throw failure
         }
     }
 
     /** Закрытие движка не должно ронять приложение, если запрос ещё не завершился. */
     fun close() {
-        val cronet = current ?: return
+        val retired =
+            synchronized(lifecycleLock) {
+                closed = true
+                engine.complete(null)
+                current.also { current = null }
+            }
+        retired?.let(::shutDown)
+    }
+
+    private fun shutDown(cronet: CronetEngine) {
         try {
             cronet.shutdown()
         } catch (_: IllegalStateException) {
@@ -84,7 +82,7 @@ internal class VocarooCronet(
     }
 
     private fun start() {
-        if (!started.compareAndSet(false, true)) return
+        if (synchronized(lifecycleLock) { closed } || !started.compareAndSet(false, true)) return
         CronetProviderInstaller.installProvider(context).addOnCompleteListener { task ->
             if (!task.isSuccessful) {
                 Log.i(TAG, "cronet provider unavailable: ${task.exception?.javaClass?.simpleName}")
@@ -92,8 +90,18 @@ internal class VocarooCronet(
                 return@addOnCompleteListener
             }
             Thread({
-                current = build()
-                engine.complete(current)
+                val created = build()
+                val retained =
+                    synchronized(lifecycleLock) {
+                        if (closed) {
+                            false
+                        } else {
+                            current = created
+                            engine.complete(created)
+                            true
+                        }
+                    }
+                if (!retained && created != null) shutDown(created)
             }, "vocaroo-cronet").start()
         }
     }

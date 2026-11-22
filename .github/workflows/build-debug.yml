@@ -1,0 +1,94 @@
+name: Build debug APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pawchan-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Source checks and Android build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python tests (tooling and publishing)
+        run: |
+          python3 -m unittest discover -s scripts/tests
+          python3 -m unittest discover -s update/publishing/tests
+          python3 -m unittest discover -s update/publishing/tools/tests
+
+      - name: Set up Java 25
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache-jdk: false
+
+      - name: Accept Android SDK licenses
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --licenses > /dev/null
+          result=${PIPESTATUS[1]}
+          set -o pipefail
+          exit "$result"
+
+      - name: Install required SDK, NDK and CMake
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" --list > "$RUNNER_TEMP/sdk-packages.txt"
+          platform="platforms;android-37"
+          if ! awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); if ($1=="platforms;android-37") found=1} END {exit !found}' "$RUNNER_TEMP/sdk-packages.txt"; then
+            platform="platforms;android-37.0"
+          fi
+          "$sdkmanager" \
+            "platform-tools" \
+            "$platform" \
+            "build-tools;37.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+
+      - name: Rebuild the ARM64 JNI bridge from the bundled source
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/29.0.14206865"
+          bash scripts/rebuild-debug-jni.sh
+
+      - name: Compile, run unit tests and produce the debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :domain:test :data:network:test :data:drafts:test testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :feature:thread:assembleDebugAndroidTest --stacktrace
+
+      - name: Verify debug package and signature
+        run: |
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          test -s "$apk"
+          "$tools/apksigner" verify --verbose "$apk"
+          "$tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/pawchan-badging.txt"
+          grep -q "^package: name='com.solthariel.pawchan.debug'" "$RUNNER_TEMP/pawchan-badging.txt"
+          grep -q '^application-debuggable' "$RUNNER_TEMP/pawchan-badging.txt"
+          mkdir -p dist/debug
+          cp "$apk" dist/debug/app-debug.apk
+          (cd dist/debug && sha256sum app-debug.apk > app-debug.apk.sha256)
+
+      - name: Upload debug APK (not a release)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Pawchan-debug-arm64-${{ github.run_number }}
+          path: dist/debug/
+          if-no-files-found: error
+          retention-days: 14

@@ -12,6 +12,12 @@ fun interface MediaSaveQueue {
     /** Holds a selected tree while documents are being created and enqueued. */
     fun useDirectory(directory: Uri): AutoCloseable = AutoCloseable {}
 
+    /** A non-null result means this queue publishes a fresh document only after download. */
+    fun enqueueInFolder(
+        attachment: MediaAttachmentUi,
+        tree: Uri,
+    ): Boolean? = null
+
     fun enqueue(
         attachment: MediaAttachmentUi,
         destination: Uri,

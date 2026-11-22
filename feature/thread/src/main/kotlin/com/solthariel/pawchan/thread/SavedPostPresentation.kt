@@ -2,6 +2,7 @@ package com.solthariel.pawchan.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.PostAddress
 import com.solthariel.pawchan.domain.model.PostId
@@ -28,6 +29,7 @@ class SavedPostPresentation private constructor(
         media: ThreadAttachmentActions,
         interactions: SavedPostInteractions,
     ) {
+        val defaults = LocalPostDisplayPreferences.current
         CompositionLocalProvider(LocalPostPreview provides interactions.onReference) {
             ThreadPostCard(
                 post,
@@ -39,6 +41,7 @@ class SavedPostPresentation private constructor(
                     )
                 },
                 ThreadPostOptions(
+                    appearance = ThreadAppearance(defaults.textSize, defaults.collapseLines),
                     replyLabel = replyLabel,
                     interactions =
                         ThreadPostInteractions(
@@ -56,7 +59,9 @@ class SavedPostPresentation private constructor(
         bindings: PostPreviewBindings,
         resources: PostPreviewResources,
     ) {
-        PostPreviewDialog(target, content, ThreadAppearance(), bindings, resources)
+        val defaults = LocalPostDisplayPreferences.current
+        val appearance = ThreadAppearance(defaults.textSize, defaults.collapseLines)
+        PostPreviewDialog(target, content, appearance, bindings, resources)
     }
 
     @Composable

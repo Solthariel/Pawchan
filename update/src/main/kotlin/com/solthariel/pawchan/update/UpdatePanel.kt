@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 public fun UpdatePanel(
     controller: UpdatePanelController,
     modifier: Modifier = Modifier,
+    showInstalledVersion: Boolean = true,
 ) {
     val context = LocalContext.current
     val updateViewModel = controller.model
@@ -37,6 +38,7 @@ public fun UpdatePanel(
         UpdateVersionSummary(
             installedVersion = configuration.currentVersionName,
             availableVersion = state.availableVersionName(),
+            showInstalledVersion = showInstalledVersion,
         )
         UpdateStatus(
             state = state,

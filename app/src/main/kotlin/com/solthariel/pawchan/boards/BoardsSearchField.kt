@@ -28,11 +28,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.catalog.CatalogIconButton
-import com.solthariel.pawchan.catalog.CatalogRefreshButton
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
@@ -45,6 +46,7 @@ import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 internal fun BoardsSearchField(
     state: BoardsSearchBarState,
     actions: BoardsSearchBarActions,
+    favoritesOnly: Boolean,
 ) {
     var overflow by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
@@ -69,8 +71,8 @@ internal fun BoardsSearchField(
         ) {
             CatalogIconButton(UiIconKind.BACK, stringResource(R.string.board_dialog_close), onClick = close)
             BoardsSearchInput(state, actions)
-            CatalogRefreshButton(state.refreshing, actions.refresh, enabled = !state.refreshing)
-            Box {
+            BoardsFavoritesFilter(favoritesOnly, actions.toggleFavorites)
+            Box(Modifier.testTag("boards-overflow")) {
                 CatalogIconButton(
                     UiIconKind.MORE,
                     "Меню досок",
@@ -93,7 +95,7 @@ private fun androidx.compose.foundation.layout.RowScope.BoardsSearchInput(
     actions: BoardsSearchBarActions,
 ) {
     com.solthariel.pawchan.core.ui.UiToolbarSearchLayout(
-        Modifier.weight(1f).padding(horizontal = 4.dp),
+        Modifier.weight(1f).padding(horizontal = 4.dp).testTag("boards-search-surface"),
         if (state.query.isNotEmpty()) ({ actions.change("") }) else null,
         stringResource(R.string.clear_search),
     ) {
@@ -106,10 +108,11 @@ private fun androidx.compose.foundation.layout.RowScope.BoardsSearchTextField(
     state: BoardsSearchBarState,
     actions: BoardsSearchBarActions,
 ) {
+    val description = stringResource(R.string.boards_address_hint)
     BasicTextField(
         value = state.query,
         onValueChange = actions.change,
-        modifier = Modifier.weight(1f).testTag("boards-search"),
+        modifier = Modifier.weight(1f).testTag("boards-search").semantics { contentDescription = description },
         singleLine = true,
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -126,6 +129,8 @@ private fun androidx.compose.foundation.layout.RowScope.BoardsSearchTextField(
                     stringResource(R.string.boards_address_hint),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
             inner()

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,18 +23,26 @@ fun MediaCaption(
     dimensions: String?,
     modifier: Modifier = Modifier,
 ) {
+    val captionStyle =
+        TextStyle(
+            color = Color.White,
+            fontSize = 8.sp,
+            lineHeight = 9.sp,
+            fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight,
+        )
     Row(
         modifier
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = CAPTION_ALPHA))
-            .padding(horizontal = 3.dp, vertical = 2.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(
             text = typeAndSize,
             modifier = Modifier.weight(1f),
-            style = CAPTION_STYLE,
+            style = captionStyle,
             maxLines = 1,
             softWrap = false,
             autoSize = CAPTION_AUTO_SIZE,
@@ -42,7 +51,7 @@ fun MediaCaption(
             BasicText(
                 text = dimensions,
                 modifier = Modifier.weight(1f),
-                style = CAPTION_STYLE.copy(textAlign = TextAlign.End),
+                style = captionStyle.copy(textAlign = TextAlign.End),
                 maxLines = 1,
                 softWrap = false,
                 autoSize = CAPTION_AUTO_SIZE,
@@ -52,5 +61,4 @@ fun MediaCaption(
 }
 
 private const val CAPTION_ALPHA = 0.68f
-private val CAPTION_STYLE = TextStyle(color = Color.White, fontSize = 8.sp, lineHeight = 9.sp)
 private val CAPTION_AUTO_SIZE = TextAutoSize.StepBased(minFontSize = 5.sp, maxFontSize = 8.sp, stepSize = 0.25.sp)

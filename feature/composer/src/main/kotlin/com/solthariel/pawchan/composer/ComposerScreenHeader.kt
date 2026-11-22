@@ -24,8 +24,8 @@ internal fun ComposerScreenHeader(
     state: ComposerScreenState,
     enabled: Boolean,
     onClose: () -> Unit,
-    onAttach: () -> Unit,
     onChange: (ComposerDraftState) -> Unit,
+    fields: ComposerFieldsAccess? = null,
 ) {
     Row(
         Modifier
@@ -43,7 +43,7 @@ internal fun ComposerScreenHeader(
             style = MaterialTheme.typography.titleLarge,
         )
         ComposerHeaderOptions(state, enabled, onChange)
-        if (canAttachComposerMedia(state.draft, state.rules)) ComposerAttachButton(onAttach)
+        fields?.let { ComposerFieldsButton(it, enabled && !state.draft.inputBlocked) }
     }
 }
 
@@ -54,5 +54,5 @@ private fun ComposerHeaderOptions(
     onChange: (ComposerDraftState) -> Unit,
 ) {
     ComposerIconSelector(state.draft, state.rules, enabled, onChange, compact = true)
-    ComposerPostingOptions(state.draft, state.rules, enabled && !state.draft.filesLoading, onChange)
+    ComposerPostingOptions(state.draft, state.rules, enabled && !state.draft.inputBlocked, onChange)
 }

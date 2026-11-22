@@ -17,18 +17,8 @@ try {
         }
     }
     $updateManifestUrl = [Environment]::GetEnvironmentVariable("PAWCHAN_UPDATE_MANIFEST_URL")
-    $parsedUpdateManifestUrl = $null
-    if (
-        -not [Uri]::TryCreate(
-            $updateManifestUrl,
-            [UriKind]::Absolute,
-            [ref] $parsedUpdateManifestUrl
-        ) -or
-        $parsedUpdateManifestUrl.Scheme -ne "https" -or
-        [string]::IsNullOrWhiteSpace($parsedUpdateManifestUrl.Host)
-    ) {
-        throw "RELEASE PACKAGE: PAWCHAN_UPDATE_MANIFEST_URL must be an absolute HTTPS URL"
-    }
+    & python scripts/validate_update_url.py $updateManifestUrl
+    if ($LASTEXITCODE -ne 0) { throw "Invalid update manifest URL" }
 
     & ".\scripts\local-check.ps1"
     if ($LASTEXITCODE -ne 0) {

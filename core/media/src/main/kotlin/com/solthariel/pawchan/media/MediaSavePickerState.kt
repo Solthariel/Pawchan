@@ -15,6 +15,8 @@ internal class MediaSavePickerState(
     private val context: Context,
     private val scope: CoroutineScope,
 ) {
+    var noticeVersion by mutableStateOf(0L)
+        private set
     var status by mutableStateOf<MediaSaveStatus>(MediaSaveStatus.Idle)
     var needsDirectory by mutableStateOf(false)
         private set
@@ -29,7 +31,12 @@ internal class MediaSavePickerState(
         pending = emptyList()
         if (uri == null) return
         scope.launch {
-            if (queue.selectDirectory(uri)) requestAll(files) else status = MediaSaveStatus.Failed
+            if (queue.selectDirectory(uri)) {
+                requestAll(files)
+            } else {
+                status = MediaSaveStatus.Failed
+                noticeVersion++
+            }
         }
     }
 
@@ -56,6 +63,7 @@ internal class MediaSavePickerState(
                 } catch (_: IllegalArgumentException) {
                     MediaSaveStatus.Failed
                 }
+            noticeVersion++
         }
     }
 }

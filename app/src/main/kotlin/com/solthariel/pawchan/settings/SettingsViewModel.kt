@@ -139,8 +139,8 @@ internal fun AppSettings.toPostDisplay(): PostDisplayPreferences =
     PostDisplayPreferences(
         zone = ZoneId.systemDefault(),
         showStateMarkers = postMarkers,
-        bubblePosts = bubblePosts,
         hideStickers = hideStickers,
+        hideMonkeyReplies = hideMonkeyReplies,
         showDefaultName = showDefaultName,
         textSize = textSize,
         collapseLines = collapseLines,

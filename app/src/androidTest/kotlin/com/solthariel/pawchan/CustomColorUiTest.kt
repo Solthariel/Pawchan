@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -35,6 +36,38 @@ class CustomColorUiTest {
     private val state = mutableStateOf(SettingsUiState(theme = ThemePreference.AMOLED))
     private var background: Color? = null
     private var accent: Color? = null
+
+    @Test fun lavenderPrefillsRgbWithoutChangingSelectedPalette() {
+        val lavender = ThemeColors(palette = ThemePalette.LAVENDER)
+        state.value = state.value.copy(themeColors = lavender)
+        showSettings()
+        openCustom()
+        assertSeed("#6750A4", 103f, 80f, 164f)
+        compose.onNodeWithText("Отмена").performClick()
+        compose.runOnIdle { assertEquals(lavender, state.value.themeColors) }
+    }
+
+    @Test fun peachPrefillsRgbInsteadOfThePreviouslySavedCustomSeed() {
+        state.value = state.value.copy(themeColors = ThemeColors(customSeed = CUSTOM_RGB))
+        showSettings()
+        compose.onNodeWithText("Цветовая палитра").performClick()
+        compose.onNodeWithText("Персиковая").performScrollTo().performClick()
+        openCustom()
+        assertSeed("#B85C26", 184f, 92f, 38f)
+        compose.onNodeWithText("Отмена").performClick()
+        compose.runOnIdle {
+            assertEquals(ThemePalette.PEACH, state.value.themeColors.palette)
+            assertEquals(CUSTOM_RGB, state.value.themeColors.customSeed)
+        }
+    }
+
+    @Test fun savedCustomSeedReopensWithoutBeingReplacedByPreset() {
+        state.value =
+            state.value.copy(themeColors = ThemeColors(palette = ThemePalette.CUSTOM, customSeed = CUSTOM_RGB))
+        showSettings()
+        openCustom()
+        assertSeed("#23A080", 35f, 160f, 128f)
+    }
 
     @Test fun applyCustomColorChangesAccentAndKeepsAmoled() {
         showSettings()
@@ -98,6 +131,21 @@ class CustomColorUiTest {
             SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("#23A080")),
         )
         compose.runOnIdle { assertEquals(ThemeColors(), state.value.themeColors) }
+    }
+
+    private fun assertSeed(
+        hex: String,
+        red: Float,
+        green: Float,
+        blue: Float,
+    ) {
+        compose.onNodeWithText("Цвет HEX").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString(hex)),
+        )
+        listOf("Красный" to red, "Зелёный" to green, "Синий" to blue).forEach { (label, expected) ->
+            val node = compose.onNodeWithContentDescription(label).performScrollTo().fetchSemanticsNode()
+            assertEquals(expected, node.config[SemanticsProperties.ProgressBarRangeInfo].current, 0f)
+        }
     }
 
     private fun showSettings(restoration: StateRestorationTester? = null) {

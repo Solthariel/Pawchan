@@ -80,6 +80,10 @@ internal class ImageViewerMotion(
         chrome.visible = !chrome.visible
     }
 
+    fun setControlsVisible(visible: Boolean) {
+        if (!dismissing) chrome.visible = visible
+    }
+
     fun doubleTap(position: Offset) {
         if (dismissing) return
         stop()

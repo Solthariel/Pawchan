@@ -12,9 +12,12 @@ import com.solthariel.pawchan.domain.model.PostMetadata
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadFlags
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
+import com.solthariel.pawchan.thread.PostPreviewState
 import com.solthariel.pawchan.thread.PostPreviewTarget
 import com.solthariel.pawchan.thread.PostPreviewViewModel
+import com.solthariel.pawchan.thread.ThreadToolsState
 import com.solthariel.pawchan.thread.ThreadUiState
+import com.solthariel.pawchan.thread.postPreviewIsMissing
 import com.solthariel.pawchan.thread.toThreadUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -187,6 +190,64 @@ class PostPreviewBoundaryTest {
                 Dispatchers.resetMain()
             }
         }
+
+    @Test
+    fun missingLocalPostShowsNoticeWithoutOpeningPreview() =
+        runTest {
+            val address = defaultThreadAddress(42)
+            val local = DomainOutcome.Success(snapshot(address)).toThreadUiState() as ThreadUiState.Content
+            val tools = ThreadToolsState(this)
+            tools.openPostPreview(PostPreviewTarget(address, 99), local)
+            assertEquals("Сообщение не найдено", tools.notice)
+            assertTrue(tools.previews.isEmpty())
+            tools.openPostPreview(PostPreviewTarget(address, 44), local)
+            assertEquals(listOf(PostPreviewTarget(address, 44)), tools.previews)
+        }
+
+    @Test
+    fun unknownForeignPostStillOpensPreviewToLoadItsThread() =
+        runTest {
+            val local =
+                DomainOutcome.Success(snapshot(defaultThreadAddress(42))).toThreadUiState() as ThreadUiState.Content
+            val other = defaultThreadAddress(43)
+            val tools = ThreadToolsState(this)
+            tools.openPostPreview(PostPreviewTarget(other, 99), local)
+            assertEquals(listOf(PostPreviewTarget(other, 99)), tools.previews)
+            assertEquals(null, tools.notice)
+        }
+
+    @Test
+    fun missingForeignPostIsReportedOnlyAfterSuccessfulLoad() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val owner = ViewModelStore()
+            try {
+                val address = defaultThreadAddress(42)
+                val repository = FakeThreadRepository(DomainOutcome.Success(snapshot(address)))
+                val factory = PostPreviewViewModel.factory(repository)
+                val model = ViewModelProvider(owner, factory)[PostPreviewViewModel::class.java]
+                val target = PostPreviewTarget(address, 99)
+                model.load(target, null)
+                val result = model.state.first { it.content != null || it.failure != null }
+                assertEquals(1, repository.requests)
+                assertTrue(postPreviewIsMissing(result, target))
+            } finally {
+                owner.clear()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun onlySuccessfullyLoadedMissingPostClosesPreview() {
+        val address = defaultThreadAddress(42)
+        val content = DomainOutcome.Success(snapshot(address)).toThreadUiState() as ThreadUiState.Content
+        val missing = PostPreviewState(content = content, posts = emptyList(), remote = true)
+        assertTrue(postPreviewIsMissing(missing, PostPreviewTarget(address, 99)))
+        assertTrue(!postPreviewIsMissing(PostPreviewState(), PostPreviewTarget(address, 99)))
+        assertTrue(!postPreviewIsMissing(missing.copy(failure = "Ошибка"), PostPreviewTarget(address, 99)))
+        assertTrue(!postPreviewIsMissing(missing, PostPreviewTarget(address, 99, replies = true)))
+        assertTrue(!postPreviewIsMissing(missing.copy(posts = content.posts), PostPreviewTarget(address, 44)))
+    }
 
     private fun snapshot(
         address: ThreadAddress,

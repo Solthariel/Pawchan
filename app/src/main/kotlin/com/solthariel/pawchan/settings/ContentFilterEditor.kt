@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
 import kotlinx.coroutines.delay
@@ -36,7 +37,6 @@ internal fun ContentFilterEditor(
     }
     val error = draft.inputError() ?: validation.errorFor(next)
     FilterEditorWindow(
-        draft = draft,
         onClose = onClose,
         onDelete = onDelete,
         confirm = {
@@ -52,7 +52,7 @@ internal fun ContentFilterEditor(
         FilterEditorFields(draft)
         ContentFilterProbe(next, samples, probeText) { probeText = it }
         if (error != null && !filterEmptyErrorIsInline(error, draft.text)) {
-            Text(error, color = MaterialTheme.colorScheme.error)
+            TransientNotice(error)
         }
     }
 }

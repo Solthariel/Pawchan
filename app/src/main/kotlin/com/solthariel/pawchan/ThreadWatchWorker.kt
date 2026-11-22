@@ -7,20 +7,25 @@ import com.solthariel.pawchan.data.database.RoomStorage
 import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.data.network.DvachHttpClient
 import com.solthariel.pawchan.data.network.DvachThreadApi
+import com.solthariel.pawchan.data.network.proxy.ScopedProxySelector
+import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
+import com.solthariel.pawchan.domain.proxy.ProxyService
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
+import com.solthariel.pawchan.domain.settings.AutomationPreferences
 import com.solthariel.pawchan.domain.thread.ThreadCheckPassRepository
 import com.solthariel.pawchan.domain.watch.CheckWatchedThread
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
-import com.solthariel.pawchan.infrastructure.dns.withArhivachDns
 import com.solthariel.pawchan.watch.BackgroundWatchRunResult
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
 import com.solthariel.pawchan.watch.ThreadWatchBackgroundRunner
 import com.solthariel.pawchan.watch.ThreadWatchEventSink
 import com.solthariel.pawchan.watch.ThreadWatchNotifier
 import com.solthariel.pawchan.workspace.checkWorkspaceReplies
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.io.File
+import java.io.IOException
 
 internal class ThreadWatchWorker(
     appContext: Context,
@@ -36,28 +41,34 @@ internal class ThreadWatchWorker(
         ) {
             return Result.success()
         }
-        val storage = RoomStorage.create(applicationContext)
-        val client =
-            DvachHttpClient
-                .create(AndroidCookieJar())
-                .newBuilder()
-                .addInterceptor(
-                    com.solthariel.pawchan.data.network
-                        .MirrorRoutingInterceptor(clientSettings.mirror),
-                ).apply {
-                    if (automation.wifiOnly) addNetworkInterceptor(BackgroundWifiInterceptor(applicationContext))
-                }.build()
-                .withArhivachDns(behavior.dns.arhivach)
-        return try {
-            val repository =
-                ThreadCheckPassRepository(
-                    com.solthariel.pawchan.domain.thread.MissingAwareThreadRepository(
-                        DvachThreadApi.create(client),
-                        com.solthariel.pawchan.data.drafts.FileThreadDeletionStore(
-                            File(applicationContext.filesDir, "missing-threads"),
-                        ),
-                    ),
+        return runBackgroundWatch(clientSettings.mirror, automation)
+    }
+
+    private suspend fun runBackgroundWatch(
+        mirror: String,
+        automation: AutomationPreferences,
+    ): Result {
+        val router =
+            try {
+                workerProxyRoutes(
+                    preferences,
+                    mirror,
+                    setOf(ProxyService.DVACH, ProxyService.FOUR_CHAN),
                 )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: IOException) {
+                return Result.retry()
+            }
+        val storage = RoomStorage.create(applicationContext)
+        val client = watchClient(mirror, automation.wifiOnly, router)
+        val secondary =
+            com.solthariel.pawchan.data.network.FourChanReadApi.create(
+                if (automation.wifiOnly) BackgroundWifiInterceptor(applicationContext) else null,
+                router = router,
+            )
+        return try {
+            val repository = ThreadCheckPassRepository(watchRepository(client, secondary))
             if (com.solthariel.pawchan.watch.runBackgroundChecks(
                     applicationContext,
                     repository,
@@ -72,10 +83,47 @@ internal class ThreadWatchWorker(
                 Result.retry()
             }
         } finally {
+            secondary.close()
             storage.close()
             client.dispatcher.executorService.shutdown()
             client.connectionPool.evictAll()
             client.cache?.close()
         }
     }
+
+    private fun watchClient(
+        mirror: String,
+        wifiOnly: Boolean,
+        router: ScopedProxySelector,
+    ): okhttp3.OkHttpClient =
+        DvachHttpClient
+            .create(AndroidCookieJar().apply { selectOrigin(mirror) })
+            .newBuilder()
+            .viaProxyRouter(router)
+            .addInterceptor(
+                com.solthariel.pawchan.data.network
+                    .MirrorRoutingInterceptor(mirror, onRouteHost = router::registerMirror),
+            ).apply { if (wifiOnly) addNetworkInterceptor(BackgroundWifiInterceptor(applicationContext)) }
+            .build()
+
+    private fun watchRepository(
+        client: okhttp3.OkHttpClient,
+        secondary: com.solthariel.pawchan.data.network.FourChanReadApi,
+    ): com.solthariel.pawchan.domain.thread.ThreadRepository =
+        com.solthariel.pawchan.domain.thread.MissingAwareThreadRepository(
+            com.solthariel.pawchan.infrastructure.sites.SiteThreadRouter(
+                mapOf(
+                    requireNotNull(
+                        com.solthariel.pawchan.domain.model.SiteId
+                            .parse("dvach"),
+                    ) to DvachThreadApi.create(client),
+                    requireNotNull(
+                        com.solthariel.pawchan.domain.model.SiteId
+                            .parse("4chan"),
+                    ) to secondary,
+                ),
+            ),
+            com.solthariel.pawchan.data.drafts
+                .FileThreadDeletionStore(File(applicationContext.filesDir, "missing-threads")),
+        )
 }

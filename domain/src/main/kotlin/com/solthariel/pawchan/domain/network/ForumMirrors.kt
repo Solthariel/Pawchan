@@ -19,6 +19,8 @@ data class MirrorObservation(
     val checkedAtMillis: Long,
     /** Full HTTP probe duration through body validation; null when no response was received. */
     val responseTimeMillis: Long? = null,
+    val successfulSamples: Int? = null,
+    val totalSamples: Int? = null,
 )
 
 data class MirrorState(
@@ -26,6 +28,8 @@ data class MirrorState(
     val checking: Boolean = false,
     val observations: List<MirrorObservation> = emptyList(),
     val switchSerial: Long = 0L,
+    val manualChecking: Boolean = false,
+    val manualObservations: List<MirrorObservation> = emptyList(),
 )
 
 interface ForumMirrors {

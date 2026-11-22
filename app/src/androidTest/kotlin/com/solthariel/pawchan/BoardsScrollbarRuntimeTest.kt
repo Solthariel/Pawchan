@@ -46,8 +46,8 @@ class BoardsScrollbarRuntimeTest {
 
     private lateinit var state: LazyListState
     private lateinit var content: BoardsListUi
-    private var selectedBoard: BoardId? = null
-    private var favoriteBoard: BoardId? = null
+    private var selectedBoard: BoardAddress? = null
+    private var favoriteBoard: BoardAddress? = null
     private var favoriteValue = false
     private var collapsedCategory: String? = null
 
@@ -80,7 +80,7 @@ class BoardsScrollbarRuntimeTest {
     @Test
     fun largeFontUsesMatchingRowAndPrefixHeights() {
         showBoards(fontScale = 2f)
-        for (index in listOf(0, 10, 30, 60, content.rows.lastIndex)) {
+        for (index in content.rows.indices) {
             scrollTo(index)
             compose.runOnIdle {
                 for (item in state.layoutInfo.visibleItemsInfo) {
@@ -96,8 +96,8 @@ class BoardsScrollbarRuntimeTest {
         compose.onNodeWithText("Доска 0").performClick()
         compose.onNodeWithContentDescription("Добавить доску в избранное").performClick()
         compose.runOnIdle {
-            assertEquals("board0", selectedBoard?.value)
-            assertEquals("board0", favoriteBoard?.value)
+            assertEquals("board0", selectedBoard?.board?.value)
+            assertEquals("board0", favoriteBoard?.board?.value)
             assertTrue(favoriteValue)
         }
     }
@@ -131,7 +131,7 @@ class BoardsScrollbarRuntimeTest {
         val density = LocalDensity.current.density
         content =
             remember(source, dimensions, density, query) {
-                source.prepareBoardsList(query, "Избранное", dimensions, density)
+                source.prepareBoardsList(query, dimensions, density)
             }
         state = rememberLazyListState()
         AppNavigationWorkspace(
@@ -178,7 +178,7 @@ class BoardsScrollbarRuntimeTest {
         return BoardsUiState.Content(
             boards = boards,
             favoriteBoards = emptySet(),
-            boardSpeeds = boards.associate { it.address.board to it.postsPerHour },
+            boardSpeeds = boards.associate { it.address to it.postsPerHour },
             unavailableBoards = emptySet(),
             expandedCategories = setOf("Пользовательские"),
             isRefreshing = false,

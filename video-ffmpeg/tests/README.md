@@ -1,86 +1,36 @@
-# Проверки нового моста
+# Проверки видеоплеера
 
-1. Штатные Android unit tests:
-   `./gradlew :video-ffmpeg:testDebugUnitTest`
-2. `ProgressiveSourceHostTest.java`: отдельные host-интеграции с настоящим OkHttp
-   и локальным HTTP-сервером (206, игнорирование Range, 416 и отмена).
-3. `timeline_test.cpp`: монотонные часы, пауза, смена скорости, anchor.
-4. `host/display_test.cpp`: реальные swscale/RGBA с тестовым ANativeWindow.
-   Проверяет 0/90/180/270°, stride и сохранение кадра при новой поверхности.
-5. `host/NativeDecodeHostTest.java`: настоящие FFmpeg 8.1.3, JNI с -Xcheck:jni,
-   PublishedInput и decoder pump. Тестовые PcmOutput/ANativeWindow не являются
-   Android runtime и не подтверждают AudioTrack, MediaCodec или настоящий PiP.
-
-Host-набор собирается отдельным classpath: вместо production PcmOutput.java
-подставляется host/PcmOutput.java. Эти файлы не входят в Android sourceSets.
-Нужны JDK 17+, Android android.jar для типов, JUnit 4.13.2 / Hamcrest 1.3,
-OkHttp 5.1.0 / Okio и Kotlin stdlib. Для C++ нужны хостовые FFmpeg 8.1.3 shared
-libraries (avformat/avcodec/swresample/swscale/avutil), JNI headers и C++17.
-
-NativeDecodeHostTest получает абсолютные пути:
-`-Dpaw.hostLibrary=/absolute/path/libpawplayback.so`
-`-Dpaw.fixtures=/absolute/path/fixtures`.
-
-Fixtures: fast.mp4 (H.264/AAC, 96×64, 12 fps, 1.2 s, faststart), tail.mp4
-(та же запись с moov в конце), sample.webm (VP9/Opus), sample.mkv (FFV1/PCM),
-silent.mp4 (без аудио), rotated.mp4 (та же запись, display_rotation 90,
-UTF-8 title «Привет 🐾»). Матрица поворота проверяется ffprobe до запуска теста;
-одного тега rotate недостаточно в некоторых версиях FFmpeg CLI.
-
-## Chunked A/V interleave regression
-
-`host/InterleaveHostTest.java` exercises original problem files with real FFmpeg/JNI
-and an optional finite realtime PCM model in `host/PcmOutput.java`. It verifies
-continuous video progress, pause, paused preview, live seek and cancellation.
-The model is NOT AudioTrack/MediaCodec and is never packaged in the APK.
-
-Compile the host library with `frames.cpp` as well as the existing sources.
-Pass `-Dpaw.problemFiles=/absolute/first.mp4:/absolute/second.mp4` (the platform
-path separator) and run `org.junit.runner.JUnitCore
-com.solthariel.pawchan.ffmpeg.InterleaveHostTest` with `-Xcheck:jni`.
-Original problem files are external inputs, not repository fixtures or attachments.
-A video-progress gap above 300 ms fails this desktop regression; this is not a
-phone frame-time benchmark. The pre-fix engine must fail the same test.
-
-`frames_test.cpp` verifies bounded demux lookahead when audio ends before video,
-and clears prefetched packets/frames on seek. Generate its fixture with:
+Основной движок — mpv. Его Android-тесты находятся в `core/media/src/androidTest`:
+`MpvVideoEngineRuntimeTest`, `MpvSyntheticFixturesRuntimeTest`,
+`MpvSessionRestartRuntimeTest`, `MpvSurfaceHandoffRuntimeTest`,
+`MpvSurfaceReferencesRuntimeTest` и `VideoSessionReliabilityRuntimeTest`.
+Они требуют подключённого устройства arm64 на Android 11 или новее:
 
 ```sh
-ffmpeg -f lavfi -i testsrc2=size=96x64:rate=30:duration=80 \
-  -f lavfi -i sine=frequency=440:duration=0.5 \
-  -c:v libx264 -preset ultrafast -crf 25 -c:a aac short-audio.mp4
+./gradlew :core:media:connectedDebugAndroidTest
+./gradlew :video-ffmpeg:testDebugUnitTest
 ```
 
-Compile with `frames.cpp`, `decoder.cpp`, C++17 and host FFmpeg headers/libraries
-(avformat, avcodec, swresample, avutil). Run `frames_test /absolute/short-audio.mp4`.
-AddressSanitizer/UndefinedBehaviorSanitizer can be enabled on this standalone test.
+`ProgressiveSourceCleanupTest.kt` проверяет, что закрытие источника не ждёт
+зависший HTTP-поток, что живой writer не теряет файл раньше времени и что
+временный файл удаляется после остановки загрузчиков и освобождения native reader.
+`ProgressiveSourceHostTest.java` — дополнительные host-интеграции с OkHttp и
+локальным HTTP-сервером для прогрессивной загрузки. Старые host/JNI-тесты
+PawPlayback удалены вместе с их реализацией; они не проверяют mpv. Исполнение
+синтетических тестов описано в `MPV-SYNTHETIC-TESTS-RU.txt`.
+Телефонная проверка не заменяется JVM-тестами или одной лишь сборкой APK.
 
-## Decoder registry regression
+После изменения плеера на реальном arm64-устройстве проверьте:
 
-`decoder_registry_test.cpp` compiles the production `decoder.cpp` against test
-implementations of FFmpeg's registry/context API and the bundled FFmpeg headers.
-It verifies the five previously supported video codecs, encoder/wrapper/type
-filtering, forced software, missing hardware, failed hardware fallback, resource
-release, optional audio and timestamp behavior. It does not exercise real
-Android MediaCodec hardware. Example from the project root, with a C++17 compiler:
+- Быстрые переходы между соседними видео и возвращение назад; не должно быть
+  пауз из-за ожидания завершения старой HTTP-загрузки.
+- 20+ переключений между большими файлами: временные `neko-ffmpeg-*.media`
+  исчезают после закрытия mpv, память не растёт без ограничений.
+- Перемотка у верхнего/нижнего края 48dp строки, с Accessibility/TalkBack.
+- PiP → возврат в просмотрщик с сохранением позиции и звукового состояния.
+- Работа на устройстве с `ActivityManager.isLowRamDevice = true`: без
+  опережающей загрузки следующего видео.
+- Видео H.264 / HEVC / VP8, локальное и медленная/прерванная сеть;
+  проверить HW/SW переключение и метаданные после начала воспроизведения.
 
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
-  -Ivideo-ffmpeg/src/main/cpp \
-  -Ivideo-ffmpeg/native-prebuilt/external/ffmpeg/include/arm64-v8a \
-  video-ffmpeg/src/main/cpp/decoder.cpp video-ffmpeg/tests/decoder_registry_test.cpp \
-  -o decoder-registry-test
-./decoder-registry-test
-```
-
-`host/NativeDecodeHostTest.java` additionally verifies the decoder-name metadata
-field returned by the real native engine, alongside UTF-8 and display rotation.
-These host tests are separate from Gradle Android unit tests.
-
-
-## Инструмент пересборки зависимостей
-
-Его Kotlin/JVM-тесты находятся в `tools/native-build/src/test`. Команды,
-область проверки и отличие от реальной NDK-сборки описаны в
-[руководстве разработки](../../docs/DEVELOPMENT.md#пересборка-ffmpegdav1d-и-тесты-её-инструментов).
-Существующие проверки runtime-плеера выше не заменяются этим набором.
+Это протокол проверки, а не подтверждение её выполнения.

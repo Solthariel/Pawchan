@@ -41,8 +41,9 @@ private fun rememberArhivachState(
     controller: ArhivachController,
     address: ThreadAddress,
 ): ThreadExternalArchiveState {
-    LaunchedEffect(controller) { controller.refreshAvailability() }
+    val supported = controller.supports(address)
+    LaunchedEffect(controller, supported) { if (supported) controller.refreshAvailability() }
     val links = controller.links.collectAsStateWithLifecycle().value
     val available = controller.available.collectAsStateWithLifecycle().value
-    return ThreadExternalArchiveState(links[address], available)
+    return ThreadExternalArchiveState(links[address].takeIf { supported }, supported && available)
 }

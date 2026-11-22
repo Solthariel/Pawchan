@@ -13,6 +13,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.domain.settings.AppSettings
@@ -45,6 +48,11 @@ private fun CacheLimitSetting(
             )
         }
         Slider(
+            modifier =
+                Modifier.semantics {
+                    contentDescription = "Лимит кэша"
+                    stateDescription = formatByteSizeForUi(value.toLong() * BYTES_PER_MB)
+                },
             value = cacheSliderPosition(value),
             onValueChange = { value = cacheSliderSize(it) },
             onValueChangeFinished = { save(value) },

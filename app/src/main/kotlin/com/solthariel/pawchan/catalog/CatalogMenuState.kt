@@ -41,6 +41,7 @@ internal data class BoardMenuNavigation(
     val onArchive: () -> Unit,
     val onNewThread: () -> Unit,
     val onInformation: () -> Unit,
+    val onArhivach: (() -> Unit)? = null,
 )
 
 internal data class CatalogMenuBindings(
@@ -50,6 +51,9 @@ internal data class CatalogMenuBindings(
     val onDismiss: () -> Unit,
     val hiddenThreads: CatalogHiddenThreadsMenu? = null,
     val boardLookup: CatalogBoardLookupBindings? = null,
+    val capabilities: com.solthariel.pawchan.infrastructure.sites.ForumCapabilities =
+        com.solthariel.pawchan.infrastructure.sites
+            .ForumCapabilities(),
 )
 
 internal data class CatalogHiddenThreadsMenu(

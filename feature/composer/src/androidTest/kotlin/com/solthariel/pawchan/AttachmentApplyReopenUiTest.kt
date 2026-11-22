@@ -1,12 +1,15 @@
 package com.solthariel.pawchan
 
+import android.util.Base64
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,8 +27,9 @@ import org.junit.Test
 class AttachmentApplyReopenUiTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun editsPersistImmediatelyAndBackKeepsThemWhenReopened() {
-        val saved = mutableStateOf(ComposerAttachment(ReplyAttachment("test.jpg", "image/jpeg", byteArrayOf(-1, -40))))
+    @Test fun toolbarAndSystemBackApplyOptionsWithoutDoneOrDiscardPrompt() {
+        val bytes = Base64.decode(PREVIEW_PNG, Base64.DEFAULT)
+        val saved = mutableStateOf(ComposerAttachment(ReplyAttachment("test.png", "image/png", bytes)))
         val opened = mutableStateOf(true)
         compose.setContent {
             MaterialTheme {
@@ -45,31 +49,40 @@ class AttachmentApplyReopenUiTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).performClick()
+        awaitEditor()
+        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Удалить метаданные", useUnmergedTree = true).performClick()
-        compose.onNodeWithText("Применить").assertDoesNotExist()
         compose.onNodeWithContentDescription("Переименовать", useUnmergedTree = true).performClick()
-        compose.onNodeWithText("Переименовать").performTextReplacement("renamed")
-        Espresso.pressBack()
+        compose.onNodeWithText("Имя файла").performTextReplacement("renamed")
+        compose.onNodeWithText("Сохранить").assertDoesNotExist()
+        compose.onNodeWithText("Готово").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Назад").performClick()
+        compose.waitUntil(10_000) { !opened.value }
         compose.runOnIdle {
             assertTrue(saved.value.options.uniqueHash)
             assertTrue(saved.value.options.removeMetadata)
+            assertEquals("renamed", saved.value.options.customName)
         }
-        Espresso.pressBack()
         compose.onNodeWithText("Открыть вложение").performClick()
-        compose.onNodeWithContentDescription("Переименовать", useUnmergedTree = true).performClick()
-        compose.onNodeWithText("renamed").assertExists()
-        Espresso.pressBack()
+        awaitEditor()
         compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).assertIsOn()
         compose.onNodeWithContentDescription("Удалить метаданные", useUnmergedTree = true).assertIsOn()
         compose.onNodeWithContentDescription("Спойлер", useUnmergedTree = true).performClick()
         Espresso.pressBack()
-        compose.runOnIdle {
-            assertTrue(saved.value.options.spoiler)
-            assertEquals("renamed", saved.value.options.customName)
-        }
+        compose.waitUntil(10_000) { !opened.value }
+        compose.onNodeWithText("Отменить изменения?").assertDoesNotExist()
+        compose.runOnIdle { assertTrue(saved.value.options.spoiler) }
         compose.onNodeWithText("Открыть вложение").performClick()
+        awaitEditor()
         compose.onNodeWithContentDescription("Спойлер", useUnmergedTree = true).assertIsOn()
-        compose.onNodeWithContentDescription("Уникальный хеш", useUnmergedTree = true).assertIsOn()
+    }
+
+    private fun awaitEditor() {
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("Уникальный хеш", useUnmergedTree = true).fetchSemanticsNodes().size == 1
+        }
     }
 }
+
+private const val PREVIEW_PNG =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aHYsAAAAASUVORK5CYII="

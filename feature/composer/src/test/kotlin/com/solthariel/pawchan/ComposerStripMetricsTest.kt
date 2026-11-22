@@ -18,12 +18,12 @@ class ComposerStripMetricsTest {
     }
 
     @Test
-    fun fiveToEightFilesUseTwoRowsWithinTheSameOverallHeight() {
+    fun fiveToEightFilesKeepTheSameCellSizeInTwoRows() {
         val single = calculateComposerStripMetrics(4, 360f)
         for (count in 5..8) {
             val metrics = calculateComposerStripMetrics(count, 360f)
             assertEquals(2, metrics.rows)
-            assertEquals(single.totalHeight, metrics.totalHeight, 0f)
+            assertEquals(single.cellHeight, metrics.cellHeight, 0f)
             assertEquals(metrics.totalHeight, metrics.cellHeight * 2 + 6f, 0f)
         }
     }

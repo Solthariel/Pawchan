@@ -3,6 +3,7 @@ package com.solthariel.pawchan.composer
 import com.solthariel.pawchan.domain.drafts.ComposerDraftKey
 import com.solthariel.pawchan.domain.model.BoardPost
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.domain.posting.PostingOptions
 import com.solthariel.pawchan.domain.posting.PostingOutcome
 import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.posting.ReplyDraft
@@ -31,6 +32,7 @@ class ReplyComposerController internal constructor(
     private val rateLimit = ComposerRateLimit()
     private val submission = ComposerSubmissionGuard()
     private val persistent = drafts != null
+    private var automaticSageOnly = false
 
     private val uploadPreparation =
         ComposerUploadPreparation(
@@ -52,6 +54,8 @@ class ReplyComposerController internal constructor(
             drafts,
             ComposerDraftKey(address.board, address.thread),
             ComposerDraftSessionActions(
+                forStorage = { draft -> draft.forReplyStorage(automaticSageOnly) },
+                restored = { exists -> if (exists) automaticSageOnly = false },
                 read = { mutableState.value.draft },
                 write = {
                     mutableState.value = mutableState.value.copy(draft = it)
@@ -95,12 +99,18 @@ class ReplyComposerController internal constructor(
     fun open(
         threadClosed: Boolean,
         insertion: String? = null,
+        defaultSage: Boolean = false,
     ) {
         if (threadClosed) return
         if (!mutableState.value.visible) {
+            automaticSageOnly = defaultSage
             mutableState.value =
                 ReplyComposerState(
-                    draft = ComposerDraftState(resetId = mutableState.value.draft.resetId),
+                    draft =
+                        ComposerDraftState(
+                            resetId = mutableState.value.draft.resetId,
+                            options = PostingOptions(sage = defaultSage),
+                        ),
                     visible = true,
                     progress = ComposerProgressState(captchaLoading = true),
                 )
@@ -118,7 +128,7 @@ class ReplyComposerController internal constructor(
                 draftSession.awaitRestore()
                 val current = mutableState.value
                 val unchangedForm = current.visible && current.draft.resetId == resetId
-                val editable = !current.submitting && !current.progress.sent && !current.draft.filesLoading
+                val editable = !current.submitting && !current.progress.sent && !current.draft.inputBlocked
                 if (unchangedForm && editable) {
                     val draft =
                         appendReplyInsertion(
@@ -146,7 +156,9 @@ class ReplyComposerController internal constructor(
     fun close() {
         val current = mutableState.value
         if (!current.visible) return
-        val busy = current.submitting || (current.draft.filesLoading && !draftSession.restoring)
+        val busy =
+            current.submitting ||
+                (current.draft.inputBlocked && !draftSession.restoring && !draftSession.restoreFailed)
         if (persistent && busy) return
         job?.cancel()
         captchaSession.cancel()
@@ -164,11 +176,14 @@ class ReplyComposerController internal constructor(
 
     fun updateDraft(draft: ComposerDraftState) {
         val current = mutableState.value
-        val editable = !current.submitting && !current.progress.sent
-        if (current.visible && editable && draft.resetId == current.draft.resetId) {
+        val editable =
+            !current.submitting && !current.progress.sent &&
+                !current.draft.closing && !draftSession.restoreFailed
+        if (current.visible && editable && current.draft.acceptsChange(draft)) {
+            automaticSageOnly = false
             mutableState.value =
                 current.copy(
-                    draft = draft.copy(attachments = draft.attachments.toList()),
+                    draft = draft.committedEdit(),
                     failure =
                         rateLimit.activeFailure()
                             ?: submission.activeFailure()
@@ -181,7 +196,11 @@ class ReplyComposerController internal constructor(
 
     fun clearAll() {
         val current = mutableState.value
-        if (current.visible && !current.submitting && !current.progress.sent) {
+        val editable =
+            !current.submitting && !current.progress.sent &&
+                !current.draft.closing && !draftSession.restoreFailed
+        if (current.visible && editable) {
+            automaticSageOnly = false
             mutableState.value =
                 current.copy(
                     draft = ComposerDraftState(resetId = current.draft.resetId + 1),
@@ -197,7 +216,8 @@ class ReplyComposerController internal constructor(
             mutableState.value = mutableState.value.copy(progress = ComposerProgressState(), failure = it)
             return
         }
-        if (mutableState.value.progress.sent || mutableState.value.submitting) return
+        val current = mutableState.value
+        if (current.progress.sent || current.submitting || current.draft.closing) return
         submission.acknowledge()
         loadCaptcha(error = null, reason = null)
     }
@@ -205,7 +225,7 @@ class ReplyComposerController internal constructor(
     fun selectEmoji(number: Int) {
         if (rateLimit.activeFailure() != null || submission.activeFailure() != null) return
         val current = mutableState.value
-        if (current.progress.sent || current.submitting) return
+        if (current.progress.sent || current.submitting || current.draft.closing) return
         job?.cancel()
         captchaSession.select(number)
     }
@@ -309,4 +329,11 @@ class ReplyComposerController internal constructor(
             loadCaptcha(error, reason)
         }
     }
+}
+
+private fun ComposerDraftState.forReplyStorage(automaticSageOnly: Boolean): ComposerDraftState {
+    val onlyAutomaticSage =
+        automaticSageOnly && options == PostingOptions(sage = true) &&
+            subject.isEmpty() && comment.isEmpty() && email.isEmpty() && attachments.isEmpty()
+    return if (onlyAutomaticSage) copy(options = PostingOptions()) else this
 }

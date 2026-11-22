@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.data.drafts
 
+import com.solthariel.pawchan.domain.drafts.DraftImageOptions
 import com.solthariel.pawchan.domain.drafts.DraftImageReencoding
 import com.solthariel.pawchan.domain.drafts.MediaDraftOptions
 import com.solthariel.pawchan.domain.posting.PostingOptions
@@ -24,7 +25,8 @@ class DraftOptionsCodecTest {
     @Test fun exactScaleDivisorSurvivesForActiveAndPreviousSettings() {
         listOf(1, 2, 4, 8).forEach { divisor ->
             val settings = DraftImageReencoding(scaleDivisor = divisor)
-            val options = MediaDraftOptions(reencoding = settings, previousReencoding = settings)
+            val options =
+                MediaDraftOptions(reencoding = settings, image = DraftImageOptions(previousReencoding = settings))
             assertEquals(options, decodeMediaOptions(encodeMediaOptions(options)))
         }
     }

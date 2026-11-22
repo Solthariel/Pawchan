@@ -56,6 +56,15 @@ data class NewThreadUiState(
         get() = failure.error
     val rejectionReason: String?
         get() = failure.reason
+    val canRequestSubmit: Boolean
+        get() =
+            rules != null && failure.error != ReplyError.THREAD_CLOSED &&
+                copy(
+                    captchaState = ComposerCaptchaState(satisfied = true),
+                    progress = progress.copy(captchaLoading = false, captchaSelecting = false),
+                    failure = ComposerFailureState(),
+                ).canSubmit
+
     val canSubmit: Boolean
         get() =
             subject.length <= NewThreadDraft.MAX_SUBJECT_LENGTH &&
@@ -64,7 +73,7 @@ data class NewThreadUiState(
                 comment.length <= (rules?.maxCommentLength ?: ReplyDraft.MAX_COMMENT_LENGTH) &&
                 attachments.isNotEmpty() &&
                 preparedSelectionAllowed(attachments, rules) &&
-                !draft.filesLoading &&
+                !draft.inputBlocked &&
                 attachments.all { it.validName } &&
                 captchaSatisfied &&
                 !captchaLoading &&
@@ -170,7 +179,9 @@ class NewThreadViewModel internal constructor(
 
     fun close(onClosed: () -> Unit) {
         val current = mutableState.value
-        val busy = current.submitting || (current.draft.filesLoading && !draftSession.restoring)
+        val busy =
+            current.submitting ||
+                (current.draft.inputBlocked && !draftSession.restoring && !draftSession.restoreFailed)
         if (!active || busy) return
         job?.cancel()
         captchaSession.cancel()
@@ -189,11 +200,13 @@ class NewThreadViewModel internal constructor(
 
     fun updateDraft(draft: ComposerDraftState) {
         val current = mutableState.value
-        val editable = !current.submitting && !current.progress.sent
-        if (active && editable && draft.resetId == current.draft.resetId) {
+        val editable =
+            !current.submitting && !current.progress.sent &&
+                !current.draft.closing && !draftSession.restoreFailed
+        if (active && editable && current.draft.acceptsChange(draft)) {
             mutableState.value =
                 current.copy(
-                    draft = draft.copy(attachments = draft.attachments.toList()),
+                    draft = draft.committedEdit(),
                     failure =
                         rateLimit.activeFailure()
                             ?: submission.activeFailure()
@@ -206,7 +219,10 @@ class NewThreadViewModel internal constructor(
 
     fun clearAll() {
         val current = mutableState.value
-        if (!current.submitting && !current.progress.sent) {
+        val editable =
+            !current.submitting && !current.progress.sent &&
+                !current.draft.closing && !draftSession.restoreFailed
+        if (editable) {
             mutableState.value =
                 current.copy(
                     draft = ComposerDraftState(resetId = current.draft.resetId + 1),
@@ -225,7 +241,8 @@ class NewThreadViewModel internal constructor(
             mutableState.value = mutableState.value.copy(progress = ComposerProgressState(), failure = it)
             return
         }
-        if (mutableState.value.progress.sent || mutableState.value.submitting) return
+        val current = mutableState.value
+        if (current.progress.sent || current.submitting || current.draft.closing) return
         submission.acknowledge()
         job?.cancel()
         captchaSession.load()
@@ -234,7 +251,7 @@ class NewThreadViewModel internal constructor(
     fun selectEmoji(number: Int) {
         if (rateLimit.activeFailure() != null || submission.activeFailure() != null) return
         val current = mutableState.value
-        if (current.progress.sent || current.submitting) return
+        if (current.progress.sent || current.submitting || current.draft.closing) return
         job?.cancel()
         captchaSession.select(number)
     }

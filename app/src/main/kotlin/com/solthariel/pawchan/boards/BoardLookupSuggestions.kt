@@ -22,13 +22,16 @@ import com.solthariel.pawchan.domain.model.BoardAddress
 
 @Composable
 internal fun BoardLookupSuggestions(
-    boards: List<BoardLookupBoard>,
+    content: BoardLookupContent,
     source: BoardLookupSource,
     select: (BoardAddress) -> Unit,
     retry: () -> Unit,
+    tags: List<String> = emptyList(),
+    selectTag: (String) -> Unit = {},
 ) {
-    if (boards.isEmpty()) {
-        BoardLookupEmpty(source, retry)
+    val boards = content.suggestions
+    if (boards.isEmpty() && tags.isEmpty()) {
+        BoardLookupEmpty(source, retry, content.interactive)
     } else {
         LazyColumn(
             Modifier
@@ -36,12 +39,29 @@ internal fun BoardLookupSuggestions(
                 .heightIn(max = BOARD_LOOKUP_ROW_HEIGHT * BOARD_LOOKUP_MAX_ROWS)
                 .testTag("board-lookup-results"),
         ) {
+            items(tags, key = { "tag:$it" }) { tag ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(BOARD_LOOKUP_ROW_HEIGHT)
+                        .clickable(enabled = content.interactive) { selectTag(tag) }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        tag,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
             items(boards, key = { it.key }) { board ->
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .height(BOARD_LOOKUP_ROW_HEIGHT)
-                        .clickable { select(board.address) }
+                        .clickable(enabled = content.interactive) { select(board.address) }
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -61,6 +81,7 @@ internal fun BoardLookupSuggestions(
 private fun BoardLookupEmpty(
     source: BoardLookupSource,
     retry: () -> Unit,
+    enabled: Boolean,
 ) {
     when {
         source.loading -> {
@@ -73,7 +94,7 @@ private fun BoardLookupEmpty(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Не удалось загрузить доски", Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                TextButton(onClick = retry) { Text("Повторить") }
+                TextButton(onClick = retry, enabled = enabled) { Text("Повторить") }
             }
         }
 

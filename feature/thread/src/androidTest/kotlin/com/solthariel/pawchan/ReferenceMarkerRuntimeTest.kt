@@ -71,6 +71,6 @@ class ReferenceMarkerRuntimeTest {
                     pixel.alpha > 0.5f && pixel.blue > pixel.red
                 }
             }
-        assertTrue("OP icon is invisible", ink > 0)
+        assertTrue("OP label is invisible", ink > 0)
     }
 }

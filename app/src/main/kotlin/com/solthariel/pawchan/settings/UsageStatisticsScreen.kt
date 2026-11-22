@@ -1,12 +1,12 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -23,12 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
 import com.solthariel.pawchan.domain.statistics.hasLegacyUsage
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
-import com.solthariel.pawchan.navigation.chrome.AppBottomBar
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -54,44 +55,66 @@ internal fun UsageStatisticsScreen(
     val days by (stats?.days ?: flowOf(emptyList())).collectAsStateWithLifecycle(emptyList())
     val available by (stats?.available ?: flowOf(false)).collectAsStateWithLifecycle(stats != null)
     var period by rememberSaveable { mutableIntStateOf(0) }
+    var writeFailed by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val today = LocalDate.now()
     val values = remember(days, period, today) { usagePeriodTotals(days, period, today) }
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        SettingsPageToolbar("Статистика", onBack) {
-            UsageStatisticsMenu(
-                app.postCountEnabled,
-                { enabled ->
-                    scope.launch {
-                        repository?.updateAppSettings { current ->
-                            current.copy(behavior = current.behavior.copy(postCountEnabled = enabled))
+    AppNavigationWorkspace(bottomActions, AppBottomDestination.SETTINGS, floatingTop = true) {
+        com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
+            SettingsPageToolbar("Статистика", onBack) {
+                UsageStatisticsMenu(
+                    app.postCountEnabled,
+                    { enabled ->
+                        scope.launch {
+                            val result =
+                                repository?.updateAppSettings { current ->
+                                    current.copy(behavior = current.behavior.copy(postCountEnabled = enabled))
+                                }
+                            writeFailed = result !is com.solthariel.pawchan.domain.model.DomainOutcome.Success<*>
                         }
-                    }
-                },
-            ) { confirm = true }
-        }
-        UsagePeriodOptions(period) { period = it }
-        if (available) {
-            LazyColumn(Modifier.weight(1f)) {
-                if (days.any { it.hasLegacyUsage() }) {
-                    item(key = "legacy-usage-notice") {
-                        LegacyUsageNotice()
-                    }
-                }
-                items(UsageMetric.entries, key = { it.name }) { metric ->
-                    UsageValueRow(metric.usageLabel(), usageValue(metric, values[metric] ?: 0L))
-                }
+                    },
+                ) { confirm = true }
             }
-        } else {
-            Text("Не удалось прочитать или сохранить статистику", Modifier.weight(1f).padding(20.dp))
+            UsagePeriodOptions(period) { period = it }
+            if (available) UsageDataStart(days)
+        }) {
+            if (available) {
+                UsageStatisticsList(values, days.any { it.hasLegacyUsage() }, Modifier.fillMaxSize())
+            } else {
+                Text(
+                    "Не удалось прочитать или сохранить статистику",
+                    Modifier.padding(top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current).padding(20.dp),
+                )
+            }
         }
-        AppBottomBar(bottomActions, AppBottomDestination.SETTINGS)
     }
+    if (writeFailed) CacheNotice("Не удалось сохранить настройку /postcount") { writeFailed = false }
     if (confirm) {
         UsageResetDialog({ confirm = false }) {
             confirm = false
             scope.launch { stats?.reset() }
+        }
+    }
+}
+
+@Composable
+private fun UsageStatisticsList(
+    values: Map<UsageMetric, Long>,
+    hasLegacy: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        modifier,
+        contentPadding =
+            PaddingValues(
+                top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                bottom = LocalBottomOverlayInset.current + 8.dp,
+            ),
+    ) {
+        if (hasLegacy) item(key = "legacy-usage-notice") { LegacyUsageNotice() }
+        items(UsageMetric.entries, key = { it.name }) { metric ->
+            UsageValueRow(metric.usageLabel(), usageValue(metric, values[metric] ?: 0L))
         }
     }
 }
@@ -119,6 +142,27 @@ private fun LegacyUsageNotice() {
     Text(
         "Старые итоги сохранены. Уникальность данных до обновления восстановить нельзя.",
         Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun UsageDataStart(days: List<com.solthariel.pawchan.domain.statistics.UsageDay>) {
+    val first = days.minOfOrNull { it.epochDay }
+    val label =
+        if (first == null) {
+            "Сохранённых записей пока нет"
+        } else {
+            val date = LocalDate.ofEpochDay(first)
+            "Первые сохранённые данные: ${date.format(
+                java.time.format.DateTimeFormatter
+                    .ofPattern("dd.MM.yyyy"),
+            )}"
+        }
+    Text(
+        label,
+        Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

@@ -1,5 +1,8 @@
 package com.solthariel.pawchan.data.network
 
+import com.solthariel.pawchan.data.network.proxy.ProxyTlsTrust
+import com.solthariel.pawchan.data.network.proxy.ScopedProxySelector
+import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.network.MirrorAvailability
 import com.solthariel.pawchan.domain.network.MirrorObservation
 import kotlinx.serialization.SerializationException
@@ -16,10 +19,14 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /** Separate public probe client: no CookieJar, credentials, redirects or routing interceptors. */
-internal class MirrorProbe : AutoCloseable {
+internal class MirrorProbe(
+    private val router: ScopedProxySelector? = null,
+    private val trust: ProxyTlsTrust = ProxyTlsTrust.system(),
+) : AutoCloseable {
     private val client =
         OkHttpClient
             .Builder()
+            .apply { if (router != null) viaProxyRouter(router, trust) }
             .connectTimeout(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .callTimeout(PROBE_CALL_SECONDS, TimeUnit.SECONDS)
@@ -32,6 +39,7 @@ internal class MirrorProbe : AutoCloseable {
         host: String,
         report: (MirrorObservation) -> Unit,
     ): Call {
+        router?.registerMirror(host)
         val call =
             client.newCall(
                 Request

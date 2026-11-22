@@ -131,11 +131,14 @@ jobs:
             echo "::error::APK signature does not match the configured release key"
             exit 1
           fi
+          # A matching configured key is not enough: it must also match the last public release.
+          python3 update/publishing/tools/check_release_signer.py \
+            --configured "$expected" --apk-signers "$actual"
           (cd dist && sha256sum --check "Pawchan-$version.apk.sha256")
           {
             echo "## Pawchan $version"
             echo "- LOCAL CHECK and release packaging passed."
-            echo "- APK signature matches the configured release key."
+            echo "- APK signature matches the configured key and the public 0.1.49 certificate."
             echo "- Signed APK prepared for publication."
             echo "- Device testing remains manual."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -9,6 +9,7 @@ internal sealed interface LibraryUiState {
 
     data class Content(
         val entries: List<LibraryEntryUi>,
+        val refreshFailures: Long = 0,
     ) : LibraryUiState {
         val favorites: List<LibraryEntryUi> = entries.filter(LibraryEntryUi::favorite)
     }
@@ -49,3 +50,16 @@ internal fun DomainOutcome<List<ThreadLibraryEntry>>.toLibraryUiState(): Library
             LibraryUiState.Error
         }
     }
+
+/** Keep already displayed data on a failed refresh; initial/empty failures remain full-screen errors. */
+internal fun libraryRefreshState(
+    previous: LibraryUiState,
+    result: LibraryUiState,
+): LibraryUiState {
+    val content = previous as? LibraryUiState.Content
+    return if (result == LibraryUiState.Error && content != null && content.entries.isNotEmpty()) {
+        content.copy(refreshFailures = content.refreshFailures + 1)
+    } else {
+        result
+    }
+}

@@ -31,6 +31,18 @@ class PawchanApplication :
         com.solthariel.pawchan.copyfiles
             .CopyDirectoryStore(contentResolver, downloadPermissions::useDirectory)
     }
+    internal val zipRegistry by lazy {
+        com.solthariel.pawchan.copyfiles
+            .ZipRegistry(this, applicationScope)
+    }
+    internal val downloadStopMonitor by lazy {
+        com.solthariel.pawchan.downloads
+            .DownloadStopMonitor(this, downloadHistory, applicationScope)
+    }
+    internal val downloadHistory by lazy {
+        com.solthariel.pawchan.downloads
+            .DownloadHistoryStore(this)
+    }
     val preferences by lazy {
         DataStoreSettingsRepository
             .create(this)

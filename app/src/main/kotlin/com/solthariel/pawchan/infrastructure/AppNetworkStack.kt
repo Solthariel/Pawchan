@@ -8,6 +8,7 @@ import com.solthariel.pawchan.data.network.DvachCatalogApi
 import com.solthariel.pawchan.data.network.DvachHttpClient
 import com.solthariel.pawchan.data.network.DvachPostingApi
 import com.solthariel.pawchan.data.network.DvachThreadApi
+import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.boards.BoardDetailsRepository
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
@@ -16,7 +17,6 @@ import com.solthariel.pawchan.domain.posting.PostingRepository
 import com.solthariel.pawchan.domain.settings.StoragePreferences
 import com.solthariel.pawchan.domain.thread.PostVoteRepository
 import com.solthariel.pawchan.domain.thread.ThreadRepository
-import com.solthariel.pawchan.infrastructure.dns.ArhivachDnsSelector
 import com.solthariel.pawchan.infrastructure.media.MediaDownloadQueue
 import com.solthariel.pawchan.infrastructure.vocaroo.VocarooNetwork
 import com.solthariel.pawchan.media.MediaViewerResources
@@ -28,12 +28,14 @@ import java.io.File
 internal class AppNetworkStack private constructor(
     private val httpClient: OkHttpClient,
     private val contentClient: OkHttpClient,
-    private val repositories: NetworkRepositories,
+    private val forum: ForumNetwork,
     val mediaLoaders: MediaLoaders,
     private val cacheDirectory: File,
     val mirror: com.solthariel.pawchan.data.network.MirrorRoutingInterceptor,
     val github: GithubNetwork,
 ) : AutoCloseable {
+    private val repositories: NetworkRepositories get() = forum.repositories
+    val sources get() = forum.sources
     var clearCacheOnExit: Boolean = false
     val boardDetailsRepository: BoardDetailsRepository
         get() = repositories.boardDetails
@@ -61,6 +63,7 @@ internal class AppNetworkStack private constructor(
         httpClient.dispatcher.executorService.shutdown()
         // Закрытие TLS-соединений пишет в сокет: на главном потоке это NetworkOnMainThreadException.
         Thread({
+            forum.close()
             mirror.recovery?.close()
             httpClient.connectionPool.evictAll()
             httpClient.cache?.close()
@@ -82,73 +85,66 @@ internal class AppNetworkStack private constructor(
             settings: com.solthariel.pawchan.domain.settings.AppSettingsRepository,
             cacheMb: Int = StoragePreferences.DEFAULT_MB,
             mirrorHost: String = "2ch.su",
-            githubDns: com.solthariel.pawchan.domain.settings.ServiceDns =
-                com.solthariel.pawchan.domain.settings
-                    .ServiceDns(),
+            proxySelector: com.solthariel.pawchan.data.network.proxy.ScopedProxySelector =
+                com.solthariel.pawchan.data.network.proxy
+                    .ScopedProxySelector(),
         ): AppNetworkStack {
             val cookies = AndroidCookieJar().apply { selectOrigin(mirrorHost) }
             val totalBytes =
                 cacheMb
                     .coerceIn(StoragePreferences.MIN_MB, StoragePreferences.MAX_MB)
                     .toLong() * BYTES_PER_MB
+            proxySelector.registerMirror(mirrorHost)
             val mirror =
                 com.solthariel.pawchan.data.network
                     .MirrorRoutingInterceptor(
                         mirrorHost,
                         com.solthariel.pawchan.data.network.MirrorRecovery
-                            .create(mirrorHost),
+                            .create(mirrorHost, proxySelector),
+                        proxySelector::registerMirror,
                     )
             val httpClient =
                 DvachHttpClient
                     .create(cookies)
                     .newBuilder()
                     .apply { interceptors().add(0, mirror) }
+                    .viaProxyRouter(proxySelector)
                     .build()
-            val boardDirectory = DvachBoardDirectoryApi.create(httpClient)
-            val arhivachDns = ArhivachDnsSelector(httpClient)
-            val contentClient =
-                DvachHttpClient
-                    .createContentClient(httpClient)
-                    .newBuilder()
-                    .dns(arhivachDns)
-                    .build()
-            val threadApi = DvachThreadApi.create(httpClient)
-            val threadRepository =
-                com.solthariel.pawchan.domain.thread.MissingAwareThreadRepository(
-                    threadApi,
+            val contentClient = DvachHttpClient.createContentClient(httpClient)
+            val forum =
+                ForumNetwork.create(
+                    httpClient,
+                    cookies,
                     com.solthariel.pawchan.data.drafts
                         .FileThreadDeletionStore(File(context.filesDir, "missing-threads")),
+                    File(context.filesDir, "board-directories"),
                 )
             return AppNetworkStack(
                 httpClient = httpClient,
-                github = GithubNetwork(httpClient, githubDns),
+                github = GithubNetwork(httpClient),
                 mirror = mirror,
                 cacheDirectory = context.cacheDir,
                 contentClient = contentClient,
-                repositories =
-                    NetworkRepositories(
-                        boardDirectory = boardDirectory,
-                        boardDetails = DvachBoardDetailsApi.create(httpClient),
-                        postingAccess = cookies,
-                        catalog = DvachCatalogApi.create(httpClient, boardDirectory),
-                        thread = threadRepository,
-                        posting = DvachPostingApi.create(httpClient),
-                        votes = threadApi,
-                    ),
+                forum = forum,
                 mediaLoaders =
-                    createMediaLoaders(context, settings, contentClient, totalBytes, arhivachDns, threadRepository),
+                    createMediaLoaders(
+                        context,
+                        settings,
+                        contentClient,
+                        totalBytes,
+                        forum.repositories.thread,
+                    ),
             )
         }
     }
 }
 
-/** Binds app-owned media resources to the scoped external-service DNS profiles. */
+/** Binds app-owned media resources to the shared content client. */
 private fun createMediaLoaders(
     context: Context,
     settings: com.solthariel.pawchan.domain.settings.AppSettingsRepository,
     contentClient: OkHttpClient,
     totalBytes: Long,
-    arhivachDns: ArhivachDnsSelector,
     threadRepository: ThreadRepository,
 ): MediaLoaders =
     MediaLoaders(
@@ -163,7 +159,6 @@ private fun createMediaLoaders(
         contentClient = contentClient,
         threadRepository = threadRepository,
         vocaroo = VocarooNetwork(context.applicationContext, contentClient),
-        arhivachDns = arhivachDns,
     )
 
 internal data class NetworkRepositories(
@@ -182,9 +177,8 @@ internal data class MediaLoaders(
     val mediaDownloadQueue: MediaDownloadQueue,
     val contentClient: OkHttpClient,
     val threadRepository: ThreadRepository? = null,
-    /** Записи Vocaroo: DoH, Cronet и журнал; null — обычный клиент медиа (тесты, превью). */
+    /** Записи Vocaroo: Cronet и журнал; null — обычный клиент медиа (тесты, превью). */
     val vocaroo: VocarooNetwork? = null,
-    val arhivachDns: ArhivachDnsSelector? = null,
 ) {
     val viewer = MediaViewerResources(imageLoader, contentClient)
 }

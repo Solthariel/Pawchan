@@ -42,8 +42,9 @@ internal fun ThreadRoute(
     val storage = remember(workspace) { workspace?.let(::AppThreadPostStorage) }
     val model = rememberThreadSession(address, dependencies)
     val reply = rememberThreadReply(address, dependencies, model)
+    val defaultSage = com.solthariel.pawchan.composer.LocalComposerPreferences.current.defaultSage
     BindThreadOfflineMode(model, workspace?.offlineAddress)
-    BindPendingReply(address, workspace, reply)
+    BindPendingReply(address, workspace, reply, defaultSage)
     BindComposerDraftLifecycle(reply::saveDraftNow)
     LaunchedEffect(challengeRetryToken) {
         if (challengeRetryToken > 0L) model.refresh()
@@ -55,8 +56,12 @@ internal fun ThreadRoute(
         actions =
             ThreadFeatureActions(
                 onBack = onBack,
+                repliesEnabled =
+                    dependencies.repositories.boards
+                        .capabilities(address.site)
+                        .replies,
                 onChallenge = onChallenge,
-                onReply = { request -> reply.open(request.closed, request.insertion) },
+                onReply = { request -> reply.open(request.closed, request.insertion, defaultSage) },
                 watcherToggle = { enabled, toggle -> rememberWatcherNotificationToggle(enabled, toggle) },
             ),
         storage = storage,
@@ -65,12 +70,12 @@ internal fun ThreadRoute(
                 actions = bottomActions.copy(onWriteClick = onWrite),
                 selected = null,
                 hideWithKeyboard = true,
+                floatingTop = true,
                 content = content,
             )
         },
         contentHost = { content ->
             ThreadReplyHost(
-                address.board.board,
                 replyState,
                 dependencies.mediaLoaders,
                 replyActions(reply, com.solthariel.pawchan.composer.LocalComposerPreferences.current.hiddenFields),
@@ -135,11 +140,12 @@ private fun BindPendingReply(
     address: ThreadAddress,
     workspace: WorkspaceController?,
     reply: ReplyComposerController,
+    defaultSage: Boolean,
 ) {
     val pendingReply = workspace?.pendingReply?.collectAsStateWithLifecycle()?.value
-    LaunchedEffect(pendingReply, reply) {
+    LaunchedEffect(pendingReply, reply, defaultSage) {
         if (pendingReply?.address == address) {
-            reply.open(false, pendingReply.text)
+            reply.open(false, pendingReply.text, defaultSage)
             workspace?.pendingReply?.value = null
         }
     }

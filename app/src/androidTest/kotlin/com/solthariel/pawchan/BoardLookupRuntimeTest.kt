@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -24,19 +26,26 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.boards.BoardLookupContent
 import com.solthariel.pawchan.boards.BoardLookupPanel
 import com.solthariel.pawchan.boards.BoardLookupSource
 import com.solthariel.pawchan.boards.prepareLookup
 import com.solthariel.pawchan.catalog.CatalogBoardLookupBindings
 import com.solthariel.pawchan.catalog.CatalogBoardLookupLayer
 import com.solthariel.pawchan.catalog.CatalogBoardLookupToolbar
+import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
+import com.solthariel.pawchan.navigation.rememberLookupContent
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class BoardLookupRuntimeTest {
     @get:Rule val compose = createComposeRule()
@@ -62,6 +71,20 @@ class BoardLookupRuntimeTest {
         compose.onNodeWithContentDescription("Введите доску…").performTextInput("моби")
         compose.onNodeWithText("/mobi/ Мобильные устройства").assertIsDisplayed()
         compose.onNodeWithTag("board-lookup-results").assertHeightIsEqualTo(48.dp)
+        val toolbar = compose.onNodeWithTag("board-lookup-toolbar")
+        toolbar.assertHeightIsEqualTo(APP_TOP_BAR_HEIGHT)
+        val toolbarBottom =
+            toolbar
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .bottom
+        val panelTop =
+            compose
+                .onNodeWithTag("board-lookup-panel")
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .top
+        assertEquals(toolbarBottom, panelTop, 0.1f)
         compose.onNodeWithText("/mobi/ Мобильные устройства").performClick()
         compose.onNodeWithTag("board-lookup-panel").assertDoesNotExist()
         assertEquals(board("mobi"), selected)
@@ -115,6 +138,80 @@ class BoardLookupRuntimeTest {
         compose.onNodeWithTag("board-lookup-recent").assertHeightIsEqualTo(48.dp)
     }
 
+    @Test
+    fun preparedQuickBoardsArePresentOnTheFirstComposition() {
+        val source = source()
+        var first: BoardLookupContent? = null
+        compose.setContent {
+            MaterialTheme {
+                val prepared = rememberLookupContent(source, board("f0"), "").value
+                SideEffect { if (first == null) first = prepared }
+                prepared?.let { BoardLookupPanel(it, source, {}, {}) }
+            }
+        }
+        compose.runOnIdle { assertEquals(30, first?.favorites?.size) }
+        compose.onNodeWithText("Введите код или название доски").assertDoesNotExist()
+        compose.onNodeWithTag("board-lookup-favorites").assertIsDisplayed()
+    }
+
+    @Test
+    fun pendingSearchKeepsPreviousPanelVisibleButDisabled() {
+        val executor = Executors.newSingleThreadExecutor()
+        val dispatcher = executor.asCoroutineDispatcher()
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        executor.submit {
+            started.countDown()
+            release.await(10, TimeUnit.SECONDS)
+        }
+        check(started.await(5, TimeUnit.SECONDS))
+        val search = mutableStateOf("")
+        val data = source()
+        try {
+            compose.setContent {
+                MaterialTheme {
+                    val currentQuery = search.value
+                    val prepared = rememberLookupContent(data, board("f0"), currentQuery, dispatcher = dispatcher).value
+                    prepared?.let { BoardLookupPanel(it.copy(interactive = it.query == currentQuery), data, {}, {}) }
+                }
+            }
+            compose.onNodeWithContentDescription("/f0/ Favorite 0").assertIsDisplayed()
+            compose.runOnIdle { search.value = "mobi" }
+            compose.onNodeWithContentDescription("/f0/ Favorite 0").assertIsDisplayed().assertIsNotEnabled()
+            release.countDown()
+            compose.waitUntil(5_000) {
+                compose
+                    .onAllNodes(
+                        androidx.compose.ui.test
+                            .hasText("/mobi/ Мобильные устройства"),
+                    ).fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            compose.onNodeWithText("/mobi/ Мобильные устройства").assertIsDisplayed()
+        } finally {
+            release.countDown()
+            dispatcher.close()
+        }
+    }
+
+    @Test
+    fun pendingQuickBoardDataDoesNotShowTheEmptyMessage() {
+        val data = mutableStateOf(BoardLookupSource(quickBoardsReady = false))
+        compose.setContent {
+            MaterialTheme {
+                val source = data.value
+                val prepared = rememberLookupContent(source, board("f0"), "").value
+                prepared?.let { BoardLookupPanel(it, source, {}, {}) }
+            }
+        }
+        compose.onNodeWithText("Введите код или название доски").assertDoesNotExist()
+        compose.runOnIdle { data.value = source() }
+        compose.onNodeWithTag("board-lookup-favorites").assertIsDisplayed()
+        compose.onNodeWithText("Введите код или название доски").assertDoesNotExist()
+        compose.runOnIdle { data.value = BoardLookupSource() }
+        compose.onNodeWithText("Введите код или название доски").assertIsDisplayed()
+    }
+
     private fun show(data: BoardLookupSource = source()) {
         val source = data
         compose.setContent {
@@ -134,7 +231,7 @@ class BoardLookupRuntimeTest {
                     }
                 CatalogBoardLookupLayer(lookup) {
                     Column {
-                        Box(Modifier.fillMaxWidth().height(54.dp)) {
+                        Box(Modifier.fillMaxWidth().height(APP_TOP_BAR_HEIGHT)) {
                             if (visible.value) CatalogBoardLookupToolbar(lookup)
                         }
                         Text("Thread list", Modifier.testTag("threads-anchor"))
@@ -151,7 +248,7 @@ class BoardLookupRuntimeTest {
             favorites.mapIndexed { index, address -> entry(address, "Favorite $index") } +
                 recent.mapIndexed { index, address -> entry(address, "Recent $index") } +
                 entry(board("mobi"), "Мобильные устройства")
-        return BoardLookupSource(boards, favorites.map { it.board }.toSet(), favorites + recent)
+        return BoardLookupSource(boards, favorites.toSet(), favorites + recent)
     }
 
     private fun board(code: String) =

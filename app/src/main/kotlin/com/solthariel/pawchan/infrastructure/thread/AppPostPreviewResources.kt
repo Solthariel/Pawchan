@@ -33,11 +33,17 @@ internal fun rememberAppPostPreviewResources(): PostPreviewResources? {
 private class AppPostPreviewActions(
     private val binding: WorkspaceBinding,
 ) : PostPreviewActions {
+    override fun canReply(address: ThreadAddress): Boolean =
+        binding.sources
+            .firstOrNull { it.site == address.site }
+            ?.capabilities
+            ?.replies == true
+
     override fun prepareReply(
         address: ThreadAddress,
         text: String,
     ) {
-        binding.controller.pendingReply.value = PendingPreviewReply(address, text)
+        if (canReply(address)) binding.controller.pendingReply.value = PendingPreviewReply(address, text)
     }
 
     override fun navigate(address: ThreadAddress) {

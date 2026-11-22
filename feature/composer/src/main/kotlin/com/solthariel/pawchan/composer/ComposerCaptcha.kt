@@ -30,8 +30,13 @@ internal fun ComposerCaptcha(
     imageLoader: ImageLoader,
     actions: NewThreadCaptchaActions,
 ) {
+    val expired = rememberCaptchaRemainingSeconds(state) == 0L
     if (!progress.captchaLoading && state.challenge != null) {
-        ComposerEmojiChallenge(ComposerCaptchaPresentation(state, progress), imageLoader, actions.onEmojiSelected)
+        ComposerEmojiChallenge(
+            ComposerCaptchaPresentation(state, progress.copy(captchaSelecting = progress.captchaSelecting || expired)),
+            imageLoader,
+            actions.onEmojiSelected,
+        )
     }
 }
 
@@ -96,7 +101,7 @@ private fun CaptchaOptionsGrid(
                             option.image,
                             imageLoader,
                             stringResource(R.string.captcha_emoji_option, index + 1),
-                            Modifier.fillMaxSize().padding(3.dp),
+                            Modifier.fillMaxSize().padding(4.dp),
                         )
                     }
                 }

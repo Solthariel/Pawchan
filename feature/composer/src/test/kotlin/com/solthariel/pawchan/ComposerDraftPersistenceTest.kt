@@ -47,6 +47,121 @@ class ComposerDraftPersistenceTest {
                 ),
         )
 
+    @Test fun defaultSageAppliesToNewRepliesButNotExistingDrafts() =
+        runTest {
+            val disk = TestComposerDraftRepository()
+            val storage =
+                ComposerDraftCoordinator(
+                    this,
+                    disk,
+                    { testScheduler.currentTime },
+                    StandardTestDispatcher(testScheduler),
+                )
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    drafts = storage,
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
+            controller.open(false, defaultSage = true)
+            advanceUntilIdle()
+            assertTrue(controller.state.value.draft.options.sage)
+            val current = controller.state.value.draft
+            controller.updateDraft(current.copy(comment = "reply", options = current.options.copy(sage = false)))
+            controller.close()
+            advanceUntilIdle()
+            controller.open(false, defaultSage = true)
+            advanceUntilIdle()
+            assertEquals("reply", controller.state.value.comment)
+            assertFalse(controller.state.value.draft.options.sage)
+            controller.close()
+            advanceUntilIdle()
+            disk.saved.remove(key)
+            controller.open(false, defaultSage = false)
+            advanceUntilIdle()
+            assertFalse(controller.state.value.draft.options.sage)
+        }
+
+    @Test fun emptyAutomaticSageDoesNotCreateAStaleDraft() =
+        runTest {
+            val disk = TestComposerDraftRepository()
+            val storage =
+                ComposerDraftCoordinator(
+                    this,
+                    disk,
+                    { testScheduler.currentTime },
+                    StandardTestDispatcher(testScheduler),
+                )
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    drafts = storage,
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
+            controller.open(false, defaultSage = true)
+            advanceUntilIdle()
+            controller.saveDraftNow()
+            advanceUntilIdle()
+            assertNull(disk.saved[key])
+            controller.close()
+            advanceUntilIdle()
+            assertNull(disk.saved[key])
+            controller.open(false, defaultSage = false)
+            advanceUntilIdle()
+            assertFalse(controller.state.value.draft.options.sage)
+        }
+
+    @Test fun existingSageOnlyDraftIsNotDiscarded() =
+        runTest {
+            val disk = TestComposerDraftRepository()
+            disk.saved[key] = ComposerDraftState(options = PostingOptions(sage = true)).toStoredDraft()
+            val storage =
+                ComposerDraftCoordinator(
+                    this,
+                    disk,
+                    { testScheduler.currentTime },
+                    StandardTestDispatcher(testScheduler),
+                )
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    drafts = storage,
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
+            controller.open(false, defaultSage = true)
+            advanceUntilIdle()
+            controller.close()
+            advanceUntilIdle()
+            assertTrue(disk.saved[key]?.options?.sage == true)
+        }
+
+    @Test fun openingAnAlreadyVisibleReplyDoesNotOverrideManualSage() =
+        runTest {
+            val controller =
+                ReplyComposerController(
+                    this,
+                    address,
+                    FakePostingRepository(),
+                    {},
+                    preparationDispatcher = Dispatchers.Unconfined,
+                )
+            controller.open(false, defaultSage = true)
+            advanceUntilIdle()
+            val current = controller.state.value.draft
+            controller.updateDraft(current.copy(options = current.options.copy(sage = false)))
+            controller.open(false, defaultSage = true)
+            assertFalse(controller.state.value.draft.options.sage)
+        }
+
     @Test fun closingReleasesMediaAndReopeningRestoresEveryDraftOption() =
         runTest {
             val disk = TestComposerDraftRepository()

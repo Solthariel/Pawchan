@@ -28,7 +28,10 @@ def environment():
 
 
 def git(*args):
-    return subprocess.check_output(('git', *args), cwd=ROOT, text=True, encoding='utf-8', env=environment()).strip()
+    # Git can mix localized status messages with UTF-8 repository content on stdout.
+    # Use ASCII diagnostics for this child only; keep decoding stored content strictly as UTF-8.
+    env = {**environment(), 'LC_ALL': 'C'}
+    return subprocess.check_output(('git', *args), cwd=ROOT, text=True, encoding='utf-8', env=env).strip()
 
 
 def repository():
@@ -63,7 +66,10 @@ def plan(change, notes, retry):
     metadata = ROOT / 'update/publishing/versions.json'
     latest = json.loads(metadata.read_text(encoding='utf-8'))['versions'][-1]
     if retry:
-        return latest['name'], latest['code'], 'Retry existing publication; never replace a public APK'
+        requested = json.loads((ROOT / 'update/publishing/release-request.json').read_text(encoding='utf-8'))
+        if (requested['version'], requested['code']) != (latest['name'], latest['code']):
+            raise ValueError('Retry request and current version differ. Inspect metadata before confirming.')
+        return requested['version'], requested['code'], 'Retry existing publication; never replace a public APK'
     versions = json.loads(metadata.read_text(encoding='utf-8'))['versions']
     if [identity(v) for v in versions] != [identity(v) for v in read_history(ROOT)]:
         raise ValueError('A release is already prepared. Use Publish-Release.ps1 -Resume; do not bump again.')
@@ -72,10 +78,12 @@ def plan(change, notes, retry):
     return next_version(latest['name'], change), latest['code'] + 1, 'Prepare a NEW release'
 
 
-def prepare(change, notes, retry):
+def prepare(change, notes, retry, expected=None):
     request = ROOT / 'update/publishing/release-request.json'
     if retry:
         data = json.loads(request.read_text(encoding='utf-8'))
+        if expected is not None and (data['version'], data['code']) != expected:
+            raise ValueError('Retry target changed during confirmation; nothing prepared')
         # Old one-time flags are not authorities in the general publication pipeline.
         data = {'version': data['version'], 'code': data['code'], 'revision': data['revision'] + 1}
         request.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8', newline='\n')
@@ -139,7 +147,9 @@ def main():
     if input('Type YES to create the commit and push: ').strip() != 'YES':
         print('Cancelled; release files not changed.')
         return
-    name, paths = prepare(args.change, notes, args.retry)
+    if args.retry and plan(args.change, notes, True)[:2] != (name, code):
+        raise ValueError('Retry target changed during confirmation; nothing pushed')
+    name, paths = prepare(args.change, notes, args.retry, (name, code)) if args.retry else prepare(args.change, notes, False)
     commit_and_push(name, paths, args.retry)
 
 

@@ -110,8 +110,7 @@ private fun CatalogIdentityRow(
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         CatalogBoardIdentity(
             board = header.board,
-            title = header.title,
-            boardSpeed = header.speed,
+            label = CatalogBoardLabel(header.title, header.speed, header.speedSupported),
             modifier =
                 Modifier
                     .weight(1f)
@@ -139,12 +138,19 @@ private fun CatalogIdentityRow(
     }
 }
 
+internal data class CatalogBoardLabel(
+    val title: String?,
+    val speed: Int?,
+    val speedSupported: Boolean = true,
+)
+
 internal data class CatalogHeaderUi(
     val board: BoardAddress,
     val title: String?,
     val speed: Int?,
     val searchVisible: Boolean,
     val query: String,
+    val speedSupported: Boolean = true,
 )
 
 internal data class CatalogMenuUi(

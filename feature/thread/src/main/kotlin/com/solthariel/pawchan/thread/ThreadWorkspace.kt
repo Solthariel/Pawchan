@@ -2,7 +2,9 @@ package com.solthariel.pawchan.thread
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
@@ -15,9 +17,11 @@ import com.solthariel.pawchan.core.ui.LoadErrorPane
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
 import com.solthariel.pawchan.core.ui.PullRefreshOptions
 import com.solthariel.pawchan.core.ui.RefreshFailureNotice
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.feature.thread.R
+import com.solthariel.pawchan.media.MediaMenuPlace
+import com.solthariel.pawchan.media.MediaMenuRequest
 import com.solthariel.pawchan.media.MediaSaveActions
-import com.solthariel.pawchan.media.MediaSaveStatusText
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -25,40 +29,58 @@ import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
 internal fun ThreadWorkspace(
     state: ThreadUiState,
     actions: ThreadActions,
-    thumbnails: ThumbnailLoader,
-    save: MediaSaveActions,
+    bindings: ThreadContentBindings,
     memory: ThreadScreenMemory,
     selection: ThreadSelectionActions,
+    autoRefreshFailed: Boolean = false,
 ) {
     val content = state as? ThreadUiState.Content
     val tools = memory.tools
-    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
-        ThreadTopBar(state, actions, tools, selection) { memory.moveSearch(content, it) }
-        content?.presentation?.contentFilterNotice?.let { label ->
-            androidx.compose.material3.Text(
-                "Тред соответствует фильтру: $label",
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-            )
+    val insets =
+        if (com.solthariel.pawchan.core.ui.LocalFloatingTopEnabled.current) {
+            WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Horizontal)
+        } else if (LocalBottomOverlayInset.current > 0.dp) {
+            WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+        } else {
+            WindowInsets.systemBarsIgnoringVisibility
         }
-        if (content != null && content.presentation.filteredComments > 0) {
-            androidx.compose.material3.Text("Скрыто комментариев: ${content.presentation.filteredComments}")
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().windowInsetsPadding(insets)) {
+        com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
+            ThreadTopBar(state, actions, tools, selection) { memory.moveSearch(content, it) }
+            val filterNotice =
+                content?.presentation?.let { presentation ->
+                    listOfNotNull(
+                        presentation.contentFilterNotice?.let { "Тред соответствует фильтру: $it" },
+                        "Скрыто комментариев: ${presentation.filteredComments}"
+                            .takeIf { presentation.filteredComments > 0 },
+                    ).joinToString("\n").takeIf(String::isNotEmpty)
+                }
+            if (autoRefreshFailed && content != null && content.presentation.refreshFailure == null) {
+                androidx.compose.material3.Text(stringResource(R.string.watcher_error))
+            }
+            TransientNotice(filterNotice)
+            RefreshFailureNotice(content?.presentation?.refreshFailure, actions.onChallenge)
+        }) {
+            ThreadBody(state, actions, bindings, memory.list)
         }
-        RefreshFailureNotice(content?.presentation?.refreshFailure, actions.onChallenge)
-        MediaSaveStatusText(save.status)
-        ThreadBody(
-            state,
-            actions,
-            ThreadContentBindings(thumbnails, {
-                memory.opened = it
-            }, save.request, {
-                memory.mediaMenu =
-                    com.solthariel.pawchan.media
-                        .MediaMenuRequest(it, com.solthariel.pawchan.media.MediaMenuPlace.THUMBNAIL)
-            }, ThreadContentPostActions(actions.onReplyTo, selection.showHidden), tools, memory.appearance),
-            memory.list,
-        )
     }
 }
+
+internal fun ThreadScreenMemory.contentBindings(
+    thumbnails: ThumbnailLoader,
+    save: MediaSaveActions,
+    actions: ThreadActions,
+    selection: ThreadSelectionActions,
+): ThreadContentBindings =
+    ThreadContentBindings(
+        loader = thumbnails,
+        onOpen = { opened = it },
+        onDownload = save.request,
+        onMediaMenu = { mediaMenu = MediaMenuRequest(it, MediaMenuPlace.THUMBNAIL) },
+        postActions = ThreadContentPostActions(actions.onReplyTo, selection.showHidden),
+        tools = tools,
+        appearance = appearance,
+    )
 
 @Composable
 private fun ThreadBody(

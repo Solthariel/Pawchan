@@ -14,8 +14,8 @@ internal enum class SettingsSection(
     THREADS(UiIconKind.FORUM, "Треды и каталог", "Открытый тред, избранное, ответы и уведомления"),
     MEDIA(UiIconKind.IMAGE, "Медиа", "Звук видео, перелистывание, галерея"),
     POSTING(UiIconKind.SEND, "Отправка", "Поля формы и обработка вложений по умолчанию"),
-    AUTOHIDE(UiIconKind.CLEANING, "Автоскрытие", "Правила скрытия постов и тредов"),
-    NETWORK(UiIconKind.PUBLIC, "Сеть", "DNS для Vocaroo, Архивача и GitHub"),
+    AUTOHIDE(UiIconKind.FILTER, "Автоскрытие", "Правила скрытия постов и тредов"),
+    NETWORK(UiIconKind.PUBLIC, "Сеть", "Прокси для форумов, Vocaroo и GitHub"),
     STORAGE(UiIconKind.STORAGE, "Хранилище", "Лимит и очистка кэша, резервные копии, статистика"),
     ABOUT(UiIconKind.INFO, "О программе", "Версия и обновления"),
 }
@@ -45,6 +45,7 @@ internal sealed interface SettingsItem {
         val range: IntRange,
         val unit: String,
         val preview: Boolean,
+        val endLabel: String? = null,
         val onChange: (Int) -> Unit,
     ) : SettingsItem
 

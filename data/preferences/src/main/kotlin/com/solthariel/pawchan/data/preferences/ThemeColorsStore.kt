@@ -15,7 +15,6 @@ import com.solthariel.pawchan.domain.settings.MAX_THEME_SEED
 import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePalette
 import com.solthariel.pawchan.domain.settings.currentPalette
-import com.solthariel.pawchan.domain.settings.legacyColors
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -39,11 +38,10 @@ internal class ThemeColorsStore(
 }
 
 internal fun Preferences.readThemeColors(): ThemeColors {
-    val legacy = parseTheme(this[stringPreferencesKey("theme")]).legacyColors()
-    val storedPalette = ThemePalette.entries.firstOrNull { it.name == this[THEME_PALETTE] } ?: legacy.palette
+    val storedPalette = ThemePalette.entries.firstOrNull { it.name == this[THEME_PALETTE] } ?: ThemePalette.SYSTEM
     return ThemeColors(
         palette = storedPalette.currentPalette(),
-        pureBlack = this[THEME_PURE_BLACK] ?: legacy.pureBlack,
+        pureBlack = this[THEME_PURE_BLACK] ?: false,
         customSeed = this[THEME_CUSTOM_SEED]?.takeIf { it in 0..MAX_THEME_SEED } ?: DEFAULT_THEME_SEED,
     )
 }

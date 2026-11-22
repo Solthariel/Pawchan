@@ -46,7 +46,7 @@ class CatalogCompactMetadataUiTest {
         val age = compose.onNodeWithText("5 мин назад")
         replies.assertIsDisplayed()
         compose.onNodeWithContentDescription("Файлов: 2").assertIsDisplayed()
-        compose.onNodeWithText("2.0 МБ").assertIsDisplayed()
+        compose.onNodeWithText(thread.statistics.sizeText, useUnmergedTree = true).assertDoesNotExist()
         age.assertIsDisplayed()
         compose.onNodeWithText("Ответов: 17").assertDoesNotExist()
         compose.onNodeWithText("Файлов: 2").assertDoesNotExist()

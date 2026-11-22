@@ -1,9 +1,24 @@
 package com.solthariel.pawchan.media
 
+import com.solthariel.pawchan.domain.model.ThreadAddress
+
 fun List<MediaAttachmentUi>.withMediaOwner(
     postId: Long,
     prefix: String? = null,
-): List<MediaAttachmentUi> = map { it.copy(source = it.source.copy(ownerPostId = postId, downloadPrefix = prefix)) }
+    threadAddress: ThreadAddress? = null,
+): List<MediaAttachmentUi> =
+    map {
+        it.copy(
+            source =
+                it.source.copy(
+                    ownerPostId = postId,
+                    downloadPrefix = prefix,
+                    origin =
+                        threadAddress?.let { address -> MediaAttachmentOrigin(threadAddress = address) }
+                            ?: it.source.origin,
+                ),
+        )
+    }
 
 fun List<MediaAttachmentUi>.viewerItems(): List<MediaAttachmentUi> =
     filter { attachment ->

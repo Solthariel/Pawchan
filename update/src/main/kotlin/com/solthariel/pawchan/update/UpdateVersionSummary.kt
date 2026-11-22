@@ -17,14 +17,17 @@ public fun UpdateVersionSummary(
     installedVersion: String,
     availableVersion: String?,
     modifier: Modifier = Modifier,
+    showInstalledVersion: Boolean = true,
 ) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = stringResource(R.string.update_current_version, installedVersion),
-            modifier = Modifier.testTag("update-installed-version"),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (showInstalledVersion) {
+            Text(
+                text = stringResource(R.string.update_current_version, installedVersion),
+                modifier = Modifier.testTag("update-installed-version"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         availableVersion?.let { version ->
             Text(
                 text = stringResource(R.string.update_available, version),

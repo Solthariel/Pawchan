@@ -27,25 +27,29 @@ internal fun CatalogSnapshot.toCatalogUiState(nowEpochSeconds: Long): CatalogUiS
                         )
                     },
             ),
-        threads = threads.map { it.toCatalogThreadUi(board.subjectsEnabled, nowEpochSeconds) },
+        threads = threads.map { it.toCatalogThreadUi(board.subjectsEnabled, nowEpochSeconds, threadTags[it.address]) },
     )
 
 private fun CatalogThread.toCatalogThreadUi(
     subjectsEnabled: Boolean?,
     nowEpochSeconds: Long,
+    tag: String?,
 ): CatalogThreadUi =
     CatalogThreadUi(
         address = address,
         content =
             CatalogThreadContentUi(
                 subject = subject,
-                text = CatalogThreadTextUi(content.document.toCatalogPreview(), content.document.plainText),
+                text = content.document.toCatalogText(tag),
                 author = content.metadata.name,
                 date = content.metadata.date,
                 sage = content.metadata.sage,
                 displaySubject = displaySubject(subjectsEnabled),
             ),
-        attachments = attachments.map(MediaAttachment::toMediaAttachmentUi).withMediaOwner(address.thread.value),
+        attachments =
+            attachments
+                .map(MediaAttachment::toMediaAttachmentUi)
+                .withMediaOwner(address.thread.value, threadAddress = address),
         flags = CatalogThreadFlagsUi(pinned = flags.pinned, closed = flags.closed, endless = flags.endless),
         statistics =
             CatalogThreadStatisticsUi(

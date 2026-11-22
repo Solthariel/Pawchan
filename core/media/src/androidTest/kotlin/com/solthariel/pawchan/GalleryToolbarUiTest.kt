@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.media.GalleryFilter
 import com.solthariel.pawchan.media.GalleryToolbar
@@ -52,7 +53,11 @@ class GalleryToolbarUiTest {
         compose.onNodeWithContentDescription("Все: 99").assertIsSelected()
         saveMediaChromeScreenshot("gallery-filters")
         for (label in listOf("Изображения: 67", "GIF: 1", "Видео: 31", "Все: 99")) {
-            compose.onNodeWithContentDescription(label).performClick().assertIsSelected()
+            compose
+                .onNodeWithContentDescription(label)
+                .performScrollTo()
+                .performClick()
+                .assertIsSelected()
         }
         compose.onNodeWithContentDescription("Фильтр медиа").assertDoesNotExist()
         compose.onNodeWithText("Изображения").assertDoesNotExist()

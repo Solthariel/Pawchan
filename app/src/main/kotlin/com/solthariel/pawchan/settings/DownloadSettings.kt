@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.DownloadNaming
 import com.solthariel.pawchan.domain.settings.ImagePreload
@@ -85,8 +86,11 @@ private fun DownloadDirectory(
             if (app.behavior.client.downloads.treeUri == null) "Выбрать папку загрузок" else "Папка загрузок",
             app.behavior.client.downloads.treeUri
                 ?.let(::downloadDirectoryLabel) ?: "Не выбрана",
-            onClick = { launcher.launch(null) },
+            onClick = {
+                error = null
+                launcher.launch(null)
+            },
         ),
     )
-    error?.let { Text(it, Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodyMedium) }
+    TransientNotice(error, onDismiss = { error = null })
 }

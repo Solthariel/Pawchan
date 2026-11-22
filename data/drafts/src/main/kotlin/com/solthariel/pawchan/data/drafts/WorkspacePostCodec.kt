@@ -41,6 +41,7 @@ internal fun BoardPost.encodePost(): JsonObject =
                 content.document.runs.map { run ->
                     buildJsonObject {
                         put("text", run.text)
+                        run.monkeyBlock?.let { put("monkeyBlock", it) }
                         put("styles", JsonArray(run.styles.map { JsonPrimitive(it.name) }))
                         when (val link = run.link) {
                             is PostLink.Reference -> {
@@ -111,6 +112,7 @@ internal fun JsonObject.decodePost(): BoardPost {
                         PostTextStyle.valueOf(it.jsonPrimitive.content)
                     }.toSet(),
                 link,
+                monkeyBlock = run["monkeyBlock"]?.jsonPrimitive?.intOrNull?.takeIf { it > 0 },
             )
         }
     val metadata =

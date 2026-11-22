@@ -9,7 +9,7 @@
 | Найти команду проверки и требования к среде | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Проверить каждый патч до отправки | [Обязательный порядок](DEVELOPMENT.md#обязательный-порядок-после-каждого-патча) |
 | Понять границы автоматизации | [QUALITY.md](QUALITY.md) |
-| Установить APK / разобраться с подписью | [INSTALL.md](INSTALL.md) |
+| Установить APK / разобраться с подписью | [INSTALL.md](INSTALL.md), [RELEASE_BUILD.md](RELEASE_BUILD.md) |
 | Подготовить проверенный выпуск | [RELEASE.md](RELEASE.md) — чек-лист |
 | Отправить / восстановить публикацию | [RELEASE_PROCESS.md](RELEASE_PROCESS.md) — единственная операционная инструкция |
 | Понять номера и метаданные версий | [update/publishing](../update/publishing/README.md) |

@@ -60,7 +60,7 @@ class MirrorSettingsStyleRuntimeTest {
             mirrors.state.value =
                 MirrorState(
                     "2ch.su",
-                    observations = listOf(MirrorObservation("2ch.su", MirrorAvailability.AVAILABLE, 1_000)),
+                    manualObservations = listOf(MirrorObservation("2ch.su", MirrorAvailability.AVAILABLE, 1_000)),
                 )
         }
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Доступно").fetchSemanticsNodes().isNotEmpty() }
@@ -81,6 +81,6 @@ private class StyleTestMirrors : ForumMirrors {
 
     override fun checkAvailability() {
         requests++
-        state.value = state.value.copy(checking = true)
+        state.value = state.value.copy(manualChecking = true)
     }
 }

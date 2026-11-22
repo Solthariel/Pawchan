@@ -94,16 +94,16 @@ internal class UpdateViewModel(
         fun factory(
             context: Context,
             configuration: UpdateConfiguration,
-            dns: okhttp3.Dns = okhttp3.Dns.SYSTEM,
+            configure: (okhttp3.OkHttpClient.Builder.() -> Unit)? = null,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     UpdateViewModel(
-                        // This ViewModel owns its HTTP resources, but borrows the app resolver.
+                        // This ViewModel owns its HTTP resources.
                         UpdateClient(
                             context,
                             configuration,
-                            updateHttpClient(dns),
+                            updateHttpClient(configure),
                         ),
                     )
                 }

@@ -16,25 +16,28 @@ internal class ComposerDraftSession(
     private var restoreJob: Job? = null
     private var closeJob: Job? = null
     private var generation = 0
-    private var restoreFailed = false
+    var restoreFailed = false
+        private set
     val restoring: Boolean get() = restoreJob?.isActive == true
 
     fun restore() {
         val storage = coordinator ?: return
         restoreFailed = false
         val revision = ++generation
-        val resetId = actions.read().resetId
-        actions.write(actions.read().copy(filesLoading = true))
+        val initial = actions.read()
+        val resetId = initial.resetId
+        actions.write(initial.copy(activity = ComposerDraftActivity.RESTORING))
         val worker =
             scope.launch(start = CoroutineStart.LAZY) {
                 try {
                     val result = storage.load(key)
                     if (revision == generation && actions.read().resetId == resetId) {
                         if (result.isSuccess) {
-                            actions.write((result.getOrNull() ?: ComposerDraftState()).copy(resetId = resetId))
+                            actions.restored(result.getOrNull() != null)
+                            actions.write((result.getOrNull() ?: initial).withResetId(resetId))
                         } else {
                             restoreFailed = true
-                            actions.write(actions.read().copy(filesLoading = false))
+                            actions.write(actions.read().copy(activity = ComposerDraftActivity.RESTORE_FAILED))
                             actions.fail("Не удалось восстановить черновик. Повторите открытие формы.")
                         }
                     }
@@ -54,21 +57,22 @@ internal class ComposerDraftSession(
         draft: ComposerDraftState,
         immediate: Boolean = false,
     ) {
-        if (!draft.filesLoading) {
-            restoreFailed = false
-            coordinator?.schedule(key, draft, immediate)
+        if (!restoreFailed && !draft.inputBlocked) {
+            coordinator?.schedule(key, actions.forStorage(draft), immediate)
         }
     }
 
     fun saveNow(draft: ComposerDraftState) {
-        if (!restoreFailed && !draft.filesLoading) coordinator?.schedule(key, draft, immediate = true)
+        if (!restoreFailed && !draft.inputBlocked) {
+            coordinator?.schedule(key, actions.forStorage(draft), immediate = true)
+        }
     }
 
     fun clear(draft: ComposerDraftState) {
-        restoreFailed = false
+        if (restoreFailed) return
         generation++
         restoreJob?.cancel()
-        coordinator?.schedule(key, draft, immediate = true)
+        coordinator?.schedule(key, actions.forStorage(draft), immediate = true)
     }
 
     fun close(
@@ -81,18 +85,22 @@ internal class ComposerDraftSession(
             restoreJob?.cancel()
             onClosed()
         } else {
-            actions.write(draft.copy(filesLoading = true))
+            actions.write(draft.copy(activity = ComposerDraftActivity.CLOSING))
             val worker =
                 scope.launch(start = CoroutineStart.LAZY) {
                     try {
-                        if (coordinator.flush(key, draft)) {
+                        if (coordinator.flush(key, actions.forStorage(draft))) {
                             onClosed()
                         } else {
-                            actions.write(draft.copy(filesLoading = false))
+                            actions.write(draft.copy(activity = ComposerDraftActivity.IDLE))
                             actions.fail("Не удалось сохранить черновик. Форма осталась открытой.")
                         }
                     } finally {
-                        if (closeJob === coroutineContext[Job]) closeJob = null
+                        if (closeJob === coroutineContext[Job]) {
+                            closeJob = null
+                            val current = actions.read()
+                            if (current.closing) actions.write(current.copy(activity = ComposerDraftActivity.IDLE))
+                        }
                     }
                 }
             closeJob = worker
@@ -109,4 +117,6 @@ internal class ComposerDraftSessionActions(
     val read: () -> ComposerDraftState,
     val write: (ComposerDraftState) -> Unit,
     val fail: (String) -> Unit,
+    val forStorage: (ComposerDraftState) -> ComposerDraftState = { it },
+    val restored: (Boolean) -> Unit = {},
 )

@@ -75,6 +75,7 @@ private fun composerAttachmentRejection(
 
 internal fun prepareAttachment(file: ComposerAttachment): ReplyAttachment {
     val options = file.options
+    if (options.edit != null) return prepareEditedAttachment(file, ::exportImageEdit)
     var content = file.source.content
     val reencoding = options.reencoding
     if (reencoding != null) {

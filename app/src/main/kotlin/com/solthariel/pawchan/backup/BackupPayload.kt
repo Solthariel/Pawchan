@@ -25,6 +25,7 @@ internal fun backupPayload(backup: ClientBackup): Map<String, String> =
                 BackupSection.FAVORITES -> {
                     buildJsonObject {
                         put("boards", backup.settings["favorite_boards_v2"].orEmpty())
+                        put("boardsBySite", backup.settings["favorite_boards_other_v1"].orEmpty())
                         val threads = encodeThreads(backup.favorites.filter { it.favorite }, false)
                         put("threads", Json.parseToJsonElement(threads))
                     }.toString()
@@ -75,6 +76,7 @@ internal fun readBackupPayload(
     val favoriteSource = payload[BackupSection.FAVORITES.fileName()]?.let { Json.parseToJsonElement(it).jsonObject }
     if (favoriteSource != null) {
         preferences["favorite_boards_v2"] = favoriteSource.getValue("boards").jsonPrimitive.content
+        preferences["favorite_boards_other_v1"] = favoriteSource["boardsBySite"]?.jsonPrimitive?.content.orEmpty()
     }
     val favorites = favoriteSource?.let { decodeThreads(it.getValue("threads").toString(), false) }.orEmpty()
     val history = payload[BackupSection.HISTORY.fileName()]?.let { decodeThreads(it, true) }.orEmpty()
@@ -103,7 +105,7 @@ internal fun readBackupPayload(
 internal fun preferenceSection(key: String): BackupSection =
     when (key) {
         "app_content_filters_v1" -> BackupSection.FILTERS
-        "favorite_boards_v2" -> BackupSection.FAVORITES
+        "favorite_boards_v2", "favorite_boards_other_v1" -> BackupSection.FAVORITES
         else -> BackupSection.SETTINGS
     }
 
@@ -123,6 +125,10 @@ internal fun backupCounts(backup: ClientBackup): Map<BackupSection, Int> =
 
             BackupSection.FAVORITES -> {
                 backup.favorites.count { it.favorite } +
+                    backup.settings["favorite_boards_other_v1"]
+                        .orEmpty()
+                        .lineSequence()
+                        .count { it.isNotBlank() } +
                     backup.settings["favorite_boards_v2"]
                         .orEmpty()
                         .lineSequence()

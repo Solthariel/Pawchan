@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
 
 internal data class ContentFilterInputPresentation(
@@ -29,8 +30,9 @@ internal fun FilterInputHint(
     presentation: ContentFilterInputPresentation,
     modifier: Modifier = Modifier,
 ) {
+    TransientNotice(presentation.error)
     Text(
-        presentation.error?.let { "$it. ${presentation.hint}" } ?: presentation.hint,
+        presentation.hint,
         modifier = modifier,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,

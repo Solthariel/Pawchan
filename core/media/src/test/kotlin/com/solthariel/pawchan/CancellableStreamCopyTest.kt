@@ -1,12 +1,14 @@
 package com.solthariel.pawchan
 
 import com.solthariel.pawchan.media.copyCancellableBytes
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -67,5 +69,51 @@ class CancellableStreamCopyTest {
             owner.cancelAndJoin()
             assertTrue(cancelled)
             assertEquals(0, output.size())
+        }
+
+    @Test
+    fun closedReadAfterCancellationRemainsCancellationAndPublishesNothing() =
+        runTest {
+            val output = ByteArrayOutputStream()
+            var sawCancellation = false
+            val owner =
+                launch {
+                    val input =
+                        object : InputStream() {
+                            override fun read(): Int = error("Bulk read required")
+
+                            override fun read(buffer: ByteArray): Int {
+                                coroutineContext[kotlinx.coroutines.Job]?.cancel()
+                                throw IOException("Socket closed by cancellation")
+                            }
+                        }
+                    try {
+                        copyCancellableBytes(input, output)
+                    } catch (cancelled: CancellationException) {
+                        sawCancellation = true
+                        throw cancelled
+                    }
+                }
+            owner.join()
+            assertTrue(sawCancellation)
+            assertEquals(0, output.size())
+        }
+
+    @Test
+    fun genuineReadFailureWithoutCancellationIsNotSwallowed() =
+        runTest {
+            val failure = IOException("Connection lost")
+            val input =
+                object : InputStream() {
+                    override fun read(): Int = error("Bulk read required")
+
+                    override fun read(buffer: ByteArray): Int = throw failure
+                }
+            try {
+                copyCancellableBytes(input, ByteArrayOutputStream())
+                throw AssertionError("Read error swallowed")
+            } catch (actual: IOException) {
+                assertSame(failure, actual)
+            }
         }
 }

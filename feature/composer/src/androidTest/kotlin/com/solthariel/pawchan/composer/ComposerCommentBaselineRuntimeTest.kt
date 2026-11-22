@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.composer
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -46,14 +47,13 @@ class ComposerCommentBaselineRuntimeTest {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
                 MaterialTheme {
-                    var value by remember { mutableStateOf(TextFieldValue(firstLine)) }
+                    val value = rememberTextFieldState(firstLine)
                     ComposerCommentField(
                         value = value,
                         limits = ComposerLimits(40 * 1024 * 1024, 4, 15_000),
                         enabled = true,
                         focusRequester = remember { FocusRequester() },
                         modifier = Modifier.testTag(COMMENT),
-                        onChange = { value = it },
                     )
                 }
             }

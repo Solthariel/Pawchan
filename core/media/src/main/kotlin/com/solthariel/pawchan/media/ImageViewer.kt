@@ -86,7 +86,7 @@ internal fun ImageViewer(
             Unit
         }
         Box(Modifier.fillMaxSize().mediaViewerGestures(motion, navigation, onClose) { menu(false) })
-        MediaViewerChrome(motion) {
+        MediaViewerChrome(motion, blackChrome = true) {
             MediaToolbar(
                 attachment = image,
                 navigation = navigation,

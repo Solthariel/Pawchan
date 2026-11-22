@@ -24,7 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
-/** Run with visible Android navigation buttons; samples the themed background underneath them. */
+/** Samples the host's last drawn row, without sampling the system's own navigation icons. */
 class ModalNavigationBackgroundRuntimeTest {
     @get:Rule val compose = createComposeRule()
 
@@ -46,7 +46,7 @@ class ModalNavigationBackgroundRuntimeTest {
             ModalLayerHost {
                 PawchanTheme(ThemePreference.LIGHT) {
                     themeBackground = MaterialTheme.colorScheme.background
-                    Box(Modifier.fillMaxSize().background(Color.White)) {
+                    Box(Modifier.fillMaxSize().background(themeBackground)) {
                         TextButton({ open.value = true }) { Text("Open modal") }
                     }
                     if (open.value) {

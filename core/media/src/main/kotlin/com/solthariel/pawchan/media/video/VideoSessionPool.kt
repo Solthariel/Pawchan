@@ -6,7 +6,7 @@ import android.os.Looper
 /**
  * Запас сессий просмотрщика: следующее видео открывается заранее (на паузе, без поверхности),
  * а видео, с которого ушли свайпом, живёт ещё [LEFT_EXPIRY_MS] — при возврате открывается без загрузки, с начала.
- * Держит не больше [CAPACITY] сессий: аппаратных декодеров на устройстве немного.
+ * Держит не больше [CAPACITY] запасной сессии вместе с активной: аппаратных декодеров мало.
  */
 internal object VideoSessionPool {
     private class Entry(
@@ -31,6 +31,12 @@ internal object VideoSessionPool {
 
     /** Ушли с видео свайпом: пауза, а не закрытие; запоминается, играло ли оно. */
     fun retain(session: VideoPlaybackSession) {
+        // Preserve a prepared next video rather than keeping the one we just left.
+        // This bounds the native-memory cost to one spare player plus the active one.
+        if (entries.size >= CAPACITY && entries.values.any { it.expiry == null }) {
+            session.close()
+            return
+        }
         val playing = session.status.value.playing
         session.pause()
         val expiry = Runnable { drop(session.url, session) }
@@ -87,4 +93,4 @@ internal object VideoSessionPool {
 }
 
 private const val LEFT_EXPIRY_MS = 5_000L
-private const val CAPACITY = 2
+private const val CAPACITY = 1

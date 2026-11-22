@@ -23,13 +23,16 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.SecureFlagPolicy
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import android.graphics.Color as AndroidColor
 
 /** Device tests: real native windows, not the host-side state-model checks. */
 class ModalLayerRuntimeTest {
@@ -79,6 +82,47 @@ class ModalLayerRuntimeTest {
         assertEquals(1f, pagePixel().red, 0.01f)
     }
 
+    @Test fun videoBackdropReplacesPickerScrimAndClosingRestoresPicker() {
+        val picker = mutableStateOf(false)
+        val video = mutableStateOf(false)
+        compose.setContent {
+            MaterialTheme {
+                SafeAreaModalHost {
+                    Box(Modifier.fillMaxSize().background(Color.White)) {
+                        TextButton({ picker.value = true }) { Text("Open picker") }
+                    }
+                    if (picker.value) {
+                        ModalWindow({ picker.value = false }, strength = ModalScrimStrength.MEDIA) {
+                            TextButton({ video.value = true }) { Text("Open video") }
+                        }
+                    }
+                    if (video.value) {
+                        FullScreenModalWindow(
+                            { video.value = false },
+                            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+                            replacesPageScrim = true,
+                        ) {
+                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f))) {
+                                TextButton({ video.value = false }) { Text("Close video") }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("Open picker").performClick()
+        assertEquals(0.1f, pagePixel().red, 0.02f)
+        compose.onNodeWithText("Open video").performClick()
+        compose.waitForIdle()
+        assertEquals(1f, pagePixel().red, 0.02f)
+        // Compose may be idle while Android is still animating the separate dialog window.
+        // Keep the 90% dim assertion and require all three channels in a real screen capture.
+        compose.waitUntil(5_000) { hasNinetyPercentDimAtScreenCenter() }
+        compose.onNodeWithText("Close video").performClick()
+        assertEquals(0.1f, pagePixel().red, 0.02f)
+        compose.onNodeWithText("Open video").assertExists()
+    }
+
     @Test fun managedWindowClearsOnlyPlatformDimAndPreservesSecurePolicy() {
         lateinit var window: Window
         compose.setContent {
@@ -100,6 +144,35 @@ class ModalLayerRuntimeTest {
         }
     }
 
+    @Test fun opaqueWindowDoesNotRestorePlatformDimWhenItsContentIsDisposed() {
+        val disable = mutableStateOf(false)
+        lateinit var window: Window
+        compose.setContent {
+            MaterialTheme {
+                Dialog(onDismissRequest = {}) {
+                    val view = LocalView.current
+                    SideEffect { window = (view.parent as DialogWindowProvider).window }
+                    if (disable.value) DisablePlatformDim(restoreDim = false)
+                    Text("Window")
+                }
+            }
+        }
+        compose.runOnIdle {
+            window.setDimAmount(0.6f)
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            disable.value = true
+        }
+        compose.runOnIdle {
+            assertEquals(0f, window.attributes.dimAmount, 0f)
+            assertEquals(0, window.attributes.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            disable.value = false
+        }
+        compose.runOnIdle {
+            assertEquals(0f, window.attributes.dimAmount, 0f)
+            assertEquals(0, window.attributes.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
+    }
+
     @Test fun dropdownUsesTheSamePageScrimAndRestoresOnDismiss() {
         val open = mutableStateOf(false)
         compose.setContent {
@@ -118,6 +191,18 @@ class ModalLayerRuntimeTest {
         assertEquals(0.4f, pagePixel().red, 0.02f)
         compose.onNodeWithText("Close menu").performClick()
         assertEquals(1f, pagePixel().red, 0.01f)
+    }
+
+    private fun hasNinetyPercentDimAtScreenCenter(): Boolean {
+        val screenshot = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: return false
+        return try {
+            val pixel = screenshot.getPixel(screenshot.width / 2, screenshot.height / 2)
+            intArrayOf(AndroidColor.red(pixel), AndroidColor.green(pixel), AndroidColor.blue(pixel)).all {
+                kotlin.math.abs(it / 255f - 0.1f) <= 0.03f
+            }
+        } finally {
+            screenshot.recycle()
+        }
     }
 
     /** Keep screenshot probes outside Android 15 system navigation contrast scrims. */

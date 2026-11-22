@@ -25,12 +25,15 @@ data class PostTextRun(
     val text: String,
     val styles: Set<PostTextStyle> = emptySet(),
     val link: PostLink? = null,
+    /** One-based id of a server-marked Dvach answer inside this post, never inferred from text. */
+    val monkeyBlock: Int? = null,
 )
 
 class PostDocument(
     runs: List<PostTextRun>,
 ) {
     val runs: List<PostTextRun> = runs.filter { it.text.isNotEmpty() }.toList()
+    val hasMonkeyReply: Boolean = this.runs.any { it.monkeyBlock != null }
     val plainText: String = this.runs.joinToString(separator = "", transform = PostTextRun::text)
 
     companion object {

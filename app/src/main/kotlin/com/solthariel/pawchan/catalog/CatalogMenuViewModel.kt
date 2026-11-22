@@ -33,12 +33,12 @@ internal class CatalogMenuViewModel(
     val information = mutableInformation.asStateFlow()
     val preferences =
         combine(favorites.favoriteBoards, settings.homeBoard, settings.theme, saving) { boards, home, theme, write ->
-            write.copy(favorite = board.board in boards, home = board == (home ?: defaultBoardAddress()), theme = theme)
+            write.copy(favorite = board in boards, home = board == (home ?: defaultBoardAddress()), theme = theme)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, BoardMenuPreferences(saving = true))
 
     fun toggleFavorite() {
         val favorite = !preferences.value.favorite
-        save { favorites.setFavoriteBoard(board.board, favorite) }
+        save { favorites.setFavoriteBoard(board, favorite) }
     }
 
     fun makeHome() {

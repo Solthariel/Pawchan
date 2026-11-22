@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
 import com.solthariel.pawchan.core.ui.UiToolbarSearchTransition
 import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
+import com.solthariel.pawchan.navigation.chrome.AppBottomActions
+import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
+import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import com.solthariel.pawchan.settings.ContentFilterBackupActions
 import com.solthariel.pawchan.settings.ContentFilterMenuActions
@@ -130,6 +133,25 @@ class ContentFilterAppearanceUiTest {
             assertEquals(expected.fontWeight, actual.fontWeight)
             assertEquals(expected.lineHeight, actual.lineHeight)
         }
+    }
+
+    @Test
+    fun lastRuleCanScrollAboveFloatingNavigation() {
+        val rules = (1..12).map { newContentFilterRule(defaultBoardAddress(), "Правило $it") }
+        compose.setContent {
+            MaterialTheme {
+                AppNavigationWorkspace(AppBottomActions({}, {}, {}, {}), AppBottomDestination.SETTINGS) {
+                    ContentFilterRulesList(rules, ContentFilterStatistics(), "Пусто", Modifier.testTag("rules")) {}
+                }
+            }
+        }
+        compose.onNodeWithTag("rules").performSemanticsAction(SemanticsActions.ScrollBy) { action ->
+            action(0f, 10000f)
+        }
+        compose.waitForIdle()
+        val last = compose.onNodeWithText("Правило 12", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val nav = compose.onNodeWithContentDescription("Настройки").fetchSemanticsNode().boundsInRoot
+        assertTrue("Last rule must not be covered by navigation", last.bottom <= nav.top)
     }
 
     @Test

@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.security.AppLockDelay
 import com.solthariel.pawchan.domain.security.appLockDelayChoices
 import com.solthariel.pawchan.settings.SettingsItem
@@ -35,12 +36,7 @@ internal fun AppLockSettingsContent(
         if (state.enabled) LockEnabledControls(state, fingerprintAvailable, onDelay, onEdit)
         val error = state.error
         if (!state.editing && error != null) {
-            Text(
-                error,
-                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            TransientNotice(error)
         }
         Text(
             "Забытый PIN-код восстановить нельзя.",

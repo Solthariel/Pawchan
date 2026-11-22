@@ -64,7 +64,7 @@ private suspend fun readComposerAttachment(
     }
     val input = requireNotNull(resolver.openInputStream(uri)) { "Не удалось открыть файл" }
     val bytes = input.use { it.readBounded(limit) }
-    val source = ReplyAttachment(name, resolver.getType(uri), bytes)
+    val source = ReplyAttachment(incomingComposerFileName(name, bytes), resolver.getType(uri), bytes)
     val file = ComposerAttachment(source = source, sourceUri = uri.toString())
     return if (file.video) {
         val details = videoDetails(context, uri)

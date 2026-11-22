@@ -21,7 +21,12 @@ fun NewThreadScreen(
                 state.draft,
                 state.rules,
                 state.captchaState,
-                ComposerScreenStatus(state.progress, state.failure, state.canSubmit),
+                ComposerScreenStatus(
+                    state.progress,
+                    state.failure,
+                    state.canSubmit,
+                    canRequestSubmit = state.canRequestSubmit,
+                ),
             ),
         imageLoader = imageLoader,
         actions = ComposerScreenActions(actions.fields, actions.captcha, actions.onSubmit, actions.onBack),

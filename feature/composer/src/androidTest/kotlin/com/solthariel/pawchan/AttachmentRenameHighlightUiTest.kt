@@ -7,6 +7,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -33,18 +36,24 @@ class AttachmentRenameHighlightUiTest {
             }
         }
         assertRenameState("Выключено")
-        compose.onNodeWithText("Переименовать").performTextReplacement("newname")
+        compose.onNodeWithText("Имя файла").performTextReplacement("newname")
         assertRenameState("Включено")
-        compose.onNodeWithText("Переименовать").performTextReplacement("image")
+        compose.onNodeWithText("Имя файла").performTextReplacement("image")
         assertRenameState("Выключено")
-        compose.onNodeWithText("Переименовать").performTextReplacement("newname")
+        compose.onNodeWithText("Имя файла").performTextReplacement("newname")
         compose.onNodeWithContentDescription("Вернуть исходное имя").performClick()
         assertRenameState("Выключено")
-        compose.onNodeWithText("Переименовать").performTextReplacement("newname")
-        compose.onNodeWithContentDescription("Убрать имя файла").performClick()
+        compose.onNodeWithText("Имя файла").performTextReplacement("newname")
+        compose
+            .onNode(
+                hasContentDescription("Убрать имя файла") and hasAnyAncestor(hasTestTag("attachment-rename-controls")),
+            ).performClick()
         compose.onNodeWithContentDescription("Переименовать").assertIsNotEnabled()
         assertRenameState("Выключено")
-        compose.onNodeWithContentDescription("Убрать имя файла").performClick()
+        compose
+            .onNode(
+                hasContentDescription("Убрать имя файла") and hasAnyAncestor(hasTestTag("attachment-rename-controls")),
+            ).performClick()
         assertRenameState("Включено")
     }
 

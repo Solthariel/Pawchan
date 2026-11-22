@@ -47,6 +47,8 @@ internal class ContentFilterDraft(
                 ),
         )
 
+    fun snapshot(): List<Any> = listOf(enabled, mode, text, boards, threadIds, boundary, exceptions, postScope)
+
     fun inputError(): String? =
         when {
             threadIdParts().any { it.toLongOrNull()?.let { id -> id > 0 } != true } -> {

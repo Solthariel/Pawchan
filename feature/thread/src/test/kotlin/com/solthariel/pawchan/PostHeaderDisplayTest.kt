@@ -10,9 +10,12 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.PostMetadata
 import com.solthariel.pawchan.domain.model.ThreadFlags
 import com.solthariel.pawchan.thread.ThreadOpeningInfo
+import com.solthariel.pawchan.thread.isOpeningPost
 import com.solthariel.pawchan.thread.preparePostDisplay
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PostHeaderDisplayTest {
@@ -33,7 +36,9 @@ class PostHeaderDisplayTest {
             first.markers,
         )
         assertEquals("tag", first.tag)
+        assertTrue(isOpeningPost(post(42)))
         val reply = preparePostDisplay(post(43), 2, opening)
+        assertFalse(isOpeningPost(post(43)))
         assertEquals(emptyList<PostStateMarker>(), reply.markers)
         assertNull(reply.tag)
     }

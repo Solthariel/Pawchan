@@ -71,7 +71,7 @@ internal fun RowScope.AppBottomItem(
             Icon(
                 painterResource(state.icon),
                 null,
-                tint = color.copy(alpha = if (enabled) 1f else DISABLED_ALPHA),
+                tint = color.copy(alpha = if (enabled && state.selected != false) 1f else DISABLED_ALPHA),
                 modifier = Modifier.size(24.dp),
             )
         }

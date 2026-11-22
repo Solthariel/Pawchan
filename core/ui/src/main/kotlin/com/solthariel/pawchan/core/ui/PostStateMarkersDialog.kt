@@ -28,6 +28,7 @@ import com.solthariel.pawchan.core.ui.AppDialog
 internal fun PostStateMarkersDialog(
     markers: List<PostStateMarker>,
     email: String?,
+    labelOverrides: Map<PostStateMarker, String>,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -35,7 +36,7 @@ internal fun PostStateMarkersDialog(
         Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp)) {
             markers.forEach { marker ->
                 val address = email?.takeIf { marker == PostStateMarker.EMAIL }
-                MarkerRow(marker, address) {
+                MarkerRow(marker, address, labelOverrides[marker]) {
                     address?.let {
                         copyTextToClipboard(context, "Email", it)
                         onClose()
@@ -50,6 +51,7 @@ internal fun PostStateMarkersDialog(
 private fun MarkerRow(
     marker: PostStateMarker,
     address: String?,
+    labelOverride: String?,
     onClick: () -> Unit,
 ) {
     Row(
@@ -64,7 +66,7 @@ private fun MarkerRow(
     ) {
         UiIcon(marker.icon, marker.color(), Modifier.size(20.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(marker.label), style = MaterialTheme.typography.bodyLarge)
+            Text(labelOverride ?: stringResource(marker.label), style = MaterialTheme.typography.bodyLarge)
             address?.let {
                 Text(
                     it,

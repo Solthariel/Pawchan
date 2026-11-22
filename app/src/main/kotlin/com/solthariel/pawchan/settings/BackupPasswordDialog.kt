@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +25,7 @@ import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.data.maintenance.BackupProtection
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
@@ -93,7 +93,7 @@ private fun BackupPasswordFields(
         if (!creating || input.encrypted) {
             OutlinedTextField(
                 value = input.password,
-                onValueChange = { if (it.length <= 1024) input.password = it },
+                onValueChange = { input.password = it },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !busy,
                 label = { Text("Пароль") },
@@ -104,7 +104,7 @@ private fun BackupPasswordFields(
             if (creating) {
                 OutlinedTextField(
                     value = input.repeated,
-                    onValueChange = { if (it.length <= 1024) input.repeated = it },
+                    onValueChange = { input.repeated = it },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !busy,
                     label = { Text("Повторите пароль") },
@@ -113,19 +113,8 @@ private fun BackupPasswordFields(
                     singleLine = true,
                 )
             }
-            Text(
-                if (creating) {
-                    "Не менее 10 символов. Используйте длинную парольную фразу, не PIN приложения. " +
-                        "Забытый пароль восстановить нельзя."
-                } else {
-                    "Пароль копии может отличаться от PIN приложения."
-                },
-                style = MaterialTheme.typography.bodySmall,
-            )
-        } else {
-            Text("Копия не зашифрована. Любой, у кого есть файл, сможет прочитать её содержимое.")
         }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        TransientNotice(error)
     }
 }
 

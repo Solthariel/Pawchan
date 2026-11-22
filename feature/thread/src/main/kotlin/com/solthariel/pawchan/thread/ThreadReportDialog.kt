@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.AppDialogStyle
 import com.solthariel.pawchan.core.ui.DialogActions
+import com.solthariel.pawchan.core.ui.TransientNotice
 
 @Composable
 internal fun ThreadReportDialog(
@@ -73,9 +74,11 @@ internal fun ThreadReportDialog(
 
 @Composable
 private fun ThreadReportStatus(report: ThreadReportState) {
-    if (report.sending) Text("Отправляется…", style = MaterialTheme.typography.bodyMedium)
-    if (report.sent > 0) Text("Отправлено: ${report.sent}", style = MaterialTheme.typography.bodyMedium)
-    report.failure?.let {
-        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-    }
+    val message =
+        when {
+            report.sending -> "Отправляется…"
+            report.sent > 0 -> "Отправлено: ${report.sent}"
+            else -> report.failure
+        }
+    TransientNotice(message)
 }

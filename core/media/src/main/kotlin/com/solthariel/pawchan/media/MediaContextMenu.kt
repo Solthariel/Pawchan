@@ -73,6 +73,8 @@ data class MediaViewerMenu(
     val metadata: MediaMetadataSource? = null,
     /** Открыто кнопкой ⋮: меню всплывает у кнопки и показывает сводку метаданных. */
     val anchored: Boolean = false,
+    /** null — режим PiP недоступен. */
+    val onPip: (() -> Unit)? = null,
 )
 
 data class MediaMenuRequest(
@@ -107,6 +109,7 @@ internal enum class MediaMenuItem(
     COPY_LINK(R.string.media_menu_copy_link),
     FAVORITE(R.string.media_menu_favorite),
     SOFTWARE_DECODER(R.string.media_menu_software_decoder),
+    PICTURE_IN_PICTURE(R.string.video_pip),
 }
 
 /**
@@ -136,6 +139,7 @@ internal fun mediaMenuItems(
             MediaMenuPlace.VIEWER -> {
                 listOfNotNull(
                     MediaMenuItem.METADATA.takeIf { viewer?.metadata != null },
+                    MediaMenuItem.PICTURE_IN_PICTURE.takeIf { viewer?.onPip != null },
                     search,
                     MediaMenuItem.COPY_IMAGE.takeIf { canCopyImage },
                     MediaMenuItem.GO_TO_POST.takeIf { canGoToPost },
@@ -263,13 +267,21 @@ private class MediaMenuHandlers(
 }
 
 @Composable
-private fun MediaSearchItems(
+internal fun MediaSearchItems(
     actions: MediaMenuActions,
     onBack: () -> Unit,
 ) {
     ActionMenuItem("Назад", onBack, navigation = MenuNavigation.BACK)
-    ActionMenuItem(stringResource(R.string.media_menu_google), { actions.onSearch(ImageSearchEngine.GOOGLE) })
-    ActionMenuItem(stringResource(R.string.media_menu_yandex), { actions.onSearch(ImageSearchEngine.YANDEX) })
+    ActionMenuItem(
+        stringResource(R.string.media_menu_google),
+        { actions.onSearch(ImageSearchEngine.GOOGLE) },
+        icon = UiIconKind.SEARCH,
+    )
+    ActionMenuItem(
+        stringResource(R.string.media_menu_yandex),
+        { actions.onSearch(ImageSearchEngine.YANDEX) },
+        icon = UiIconKind.SEARCH,
+    )
 }
 
 @Composable
@@ -310,6 +322,7 @@ private fun mediaMenuAction(
         MediaMenuItem.COPY_LINK -> actions.onCopyLink
         MediaMenuItem.FAVORITE -> handlers.closing(actions.onFavorite)
         MediaMenuItem.SOFTWARE_DECODER -> handlers.closing { request.viewer?.onSoftwareDecoder?.invoke() }
+        MediaMenuItem.PICTURE_IN_PICTURE -> handlers.closing { request.viewer?.onPip?.invoke() }
     }
 
 @Composable
@@ -336,4 +349,5 @@ private val MediaMenuItem.icon: UiIconKind
             MediaMenuItem.COPY_LINK -> UiIconKind.LINK
             MediaMenuItem.FAVORITE -> UiIconKind.BOOKMARK_ADD
             MediaMenuItem.SOFTWARE_DECODER -> UiIconKind.SETTINGS
+            MediaMenuItem.PICTURE_IN_PICTURE -> UiIconKind.PIP
         }

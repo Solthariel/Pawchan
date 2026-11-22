@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.composer
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -68,14 +69,13 @@ class ComposerCommentPixelsRuntimeTest {
             pixelsPerDp = density.density
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
                 MaterialTheme(colorScheme = darkColorScheme()) {
-                    var value by remember { mutableStateOf(TextFieldValue(TEST_TEXT, TextRange(TEST_TEXT.length))) }
+                    val value = rememberTextFieldState(TEST_TEXT, TextRange(TEST_TEXT.length))
                     ComposerCommentField(
                         value = value,
                         limits = ComposerLimits(40 * 1024 * 1024, 4, 15_000),
                         enabled = true,
                         focusRequester = remember { FocusRequester() },
                         modifier = Modifier.testTag(PIXEL_COMMENT),
-                        onChange = { value = it },
                     )
                 }
             }

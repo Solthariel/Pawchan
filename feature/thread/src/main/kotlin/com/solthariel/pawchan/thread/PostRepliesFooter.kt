@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.PostStatsText
 
 @Composable
-internal fun PostRepliesFooter(
+fun PostRepliesFooter(
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
