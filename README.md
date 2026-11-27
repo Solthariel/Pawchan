@@ -1,4 +1,5 @@
-<img src="docs/screenshots/icon.png" width="112" align="right" alt="">
+<img src="docs/screenshots/icon-dark.png#gh-dark-mode-only" width="88" align="right" alt="">
+<img src="docs/screenshots/icon-light.png#gh-light-mode-only" width="88" align="right" alt="">
 
 # Pawchan 0.1.53
 
@@ -6,20 +7,17 @@ Android-клиент для 2ch с чтением 4chan и Архивача. П�
 Код версии Android (`versionCode`): **54**.
 
 [![Последний релиз](https://img.shields.io/github/v/release/Solthariel/Pawchan?label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/Solthariel/Pawchan/releases/latest)
-[![Загрузки](https://img.shields.io/github/downloads/Solthariel/Pawchan/total?label=%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8)](https://github.com/Solthariel/Pawchan/releases)
+[![Загрузки релиза](https://img.shields.io/github/downloads/Solthariel/Pawchan/latest/total?label=%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8%20%D1%80%D0%B5%D0%BB%D0%B8%D0%B7%D0%B0)](https://github.com/Solthariel/Pawchan/releases/latest)
 ![Android 11+](https://img.shields.io/badge/Android-11%2B-3ddc84?logo=android&logoColor=white)
 [![GPL-3.0](https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-GPL--3.0-blue)](LICENSE)
 
-<table>
-  <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/reading.webp" width="300" alt="Чтение"><br><sub>Доска, поиск, тред и его статистика, видео и картинки, превью ответа</sub></td>
-    <td align="center" width="50%"><img src="docs/screenshots/gallery.webp" width="300" alt="Галерея треда"><br><sub>Галерея треда: фильтры и выделение файлов</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/screenshots/editor.webp" width="300" alt="Новый пост и редактор"><br><sub>Новый пост с файлами и редактор картинок</sub></td>
-    <td align="center"><img src="docs/screenshots/sections.webp" width="300" alt="Разделы и настройки"><br><sub>Треды, доски 2ch и 4chan, настройки</sub></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/screenshots/reading.webp" width="24%" alt="Чтение" title="Доска, поиск, тред и его статистика, видео и картинки, превью ответа">
+  <img src="docs/screenshots/gallery.webp" width="24%" alt="Галерея треда" title="Галерея треда: фильтры и выделение файлов">
+  <img src="docs/screenshots/editor.webp" width="24%" alt="Новый пост и редактор" title="Новый пост с файлами и редактор картинок">
+  <img src="docs/screenshots/sections.webp" width="24%" alt="Разделы и настройки" title="Треды, доски 2ch и 4chan, настройки">
+</p>
+<p align="center"><sub>Чтение · Галерея треда · Новый пост и редактор · Разделы и настройки</sub></p>
 
 ## Что умеет
 
