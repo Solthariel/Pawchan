@@ -9,7 +9,6 @@ import com.solthariel.pawchan.domain.filter.FilterBoundary
 import com.solthariel.pawchan.domain.filter.FilterTextMatch
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.Base64
 
 class ContentFilterCodecTest {
     @Test fun newModesScopesFlagsAndUtf8RoundTrip() {

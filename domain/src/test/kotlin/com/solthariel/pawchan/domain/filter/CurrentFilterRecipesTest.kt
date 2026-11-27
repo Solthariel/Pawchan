@@ -1,8 +1,5 @@
 package com.solthariel.pawchan.domain.filter
 
-import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.BoardId
-import com.solthariel.pawchan.domain.model.SiteId
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test

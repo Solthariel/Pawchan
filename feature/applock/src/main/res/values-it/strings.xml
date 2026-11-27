@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="ui_digits_entered_of">Cifre inserite: %1$d di %2$d</string>
+    <string name="ui_enter_pin">Inserisci il PIN</string>
+    <string name="ui_loading">Caricamento…</string>
+    <string name="ui_new_pin">Nuovo PIN</string>
+    <string name="ui_cancel">Annulla</string>
+    <string name="ui_fingerprint">Impronta digitale</string>
+    <string name="ui_repeat_pin">Ripeti il PIN</string>
+    <plurals name="ui_retry_in_sec">
+        <item quantity="one">Riprova tra %1$d secondo</item>
+        <item quantity="many">Secondi prima del nuovo tentativo: %1$d</item>
+        <item quantity="other">Riprova tra %1$d secondi</item>
+    </plurals>
+    <string name="ui_confirm_fingerprint">Conferma impronta digitale</string>
+    <string name="ui_checking_e17a">Controllo…</string>
+    <string name="ui_delete_digit">Elimina cifra</string>
+    <string name="platform_enter_pin">Inserisci PIN</string>
+    <string name="platform_confirm_your_fingerprint">Conferma l’impronta digitale</string>
+    <string name="platform_unlock_pawchan">Sblocca Pawchan</string>
+</resources>

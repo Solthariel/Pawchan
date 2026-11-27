@@ -17,7 +17,7 @@ internal fun BindVideoCompletion(
     LaunchedEffect(player, status.ended, completion) {
         val visible = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && !player.inPip
         if (status.ended && completion == VideoCompletion.REPEAT && visible) {
-            player.startAt(0L)
+            player.replayFromEnd(automatic = true)
         }
     }
 }

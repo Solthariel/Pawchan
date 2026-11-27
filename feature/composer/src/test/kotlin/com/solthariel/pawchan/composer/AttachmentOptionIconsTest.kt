@@ -5,6 +5,23 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AttachmentOptionIconsTest {
+    @Test fun onlyTheFourSelectableFileToolsUseNavigationIconTints() {
+        val expectations =
+            mapOf(
+                R.string.attachment_unique_hash to true,
+                R.string.attachment_strip_metadata to true,
+                R.string.markup_spoiler to true,
+                R.string.attachment_rename to true,
+                R.string.attachment_edit_image to false,
+                R.string.attachment_reencode to false,
+                R.string.attachment_remove_name to false,
+                R.string.editor_crop to false,
+            )
+        expectations.forEach { (label, expected) ->
+            assertEquals(expected, AttachmentTileState(label, checked = false, enabled = true).iconOnlySelection)
+        }
+    }
+
     @Test fun hashFollowsUniqueHashOption() {
         assertEquals(
             R.drawable.ic_attachment_option_hash,

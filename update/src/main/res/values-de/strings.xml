@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="update_current_version">Installiert: %1$s</string>
+    <string name="update_check">Nach Updates suchen</string>
+    <string name="update_checking">Suche nach Updates…</string>
+    <string name="update_up_to_date">Die aktuelle Version ist installiert.</string>
+    <string name="update_available">Verfügbar: %1$s</string>
+    <string name="update_download">Update herunterladen</string>
+    <string name="update_downloading">Laden: %1$d%%</string>
+    <string name="update_install">Update installieren</string>
+    <string name="update_not_configured">Die Adresse des Aktualisierungsservers ist noch nicht konfiguriert.</string>
+    <string name="update_error">Die Aktualisierung konnte nicht geprüft oder heruntergeladen werden.</string>
+    <string name="update_permission">Erlauben Sie die Installation von Updates und drücken Sie erneut „Installieren“.</string>
+</resources>

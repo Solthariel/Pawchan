@@ -10,21 +10,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 /** Plain text rows, deliberately not disabled/clickable menu actions. */
 @Composable
 internal fun ThreadMenuStatistics(content: ThreadUiState.Content) {
+    val res = LocalResources.current
+
     val display = threadMenuStatistics(content)
     Column(
         Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ThreadMenuStatistic("Постов", display.posts)
-        display.deleted?.let { ThreadMenuStatistic("Удалено", it) }
-        ThreadMenuStatistic("Файлов", display.files)
-        ThreadMenuStatistic("Размер файлов", display.size)
-        ThreadMenuStatistic("Участников", display.participants)
+        ThreadMenuStatistic(res.getString(L.ui_posts), display.posts)
+        display.deleted?.let { ThreadMenuStatistic(res.getString(L.ui_deleted), it) }
+        ThreadMenuStatistic(res.getString(L.ui_files), display.files)
+        ThreadMenuStatistic(res.getString(L.ui_file_sizes), display.size)
+        ThreadMenuStatistic(res.getString(L.ui_participants), display.participants)
     }
 }
 

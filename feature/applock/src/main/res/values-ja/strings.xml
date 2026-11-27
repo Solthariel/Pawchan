@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="ui_digits_entered_of">入力した数字：%1$d / %2$d</string>
+    <string name="ui_enter_pin">PIN を入力</string>
+    <string name="ui_loading">読み込み中…</string>
+    <string name="ui_new_pin">新しい PIN</string>
+    <string name="ui_cancel">キャンセル</string>
+    <string name="ui_fingerprint">フィンガープリント</string>
+    <string name="ui_repeat_pin">PIN を再入力</string>
+    <plurals name="ui_retry_in_sec">
+        <item quantity="other">%1$d秒後に再試行</item>
+    </plurals>
+    <string name="ui_confirm_fingerprint">指紋を確認</string>
+    <string name="ui_checking_e17a">確認中…</string>
+    <string name="ui_delete_digit">数字を削除</string>
+    <string name="platform_enter_pin">PIN を入力</string>
+    <string name="platform_confirm_your_fingerprint">指紋を確認</string>
+    <string name="platform_unlock_pawchan">Pawchanのロックを解除</string>
+</resources>

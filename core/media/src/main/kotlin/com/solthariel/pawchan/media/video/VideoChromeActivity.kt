@@ -76,4 +76,5 @@ internal fun Modifier.videoChromeActivity(activity: VideoChromeActivity): Modifi
         }
     }
 
-private const val VIDEO_CONTROLS_TIMEOUT_MS = 3_000L
+/** Панель видео исчезает через 5 секунд без касаний. */
+internal const val VIDEO_CONTROLS_TIMEOUT_MS = 5_000L

@@ -6,10 +6,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.domain.boards.BoardInformation
-import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.isRateLimited
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
@@ -71,7 +71,7 @@ private fun BoardInformationBody(info: BoardInformation) {
         Text(info.description.ifBlank { stringResource(R.string.board_description_missing) })
         info.defaultName?.let { Text(stringResource(R.string.board_default_name, it)) }
         info.bumpLimit?.let { Text(stringResource(R.string.board_bump_limit, it)) }
-        info.maxCommentLength?.let { Text(stringResource(R.string.board_comment_limit, it)) }
+        info.maxCommentLength?.let { limit -> Text(pluralStringResource(R.plurals.board_comment_limit, limit, limit)) }
         if (info.configuration.subjectsEnabled != null || info.configuration.namesEnabled != null) {
             Text(stringResource(R.string.board_configuration))
             info.configuration.subjectsEnabled?.let {

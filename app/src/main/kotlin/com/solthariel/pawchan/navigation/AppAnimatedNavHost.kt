@@ -47,6 +47,7 @@ internal fun AppAnimatedNavHost(
     DisposableEffect(controller) {
         val listener =
             NavController.OnDestinationChangedListener { nav, _, _ ->
+                nav.markReadingRun()
                 val next = nav.currentBackStackEntry
                 val direction = threadsScreenMotion(current?.destination?.route, next?.destination?.route)
                 if (current?.id != next?.id && direction == null) {
@@ -59,7 +60,7 @@ internal fun AppAnimatedNavHost(
     }
     val holder = rememberSaveableStateHolder()
     val navigator = remember(controller) { controller.navigatorProvider.getNavigator(InstantNavigator::class.java) }
-    BackHandler(enabled = current != null && controller.previousBackStackEntry != null) { controller.popBackStack() }
+    BackHandler(enabled = current != null && controller.previousBackStackEntry != null) { controller.popReading() }
     // Restart only the animation clock on instant jumps. A generation key around the destination
     // would also change rememberSaveable's positional keys when the same back-stack entry returns.
     val transition = key(sceneGroup) { updateTransition(current, label = "threads-navigation") }

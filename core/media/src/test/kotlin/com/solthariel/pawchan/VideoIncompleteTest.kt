@@ -1,8 +1,10 @@
 package com.solthariel.pawchan
 
 import android.widget.FrameLayout
+import com.solthariel.pawchan.media.video.VideoAttempt
 import com.solthariel.pawchan.media.video.VideoEngineBackend
 import com.solthariel.pawchan.media.video.VideoEvent
+import com.solthariel.pawchan.media.video.VideoFailure
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import com.solthariel.pawchan.media.video.VideoStage
@@ -14,6 +16,34 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VideoIncompleteTest {
+    @Test
+    fun sourceFailureWaitsForExplicitRetryWithoutChangingDecoderOrLosingPosition() =
+        runTest {
+            val engine = IncompleteTestEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, "https://example.test/video.webm")
+            try {
+                session.start()
+                testScheduler.runCurrent()
+                val stale = engine.listener
+                val last = VideoPlaybackStatus(timeline = VideoTimeline(2400L, 5000L), playing = true, seekable = true)
+                stale(VideoEvent.PROGRESS, last)
+                stale(VideoEvent.ERROR, last.copy(attempt = VideoAttempt(failure = VideoFailure.SOURCE)))
+                stale(VideoEvent.ERROR, last)
+                testScheduler.runCurrent()
+                assertEquals(listOf(false), engine.modes)
+                assertEquals(VideoStage.ERROR, session.status.value.stage)
+                assertEquals(VideoFailure.SOURCE, session.status.value.attempt.failure)
+                session.retry()
+                testScheduler.runCurrent()
+                assertEquals(listOf(false, false), engine.modes)
+                engine.listener(VideoEvent.PROGRESS, last.copy(timeline = VideoTimeline(0L, 5000L)))
+                assertEquals(2400L, engine.seek)
+                assertEquals(null, session.status.value.attempt.failure)
+            } finally {
+                session.close()
+            }
+        }
+
     @Test
     fun incompleteInputPausesWithoutCompletionOrDecoderFallback() =
         runTest {
@@ -100,10 +130,34 @@ class VideoIncompleteTest {
                 session.close()
             }
         }
+
+    @Test
+    fun pauseOrPipCannotAutostartAnotherLoop() =
+        runTest {
+            val engine = IncompleteTestEngine()
+            val session = VideoPlaybackSession(engine, backgroundScope, "file:///test.mp4")
+            try {
+                session.start()
+                testScheduler.runCurrent()
+                engine.listener(VideoEvent.ENDED, VideoPlaybackStatus(ended = true))
+                session.inPip = true
+                session.replayFromEnd(automatic = true)
+                session.inPip = false
+                session.pause()
+                session.replayFromEnd(automatic = true)
+                assertEquals(0, engine.plays)
+                session.togglePlay()
+                assertEquals(1, engine.plays)
+                assertEquals(1, engine.opens)
+            } finally {
+                session.close()
+            }
+        }
 }
 
 private class IncompleteTestEngine : VideoEngineBackend {
     var opens = 0
+    val modes = mutableListOf<Boolean>()
     var plays = 0
     var seek = -1L
     var listener: (VideoEvent, VideoPlaybackStatus) -> Unit = { _, _ -> }
@@ -114,6 +168,7 @@ private class IncompleteTestEngine : VideoEngineBackend {
         onEvent: (VideoEvent, VideoPlaybackStatus) -> Unit,
     ) {
         opens++
+        modes += software
         listener = onEvent
     }
 

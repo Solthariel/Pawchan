@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
+import com.solthariel.pawchan.R.string as L
 
 internal data class ThreadsScreenInput(
     val pages: List<ThreadRowUi>,
@@ -58,7 +60,10 @@ internal data class ThreadsLinkActions(
     val downloads: () -> Unit = {},
 )
 
-/** Экран тредов: страницы, избранные треды и ответы — сворачиваемые секции, ниже история и копии. */
+/**
+ * Экран тредов: страницы, избранные треды и ответы — сворачиваемые секции, ссылки на историю, копии и загрузки.
+ * Порядок и то, какие ссылки убраны в ⋮, задаются в «⋮ → Отображение списка»; по умолчанию — как было.
+ */
 @Composable
 internal fun ThreadsScreen(
     input: ThreadsScreenInput,
@@ -95,7 +100,7 @@ internal fun ThreadsScreen(
                 { query = it },
                 actions,
                 input.pages.isNotEmpty(),
-                ThreadsToolbarActions(onBack) { displaySettings = true },
+                ThreadsToolbarActions(onBack, threadsMenuItems(limits.layout)) { displaySettings = true },
             )
         }) {
             LazyColumn(
@@ -116,10 +121,7 @@ internal fun ThreadsScreen(
                         limits,
                         { menu = it },
                     )
-                threadsSection(ThreadsSection.PAGES, visibleInput.pages, list)
-                threadsSection(ThreadsSection.FAVORITES, visibleInput.favorites, list)
-                threadsSection(ThreadsSection.REPLIES, visibleInput.replies, list)
-                item(key = "links") { ThreadsLinks(input.copies, actions) }
+                threadsHubContent(threadsScreenItems(limits.layout), list)
             }
         }
     }
@@ -142,6 +144,33 @@ internal class ThreadsListContext(
     val limits: com.solthariel.pawchan.domain.settings.NavigationPreferences,
     val onMenu: (ThreadsMenuTarget) -> Unit,
 )
+
+/** Разделы в выбранном порядке; ссылки перед секцией отделяются той же чертой, что и секции. */
+private fun LazyListScope.threadsHubContent(
+    items: List<com.solthariel.pawchan.domain.settings.ThreadsHubItem>,
+    list: ThreadsListContext,
+) {
+    items.forEachIndexed { index, item ->
+        val section = item.section()
+        if (section != null) {
+            threadsSection(section, list.input.rows(section), list)
+        } else {
+            item(key = "link-${item.id}", contentType = "threads-link") {
+                ThreadsLinkItem(item, list.input.copies, list.actions.links)
+            }
+            if (items.getOrNull(index + 1)?.section() != null) {
+                item(key = "link-divider-${item.id}", contentType = "threads-divider") { ThreadsSectionDivider() }
+            }
+        }
+    }
+}
+
+private fun ThreadsScreenInput.rows(section: ThreadsSection): List<ThreadRowUi>? =
+    when (section) {
+        ThreadsSection.PAGES -> pages
+        ThreadsSection.FAVORITES -> favorites
+        ThreadsSection.REPLIES -> replies
+    }
 
 private fun LazyListScope.threadsSection(
     section: ThreadsSection,
@@ -184,13 +213,12 @@ internal fun ThreadsSection.emptyText(): String =
     }
 
 @Composable
-private fun ThreadsLinks(
+private fun ThreadsLinkItem(
+    item: com.solthariel.pawchan.domain.settings.ThreadsHubItem,
     copies: Int,
-    actions: ThreadsScreenActions,
+    links: ThreadsLinkActions,
 ) {
-    Column {
-        ThreadsLinkRow(UiIconKind.DOCUMENT, "История", null, actions.links.history)
-        ThreadsLinkRow(UiIconKind.SAVE, "Сохранённые копии", copies, actions.links.copies)
-        ThreadsLinkRow(UiIconKind.SAVE, "Загрузки", null, actions.links.downloads)
-    }
+    val res = LocalResources.current
+    val count = if (item == com.solthariel.pawchan.domain.settings.ThreadsHubItem.COPIES) copies else null
+    ThreadsLinkRow(item.linkIcon(), res.threadsHubLabel(item), count) { links.open(item) }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.modelLabel
 import com.solthariel.pawchan.domain.settings.ThemePalette
 import com.solthariel.pawchan.domain.settings.currentPalette
 import com.solthariel.pawchan.ui.pawchanColorScheme
@@ -65,7 +66,7 @@ private fun PaletteChoiceRow(
     ) {
         RadioButton(selected, onClick = null, modifier = Modifier.size(48.dp))
         Text(
-            palette.paletteLabel(),
+            modelLabel(palette.paletteLabel()),
             Modifier.weight(1f).padding(end = 8.dp),
             style = MaterialTheme.typography.bodyLarge,
         )

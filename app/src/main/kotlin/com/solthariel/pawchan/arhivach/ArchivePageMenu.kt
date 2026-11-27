@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -32,6 +33,7 @@ import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.archive.ArchiveTag
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ArchivePageMenu(
@@ -74,11 +76,13 @@ private fun ArchiveCurrentPageItem(
     loading: Boolean,
     onClick: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     DropdownMenuItem(
         text = {
             Box(Modifier.fillMaxWidth()) {
                 Text(
-                    if (loading) "Загрузка…" else "$currentPage / ${totalPages ?: "…"}",
+                    if (loading) res.getString(L.ui_loading) else "$currentPage / ${totalPages ?: "…"}",
                     modifier = Modifier.align(Alignment.Center),
                     maxLines = 1,
                     color =
@@ -93,7 +97,7 @@ private fun ArchiveCurrentPageItem(
                 )
                 if (loading) {
                     PageLoadingIndicator(
-                        description = "Загрузка страницы Архивача",
+                        description = res.getString(L.ui_loading_page),
                         modifier = Modifier.align(Alignment.CenterEnd),
                         size = 18.dp,
                     )
@@ -114,6 +118,8 @@ private fun ArchivePageTagItems(
     model: ArchiveBrowseModel,
     onDismiss: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     if (tags.isEmpty()) return
     HorizontalDivider(Modifier.padding(vertical = 4.dp))
     tags.forEach { tag ->
@@ -123,7 +129,13 @@ private fun ArchivePageTagItems(
                 .trim()
                 .ifBlank { tag.title }
         DropdownMenuItem(
-            text = { Text("Убрать тег $shortTag", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            text = {
+                Text(
+                    res.getString(L.ui_remove_tag, shortTag),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
             leadingIcon = {
                 UiIcon(UiIconKind.CLOSE, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(20.dp))
             },
@@ -142,18 +154,20 @@ private fun ArchivePageJumpDialog(
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit,
 ) {
+    val res = LocalResources.current
+
     var pageText by rememberSaveable(currentPage) { mutableStateOf(currentPage.toString()) }
     val targetPage = pageText.toIntOrNull()
     val validPage = targetPage != null && targetPage > 0 && (totalPages == null || targetPage <= totalPages)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Перейти к странице") },
+        title = { Text(res.getString(L.ui_go_to_page)) },
         text = {
             OutlinedTextField(
                 value = pageText,
                 onValueChange = { value -> pageText = value.filter { it in '0'..'9' } },
-                label = { Text("Номер страницы") },
-                supportingText = { totalPages?.let { Text("Всего страниц: $it") } },
+                label = { Text(res.getString(L.ui_page_number)) },
+                supportingText = { totalPages?.let { Text(res.getString(L.ui_total_pages, it)) } },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.testTag("archive-page-number-input"),
@@ -164,9 +178,9 @@ private fun ArchivePageJumpDialog(
                 onClick = { targetPage?.let(onConfirm) },
                 enabled = validPage,
             ) {
-                Text("Перейти")
+                Text(res.getString(L.ui_go_to))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(res.getString(L.ui_cancel)) } },
     )
 }

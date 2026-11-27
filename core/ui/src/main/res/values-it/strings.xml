@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Riprova</string>
+    <string name="core_ui_challenge_open">Completa verifica</string>
+    <string name="core_ui_error_loading_data">Errore durante il caricamento dei dati</string>
+    <string name="core_ui_fast_scrollbar">Scorrimento dell’elenco</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Aggiorna dall’alto</string>
+    <string name="core_ui_pull_refresh_bottom">Aggiorna dal basso</string>
+    <string name="core_ui_thread_author">Creatore del thread</string>
+    <string name="core_ui_post_sage">Non uppare</string>
+    <string name="core_ui_post_email">E-mail dell\'autore</string>
+    <string name="core_ui_thread_sticky">Thread fissato</string>
+    <string name="core_ui_thread_closed">Thread chiuso</string>
+    <string name="core_ui_thread_cyclical">Thread ciclico</string>
+    <string name="core_ui_post_banned">Autore bannato</string>
+    <string name="core_ui_archive_active">Archiver: il thread è attivo e in aggiornamento</string>
+    <string name="core_ui_archive_maybe_deleted">Archiver: il thread originale potrebbe essere stato eliminato</string>
+    <string name="core_ui_archive_saved">Archiver: thread salvato</string>
+    <string name="core_ui_archive_lost">Archiver: il thread è contrassegnato come perso</string>
+    <string name="core_ui_archive_queued">Archiver: il thread è in attesa di elaborazione</string>
+    <string name="core_ui_archive_other">Un altro stato di Archiver</string>
+    <string name="core_ui_copied">Copiato</string>
+    <string name="ui_enter_jpeg_quality">Inserisci la qualità JPEG</string>
+    <string name="ui_value">Valore</string>
+    <string name="ui_quality">Qualità</string>
+    <string name="ui_jpeg_quality_906d">Qualità JPEG, %</string>
+    <string name="ui_from_to">Da %1$d a %2$d</string>
+    <string name="ui_cancel">Annulla</string>
+    <string name="ui_apply">Applica</string>
+    <string name="ui_expanded">Espanso</string>
+    <string name="ui_expand">Espandi</string>
+    <string name="ui_collapsed">Compattato</string>
+    <string name="ui_removed">Rimosso</string>
+</resources>

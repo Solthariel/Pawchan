@@ -2,8 +2,6 @@ package com.solthariel.pawchan.media.video
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -21,12 +19,11 @@ internal fun BindVideoPlaybackLifecycle(
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = LocalContext.current
-    val audio = remember(session) { session.audio(context) }
     val access = LocalVideoPrivacyAccess.current
     val picker = com.solthariel.pawchan.media.LocalMediaPickerPlayback.current
     BindVideoPickerReturn(session, access)
-    LaunchedEffect(session, audio) { session.status.collect { audio.update(it.playing) } }
     DisposableEffect(session, lifecycle, access, picker) {
+        session.audio(context)
         session.privacy.bind(access)
         val observer =
             LifecycleEventObserver { _, event ->

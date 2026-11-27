@@ -3,8 +3,6 @@ package com.solthariel.pawchan.thread
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.MediaAttachment
-import com.solthariel.pawchan.domain.model.MediaDimensions
-import com.solthariel.pawchan.domain.model.MediaKind
 import com.solthariel.pawchan.domain.model.PostDocument
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.domain.model.PostRating

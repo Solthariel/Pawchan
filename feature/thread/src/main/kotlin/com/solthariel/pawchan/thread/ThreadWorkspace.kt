@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.thread
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.BidirectionalPullRefreshBox
@@ -23,6 +23,7 @@ import com.solthariel.pawchan.media.MediaMenuPlace
 import com.solthariel.pawchan.media.MediaMenuRequest
 import com.solthariel.pawchan.media.MediaSaveActions
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -34,6 +35,8 @@ internal fun ThreadWorkspace(
     selection: ThreadSelectionActions,
     autoRefreshFailed: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     val content = state as? ThreadUiState.Content
     val tools = memory.tools
     val insets =
@@ -50,8 +53,9 @@ internal fun ThreadWorkspace(
             val filterNotice =
                 content?.presentation?.let { presentation ->
                     listOfNotNull(
-                        presentation.contentFilterNotice?.let { "Тред соответствует фильтру: $it" },
-                        "Скрыто комментариев: ${presentation.filteredComments}"
+                        presentation.contentFilterNotice?.let { res.getString(L.ui_thread_matches_filter, it) },
+                        res
+                            .getString(L.ui_hidden_comments, presentation.filteredComments)
                             .takeIf { presentation.filteredComments > 0 },
                     ).joinToString("\n").takeIf(String::isNotEmpty)
                 }

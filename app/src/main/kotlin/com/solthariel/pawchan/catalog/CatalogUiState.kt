@@ -89,8 +89,6 @@ internal data class CatalogThreadUi(
         get() = statistics.files
     val knownMediaBytes: Long
         get() = statistics.knownMediaBytes
-    val metadataText: String
-        get() = statistics.displayText
     val mediaBytesComplete: Boolean
         get() = statistics.mediaBytesComplete
     val id: Long
@@ -104,9 +102,6 @@ internal data class CatalogThreadUi(
 
     val displaySubject: String?
         get() = content.displaySubject
-
-    val hasMultipleAttachments: Boolean
-        get() = attachments.size > 1
 }
 
 internal data class CatalogThreadContentUi(
@@ -143,7 +138,6 @@ internal data class CatalogThreadStatisticsUi(
     val files: Int,
     val knownMediaBytes: Long,
     val mediaBytesComplete: Boolean,
-    val displayText: String = catalogMetadataText(replies, files, knownMediaBytes),
 ) {
     val repliesText: String = replies.toString()
     val filesText: String = files.toString()
@@ -240,22 +234,6 @@ private fun DomainFailure.toCatalogErrorState(): CatalogUiState.Error =
 
         is DomainFailure.ProtectionChallenge -> {
             CatalogUiState.Error(CatalogError.PROTECTION, verificationUrl.value)
-        }
-    }
-
-private fun catalogMetadataText(
-    replies: Int,
-    files: Int,
-    mediaBytes: Long,
-): String =
-    buildString {
-        append("Ответов: ")
-        append(replies)
-        append("   Файлов: ")
-        append(files)
-        if (mediaBytes > 0L) {
-            append("   ")
-            append(formatByteSizeForUi(mediaBytes))
         }
     }
 

@@ -43,14 +43,7 @@ class ImagePreviewContinuationTest {
 
     @Test fun everyVisibleToolSharesTheFullPlaneWithoutChangingTheSavedCrop() {
         val edit = DraftImageEdit(crop = DraftCrop(.1f, .2f, .6f, .9f), marks = listOf(mask))
-        ImageEditorCanvasMode.entries.filter { it != ImageEditorCanvasMode.TEXT }.forEach { mode ->
-            assertEquals(edit.copy(crop = DraftCrop()), imageEditorDisplayEdit(edit, mode))
-        }
+        assertEquals(edit.copy(crop = DraftCrop()), imageEditorDisplayEdit(edit))
         assertEquals(DraftCrop(.1f, .2f, .6f, .9f), edit.crop)
-    }
-
-    @Test fun legacyTextWorkspaceKeepsItsOwnCroppedCoordinates() {
-        val edit = DraftImageEdit(crop = DraftCrop(.1f, .2f, .6f, .9f))
-        assertEquals(edit, imageEditorDisplayEdit(edit, ImageEditorCanvasMode.TEXT))
     }
 }

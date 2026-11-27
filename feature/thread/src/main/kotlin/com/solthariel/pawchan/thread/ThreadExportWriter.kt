@@ -17,23 +17,19 @@ internal class ThreadExportWriter(
     private var job: Job? = null
 
     fun saveHtml(
-        request: ThreadExportRequest,
+        content: ThreadUiState.Content,
         target: ThreadExportTarget,
     ) = execute {
-        val document = withContext(preparationDispatcher) { request.content.exportDocument() }
+        val document = withContext(preparationDispatcher) { content.exportDocument() }
         target.saveHtml(document)
         "HTML-копия сохранена. Вложения доступны по ссылкам."
     }
 
     fun saveShot(
-        request: ThreadExportRequest,
+        image: CapturedThreadShot,
         target: ThreadExportTarget,
     ) = execute {
-        val document =
-            withContext(preparationDispatcher) {
-                request.content.exportDocument(request.selected, request.displayPreferences)
-            }
-        target.saveShot(document.posts, request.shotStyle)
+        target.saveShot(image)
         "Скриншот выбранных постов сохранён"
     }
 

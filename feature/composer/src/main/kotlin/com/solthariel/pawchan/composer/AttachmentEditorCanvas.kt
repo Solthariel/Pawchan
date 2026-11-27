@@ -6,8 +6,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import coil3.ImageLoader
 import com.solthariel.pawchan.domain.drafts.DraftImageEdit
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentEditorCanvas(
@@ -18,6 +20,8 @@ internal fun AttachmentEditorCanvas(
     actions: AttachmentEditorActions,
     modifier: Modifier = Modifier,
 ) {
+    val res = LocalResources.current
+
     val tab = if (dimensions == null) AttachmentEditorTab.FILE else draft.tab
     if (dimensions == null) {
         ComposerViewerMedia(file, imageLoader)
@@ -39,7 +43,7 @@ internal fun AttachmentEditorCanvas(
                     ),
             )
             if (draft.comparing && original?.bitmap == null && original != null) {
-                Text("Не удалось загрузить оригинал", color = MaterialTheme.colorScheme.onBackground)
+                Text(res.getString(L.ui_failed_to_load_original), color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }
@@ -56,7 +60,13 @@ private fun attachmentEditorCanvasConfig(
                 ImageEditorCanvasMode.CROP,
                 cropAspect =
                     draft.cropPreset.aspect(draft.editor.edit, dimensions.width, dimensions.height)?.let {
-                        if (draft.cropPreset == ImageCropPreset.ORIGINAL && draft.cropOriginalInverted) 1f / it else it
+                        if (draft.cropPreset == ImageCropPreset.ORIGINAL &&
+                            draft.cropOriginalInverted
+                        ) {
+                            1f / it
+                        } else {
+                            it
+                        }
                     },
             )
         }

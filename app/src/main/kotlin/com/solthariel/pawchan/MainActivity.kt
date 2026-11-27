@@ -1,5 +1,6 @@
 package com.solthariel.pawchan
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.viewmodel.initializer
+import com.solthariel.pawchan.locale.PawchanLocales
 import com.solthariel.pawchan.navigation.IncomingLinksViewModel
 import com.solthariel.pawchan.navigation.LocalIncomingLinks
 import com.solthariel.pawchan.navigation.PawchanApp
@@ -61,6 +63,8 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(PawchanLocales.attach(base))
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         androidx.core.content.ContextCompat.registerReceiver(
@@ -78,7 +82,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             com.solthariel.pawchan.security.AppLockHost(this, appLock) {
-                com.solthariel.pawchan.backup.BackupRecoveryHost((application as PawchanApplication).backupRecovery) {
+                com.solthariel.pawchan.backup.BackupRecoveryHost(
+                    (application as PawchanApplication).backupRecovery,
+                ) {
                     CompositionLocalProvider(LocalIncomingLinks provides incomingLinks) {
                         PostSelectionHost { PawchanApp() }
                     }

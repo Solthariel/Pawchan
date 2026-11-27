@@ -26,4 +26,15 @@ data class UiOptionColors(
     val caption: Color,
 )
 
+/** Bottom tabs and selectable attachment icons share a tint; null is an ordinary action. */
+@Composable
+fun uiSelectionIconTint(
+    selected: Boolean?,
+    enabled: Boolean,
+): Color {
+    val scheme = MaterialTheme.colorScheme
+    val color = if (selected == true) scheme.primary else scheme.onSurfaceVariant
+    return color.copy(alpha = if (enabled && selected != false) 1f else UNAVAILABLE_OPTION_ALPHA)
+}
+
 private const val UNAVAILABLE_OPTION_ALPHA = 0.55f

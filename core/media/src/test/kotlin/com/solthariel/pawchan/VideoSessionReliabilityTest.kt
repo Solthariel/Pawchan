@@ -205,18 +205,23 @@ class VideoSessionReliabilityTest {
         }
 
     @Test
-    fun completionStillAllowsReplayAfterIntentBasedToggle() =
+    fun tenAutomaticOrManualReplaysKeepTheSameOpenSource() =
         runTest {
             val engine = ReliabilityEngine()
             val session = VideoPlaybackSession(engine, backgroundScope, "file:///movie.mp4")
             try {
                 session.start()
                 testScheduler.runCurrent()
-                engine.listeners.last()(VideoEvent.ENDED, READY.copy(ended = true, playing = false))
-                session.togglePlay()
-                testScheduler.runCurrent()
-                assertEquals(2, engine.listeners.size)
-                assertEquals(listOf(0L), engine.seeks)
+                repeat(10) { lap ->
+                    engine.listeners.single()(VideoEvent.ENDED, READY.copy(ended = true, playing = false))
+                    if (lap % 2 == 0) session.replayFromEnd(automatic = true) else session.togglePlay()
+                    session.replayFromEnd() // A consumed EOF is not a second loop command.
+                    testScheduler.runCurrent()
+                    assertFalse(session.status.value.ended)
+                }
+                assertEquals(1, engine.listeners.size)
+                assertEquals(List(10) { 0L }, engine.seeks)
+                assertEquals(10, engine.plays)
             } finally {
                 session.close()
             }

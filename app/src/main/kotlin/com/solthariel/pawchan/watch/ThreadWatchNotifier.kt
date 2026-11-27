@@ -20,6 +20,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.navigation.AppRoute
 import com.solthariel.pawchan.navigation.saveableKey
+import com.solthariel.pawchan.R.string as PlatformStrings
 
 internal class ThreadWatchNotifier(
     private val context: Context,
@@ -53,8 +54,16 @@ internal class ThreadWatchNotifier(
                 .Builder(context, if (replies) REPLIES_CHANNEL else CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
-                .setContentText(if (replies) "Новых ответов на ваши посты: $count" else text)
-                .setGroup(GROUP_KEY)
+                .setContentText(
+                    if (replies) {
+                        context.getString(
+                            PlatformStrings.platform_new_replies_to_your_posts_s,
+                            count,
+                        )
+                    } else {
+                        text
+                    },
+                ).setGroup(GROUP_KEY)
                 .setAutoCancel(!replies)
                 .setContentIntent(threadPendingIntent(subscription))
                 .build()
@@ -126,8 +135,9 @@ internal class ThreadWatchNotifier(
                         .Builder(context, REPLIES_CHANNEL)
                         .setSmallIcon(R.drawable.ic_notification)
                         .setContentTitle(it.notification.extras.getCharSequence(Notification.EXTRA_TITLE))
-                        .setContentText("Новых ответов на ваши посты: $unread")
-                        .setContentIntent(it.notification.contentIntent)
+                        .setContentText(
+                            context.getString(PlatformStrings.platform_new_replies_to_your_posts_s, unread),
+                        ).setContentIntent(it.notification.contentIntent)
                         .setGroup(GROUP_KEY)
                         .setAutoCancel(false)
                         .setOnlyAlertOnce(true)
@@ -163,7 +173,7 @@ internal class ThreadWatchNotifier(
                 createNotificationChannel(
                     NotificationChannel(
                         REPLIES_CHANNEL,
-                        "Ответы на ваши посты",
+                        context.getString(PlatformStrings.platform_replies_to_your_posts),
                         NotificationManager.IMPORTANCE_DEFAULT,
                     ),
                 )

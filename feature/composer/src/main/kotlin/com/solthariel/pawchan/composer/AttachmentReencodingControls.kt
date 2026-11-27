@@ -1,10 +1,12 @@
 package com.solthariel.pawchan.composer
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.core.ui.UiConnectedChoices
 import com.solthariel.pawchan.core.ui.UiOptionRow
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentReencodingControls(
@@ -13,7 +15,9 @@ internal fun AttachmentReencodingControls(
     onQualityChange: (Int) -> Unit,
     onChange: (ImageReencoding) -> Unit,
 ) {
-    UiOptionRow("Формат") {
+    val res = LocalResources.current
+
+    UiOptionRow(res.getString(L.ui_format)) {
         UiConnectedChoices(listOf("JPEG", "PNG"), if (settings.jpeg) 0 else 1, enabled) {
             onChange(settings.copy(jpeg = it == 0))
         }

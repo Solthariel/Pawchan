@@ -6,14 +6,18 @@ import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ImageBrushControls(
     selection: ImageToolSelection,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         ImageColorControl(selection, enabled && selection.drawing != ImageDrawingTool.ERASER)
         Slider(
@@ -24,7 +28,13 @@ internal fun ImageBrushControls(
             modifier =
                 Modifier.weight(1f).semantics {
                     contentDescription =
-                        if (selection.drawing == ImageDrawingTool.ERASER) "Размер ластика" else "Толщина"
+                        if (selection.drawing ==
+                            ImageDrawingTool.ERASER
+                        ) {
+                            res.getString(L.ui_eraser_size)
+                        } else {
+                            res.getString(L.ui_thickness)
+                        }
                 },
         )
     }

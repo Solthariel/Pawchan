@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="ui_select_media">Выделить медиа</string>
+    <string name="ui_gallery">Галерея</string>
+    <string name="ui_back">Назад</string>
+    <string name="ui_video_seek">Перемотка видео</string>
+    <string name="ui_video_progress">Прогресс видео</string>
+</resources>

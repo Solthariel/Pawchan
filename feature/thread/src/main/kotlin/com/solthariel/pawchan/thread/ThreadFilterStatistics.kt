@@ -10,11 +10,13 @@ import kotlinx.coroutines.launch
 internal fun ThreadUiState.Content.filteredThreadPosts(
     engine: ContentFilterEngine,
     revealed: Set<Long>,
+    showHiddenPosts: Boolean,
 ): FilteredThreadPosts {
     val thread = requireNotNull(address)
     val hits = mutableListOf<ContentFilterHit>()
+    val omitted = mutableMapOf<Long, ThreadPostUi>()
     val filtered =
-        posts.map { post ->
+        posts.mapNotNull { post ->
             val rule =
                 if (post.id == id) {
                     null
@@ -25,19 +27,26 @@ internal fun ThreadUiState.Content.filteredThreadPosts(
             if (hiddenByRule && !post.metadata.hidden) {
                 hits.add(ContentFilterHit(requireNotNull(rule).id, thread, post.id, false))
             }
-            post.copy(
-                metadata =
-                    post.metadata.copy(
-                        visibility =
-                            ThreadPostVisibility(
-                                hidden = post.metadata.hidden || hiddenByRule,
-                                contentFilterLabel = rule?.label?.takeIf { hiddenByRule },
-                                contentFilterId = rule?.id?.takeIf { hiddenByRule },
-                            ),
-                    ),
-            )
+            val marked =
+                post.copy(
+                    metadata =
+                        post.metadata.copy(
+                            visibility =
+                                ThreadPostVisibility(
+                                    hidden = post.metadata.hidden || hiddenByRule,
+                                    contentFilterLabel = rule?.label?.takeIf { hiddenByRule },
+                                    contentFilterId = rule?.id?.takeIf { hiddenByRule },
+                                ),
+                        ),
+                )
+            if (!showHiddenPosts && hiddenByRule && !post.metadata.hidden) {
+                omitted[post.id] = marked
+                null
+            } else {
+                marked
+            }
         }
-    return FilteredThreadPosts(filtered, hits)
+    return FilteredThreadPosts(filtered, hits, omitted)
 }
 
 internal fun recordThreadFilterStatistics(

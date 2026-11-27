@@ -1,8 +1,5 @@
 package com.solthariel.pawchan.thread
 
-import com.solthariel.pawchan.domain.model.PostAddress
-import com.solthariel.pawchan.domain.model.PostId
-
 /** Menu semantics stay in the feature; app effects receive only addressed domain data. */
 internal fun executePreviewPostMenu(
     command: PostMenuCommand,

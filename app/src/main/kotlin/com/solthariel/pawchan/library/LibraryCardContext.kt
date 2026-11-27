@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.archive.ArchiveCopyUi
 import com.solthariel.pawchan.catalog.CatalogThreadCard
 import com.solthariel.pawchan.core.ui.ActionMenuItem
@@ -15,6 +16,7 @@ import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.navigation.AppRoute
 import com.solthariel.pawchan.threads.ThreadListCardActions
 import com.solthariel.pawchan.workspace.WorkspaceBinding
+import com.solthariel.pawchan.R.string as L
 
 /** Общее для карточек списка: загрузка миниатюр и просмотр файлов ОП-поста по нажатию на превью. */
 internal data class LibraryCardContext(
@@ -30,6 +32,8 @@ internal fun SavedCopyItem(
     context: LibraryCardContext,
     zipRoutes: Set<String>,
 ) {
+    val res = LocalResources.current
+
     val controller = binding.archives ?: return
     val address = item.copy.snapshot.address
     var menu by remember(address) { mutableStateOf(false) }
@@ -64,15 +68,15 @@ internal fun SavedCopyItem(
     if (menu) {
         val close = { menu = false }
         LibraryActionsDialog(close) {
-            ActionMenuItem("Обновить", {
+            ActionMenuItem(res.getString(L.ui_refresh), {
                 close()
                 controller.update(address)
             }, icon = UiIconKind.REFRESH)
-            ActionMenuItem("Сохранить ZIP", {
+            ActionMenuItem(res.getString(L.ui_save_zip), {
                 close()
                 export()
             }, icon = UiIconKind.ARCHIVE)
-            ActionMenuItem("Удалить", {
+            ActionMenuItem(res.getString(L.ui_delete), {
                 close()
                 controller.remove(address)
             }, icon = UiIconKind.DELETE)

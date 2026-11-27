@@ -91,7 +91,7 @@ internal class TestResource : AutoCloseable {
 
 internal fun echoOf(body: ByteArray): String = "${body.size}:${body.contentHashCode()}"
 
-internal enum class TestProxyKind { SOCKS5, HTTP, HTTPS, NOT_A_PROXY }
+internal enum class TestProxyKind { SOCKS5, HTTP, HTTPS, NOT_A_PROXY, RESETS_CONNECTION }
 
 /**
  * A local proxy that really tunnels. It parses the handshake, checks the login when one is set,
@@ -144,7 +144,12 @@ internal class TestProxy(
             client.soTimeout = SERVER_TIMEOUT_MILLIS
             when {
                 kind == TestProxyKind.NOT_A_PROXY -> writeAll(client.getOutputStream(), NOT_A_PROXY_REPLY)
+
+                // Lingering for zero seconds makes the close below a reset instead of an orderly shutdown.
+                kind == TestProxyKind.RESETS_CONNECTION -> client.setSoLinger(true, 0)
+
                 stall -> client.getInputStream().copyTo(OutputStream.nullOutputStream())
+
                 else -> handshake(client.getInputStream(), client.getOutputStream())?.let { tunnel(client, it) }
             }
         } catch (_: IOException) {

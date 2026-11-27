@@ -10,12 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.AppDialogStyle
 import com.solthariel.pawchan.core.ui.AppearanceScale
 import com.solthariel.pawchan.core.ui.AppearanceSlider
 import com.solthariel.pawchan.core.ui.NO_POST_COLLAPSE
+import com.solthariel.pawchan.feature.thread.R
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun ThreadAppearanceDialog(
@@ -23,27 +26,29 @@ internal fun ThreadAppearanceDialog(
     onChange: (ThreadAppearance) -> Unit,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     AppDialog(onClose) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(AppDialogStyle.contentPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Внешний вид", style = MaterialTheme.typography.titleLarge)
+            Text(res.getString(L.ui_appearance_0983), style = MaterialTheme.typography.titleLarge)
             AppearanceSlider(
-                "Текст поста: ${value.textSize} sp",
+                res.getString(L.ui_post_text_sp, value.textSize),
                 value.textSize,
                 AppearanceScale(MIN_TEXT_SIZE..MAX_TEXT_SIZE, DEFAULT_THREAD_TEXT_SIZE, "sp"),
             ) { onChange(value.copy(textSize = it)) }
             AppearanceSlider(
                 if (value.maxLines == NO_POST_COLLAPSE) {
-                    "Не сворачивать"
+                    res.getString(L.ui_do_not_collapse)
                 } else {
-                    "Сворачивать после: ${value.maxLines} строк"
+                    res.getQuantityString(R.plurals.ui_collapse_after_lines, value.maxLines, value.maxLines)
                 },
                 value.maxLines,
                 AppearanceScale(MIN_POST_LINES..NO_POST_COLLAPSE, DEFAULT_THREAD_MAX_LINES, "строк"),
             ) { onChange(value.copy(maxLines = it)) }
-            TextButton(onClick = { onChange(ThreadAppearance()) }) { Text("По умолчанию") }
+            TextButton(onClick = { onChange(ThreadAppearance()) }) { Text(res.getString(L.ui_default)) }
         }
     }
 }

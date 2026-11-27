@@ -16,6 +16,7 @@ import com.solthariel.pawchan.domain.workspace.observe
 import com.solthariel.pawchan.domain.workspace.storePost
 import com.solthariel.pawchan.domain.workspace.visit
 import com.solthariel.pawchan.domain.workspace.withReadingPosition
+import com.solthariel.pawchan.domain.workspace.withRoutes
 import com.solthariel.pawchan.navigation.AppRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -177,13 +178,10 @@ internal class WorkspaceController(
 
     fun closeTab(address: ThreadAddress) =
         change { state ->
-            state.copy(
-                tabs = state.tabs.filterNot { it.address == address },
-                lastRoute =
-                    state.lastRoute.takeUnless {
-                        it ==
-                            AppRoute.thread(address)
-                    },
+            val route = AppRoute.thread(address)
+            state.copy(tabs = state.tabs.filterNot { it.address == address }).withRoutes(
+                last = state.lastRoute.takeUnless { it == route },
+                reading = state.readingRoute.takeUnless { it == route },
             )
         }
 }

@@ -1,26 +1,8 @@
 package com.solthariel.pawchan.catalog
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,15 +10,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.navigation.LocalSelectedForum
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun CatalogToolbar(
@@ -68,13 +46,18 @@ private fun CatalogToolbarHeader(
     actions: CatalogActions,
     menu: CatalogMenuBindings,
 ) {
+    val res = LocalResources.current
+
     var menuVisible by rememberSaveable { mutableStateOf(false) }
     val search = rememberCatalogSearchState(input.searchQuery, onSearchQueryChange)
     val lookup = menu.boardLookup
     if (lookup?.visible == true) {
         val selectedSite = LocalSelectedForum.current?.value ?: input.board.site.value
         val supportsTags = selectedSite == input.board.site.value && menu.capabilities.tags
-        CatalogBoardLookupToolbar(lookup, if (supportsTags) "Введите доску или тег…" else "Введите доску…")
+        CatalogBoardLookupToolbar(
+            lookup,
+            if (supportsTags) res.getString(L.ui_enter_board_or_tag) else res.getString(L.ui_enter_board),
+        )
         return
     }
     val searchVisible = search.visible

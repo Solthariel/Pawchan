@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +42,7 @@ import com.solthariel.pawchan.workspace.openThread
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.R.string as L
 
 internal data class ThreadsNavigation(
     val onHistory: () -> Unit,
@@ -140,6 +142,8 @@ private fun rememberThreadsActions(
     favorites: List<ThreadAddress>,
     refreshFavorites: () -> Unit,
 ): ThreadsScreenActions {
+    val res = LocalResources.current
+
     val mirror = com.solthariel.pawchan.infrastructure.sites.LocalForumMirror.current
     val binding = LocalWorkspace.current
     val context = LocalContext.current
@@ -160,8 +164,11 @@ private fun rememberThreadsActions(
             scope.launch {
                 if (library.setFavoriteAddress(row.address, row.title, favorite) is DomainOutcome.Failure) {
                     android.widget.Toast
-                        .makeText(context, "Не удалось изменить избранное", android.widget.Toast.LENGTH_SHORT)
-                        .show()
+                        .makeText(
+                            context,
+                            res.getString(L.ui_failed_to_change_favorites),
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
                 }
             }
         },

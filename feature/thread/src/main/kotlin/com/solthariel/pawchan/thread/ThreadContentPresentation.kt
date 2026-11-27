@@ -29,7 +29,7 @@ internal data class ThreadContentPresentation(
         get() = contentFilters.samples
 }
 
-/** Prepared indices keep post/reply/media navigation together without dropping hidden post addresses. */
+/** Positions index actual list rows; auto-hidden posts without a row remain available to explicit previews. */
 internal data class ThreadPostNavigation(
     val postPositions: Map<Long, Int> = emptyMap(),
     val replyIndex: Map<Long, ThreadReplyGroup> = emptyMap(),
@@ -45,4 +45,5 @@ internal data class ThreadContentFilterState(
     val filteredComments: Int = 0,
     val samples: List<ContentFilterSample> = emptyList(),
     val hits: List<ContentFilterHit> = emptyList(),
+    val omittedPosts: Map<Long, ThreadPostUi> = emptyMap(),
 )

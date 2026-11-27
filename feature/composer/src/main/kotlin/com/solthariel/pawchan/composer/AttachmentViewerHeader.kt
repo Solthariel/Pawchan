@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.domain.drafts.DraftImageEdit
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentViewerHeader(
@@ -40,6 +42,8 @@ internal fun AttachmentViewerHeader(
     onRemove: () -> Unit,
     draft: AttachmentViewerDraft,
 ) {
+    val res = LocalResources.current
+
     Surface(color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground) {
         BoxWithConstraints(Modifier.fillMaxWidth().testTag("attachment-header")) {
             val layout = attachmentHeaderLayout(maxWidth.value, LocalDensity.current.fontScale)
@@ -50,18 +54,23 @@ internal fun AttachmentViewerHeader(
                     .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                UiToolbarButton(UiIconKind.BACK, "Назад", enabled = enabled, onClick = onClose)
+                UiToolbarButton(UiIconKind.BACK, res.getString(L.ui_back), enabled = enabled, onClick = onClose)
                 if (layout != HeaderLayout.COMPACT) AttachmentHistoryButtons(draft, enabled)
                 androidx.compose.foundation.layout
                     .Spacer(Modifier.weight(1f))
                 if (layout == HeaderLayout.DIRECT) {
                     UiToolbarButton(
                         UiIconKind.REFRESH,
-                        "Сбросить правки",
+                        res.getString(L.ui_reset_edits),
                         enabled = canResetImage(draft, enabled),
                         onClick = draft::reset,
                     )
-                    UiToolbarButton(UiIconKind.DELETE, "Удалить вложение", enabled = enabled, onClick = onRemove)
+                    UiToolbarButton(
+                        UiIconKind.DELETE,
+                        res.getString(L.ui_delete_attachment),
+                        enabled = enabled,
+                        onClick = onRemove,
+                    )
                 } else {
                     AttachmentHeaderMenu(draft, enabled, layout == HeaderLayout.COMPACT, onRemove)
                 }
@@ -77,28 +86,44 @@ private fun AttachmentHeaderMenu(
     showHistory: Boolean,
     onRemove: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     var open by remember { mutableStateOf(false) }
     Box {
-        UiToolbarButton(UiIconKind.MORE, "Ещё", enabled = enabled) {
+        UiToolbarButton(UiIconKind.MORE, res.getString(L.ui_more), enabled = enabled) {
             draft.closeNamePanel()
             open = true
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             if (showHistory) {
-                DropdownMenuItem(text = { Text("Отменить") }, enabled = enabled && draft.editor.canUndo, onClick = {
-                    open = false
-                    draft.undo()
-                })
-                DropdownMenuItem(text = { Text("Повторить") }, enabled = enabled && draft.editor.canRedo, onClick = {
-                    open = false
-                    draft.redo()
-                })
+                DropdownMenuItem(
+                    text = { Text(res.getString(L.ui_undo)) },
+                    enabled =
+                        enabled && draft.editor.canUndo,
+                    onClick = {
+                        open = false
+                        draft.undo()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(res.getString(L.ui_retry)) },
+                    enabled =
+                        enabled && draft.editor.canRedo,
+                    onClick = {
+                        open = false
+                        draft.redo()
+                    },
+                )
             }
-            DropdownMenuItem(text = { Text("Сбросить правки") }, enabled = canResetImage(draft, enabled), onClick = {
+            DropdownMenuItem(text = {
+                Text(
+                    res.getString(L.ui_reset_edits),
+                )
+            }, enabled = canResetImage(draft, enabled), onClick = {
                 open = false
                 draft.reset()
             })
-            DropdownMenuItem(text = { Text("Удалить вложение") }, enabled = enabled, onClick = {
+            DropdownMenuItem(text = { Text(res.getString(L.ui_delete_attachment)) }, enabled = enabled, onClick = {
                 open = false
                 onRemove()
             })
@@ -116,6 +141,8 @@ private fun AttachmentHistoryButtons(
     draft: AttachmentViewerDraft,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     val colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
     IconButton(
         onClick = draft::undo,
@@ -123,7 +150,11 @@ private fun AttachmentHistoryButtons(
         colors = colors,
         modifier = Modifier.size(48.dp),
     ) {
-        Icon(painterResource(R.drawable.ic_editor_undo), "Отменить", modifier = Modifier.size(24.dp))
+        Icon(
+            painterResource(R.drawable.ic_editor_undo),
+            res.getString(L.ui_undo),
+            modifier = Modifier.size(24.dp),
+        )
     }
     IconButton(
         onClick = draft::redo,
@@ -131,7 +162,11 @@ private fun AttachmentHistoryButtons(
         colors = colors,
         modifier = Modifier.size(48.dp),
     ) {
-        Icon(painterResource(R.drawable.ic_editor_redo), "Повторить", modifier = Modifier.size(24.dp))
+        Icon(
+            painterResource(R.drawable.ic_editor_redo),
+            res.getString(L.ui_retry),
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 

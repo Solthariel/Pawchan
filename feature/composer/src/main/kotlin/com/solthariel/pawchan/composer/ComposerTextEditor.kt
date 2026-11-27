@@ -3,6 +3,7 @@ package com.solthariel.pawchan.composer
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.input.TextFieldState
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.FocusWhenOpened
 import com.solthariel.pawchan.domain.posting.PostingRules
 import com.solthariel.pawchan.domain.posting.ReplyDraft
 import com.solthariel.pawchan.feature.composer.R
@@ -35,12 +37,14 @@ internal fun ComposerTextEditor(
     enabled: Boolean,
     actions: ComposerFieldActions,
     onReceive: (List<Uri>, Any?) -> Unit = { _, _ -> },
+    fill: Boolean = false,
 ) {
     val comment = rememberTextFieldState(draft.comment)
     val latest = rememberUpdatedState(draft)
     val change = rememberUpdatedState(actions.onChange)
     val commentFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    FocusWhenOpened(commentFocus, ready = enabled && !draft.inputBlocked)
     LaunchedEffect(draft.comment) {
         if (comment.text.toString() != draft.comment) {
             comment.edit {
@@ -54,7 +58,8 @@ internal fun ComposerTextEditor(
             if (latest.value.comment != text) change.value(latest.value.copy(comment = text))
         }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Поле и панель форматирования склеены; при [fill] поле растягивается на всю высоту, панель — под ним.
+    Column(if (fill) Modifier.fillMaxHeight() else Modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ComposerCommentField(
             comment,
             ComposerLimits(
@@ -65,7 +70,7 @@ internal fun ComposerTextEditor(
             ),
             enabled && !draft.inputBlocked,
             commentFocus,
-            Modifier.composerMediaReceiver(onReceive),
+            (if (fill) Modifier.weight(1f) else Modifier).composerMediaReceiver(onReceive),
             preserveAppearance = draft.filesLoading,
         )
         ComposerFormattingToolbar(enabled, draft.inputBlocked, actions.onClearAll) { markup ->

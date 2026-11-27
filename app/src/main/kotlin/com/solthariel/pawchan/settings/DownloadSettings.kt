@@ -3,36 +3,38 @@ package com.solthariel.pawchan.settings
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.DownloadNaming
 import com.solthariel.pawchan.domain.settings.ImagePreload
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun downloadGroups(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ): List<SettingsGroup> {
+    val res = LocalResources.current
+
     val value = app.behavior.client
     return listOf(
         SettingsGroup(
-            "Скачивание и предзагрузка",
+            res.getString(L.ui_downloading_and_preloading),
             listOf(
                 SettingsItem.Choice(
-                    "Предзагрузка изображений",
-                    listOf("Выключена", "Только Wi-Fi", "Любая сеть"),
+                    res.getString(L.ui_preload_images),
+                    listOf(
+                        res.getString(L.ui_disabled),
+                        res.getString(L.ui_wi_fi_only),
+                        res.getString(L.ui_any_network),
+                    ),
                     value.media.preloadImages.ordinal,
                 ) { index ->
                     update { current ->
@@ -42,8 +44,8 @@ internal fun downloadGroups(
                     }
                 },
                 SettingsItem.Choice(
-                    "Имя скачиваемого файла",
-                    listOf("Исходное", "С доской, тредом и постом"),
+                    res.getString(L.ui_downloaded_filename),
+                    listOf(res.getString(L.ui_original), res.getString(L.ui_with_board_thread_and_post)),
                     value.downloads.naming.ordinal,
                 ) { index ->
                     update { current ->
@@ -52,7 +54,7 @@ internal fun downloadGroups(
                         }
                     }
                 },
-                SettingsItem.Custom("Папка загрузок") { DownloadDirectory(app, update) },
+                SettingsItem.Custom(res.getString(L.ui_downloads_folder)) { DownloadDirectory(app, update) },
             ),
         ),
     )
@@ -63,6 +65,8 @@ private fun DownloadDirectory(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     var error by remember { mutableStateOf<String?>(null) }
     val launcher =
@@ -77,15 +81,21 @@ private fun DownloadDirectory(
                         current.withClient { it.copy(downloads = it.downloads.copy(treeUri = uri.toString())) }
                     }
                 } catch (_: SecurityException) {
-                    error = "Не удалось сохранить доступ к папке"
+                    error = res.getString(L.ui_failed_to_save_folder_access)
                 }
             }
         }
     SettingsItemRow(
         SettingsItem.Action(
-            if (app.behavior.client.downloads.treeUri == null) "Выбрать папку загрузок" else "Папка загрузок",
+            if (app.behavior.client.downloads.treeUri ==
+                null
+            ) {
+                res.getString(L.ui_choose_downloads_folder)
+            } else {
+                res.getString(L.ui_downloads_folder)
+            },
             app.behavior.client.downloads.treeUri
-                ?.let(::downloadDirectoryLabel) ?: "Не выбрана",
+                ?.let(::downloadDirectoryLabel) ?: res.getString(L.ui_not_selected),
             onClick = {
                 error = null
                 launcher.launch(null)

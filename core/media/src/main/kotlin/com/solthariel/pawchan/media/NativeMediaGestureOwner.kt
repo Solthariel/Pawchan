@@ -18,7 +18,7 @@ internal class NativeMediaGestureOwner(
 ) {
     private val configuration = ViewConfiguration.get(context)
     private val density = context.resources.displayMetrics.density
-    private var session = ImageViewerGestureSession(motion.transform, FLING_DISTANCE_DP * density)
+    private var session = newSession()
     private var tracker: VelocityTracker? = null
     private var pointer = 0
     private var last = Offset.Zero
@@ -55,6 +55,9 @@ internal class NativeMediaGestureOwner(
     /** Касание, завершившее перелистывание: до следующего ACTION_DOWN события игнорируются. */
     private var passing = false
 
+    private fun newSession(): ImageViewerGestureSession =
+        ImageViewerGestureSession(motion.transform, FLING_DISTANCE_DP * density, DIRECTION_DECISION_DP * density)
+
     fun touch(event: MotionEvent): Boolean {
         if (!alive || motion.dismissing) return alive
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -84,7 +87,7 @@ internal class NativeMediaGestureOwner(
         taps.start()
         motion.stop()
         motion.frame(shift = Offset.Zero, close = false)
-        session = ImageViewerGestureSession(motion.transform, FLING_DISTANCE_DP * density)
+        session = newSession()
         pointer = event.getPointerId(0)
         last = Offset(event.x, event.y)
         transformed = false
@@ -165,6 +168,9 @@ internal class NativeMediaGestureOwner(
 }
 
 private const val FLING_DISTANCE_DP = 24f
+
+/** About 4 mm: a near-vertical swipe must be this long before it may close the viewer. */
+private const val DIRECTION_DECISION_DP = 25f
 private const val FLING_VELOCITY_DP = 400f
 private const val QUICK_MIN = 0.75f
 private const val QUICK_MAX = 1.25f

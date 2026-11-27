@@ -8,17 +8,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.core.ui.UiForwardIndicator
+import com.solthariel.pawchan.core.ui.modelLabel
 import com.solthariel.pawchan.domain.settings.ThemeColors
 import com.solthariel.pawchan.domain.settings.ThemePalette
 import com.solthariel.pawchan.domain.settings.currentPalette
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ThemePaletteRow(
     state: SettingsUiState,
     onChange: (ThemeColors) -> Unit,
 ) {
+    val res = LocalResources.current
+
     var open by rememberSaveable { mutableStateOf(false) }
     val palette =
         if (state.themeColors.palette == ThemePalette.SYSTEM && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
@@ -28,11 +33,11 @@ internal fun ThemePaletteRow(
         }
     val summary =
         if (palette == ThemePalette.CUSTOM) {
-            "Свой цвет ${seedHex(state.themeColors.customSeed)}"
+            res.getString(L.ui_own_color, seedHex(state.themeColors.customSeed))
         } else {
-            palette.paletteLabel()
+            modelLabel(palette.paletteLabel())
         }
-    SettingsRow("Цветовая палитра", summary, onClick = { open = true }) { UiForwardIndicator() }
+    SettingsRow(res.getString(L.ui_color_palette), summary, onClick = { open = true }) { UiForwardIndicator() }
     if (open) {
         ThemePaletteDialog(state, onChange, onDismiss = { open = false })
     }
@@ -44,13 +49,15 @@ private fun ThemePaletteDialog(
     onChange: (ThemeColors) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     var custom by rememberSaveable { mutableStateOf(false) }
     if (custom) {
         CustomColorDialog(state, onChange, onDismiss)
     } else {
         AppAlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Цветовая палитра") },
+            title = { Text(res.getString(L.ui_color_palette)) },
             text = {
                 PaletteChoiceList(state) { palette ->
                     if (palette == ThemePalette.CUSTOM) {
@@ -61,7 +68,7 @@ private fun ThemePaletteDialog(
                     }
                 }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(res.getString(L.ui_cancel)) } },
         )
     }
 }

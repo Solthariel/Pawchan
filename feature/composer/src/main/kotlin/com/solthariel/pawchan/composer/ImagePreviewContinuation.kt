@@ -20,8 +20,5 @@ internal fun imagePreviewContinuation(
     return pending.takeIf { marks -> marks.all { it is DraftStroke || it is DraftShape || it is DraftRedaction } }
 }
 
-/** The hidden legacy text workspace retains its original cropped-coordinate contract. */
-internal fun imageEditorDisplayEdit(
-    edit: DraftImageEdit,
-    mode: ImageEditorCanvasMode,
-): DraftImageEdit = if (mode == ImageEditorCanvasMode.TEXT) edit else edit.copy(crop = DraftCrop())
+/** Every editor tool works on the full plane; the saved crop is applied on export. */
+internal fun imageEditorDisplayEdit(edit: DraftImageEdit): DraftImageEdit = edit.copy(crop = DraftCrop())

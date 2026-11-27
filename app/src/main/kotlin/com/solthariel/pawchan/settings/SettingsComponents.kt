@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +33,7 @@ import com.solthariel.pawchan.core.ui.CompactSlider
 import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.russianPlural
 import kotlin.math.roundToInt
+import com.solthariel.pawchan.R.string as L
 
 /** Группы используют те же отступы и спокойную заливку, что и список досок. */
 @Composable
@@ -137,6 +139,8 @@ private fun ChoiceRow(item: SettingsItem.Choice) {
 /** Ползунок с живым примером: значение сохраняется, когда палец отпущен. */
 @Composable
 private fun ScaleRow(item: SettingsItem.Scale) {
+    val res = LocalResources.current
+
     var value by remember(item.value) { mutableFloatStateOf(item.value.toFloat()) }
     val current = value.roundToInt()
     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -162,7 +166,7 @@ private fun ScaleRow(item: SettingsItem.Scale) {
         )
         if (item.preview) {
             Text(
-                "Пример текста поста",
+                res.getString(L.ui_post_text_example),
                 fontSize = current.sp,
                 lineHeight = (current * PREVIEW_LINE_HEIGHT).sp,
             )
@@ -184,7 +188,6 @@ private fun ActionRow(item: SettingsItem.Action) {
     }
 }
 
-internal val SETTINGS_SINGLE_ROW_HEIGHT = 56.dp
 internal val SETTINGS_DOUBLE_ROW_HEIGHT = 72.dp
 
 private const val PREVIEW_LINE_HEIGHT = 1.35f

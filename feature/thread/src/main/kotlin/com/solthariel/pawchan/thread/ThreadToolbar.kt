@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.ThreadToolbarActionLayout
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiRefreshButton
 import com.solthariel.pawchan.feature.thread.R
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun ThreadTopBar(
@@ -91,12 +93,14 @@ private fun ThreadToolbarActionRow(
     tools: ThreadToolsState,
     compact: Boolean,
 ) {
+    val res = LocalResources.current
+
     ThreadToolbarActionLayout(
         leading = { ThreadToolbarNavigation(content, actions, tools, compact) },
         trailing = {
             ThreadToolbarButton(
                 kind = UiIconKind.SEARCH,
-                description = "Поиск",
+                description = res.getString(L.ui_search),
                 enabled = content != null,
                 onClick = { tools.searchOpen = true },
             )
@@ -112,7 +116,7 @@ private fun ThreadToolbarActionRow(
                 Box {
                     ThreadToolbarButton(
                         kind = UiIconKind.MORE,
-                        description = "Меню треда",
+                        description = res.getString(L.ui_thread_menu),
                         enabled = content != null,
                         onClick = { tools.menu = true },
                     )
@@ -135,8 +139,10 @@ private fun ThreadToolbarNavigation(
     tools: ThreadToolsState,
     compact: Boolean,
 ) {
+    val res = LocalResources.current
+
     ThreadToolbarSlot {
-        ThreadToolbarButton(UiIconKind.BACK, "Назад", onClick = actions.onBack)
+        ThreadToolbarButton(UiIconKind.BACK, res.getString(L.ui_back), onClick = actions.onBack)
     }
     if (compact) return
     ThreadToolbarSlot {
@@ -153,7 +159,7 @@ private fun ThreadToolbarNavigation(
     }
     ThreadToolbarButton(
         kind = UiIconKind.MEDIA_MULTIPLE,
-        description = "Галерея",
+        description = res.getString(L.ui_gallery),
         enabled = content != null,
         onClick = { tools.dialog = ThreadDialog.GALLERY },
     )

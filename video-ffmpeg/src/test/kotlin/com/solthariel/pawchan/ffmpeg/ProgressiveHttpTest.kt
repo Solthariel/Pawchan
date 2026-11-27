@@ -13,6 +13,10 @@ import org.junit.Test
 import java.io.IOException
 
 class ProgressiveHttpTest {
+    @Test fun invalidVideoAddressIsASourceIoError() {
+        assertThrows(IOException::class.java) { mediaRequest("not a video URL") }
+    }
+
     @Test fun mediaRequestAsksForUnencodedBytes() {
         assertEquals("identity", mediaRequest("https://example.test/v.mp4").build().header("Accept-Encoding"))
     }

@@ -23,7 +23,3 @@ fun addUsageValues(
     first: Long,
     second: Long,
 ): Long = if (Long.MAX_VALUE - first < second) Long.MAX_VALUE else first + second
-
-/** Aggregates without retained IDs cannot be retroactively made unique. */
-fun UsageDay.hasLegacyUsage(): Boolean =
-    values.any { (metric, amount) -> amount > objects[metric].orEmpty().values.fold(0L, ::addUsageValues) }

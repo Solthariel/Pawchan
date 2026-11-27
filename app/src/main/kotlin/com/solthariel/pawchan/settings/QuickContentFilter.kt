@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
@@ -16,6 +17,7 @@ import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.thread.ThreadContentFilterTools
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 @Composable
@@ -49,6 +51,8 @@ private fun QuickFilterEditor(
     existing: Boolean,
     close: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     var failure by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -89,8 +93,8 @@ private fun QuickFilterEditor(
     if (failure) {
         AlertDialog(
             onDismissRequest = { failure = false },
-            title = { Text("Не удалось сохранить правило") },
-            confirmButton = { TextButton(onClick = { failure = false }) { Text("Закрыть") } },
+            title = { Text(res.getString(L.ui_failed_to_save_rule)) },
+            confirmButton = { TextButton(onClick = { failure = false }) { Text(res.getString(L.ui_close)) } },
         )
     }
 }

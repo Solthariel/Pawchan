@@ -10,6 +10,7 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.crypto.Cipher
 import kotlin.coroutines.resume
+import com.solthariel.pawchan.feature.applock.R.string as PlatformStrings
 
 /** The request stays busy until the system sheet closes; no overlapping prompts. */
 internal suspend fun authenticateFingerprint(
@@ -32,10 +33,13 @@ internal suspend fun authenticateFingerprint(
         val prompt =
             BiometricPrompt
                 .Builder(activity)
-                .setTitle("Разблокировать Pawchan")
-                .setSubtitle("Подтвердите отпечаток пальца")
+                .setTitle(activity.getString(PlatformStrings.platform_unlock_pawchan))
+                .setSubtitle(activity.getString(PlatformStrings.platform_confirm_your_fingerprint))
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-                .setNegativeButton("Ввести PIN-код", activity.mainExecutor) { _, _ -> finish(null) }
+                .setNegativeButton(
+                    activity.getString(PlatformStrings.platform_enter_pin),
+                    activity.mainExecutor,
+                ) { _, _ -> finish(null) }
                 .build()
         prompt.authenticate(
             BiometricPrompt.CryptoObject(cipher),

@@ -9,12 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.R.string as L
 
 /** Display metadata supplied by the app's registered sources, never inferred from a domain. */
 internal data class ThreadSourceUi(
@@ -28,10 +30,15 @@ internal fun ThreadSourceIcon(
     source: ThreadSourceUi,
     current: Boolean,
 ) {
+    val res = LocalResources.current
+
     val color =
         if (current) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
-        Modifier.padding(end = 16.dp).size(24.dp).semantics { contentDescription = "Форум: ${source.title}" },
+        Modifier.padding(end = 16.dp).size(24.dp).semantics {
+            contentDescription =
+                res.getString(L.ui_forum, source.title)
+        },
         contentAlignment = Alignment.Center,
     ) {
         val icon = source.icon

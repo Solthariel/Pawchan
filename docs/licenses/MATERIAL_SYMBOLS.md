@@ -7,6 +7,7 @@ revision `10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7`.
 - Family: Material Symbols Rounded.
 - Default static exports: weight 400, grade 0, optical size 24, FILL 0.
 - Rating, board-star and thread-bookmark selection use official FILL 1 exports.
+- Video thumbnails use the official filled `play_arrow`; the player controls retain FILL 0.
 - `material-symbols-manifest.json` records each destination, source URL and SHA-256.
 - License: Apache License 2.0, copied verbatim to `MATERIAL_SYMBOLS_LICENSE.txt`
   and included in the APK assets as `licenses/material-symbols.txt` with attribution.

@@ -3,10 +3,15 @@ package com.solthariel.pawchan.thread
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,19 +23,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.core.ui.PostSeparator
+import com.solthariel.pawchan.core.ui.modelLabel
 import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun PostPreviewDialog(
@@ -57,10 +65,19 @@ private fun PostPreviewDialogContent(
     bindings: PostPreviewBindings,
     resources: PostPreviewResources,
 ) {
+    val res = LocalResources.current
+
     val model: PostPreviewViewModel =
         viewModel(
             key = "post-preview",
-            factory = PostPreviewViewModel.factory(resources.repository, resources.contentFilters, target, local),
+            factory =
+                PostPreviewViewModel.factory(
+                    resources.repository,
+                    resources.contentFilters,
+                    target,
+                    local,
+                    showHiddenPosts = resources.showHiddenPosts,
+                ),
         )
     DisposableEffect(model) { onDispose { model.cancelLoading() } }
     val state by model.state.collectAsStateWithLifecycle()
@@ -74,7 +91,7 @@ private fun PostPreviewDialogContent(
         if (missing && active) {
             bindings.onClose()
             android.widget.Toast
-                .makeText(context, "Сообщение не найдено", android.widget.Toast.LENGTH_SHORT)
+                .makeText(context, res.getString(L.ui_message_not_found), android.widget.Toast.LENGTH_SHORT)
                 .show()
         }
     }
@@ -111,13 +128,31 @@ internal fun PostPreviewWindow(
                 Box(Modifier.weight(1f, fill = false)) {
                     PreviewContent(state, presentation, bindings, onRetry, onMenu, target.replies)
                 }
-                openThread?.let {
-                    TextButton(onClick = it, modifier = Modifier.align(Alignment.End).padding(end = 4.dp)) {
-                        Text("Открыть тред")
-                    }
-                }
+                openThread?.let { OpenPreviewThreadButton(it) }
             }
         }
+    }
+}
+
+@Composable
+private fun OpenPreviewThreadButton(onClick: () -> Unit) {
+    val res = LocalResources.current
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 56.dp),
+        shape = CircleShape,
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+    ) {
+        Text(
+            res.getString(L.ui_open_thread_1c3f),
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -140,25 +175,30 @@ private fun PreviewContent(
     onMenu: (ThreadPostUi) -> Unit,
     replies: Boolean,
 ) {
+    val res = LocalResources.current
+
     val list = rememberLazyListState()
     val thumbnails = rememberThumbnailLoading(presentation.thumbnails, list)
     when {
         state.failure != null -> {
             Column(Modifier.padding(12.dp)) {
-                Text(requireNotNull(state.failure))
-                TextButton(onClick = onRetry) { Text("Повторить") }
+                Text(modelLabel(requireNotNull(state.failure)))
+                TextButton(onClick = onRetry) { Text(res.getString(L.ui_retry)) }
             }
         }
 
         state.content == null -> {
             PageLoadingIndicator(
-                description = "Загрузка предпросмотра поста",
+                description = res.getString(L.ui_loading_post_preview),
                 modifier = Modifier.padding(12.dp).testTag("preview-loading"),
             )
         }
 
         state.posts.isEmpty() -> {
-            Text(if (replies) "Ответов пока нет" else "Пост отсутствует или удалён", Modifier.padding(12.dp))
+            Text(
+                res.getString(if (replies) L.ui_no_replies_yet else L.ui_post_is_missing_or_deleted),
+                Modifier.padding(12.dp),
+            )
         }
 
         else -> {
@@ -219,7 +259,11 @@ private fun PreviewPostCard(
             ThreadPostOptions(
                 appearance = appearance,
                 replyLabel = content.presentation.replyIndex[post.id]?.label,
-                interactions = ThreadPostInteractions(onReplies = { bindings.onReplies(post.id) }, onMenu = onMenu),
+                interactions =
+                    ThreadPostInteractions(
+                        onReplies = { bindings.onReplies(post.id) },
+                        onMenu = onMenu,
+                    ),
             ),
     )
 }

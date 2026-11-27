@@ -12,7 +12,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toPixelMap
@@ -114,9 +113,4 @@ class BottomNavigationOutlineRuntimeTest {
         assertTrue(kotlin.math.abs(expected.blue - actual.blue) <= tolerance)
         assertEquals(expected.alpha, actual.alpha)
     }
-
-    private fun buttonBounds(): List<Rect> =
-        listOf("Каталог", "Треды", "Доски", "Настройки", "Написать").map {
-            compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
-        }
 }

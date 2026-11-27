@@ -4,8 +4,5 @@ package com.solthariel.pawchan.thread
 interface ThreadExportTarget {
     suspend fun saveHtml(document: ThreadExportDocument)
 
-    suspend fun saveShot(
-        posts: List<ThreadExportPost>,
-        style: ThreadShotStyle,
-    )
+    suspend fun saveShot(image: CapturedThreadShot)
 }

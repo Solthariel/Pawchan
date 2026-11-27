@@ -49,7 +49,7 @@ class VideoEdgeProgressRuntimeTest {
                         VideoPlaybackStatus(stage = VideoStage.READY, timeline = VideoTimeline(25, 100)),
                         visible.value,
                         MaterialTheme.colorScheme,
-                        Modifier.align(Alignment.BottomCenter),
+                        aspect = null,
                     )
                 }
             }
@@ -65,5 +65,25 @@ class VideoEdgeProgressRuntimeTest {
         line.assertDoesNotExist()
         compose.runOnIdle { visible.value = false }
         line.assertExists()
+    }
+
+    @Test
+    fun lineFollowsTheBottomEdgeOfAWideFrame() {
+        compose.setContent {
+            MaterialTheme {
+                Box(Modifier.size(240.dp).testTag("video-progress-container")) {
+                    VideoEdgeProgress(
+                        VideoPlaybackStatus(stage = VideoStage.READY, timeline = VideoTimeline(25, 100)),
+                        false,
+                        MaterialTheme.colorScheme,
+                        aspect = 2.0,
+                    )
+                }
+            }
+        }
+        val container = compose.onNodeWithTag("video-progress-container").fetchSemanticsNode().boundsInRoot
+        val line = compose.onNodeWithTag("video-edge-progress").fetchSemanticsNode().boundsInRoot
+        val frameBottom = container.top + container.height * 0.75f
+        org.junit.Assert.assertEquals(frameBottom, line.bottom, 1.5f)
     }
 }

@@ -10,37 +10,31 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import coil3.ImageLoader
 import coil3.compose.SubcomposeAsyncImage
-import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.ModalScrimStrength
 import com.solthariel.pawchan.core.ui.modalLayerSurface
 import com.solthariel.pawchan.media.AttachmentCaption
 import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.BindAttachmentImagePreload
 import com.solthariel.pawchan.media.MediaAttachmentUi
+import com.solthariel.pawchan.media.VideoThumbnailBadge
 import com.solthariel.pawchan.media.calculateAttachmentGridMetrics
 import com.solthariel.pawchan.media.rememberMediaThumbnailOrigin
 import com.solthariel.pawchan.media.thumbnail.LocalThumbnailLoader
@@ -138,15 +132,7 @@ private fun CatalogAttachmentCell(
             contentScale = ContentScale.Crop,
         )
         if (attachment.viewer == AttachmentViewer.VIDEO) {
-            Text(
-                text = stringResource(R.string.play_video),
-                modifier =
-                    Modifier
-                        .background(Color.Black.copy(alpha = PLAY_BADGE_ALPHA), CircleShape)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                color = Color.White,
-                fontSize = 24.sp,
-            )
+            VideoThumbnailBadge()
         }
         CatalogAttachmentMetadata(
             attachment = attachment,
@@ -164,7 +150,6 @@ private fun CatalogAttachmentMetadata(
 }
 
 private const val ATTACHMENT_GRID_COLUMNS = 2
-private const val PLAY_BADGE_ALPHA = 0.65f
 private val PICKER_MAX_CELL_SIZE = 120.dp
 private val PICKER_GAP = 8.dp
 private val PICKER_SCREEN_PADDING = 16.dp

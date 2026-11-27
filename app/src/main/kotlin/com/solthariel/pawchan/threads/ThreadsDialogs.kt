@@ -5,12 +5,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppMenuDialog
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.R.string as L
 
 /** Меню по долгому нажатию: убрать из секции, избранное, ссылка. */
 @Composable
@@ -20,6 +22,8 @@ internal fun ThreadsRowMenu(
     actions: ThreadsScreenActions,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val row = target.row
     val run: (() -> Unit) -> () -> Unit = { action ->
         {
@@ -38,7 +42,11 @@ internal fun ThreadsRowMenu(
         )
         when (target.section) {
             ThreadsSection.PAGES -> {
-                ActionMenuItem("Закрыть", run { actions.pages.close(row.address) }, icon = UiIconKind.CLOSE)
+                ActionMenuItem(
+                    res.getString(L.ui_close),
+                    run { actions.pages.close(row.address) },
+                    icon = UiIconKind.CLOSE,
+                )
             }
 
             ThreadsSection.FAVORITES -> {
@@ -47,17 +55,21 @@ internal fun ThreadsRowMenu(
 
             ThreadsSection.REPLIES -> {
                 ActionMenuItem(
-                    "Убрать из ответов",
+                    res.getString(L.ui_remove_from_replies),
                     run { actions.dismissReplies(row.address) },
                     icon = UiIconKind.DELETE,
                 )
             }
         }
         ActionMenuItem(
-            if (favorite) "Убрать из избранного" else "В избранное",
+            if (favorite) res.getString(L.ui_remove_from_favorites) else res.getString(L.ui_to_favorites),
             run { actions.setFavorite(row, !favorite) },
             icon = if (favorite) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
         )
-        ActionMenuItem("Копировать ссылку", run { actions.copyLink(row.address) }, icon = UiIconKind.LINK)
+        ActionMenuItem(
+            res.getString(L.ui_copy_link),
+            run { actions.copyLink(row.address) },
+            icon = UiIconKind.LINK,
+        )
     }
 }

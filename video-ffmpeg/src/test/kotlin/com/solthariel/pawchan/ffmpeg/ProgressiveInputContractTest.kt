@@ -78,6 +78,7 @@ class ProgressiveInputContractTest {
             source.start()
             assertTrue("HTTP failure", failure.await(5, TimeUnit.SECONDS))
             assertFalse(source.isComplete)
+            assertTrue(source.failed)
             assertEquals(0, calls.get())
         } finally {
             source.close()

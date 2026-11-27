@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
@@ -154,13 +153,13 @@ private fun AppNoticePill(
             CompactNoticeContent(notice, dismiss)
         } else {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-                Text(notice.message, style = MaterialTheme.typography.bodyMedium)
+                Text(modelLabel(notice.message), style = MaterialTheme.typography.bodyMedium)
                 notice.action?.let { action ->
                     TextButton(onClick = {
                         dismiss()
                         action.onClick()
                     }, modifier = Modifier.align(Alignment.End)) {
-                        Text(action.label)
+                        Text(modelLabel(action.label))
                     }
                 }
             }
@@ -195,14 +194,14 @@ private fun CompactNoticeContent(
     dismiss: () -> Unit,
 ) {
     Row(Modifier.height(40.dp).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(notice.message, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+        Text(modelLabel(notice.message), style = MaterialTheme.typography.bodyMedium, maxLines = 1)
         notice.action?.let { action ->
             VerticalDivider(
                 Modifier.padding(horizontal = 12.dp).height(16.dp),
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             Text(
-                action.label,
+                modelLabel(action.label),
                 modifier =
                     if (notice.actionOnly) {
                         Modifier.clickable {

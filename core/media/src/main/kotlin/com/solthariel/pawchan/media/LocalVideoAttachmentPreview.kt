@@ -22,6 +22,8 @@ import com.solthariel.pawchan.domain.model.MediaDimensions
 import com.solthariel.pawchan.domain.model.MediaKind
 import com.solthariel.pawchan.media.video.BindVideoPlaybackLifecycle
 import com.solthariel.pawchan.media.video.MpvVideoEngine
+import com.solthariel.pawchan.media.video.VideoAttempt
+import com.solthariel.pawchan.media.video.VideoFailure
 import com.solthariel.pawchan.media.video.VideoPlaybackPanel
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import com.solthariel.pawchan.media.video.VideoRenderSurface
@@ -70,9 +72,15 @@ fun LocalVideoAttachmentPreview(
     val current = file
     if (current != null) {
         LocalVideoPreview(current, id, fileName, content.size.toLong(), dimensions)
-    } else if (error) {
+    } else {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
-            VideoStateOverlay(VideoPlaybackStatus(stage = VideoStage.ERROR)) { attempt++ }
+            val state =
+                if (error) {
+                    VideoPlaybackStatus(stage = VideoStage.ERROR, attempt = VideoAttempt(failure = VideoFailure.SOURCE))
+                } else {
+                    VideoPlaybackStatus(stage = VideoStage.BUFFERING)
+                }
+            VideoStateOverlay(state) { attempt++ }
         }
     }
 }
@@ -111,7 +119,8 @@ private fun LocalVideoPreview(
         Column(Modifier.fillMaxSize().background(Color.Black)) {
             Box(Modifier.weight(1f)) {
                 VideoRenderSurface(player, video, motion)
-                VideoStateOverlay(status, player::retry)
+                val hasFrame by player.hasVideoOutput.collectAsStateWithLifecycle()
+                VideoStateOverlay(status, waitingForFrame = !hasFrame, onRetry = player::retry)
             }
             MaterialTheme(colorScheme = MEDIA_CHROME_COLORS) { VideoPlaybackPanel(player, seekColors = seekColors) }
         }

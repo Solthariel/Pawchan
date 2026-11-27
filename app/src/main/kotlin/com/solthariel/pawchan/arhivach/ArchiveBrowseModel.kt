@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.solthariel.pawchan.data.network.ArhivachBrowser
 import com.solthariel.pawchan.data.network.proxy.ScopedProxySelector
 import com.solthariel.pawchan.domain.archive.ArchiveBrowser
-import com.solthariel.pawchan.domain.archive.ArchiveMedia
 import com.solthariel.pawchan.domain.archive.ArchiveTag
 import com.solthariel.pawchan.domain.archive.ArchiveThread
 import com.solthariel.pawchan.domain.archive.ArchiveThreadPage

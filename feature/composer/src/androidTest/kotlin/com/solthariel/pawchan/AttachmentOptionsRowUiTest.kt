@@ -6,6 +6,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
@@ -15,6 +19,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -158,10 +163,21 @@ class AttachmentOptionsRowUiTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Переименовать").performClick()
+        val name = compose.onNodeWithContentDescription("Переименовать")
+        val off = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Выключено")
+        val on = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Включено")
+        name.assert(off).performClick()
+        name.assert(on)
+        compose.onAllNodesWithContentDescription("Убрать имя файла").assertCountEquals(1)
+        name.performClick()
+        name.assert(off)
+        compose.onNodeWithContentDescription("Убрать имя файла").assertDoesNotExist()
+        name.performClick()
         compose.onNodeWithText("Сохранить").assertDoesNotExist()
         compose.onNodeWithText("Отмена").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).assertIsNotFocused().performTextReplacement("newname")
+        name.performClick()
+        name.assert(on).performClick()
         compose
             .onNode(
                 hasContentDescription("Убрать имя файла") and hasAnyAncestor(hasTestTag("attachment-rename-controls")),

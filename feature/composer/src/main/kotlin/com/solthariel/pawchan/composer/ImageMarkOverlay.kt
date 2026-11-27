@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.solthariel.pawchan.domain.drafts.DraftCrop
@@ -18,6 +19,7 @@ import com.solthariel.pawchan.domain.drafts.DraftMarkTool
 import com.solthariel.pawchan.domain.drafts.DraftPoint
 import com.solthariel.pawchan.domain.drafts.ImageCanvasPoint
 import com.solthariel.pawchan.domain.drafts.canvasToSource
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 /** Place over the fitted output bitmap; one finger draws, two fingers are left for viewport gestures. */
 @Composable
@@ -27,11 +29,13 @@ internal fun ImageMarkOverlay(
     actions: ImageMarkActions,
     modifier: Modifier = Modifier,
 ) {
+    val res = LocalResources.current
+
     val currentEdit by rememberUpdatedState(edit)
     val currentActions by rememberUpdatedState(actions)
     Canvas(
         modifier
-            .semantics { contentDescription = "Поле рисования" }
+            .semantics { contentDescription = res.getString(L.ui_drawing_field) }
             .pointerInput(tool) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)

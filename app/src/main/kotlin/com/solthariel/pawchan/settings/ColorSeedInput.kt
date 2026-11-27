@@ -12,6 +12,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -21,12 +22,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.settings.DEFAULT_THEME_SEED
 import kotlin.math.roundToInt
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ColorSeedInput(
     hex: String,
     onChange: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val parsed = parseSeedHex(hex)
     val keyboard = LocalSoftwareKeyboardController.current
     Column {
@@ -34,8 +38,8 @@ internal fun ColorSeedInput(
             value = hex,
             onValueChange = onChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Цвет HEX") },
-            supportingText = { Text("Шесть цифр: #RRGGBB") },
+            label = { Text(res.getString(L.ui_hex_color)) },
+            supportingText = { Text(res.getString(L.ui_six_digits_rrggbb)) },
             singleLine = true,
             isError = parsed == null,
             keyboardOptions =
@@ -48,7 +52,11 @@ internal fun ColorSeedInput(
             keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
         )
         val seed = parsed ?: DEFAULT_THEME_SEED
-        listOf("Красный" to RED_SHIFT, "Зелёный" to GREEN_SHIFT, "Синий" to 0).forEach { (label, shift) ->
+        listOf(
+            res.getString(L.ui_red) to RED_SHIFT,
+            res.getString(L.ui_green) to GREEN_SHIFT,
+            res.getString(L.ui_blue) to 0,
+        ).forEach { (label, shift) ->
             ColorChannelSlider(label, (seed shr shift) and CHANNEL_MAX) { channel ->
                 val replaced = (seed and (CHANNEL_MAX shl shift).inv()) or (channel shl shift)
                 onChange(seedHex(replaced))

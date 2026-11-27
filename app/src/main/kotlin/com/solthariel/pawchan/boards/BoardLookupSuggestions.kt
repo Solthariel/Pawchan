@@ -15,10 +15,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.model.BoardAddress
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun BoardLookupSuggestions(
@@ -83,9 +85,11 @@ private fun BoardLookupEmpty(
     retry: () -> Unit,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     when {
         source.loading -> {
-            BoardLookupMessage("Загрузка досок…")
+            BoardLookupMessage(res.getString(L.ui_loading_boards))
         }
 
         source.failed -> {
@@ -93,13 +97,18 @@ private fun BoardLookupEmpty(
                 Modifier.fillMaxWidth().height(BOARD_LOOKUP_ROW_HEIGHT).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Не удалось загрузить доски", Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                TextButton(onClick = retry, enabled = enabled) { Text("Повторить") }
+                Text(
+                    res.getString(L.ui_failed_to_load_boards),
+                    Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                TextButton(onClick = retry, enabled = enabled) { Text(res.getString(L.ui_retry)) }
             }
         }
 
         else -> {
-            BoardLookupMessage("Ничего не найдено")
+            BoardLookupMessage(res.getString(L.ui_nothing_found))
         }
     }
 }

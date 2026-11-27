@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.FastScrollMode
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
@@ -62,6 +63,7 @@ import com.solthariel.pawchan.thread.PostTextContent
 import com.solthariel.pawchan.thread.ReadOnlyPostMenu
 import com.solthariel.pawchan.thread.SharedPostText
 import com.solthariel.pawchan.thread.SharedPostTextPresentation
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ArchivePostList(
@@ -143,6 +145,8 @@ private fun ArchivePostRows(
     words: String,
     actions: ArchivePostActions,
 ) {
+    val res = LocalResources.current
+
     val visiblePosts = data.posts
     val listState = rememberLazyListState()
     val thumbnailLoading = rememberThumbnailLoading(loaders.thumbnailLoader, listState)
@@ -155,7 +159,12 @@ private fun ArchivePostRows(
             state.thread?.let {
                 itemsIndexed(
                     visiblePosts,
-                    key = { _, card -> "post:${state.selectedThread}:${card.ordinal}:${card.post.number.orEmpty()}" },
+                    key = {
+                        _,
+                        card,
+                        ->
+                        "post:${state.selectedThread}:${card.ordinal}:${card.post.number.orEmpty()}"
+                    },
                     contentType = { _, _ -> "archive-post" },
                 ) { index, card ->
                     Column {
@@ -164,7 +173,7 @@ private fun ArchivePostRows(
                     }
                 }
                 if (words.isNotBlank() && visiblePosts.isEmpty()) {
-                    item { Text("Посты не найдены", Modifier.padding(16.dp)) }
+                    item { Text(res.getString(L.ui_no_posts_found), Modifier.padding(16.dp)) }
                 }
             }
         }
@@ -226,7 +235,9 @@ internal fun ArchivePostBody(
 ) {
     val preferences = LocalPostDisplayPreferences.current
     var expanded by rememberSaveable(card.ordinal, card.post.number) { mutableStateOf(false) }
-    var limited by rememberSaveable(card.ordinal, card.post.number, preferences.collapseLines) { mutableStateOf(false) }
+    var limited by rememberSaveable(card.ordinal, card.post.number, preferences.collapseLines) {
+        mutableStateOf(false)
+    }
     val maxLines = postCollapseMaxLines(card.ordinal == 1, expanded, preferences.collapseLines)
     if (card.subject != null || card.document.plainText.isNotBlank()) {
         PostTextContent(card.subject, null, preferences.textSize) {

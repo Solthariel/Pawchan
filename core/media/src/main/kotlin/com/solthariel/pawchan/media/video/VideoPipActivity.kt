@@ -15,7 +15,6 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.Lifecycle
@@ -33,10 +32,9 @@ import kotlinx.coroutines.launch
  * перемотки), кнопки −10 с / ▶ / +10 с. Разворот возвращает сессию просмотрщику, закрытие
  * останавливает видео.
  */
-class VideoPipActivity : ComponentActivity() {
+class VideoPipActivity : LocalizedPipActivity() {
     private val scope = MainScope()
     private var session: VideoPlaybackSession? = null
-    private var audio: VideoPlaybackAudio? = null
     private var request: VideoPipRequest? = null
     private var container: FrameLayout? = null
     private var entered = false
@@ -91,7 +89,7 @@ class VideoPipActivity : ComponentActivity() {
         val player = request.session
         session = player
         this.request = request
-        audio = player.audio(this)
+        player.audio(this)
         ContextCompat.registerReceiver(
             this,
             controls,
@@ -102,12 +100,6 @@ class VideoPipActivity : ComponentActivity() {
         updatePipParams(player.status.value)
         scope.launch {
             request.access?.changes?.collect { allowed -> if (!allowed) privacy.revoke() }
-        }
-        scope.launch {
-            player.status
-                .map { it.playing }
-                .distinctUntilChanged()
-                .collect { audio?.update(it) }
         }
         scope.launch {
             player.status.map { it.playing to it.videoAspect }.distinctUntilChanged().collect {
@@ -251,7 +243,15 @@ class VideoPipActivity : ComponentActivity() {
         status: VideoPlaybackStatus,
         forceSquare: Boolean = false,
     ): PictureInPictureParams {
-        val aspect = if (forceSquare) android.util.Rational(1, 1) else request?.dimensions.pipAspect(status.videoAspect)
+        val aspect =
+            if (forceSquare) {
+                android.util.Rational(
+                    1,
+                    1,
+                )
+            } else {
+                request?.dimensions.pipAspect(status.videoAspect)
+            }
         return PictureInPictureParams
             .Builder()
             .setActions(pipActions(status.playing))
@@ -296,7 +296,12 @@ private fun FrameLayout.videoBounds(aspect: Float): Rect? {
     val left = ((width - frameWidth) / 2).toInt()
     val top = ((height - frameHeight) / 2).toInt()
     val origin = IntArray(2).also(::getLocationInWindow)
-    return Rect(left, top, left + frameWidth.toInt(), top + frameHeight.toInt()).apply { offset(origin[0], origin[1]) }
+    return Rect(
+        left,
+        top,
+        left + frameWidth.toInt(),
+        top + frameHeight.toInt(),
+    ).apply { offset(origin[0], origin[1]) }
 }
 
 private const val ACTION_CONTROL = "com.solthariel.pawchan.media.video.PIP_CONTROL"

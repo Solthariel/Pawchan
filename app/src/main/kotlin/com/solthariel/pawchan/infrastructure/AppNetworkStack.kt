@@ -2,12 +2,7 @@ package com.solthariel.pawchan.infrastructure
 
 import android.content.Context
 import coil3.ImageLoader
-import com.solthariel.pawchan.data.network.DvachBoardDetailsApi
-import com.solthariel.pawchan.data.network.DvachBoardDirectoryApi
-import com.solthariel.pawchan.data.network.DvachCatalogApi
 import com.solthariel.pawchan.data.network.DvachHttpClient
-import com.solthariel.pawchan.data.network.DvachPostingApi
-import com.solthariel.pawchan.data.network.DvachThreadApi
 import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.boards.BoardDetailsRepository
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
@@ -55,6 +50,7 @@ internal class AppNetworkStack private constructor(
 
     override fun close() {
         val clearCache = clearCacheOnExit
+        CookieRuleStore.shared?.let { WebViewSiteCookies(mirror.host).deleteOnExit(it.current()) }
         mediaLoaders.mediaDownloadQueue.close()
         mediaLoaders.thumbnailLoader.close()
         mediaLoaders.vocaroo?.close()
@@ -89,7 +85,9 @@ internal class AppNetworkStack private constructor(
                 com.solthariel.pawchan.data.network.proxy
                     .ScopedProxySelector(),
         ): AppNetworkStack {
-            val cookies = AndroidCookieJar().apply { selectOrigin(mirrorHost) }
+            val cookieRules = CookieRuleStore.get(context)
+            WebViewSiteCookies(mirrorHost).deleteOnExit(cookieRules.current())
+            val cookies = AndroidCookieJar(rules = cookieRules::current).apply { selectOrigin(mirrorHost) }
             val totalBytes =
                 cacheMb
                     .coerceIn(StoragePreferences.MIN_MB, StoragePreferences.MAX_MB)

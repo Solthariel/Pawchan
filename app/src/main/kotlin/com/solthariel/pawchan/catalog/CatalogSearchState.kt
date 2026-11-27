@@ -34,12 +34,15 @@ internal class CatalogSearchState(
     var focusRequested by mutableStateOf(false)
         private set
 
+    /** «Сразу открывать клавиатуру»: выключено — лупа открывает поле без фокуса. */
+    internal var autoOpen = true
+
     val visible: Boolean get() = openedState.value && (touched || query.isNotEmpty())
 
     fun open() {
         openedState.value = true
         touched = true
-        focusRequested = true
+        focusRequested = autoOpen
     }
 
     fun edit(value: String) {
@@ -77,6 +80,7 @@ internal fun rememberCatalogSearchState(
     val state = remember { CatalogSearchState(opened, focusManager, keyboard) }
     state.query = query
     state.onQueryChange = onQueryChange
+    state.autoOpen = com.solthariel.pawchan.core.ui.LocalAutoOpenKeyboard.current
     val visible = state.visible
     LaunchedEffect(state.focusRequested, visible) { if (visible) state.applyFocusRequest() }
     BackHandler(enabled = visible, onBack = state::close)

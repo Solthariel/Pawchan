@@ -13,6 +13,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.CompactStatusNotice
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
@@ -21,6 +22,7 @@ import com.solthariel.pawchan.core.ui.postContainerShape
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 /** Следит за списком постов и за тем, какие новые посты уже показались на экране. */
 @Composable
@@ -54,7 +56,8 @@ internal fun rememberThreadFreshPosts(
  */
 @Composable
 internal fun BoxScope.FreshPostHighlight(fresh: Boolean) {
-    val alpha = animateFloatAsState(if (fresh) HIGHLIGHT_ALPHA else 0f, tween(HIGHLIGHT_FADE_MS), label = "fresh-post")
+    val alpha =
+        animateFloatAsState(if (fresh) HIGHLIGHT_ALPHA else 0f, tween(HIGHLIGHT_FADE_MS), label = "fresh-post")
     val color = MaterialTheme.colorScheme.primary
     val shape = postContainerShape()
     Box(
@@ -79,13 +82,15 @@ internal fun BoxScope.ThreadRefreshNoticeBar(
     fresh: ThreadFreshPosts,
     onShow: (Long) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val notice = fresh.notice.value
     CompactStatusNotice(
         notice?.message,
         eventKey = notice,
         action =
             notice?.firstNew?.let { id ->
-                NoticeAction("Показать") {
+                NoticeAction(res.getString(L.ui_show)) {
                     fresh.dismiss()
                     onShow(id)
                 }

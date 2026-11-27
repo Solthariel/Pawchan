@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
@@ -23,9 +24,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun LicenseInventoryContent(uriHandler: UriHandler) {
+    val res = LocalResources.current
+
     val assets = LocalContext.current.applicationContext.assets
     val inventory by produceState<List<LicensedComponent>?>(null, assets) {
         value =
@@ -45,9 +49,9 @@ internal fun LicenseInventoryContent(uriHandler: UriHandler) {
         }
         val entries = inventory
         if (entries == null) {
-            item { Text("Загрузка…", Modifier.padding(20.dp)) }
+            item { Text(res.getString(L.ui_loading), Modifier.padding(20.dp)) }
         } else if (entries.isEmpty()) {
-            item { Text("Не удалось прочитать список зависимостей.", Modifier.padding(20.dp)) }
+            item { Text(res.getString(L.ui_failed_to_read_dependency_list), Modifier.padding(20.dp)) }
         } else {
             items(entries, key = { it.coordinate }) { component -> LicenseComponentRow(component, uriHandler) }
         }

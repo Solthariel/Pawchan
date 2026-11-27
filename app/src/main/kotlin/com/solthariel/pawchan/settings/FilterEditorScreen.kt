@@ -17,11 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.R.string as L
 
 /** Включение правила переключается в списке правил; справка доступна из меню списка. */
 @Composable
@@ -58,20 +60,22 @@ private fun FilterEditorHeader(
     onDelete: (() -> Unit)?,
     confirm: @Composable () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        UiToolbarButton(UiIconKind.CLOSE, "Закрыть правило", onClick = onClose)
+        UiToolbarButton(UiIconKind.CLOSE, res.getString(L.ui_close_rule), onClick = onClose)
         Text(
-            "Правило автоскрытия",
+            res.getString(L.ui_auto_hide_rule),
             Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (onDelete != null) {
-            UiToolbarButton(UiIconKind.DELETE, "Удалить правило", onClick = onDelete)
+            UiToolbarButton(UiIconKind.DELETE, res.getString(L.ui_delete_rule), onClick = onDelete)
         }
         confirm()
     }

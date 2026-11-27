@@ -9,7 +9,11 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.domain.thread.ThreadRepository
+import com.solthariel.pawchan.domain.workspace.withRoutes
 import com.solthariel.pawchan.navigation.AppRoute
+import com.solthariel.pawchan.navigation.SUSPENDED_READING_ROUTE
+import com.solthariel.pawchan.navigation.entryOrNull
+import com.solthariel.pawchan.navigation.readingRoute
 import com.solthariel.pawchan.navigation.toBoardAddress
 import com.solthariel.pawchan.navigation.toThreadAddress
 
@@ -17,7 +21,8 @@ internal fun String?.validRestorableRoute(): String? =
     this?.takeIf {
         it == AppRoute.BOARDS || it == AppRoute.LIBRARY || it == AppRoute.SETTINGS ||
             it.matches(Regex("(?:catalog|archive|archive-browser)/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+")) ||
-            it.matches(Regex("thread/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+/[1-9][0-9]*"))
+            it.matches(Regex("thread/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+/[1-9][0-9]*")) ||
+            it.matches(Regex("download-archive/[1-9][0-9]*"))
     }
 
 @Composable
@@ -33,9 +38,27 @@ internal fun BindWorkspaceRoute(
                     AppRoute.CATALOG -> entry.arguments?.toBoardAddress()?.let(AppRoute::catalog)
                     AppRoute.ARCHIVE_BROWSER -> entry.arguments?.toBoardAddress()?.let(AppRoute::archiveBrowser)
                     AppRoute.ARCHIVE -> entry.arguments?.toBoardAddress()?.let(AppRoute::archive)
+                    AppRoute.DOWNLOAD_ARCHIVE -> entry.readingRoute()
                     else -> entry.destination.route.validRestorableRoute()
                 }
-            if (route != null) workspace?.change { it.copy(lastRoute = route) }
+            val base = navController.entryOrNull(AppRoute.CATALOG)
+            val baseRoute = base?.arguments?.toBoardAddress()?.let(AppRoute::catalog)
+            val reading = base?.savedStateHandle?.get<String>(SUSPENDED_READING_ROUTE).validRestorableRoute()
+            val current = workspace?.state?.value
+            val changed =
+                current == null ||
+                    (route != null && route != current.lastRoute) ||
+                    (baseRoute != null && baseRoute != current.baseRoute) ||
+                    reading != current.readingRoute
+            if (changed) {
+                workspace?.change { state ->
+                    state.withRoutes(
+                        last = route ?: state.lastRoute,
+                        base = baseRoute ?: state.baseRoute,
+                        reading = reading,
+                    )
+                }
+            }
         }
     }
 }

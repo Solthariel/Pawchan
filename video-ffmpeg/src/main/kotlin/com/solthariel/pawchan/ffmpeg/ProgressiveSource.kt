@@ -85,14 +85,15 @@ class ProgressiveSource(
     @Volatile var isComplete = false
         private set
 
+    @Volatile var failed = false
+        private set
+
     @Volatile private var rangesAllowed = true
 
     fun start() {
         timing.mark(TimingProbe.Event.GET_START, 0)
         sequential.execute(::download)
     }
-
-    fun timingId(): Int = timing.id()
 
     fun bind(sink: ProgressiveInputSink?) {
         this.sink = sink
@@ -111,7 +112,10 @@ class ProgressiveSource(
             if (closed) call.cancel() else call.execute().use { receive(it, next) }
         } catch (error: IOException) {
             timing.mark(TimingProbe.Event.GET_ERROR, if (closed) 1 else 0)
-            if (!closed) listener.onError(error)
+            if (!closed) {
+                failed = true
+                listener.onError(error)
+            }
         } finally {
             primaryCall = null
         }

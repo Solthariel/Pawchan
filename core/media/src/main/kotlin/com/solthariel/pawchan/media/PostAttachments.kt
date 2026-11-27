@@ -9,19 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.core.ui.UiIcon
-import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.media.MEDIA_ATTACHMENT_COLUMNS
 import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
@@ -90,7 +85,7 @@ fun PostAttachment(
             Modifier.fillMaxSize(),
         )
         if (attachment.viewer == AttachmentViewer.VIDEO) {
-            UiIcon(UiIconKind.PLAY, Color.White, Modifier.align(Alignment.Center).size(24.dp))
+            VideoThumbnailBadge(Modifier.align(Alignment.Center))
         }
         AttachmentCaption(attachment, Modifier.align(Alignment.BottomStart))
     }

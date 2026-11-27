@@ -2,8 +2,6 @@ package com.solthariel.pawchan.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import com.solthariel.pawchan.domain.model.PostAddress
-import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import kotlinx.coroutines.launch
 
@@ -21,10 +19,7 @@ internal fun ThreadPostMenuHost(
     actions: ThreadActions,
     presentation: ThreadPresentation,
 ) {
-    val post =
-        tools.postMenuId
-            ?.let { content.presentation.postPositions[it] }
-            ?.let { content.posts[it] } ?: return
+    val post = tools.postMenuId?.let(content::postForPreview) ?: return
     val postContext = presentation.postContext
     val bindings = LocalPostLinks.current
     if (postContext == null || bindings == null) return

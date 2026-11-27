@@ -12,16 +12,25 @@ internal class MpvPlaybackEvents {
 
     fun emit(event: VideoEvent) = callback(event, snapshot)
 
-    fun sample(sample: MpvPollSample) {
+    fun sample(
+        sample: MpvPollSample,
+        waitingForBytes: Boolean = false,
+    ) {
+        if (snapshot.ended && !sample.hasFile) return
+        val stalled = waitingForBytes && !sample.paused && sample.position == snapshot.position
         snapshot =
             snapshot.copy(
-                stage = pollPlaybackStage(snapshot.ended, sample.hasFile, sample.buffering),
+                stage = pollPlaybackStage(snapshot.ended, sample.hasFile, sample.buffering || stalled),
                 timeline = VideoTimeline(sample.position, sample.duration),
                 playing = sample.hasFile && !sample.paused && !snapshot.ended,
                 seekable = sample.duration > 0,
                 output = VideoOutputDetails(sample.hardwareDecoded, sample.aspect),
             )
         emit(VideoEvent.PROGRESS)
+    }
+
+    fun sourceError() {
+        callback(VideoEvent.ERROR, snapshot.copy(attempt = snapshot.attempt.copy(failure = VideoFailure.SOURCE)))
     }
 
     fun end(reason: String?) {

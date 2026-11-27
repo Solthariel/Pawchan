@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiChoiceSegments
+import com.solthariel.pawchan.R.string as L
 
 /** Shared Material segments; stack before labels run out of room at large text sizes. */
 @Composable
@@ -24,6 +26,8 @@ internal fun FilterOptionGroup(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val measurer = rememberTextMeasurer()
     val style = MaterialTheme.typography.labelLarge
     val density = LocalDensity.current
@@ -35,7 +39,9 @@ internal fun FilterOptionGroup(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, style = MaterialTheme.typography.labelLarge)
         BoxWithConstraints(Modifier.fillMaxWidth().selectableGroup().testTag("filter-options-$title")) {
-            if (title == "Где скрывать" || maxWidth >= minimum * options.size + 4.dp * (options.size - 1)) {
+            if (title == res.getString(L.ui_where_to_hide) ||
+                maxWidth >= minimum * options.size + 4.dp * (options.size - 1)
+            ) {
                 UiChoiceSegments(
                     options.map { it.second },
                     options.indexOfFirst { it.first == selected },
@@ -47,7 +53,18 @@ internal fun FilterOptionGroup(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     options.forEach { (value, label) ->
-                        UiChoiceSegments(listOf(label), if (selected == value) 0 else -1, true, wrapLabels = true) {
+                        UiChoiceSegments(
+                            listOf(label),
+                            if (selected ==
+                                value
+                            ) {
+                                0
+                            } else {
+                                -1
+                            },
+                            true,
+                            wrapLabels = true,
+                        ) {
                             onSelect(value)
                         }
                     }

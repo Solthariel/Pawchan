@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -18,12 +19,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.validMirrorHost
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun MirrorSetting(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val mirrors = com.solthariel.pawchan.infrastructure.LocalForumMirrors.current
     val host = app.behavior.client.mirror
     val options =
@@ -31,13 +35,13 @@ internal fun MirrorSetting(
             "2ch.su",
             "2ch.org",
             "2ch.life",
-            if (host in DEFAULT_MIRRORS) "Свой домен" else host,
+            if (host in DEFAULT_MIRRORS) res.getString(L.ui_own_domain) else host,
         )
     var custom by remember { mutableStateOf(false) }
     var input by remember(host) { mutableStateOf(host) }
     SettingsItemRow(
         SettingsItem.Choice(
-            "Зеркало сайта",
+            res.getString(L.ui_site_mirror),
             options,
             options.indexOf(host).takeIf { it >= 0 } ?: CUSTOM_MIRROR_INDEX,
         ) { index ->
@@ -45,7 +49,11 @@ internal fun MirrorSetting(
                 custom = true
             } else {
                 mirrors?.selectHost(options[index])
-                update { it.withClient { c -> c.copy(connection = c.connection.copy(preferredHost = options[index])) } }
+                update {
+                    it.withClient { c ->
+                        c.copy(connection = c.connection.copy(preferredHost = options[index]))
+                    }
+                }
             }
         },
     )
@@ -81,16 +89,25 @@ private fun CustomMirrorDialog(
     onClose: () -> Unit,
     onSave: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     AppAlertDialog(
         onDismissRequest = onClose,
-        title = { Text("Свой домен") },
+        title = { Text(res.getString(L.ui_own_domain)) },
         text = {
             OutlinedTextField(
                 input,
                 { onInput(it.trim().lowercase()) },
                 label = {
                     Text(
-                        if (validMirrorHost(input)) "Домен без https://" else "Нужен домен вида example.org",
+                        if (validMirrorHost(
+                                input,
+                            )
+                        ) {
+                            res.getString(L.ui_domain_without_https)
+                        } else {
+                            res.getString(L.ui_a_domain_like_example_org)
+                        },
                         maxLines = 1,
                     )
                 },
@@ -103,8 +120,8 @@ private fun CustomMirrorDialog(
             )
         },
         confirmButton = {
-            TextButton(enabled = validMirrorHost(input), onClick = onSave) { Text("Сохранить") }
+            TextButton(enabled = validMirrorHost(input), onClick = onSave) { Text(res.getString(L.ui_save)) }
         },
-        dismissButton = { TextButton(onClick = onClose) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onClose) { Text(res.getString(L.ui_cancel)) } },
     )
 }

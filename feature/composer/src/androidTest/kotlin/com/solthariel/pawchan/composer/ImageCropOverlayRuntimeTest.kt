@@ -27,11 +27,9 @@ class ImageCropOverlayRuntimeTest {
         var finishes = 0
         compose.setContent {
             MaterialTheme {
-                ImageCropOverlay(
+                ImagePaddedCropOverlay(
                     edit,
-                    1000,
-                    1000,
-                    null,
+                    ImageCropGeometry(1000, 1000, null),
                     ImageCropActions({ starts++ }, { edit = it }, { finishes++ }),
                     Modifier.size(300.dp, 200.dp),
                 )
@@ -85,11 +83,9 @@ class ImageCropOverlayRuntimeTest {
         var finished = 0
         compose.setContent {
             MaterialTheme {
-                ImageCropOverlay(
+                ImagePaddedCropOverlay(
                     edit,
-                    1000,
-                    1000,
-                    null,
+                    ImageCropGeometry(1000, 1000, null),
                     ImageCropActions({}, { edit = it }, { finished++ }),
                     Modifier.size(300.dp, 200.dp),
                 )

@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -29,6 +30,7 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.PostRating
 import com.solthariel.pawchan.domain.thread.PostVote
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 /**
  * Лайк/дизлайк в конце строки заголовка. Высота как у текста строки; область нажатия
@@ -39,6 +41,8 @@ internal fun PostRatingButtons(
     postId: Long,
     rating: PostRating,
 ) {
+    val res = LocalResources.current
+
     val session = LocalPostVotes.current
     val thread = LocalPostLinkAddress.current
     val post = PostId.parse(postId)?.let { id -> thread?.let { PostAddress(it, id) } }
@@ -57,12 +61,17 @@ internal fun PostRatingButtons(
         RatingButton(
             RatingButtonState(true, state?.likes ?: rating.likes, state?.voted == PostVote.LIKE, enabled),
             ratingLikeColor(),
-            "Нравится",
+            res.getString(L.ui_like),
         ) { vote(PostVote.LIKE) }
         RatingButton(
-            RatingButtonState(false, state?.dislikes ?: rating.dislikes, state?.voted == PostVote.DISLIKE, enabled),
+            RatingButtonState(
+                false,
+                state?.dislikes ?: rating.dislikes,
+                state?.voted == PostVote.DISLIKE,
+                enabled,
+            ),
             ratingDislikeColor(),
-            "Не нравится",
+            res.getString(L.ui_dislike),
         ) { vote(PostVote.DISLIKE) }
     }
 }
@@ -92,7 +101,13 @@ private fun RatingButton(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         UiRatingIcon(state.up, state.voted, color, Modifier.size(iconSize))
-        Text(state.count.toString(), color = color, fontSize = RATING_TEXT_SIZE.sp, lineHeight = 14.sp, maxLines = 1)
+        Text(
+            state.count.toString(),
+            color = color,
+            fontSize = RATING_TEXT_SIZE.sp,
+            lineHeight = 14.sp,
+            maxLines = 1,
+        )
     }
 }
 

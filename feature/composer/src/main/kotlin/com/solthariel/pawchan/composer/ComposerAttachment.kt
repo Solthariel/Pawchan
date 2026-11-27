@@ -4,7 +4,6 @@ import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.data.network.PostingMediaBytes
 import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import com.solthariel.pawchan.media.canonicalMediaFormat
-import com.solthariel.pawchan.media.metadata.basicMediaSummary
 import java.util.UUID
 
 data class ComposerAttachment(
@@ -28,9 +27,6 @@ data class ComposerAttachment(
     val displaySize: String = formatByteSizeForUi(source.content.size.toLong())
     val displayFormat: String = canonicalMediaFormat(format ?: source.fileName.substringAfterLast('.', ""))
     val typeAndSize: String = "$displayFormat $displaySize"
-
-    // Same order as the viewer summary; original file, not a prediction of the processed upload.
-    val metadataFallback: String = basicMediaSummary(displayFormat, dimensions, source.content.size.toLong())
 }
 
 internal typealias AttachmentEditOptions = com.solthariel.pawchan.domain.drafts.MediaDraftOptions

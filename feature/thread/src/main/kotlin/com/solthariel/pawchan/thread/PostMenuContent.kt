@@ -11,11 +11,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.MenuNavigation
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiMenuIcon
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 internal enum class PostMenuPage { MAIN, COPY, HIDE }
 
@@ -54,6 +56,8 @@ internal fun PostMenuContent(
     onCommand: (PostMenuCommand) -> Unit,
     canAddRule: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     when (page) {
         PostMenuPage.MAIN -> {
             PostMenuMain(options, onPage, onCommand, canAddRule)
@@ -61,18 +65,40 @@ internal fun PostMenuContent(
 
         PostMenuPage.COPY -> {
             if (options.hasText) {
-                ActionMenuItem("Текст", { onCommand(PostMenuCommand.COPY_TEXT) }, icon = UiIconKind.DOCUMENT)
-                ActionMenuItem("Разметку", { onCommand(PostMenuCommand.COPY_MARKUP) }, icon = UiIconKind.CODE)
+                ActionMenuItem(
+                    res.getString(L.ui_text),
+                    { onCommand(PostMenuCommand.COPY_TEXT) },
+                    icon = UiIconKind.DOCUMENT,
+                )
+                ActionMenuItem(
+                    res.getString(L.ui_markup),
+                    { onCommand(PostMenuCommand.COPY_MARKUP) },
+                    icon = UiIconKind.CODE,
+                )
             }
-            ActionMenuItem("Ссылку", { onCommand(PostMenuCommand.COPY_LINK) }, options.hasLink, icon = UiIconKind.LINK)
+            ActionMenuItem(res.getString(L.ui_link), {
+                onCommand(PostMenuCommand.COPY_LINK)
+            }, options.hasLink, icon = UiIconKind.LINK)
         }
 
         PostMenuPage.HIDE -> {
-            ActionMenuItem("Этот пост", { onCommand(PostMenuCommand.HIDE) }, icon = UiIconKind.HIDE)
-            ActionMenuItem("Дерево ответов", { onCommand(PostMenuCommand.HIDE_TREE) }, icon = UiIconKind.HIDE)
-            ActionMenuItem("Посты с тем же именем", { onCommand(PostMenuCommand.HIDE_NAME) }, icon = UiIconKind.PERSON)
             ActionMenuItem(
-                "Похожие посты",
+                res.getString(L.ui_this_post),
+                { onCommand(PostMenuCommand.HIDE) },
+                icon = UiIconKind.HIDE,
+            )
+            ActionMenuItem(
+                res.getString(L.ui_reply_tree),
+                { onCommand(PostMenuCommand.HIDE_TREE) },
+                icon = UiIconKind.HIDE,
+            )
+            ActionMenuItem(
+                res.getString(L.ui_posts_with_the_same_name),
+                { onCommand(PostMenuCommand.HIDE_NAME) },
+                icon = UiIconKind.PERSON,
+            )
+            ActionMenuItem(
+                res.getString(L.ui_similar_posts),
                 { onCommand(PostMenuCommand.HIDE_SIMILAR) },
                 options.hasText,
                 icon = UiIconKind.FILTER,
@@ -88,20 +114,26 @@ private fun PostMenuMain(
     onCommand: (PostMenuCommand) -> Unit,
     canAddRule: Boolean,
 ) {
-    ActionMenuItem("Ответить", { onCommand(PostMenuCommand.REPLY) }, !options.closed, icon = UiIconKind.REPLY)
+    val res = LocalResources.current
+
+    ActionMenuItem(res.getString(L.ui_reply), {
+        onCommand(PostMenuCommand.REPLY)
+    }, !options.closed, icon = UiIconKind.REPLY)
     ActionMenuItem(
-        "Цитировать",
+        res.getString(L.ui_quote),
         { onCommand(PostMenuCommand.QUOTE) },
         !options.closed && options.hasText,
         icon = UiIconKind.QUOTE,
     )
     ActionMenuItem(
-        "Копировать",
+        res.getString(L.ui_copy),
         { onPage(PostMenuPage.COPY) },
         navigation = MenuNavigation.FORWARD,
         icon = UiIconKind.COPY,
     )
-    ActionMenuItem("Пожаловаться", { onCommand(PostMenuCommand.REPORT) }, options.canReport, icon = UiIconKind.WARNING)
+    ActionMenuItem(res.getString(L.ui_report_c133), {
+        onCommand(PostMenuCommand.REPORT)
+    }, options.canReport, icon = UiIconKind.WARNING)
     if (options.storageActions) {
         TextButton(
             onClick = { onCommand(PostMenuCommand.OWN) },
@@ -110,20 +142,20 @@ private fun PostMenuMain(
         ) {
             UiMenuIcon(UiIconKind.PERSON)
             Spacer(Modifier.width(12.dp))
-            Text("Моё сообщение", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Text(res.getString(L.ui_my_message), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Checkbox(options.own, onCheckedChange = null)
         }
     }
     if (canAddRule) {
         ActionMenuItem(
-            "Добавить правило",
+            res.getString(L.ui_add_rule),
             { onCommand(PostMenuCommand.ADD_FILTER) },
             icon = UiIconKind.FILTER,
         )
     }
     if (options.storageActions && !options.hidden) {
         ActionMenuItem(
-            "Скрыть",
+            res.getString(L.ui_hide),
             { onPage(PostMenuPage.HIDE) },
             navigation = MenuNavigation.FORWARD,
             icon = UiIconKind.HIDE,

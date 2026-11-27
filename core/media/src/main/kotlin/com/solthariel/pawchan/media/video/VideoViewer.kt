@@ -2,14 +2,9 @@ package com.solthariel.pawchan.media.video
 
 import android.app.ActivityManager
 import android.content.Context
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -20,13 +15,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.core.ui.ModalScrimStrength
 import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.ImageViewerMotion
@@ -146,8 +137,10 @@ internal fun VideoSurface(
             Unit
         }
         VideoGestureSurface(player, video, motion, navigation, actions.onClose) { menu(false) }
-        VideoStateOverlay(state, actions.onRetry)
-        VideoEdgeProgress(state, motion.controlsVisible, seekColors, Modifier.align(Alignment.BottomCenter))
+        val hasFrame by player.hasVideoOutput.collectAsStateWithLifecycle()
+        VideoStateOverlay(state, waitingForFrame = !hasFrame, onRetry = actions.onRetry)
+        val frameAspect = videoFrameAspect(state, video)
+        VideoEdgeProgress(state, motion.controlsVisible, seekColors, frameAspect, speed = rememberVideoSpeed(player))
         MediaViewerChrome(
             motion,
             // Ошибка загрузки не убирает кнопки, время и переход к соседним вложениям.
@@ -174,42 +167,6 @@ internal data class VideoSurfaceActions(
     val onClose: () -> Unit,
     val onPip: (() -> Unit)?,
 )
-
-@Composable
-internal fun VideoStateOverlay(
-    state: VideoPlaybackStatus,
-    onRetry: () -> Unit,
-) {
-    when (state.stage) {
-        VideoStage.BUFFERING -> {
-            Unit
-        }
-
-        VideoStage.ERROR -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.video_load_failed),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier.padding(top = 12.dp),
-                ) {
-                    Text(stringResource(R.string.retry))
-                }
-            }
-        }
-
-        VideoStage.READY -> {
-            Unit
-        }
-    }
-}
 
 /** Следующее видео открывается, когда текущее уже готово: оно не отнимает сеть у того, что смотрят. */
 @Composable

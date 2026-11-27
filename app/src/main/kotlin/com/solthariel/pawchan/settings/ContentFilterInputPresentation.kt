@@ -7,23 +7,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import com.solthariel.pawchan.core.ui.TransientNotice
-import com.solthariel.pawchan.domain.filter.ContentFilterMode
 
 internal data class ContentFilterInputPresentation(
     val hint: String = "",
     val error: String? = null,
     val preview: AnnotatedString? = null,
 )
-
-internal fun filterConditionPresentation(mode: String): ContentFilterInputPresentation =
-    ContentFilterInputPresentation(
-        hint =
-            when (mode) {
-                ContentFilterMode.ANY_TERM.name, ContentFilterMode.ALL_TERMS.name -> FILTER_CONDITION_HINTS[1]
-                else -> FILTER_CONDITION_HINTS[0]
-            },
-        error = null,
-    )
 
 @Composable
 internal fun FilterInputHint(
@@ -50,9 +39,3 @@ internal fun filterEmptyErrorIsInline(
     error: String,
     text: String,
 ): Boolean = text.isBlank() && (error == "Условие пустое" || error == "Введите одну фразу")
-
-private val FILTER_CONDITION_HINTS =
-    listOf(
-        "Введите фразу целиком",
-        "По одному слову или фразе на строку",
-    )

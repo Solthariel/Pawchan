@@ -7,6 +7,10 @@ data class NavigationPreferences(
     val replies: Int = 5,
     val bottomBarTransparencyPercent: Int = DEFAULT_BOTTOM_BAR_TRANSPARENCY,
     val topBarTransparencyPercent: Int = DEFAULT_TOP_BAR_TRANSPARENCY,
+    /** Порядок кнопок нижней панели и разделов «Тредов»; по умолчанию — как было всегда. */
+    val layout: NavigationLayout = NavigationLayout(),
+    /** Поля, ради которых открыт экран (поиск, выбор доски, новое сообщение), сразу показывают клавиатуру. */
+    val autoOpenKeyboard: Boolean = true,
 ) {
     fun normalized(): NavigationPreferences =
         copy(
@@ -15,7 +19,11 @@ data class NavigationPreferences(
             replies = replies.coerceIn(MIN_VISIBLE, MAX_VISIBLE),
             bottomBarTransparencyPercent = bottomBarTransparencyPercent.coerceIn(0, MAX_TRANSPARENCY_PERCENT),
             topBarTransparencyPercent = topBarTransparencyPercent.coerceIn(0, MAX_TRANSPARENCY_PERCENT),
+            layout = layout.normalized(),
         )
+
+    /** Кнопки нижней панели слева направо. */
+    val bottomBarOrder: List<BottomBarButton> get() = layout.bottomBar
 
     companion object {
         const val DEFAULT_BOTTOM_BAR_TRANSPARENCY = 20
@@ -23,6 +31,27 @@ data class NavigationPreferences(
         const val MAX_TRANSPARENCY_PERCENT = 100
     }
 }
+
+/** Кнопки нижней панели; [id] хранится в настройках, имена значений можно менять. */
+enum class BottomBarButton(
+    val id: String,
+) {
+    CATALOG("catalog"),
+    THREADS("threads"),
+    BOARDS("boards"),
+    SETTINGS("settings"),
+    WRITE("write"),
+}
+
+/** Каждая кнопка ровно один раз: неизвестные и повторы отбрасываются, недостающие встают в конец. */
+fun normalizedBottomBarOrder(order: List<BottomBarButton>) = (order + BottomBarButton.entries).distinct()
+
+fun parseBottomBarOrder(value: String): List<BottomBarButton> =
+    normalizedBottomBarOrder(
+        value.split(',').mapNotNull { id -> BottomBarButton.entries.firstOrNull { it.id == id.trim() } },
+    )
+
+fun List<BottomBarButton>.bottomBarOrderValue(): String = normalizedBottomBarOrder(this).joinToString(",") { it.id }
 
 fun validMirrorHost(value: String): Boolean =
     value.length in MIN_HOST_LENGTH..MAX_HOST_LENGTH && value == value.lowercase() && value.split('.').size >= 2 &&

@@ -1,7 +1,5 @@
 package com.solthariel.pawchan.navigation
 
-import com.solthariel.pawchan.infrastructure.sites.DVACH_LINK_HOSTS
-import com.solthariel.pawchan.infrastructure.sites.DvachWebLinks
 import com.solthariel.pawchan.infrastructure.sites.ForumWebLink
 import java.net.URI
 import java.net.URISyntaxException

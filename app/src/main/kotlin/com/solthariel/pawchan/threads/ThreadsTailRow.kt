@@ -8,7 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ThreadsTailRow(
@@ -16,8 +18,10 @@ internal fun ThreadsTailRow(
     remaining: Int,
     onToggle: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Text(
-        if (expanded) "Свернуть" else "Развернуть остальные ($remaining)",
+        if (expanded) res.getString(L.ui_collapse) else res.getString(L.ui_expand_remaining, remaining),
         modifier =
             Modifier
                 .fillMaxWidth()

@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.PawchanApplication
@@ -30,6 +31,7 @@ import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.core.ui.ModalDropdownMenu
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiSpacing
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun SavedCopiesMenu(
@@ -37,6 +39,8 @@ internal fun SavedCopiesMenu(
     count: Int,
     busy: Boolean,
 ) {
+    val res = LocalResources.current
+
     val files = rememberCopyFiles(CopyFileKind.THREAD)
     val context = LocalContext.current
     val registry = (context.applicationContext as PawchanApplication).zipRegistry
@@ -50,14 +54,14 @@ internal fun SavedCopiesMenu(
         }
     val chooseOther = { picker.launch(arrayOf("application/zip", "application/x-zip-compressed")) }
     Box {
-        CatalogIconButton(UiIconKind.MORE, "Меню сохранённых копий") { menu = true }
+        CatalogIconButton(UiIconKind.MORE, res.getString(L.ui_saved_copies_menu)) { menu = true }
         ModalDropdownMenu(menu, { menu = false }) {
-            ActionMenuItem("ZIP-файлы", {
+            ActionMenuItem(res.getString(L.ui_zip_files), {
                 menu = false
                 registry.refresh()
                 files.browse()
             }, enabled = files.ready && !files.busy, icon = UiIconKind.ARCHIVE)
-            ActionMenuItem("Очистить копии", {
+            ActionMenuItem(res.getString(L.ui_clear_copies), {
                 menu = false
                 confirm = true
             }, enabled = controller != null && count > 0 && !busy, icon = UiIconKind.DELETE)
@@ -89,19 +93,21 @@ private fun ClearCopiesDialog(
     close: () -> Unit,
     remove: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     AppAlertDialog(
         onDismissRequest = close,
-        title = { Text("Удалить все сохранённые копии?") },
+        title = { Text(res.getString(L.ui_delete_all_saved_copies)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(UiSpacing.small)) {
                 Text(copyDeletionLead(count))
-                Text("Загруженные для них медиа будут удалены в фоне.")
-                Text("ZIP-файлы и обычные загрузки останутся.")
-                Text("Это действие нельзя отменить.")
+                Text(res.getString(L.ui_media_uploaded_for_them_will))
+                Text(res.getString(L.ui_zip_files_and_regular_uploads))
+                Text(res.getString(L.ui_this_action_cannot_be_undone))
             }
         },
-        confirmButton = { TextButton(onClick = remove) { Text("Удалить") } },
-        dismissButton = { TextButton(onClick = close) { Text("Отмена") } },
+        confirmButton = { TextButton(onClick = remove) { Text(res.getString(L.ui_delete)) } },
+        dismissButton = { TextButton(onClick = close) { Text(res.getString(L.ui_cancel)) } },
     )
 }
 
@@ -110,22 +116,24 @@ private fun ZipFileActions(
     document: CopyDocument,
     close: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     AppAlertDialog(
         onDismissRequest = close,
         title = { Text(document.name) },
         text = {
             Column {
-                ActionMenuItem("Открыть файл", {
+                ActionMenuItem(res.getString(L.ui_open_file), {
                     close()
                     openCopyFile(context, document, false)
                 }, icon = UiIconKind.DOCUMENT, contentPadding = PaddingValues(0.dp))
-                ActionMenuItem("Поделиться", {
+                ActionMenuItem(res.getString(L.ui_share), {
                     close()
                     openCopyFile(context, document, true)
                 }, icon = UiIconKind.SHARE, contentPadding = PaddingValues(0.dp))
             }
         },
-        confirmButton = { TextButton(onClick = close) { Text("Закрыть") } },
+        confirmButton = { TextButton(onClick = close) { Text(res.getString(L.ui_close)) } },
     )
 }

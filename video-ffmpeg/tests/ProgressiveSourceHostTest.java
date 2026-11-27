@@ -3,17 +3,69 @@ package com.solthariel.pawchan.ffmpeg;
 import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import io.github.yuroyami.libmpvkt.stream.MpvStream;
 import okhttp3.OkHttpClient;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 /** Host-only integration tests: actual OkHttp and HTTP server, no mocked native playback. */
 public class ProgressiveSourceHostTest {
+    @Test public void bundledThreeSecondClipReadsToEofElevenTimesWithOneRealGet() throws Exception {
+        Path asset = Path.of("core/media/src/androidTest/assets/video/h264_aac.mp4");
+        if (!Files.isRegularFile(asset)) asset = Path.of("..").resolve(asset);
+        byte[] bytes = Files.readAllBytes(asset);
+        AtomicInteger gets = new AtomicInteger();
+        HttpServer server = HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/clip.mp4", exchange -> {
+            try {
+                if (!"GET".equals(exchange.getRequestMethod())) {
+                    exchange.sendResponseHeaders(405, -1);
+                    return;
+                }
+                gets.incrementAndGet();
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+            } finally { exchange.close(); }
+        });
+        server.start();
+        File dir = Files.createTempDirectory("paw-clip-loop").toFile();
+        AtomicReference<IOException> failure = new AtomicReference<>();
+        ProgressiveSource source = new ProgressiveSource(new OkHttpClient(), dir,
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/clip.mp4", new ProgressiveSource.Listener() {
+                    public void onFile(File file) {}
+                    public void onError(IOException e) { failure.set(e); }
+                });
+        try {
+            source.start();
+            await(() -> source.isComplete() || failure.get() != null);
+            assertNull(failure.get());
+            try (MpvProgressiveProvider provider = new MpvProgressiveProvider(source.getFile(), source, () -> {}, () -> {})) {
+                for (int pass = 0; pass <= 10; pass++) {
+                    MpvStream stream = java.util.Objects.requireNonNull(provider.open("pawvideo://video"));
+                    try {
+                        ByteBuffer result = ByteBuffer.allocate(bytes.length);
+                        while (result.hasRemaining()) assertTrue(stream.read(result) > 0);
+                        assertArrayEquals(bytes, result.array());
+                        assertEquals(0, stream.read(ByteBuffer.allocate(1)));
+                    } finally { stream.close(); }
+                }
+                assertEquals(1, gets.get());
+            }
+        } finally {
+            source.close(); source.deleteFile(); server.stop(0);
+            await(() -> source.getFile() == null || !source.getFile().exists());
+            dir.delete();
+        }
+    }
+
     @Test public void startsBeforeWholeFileAndPreservesBytes() throws Exception { exerciseRange(206); }
     @Test public void ignoredRangeDoesNotCorruptPartialFile() throws Exception { exerciseRange(200); }
     @Test public void range416KeepsSequentialDownload() throws Exception { exerciseRange(416); }

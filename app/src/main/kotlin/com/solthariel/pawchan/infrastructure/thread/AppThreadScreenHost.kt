@@ -20,8 +20,8 @@ internal fun rememberAppThreadScreenHost(
 ): ThreadScreenHost {
     val context = LocalContext.current
     val exportTarget =
-        remember(context, loaders.imageLoader) {
-            { uri: android.net.Uri -> AppThreadExportTarget(context, loaders.imageLoader, uri) }
+        remember(context) {
+            { uri: android.net.Uri -> AppThreadExportTarget(context, uri) }
         }
     val reading = remember(workspace) { workspace?.let(::AppThreadReadingSession) }
     val preview = rememberAppPostPreviewResources()

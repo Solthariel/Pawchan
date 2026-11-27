@@ -15,18 +15,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.backup.BackupSection
 import com.solthariel.pawchan.backup.BackupStores
 import com.solthariel.pawchan.backup.ClientBackupActions
 import com.solthariel.pawchan.backup.ClientBackupService
 import com.solthariel.pawchan.backup.DEFAULT_BACKUP_SECTIONS
-import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.data.maintenance.MaintenanceGate
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import java.io.File
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ClientBackupSettings() {
@@ -50,6 +51,8 @@ internal fun ClientBackupSettings() {
 
 @Composable
 private fun ClientBackupControls(actions: ClientBackupActions) {
+    val res = LocalResources.current
+
     var choosing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(DEFAULT_BACKUP_SECTIONS) }
@@ -87,7 +90,7 @@ private fun ClientBackupControls(actions: ClientBackupActions) {
     }
     BackupRestorePreview(actions, selected, { selected = it })
     TransientNotice(
-        "Выполняется операция с резервной копией…".takeIf { actions.busy && !actions.passwordNeeded },
+        res.getString(L.ui_backup_operation_in_progress).takeIf { actions.busy && !actions.passwordNeeded },
     )
 }
 
@@ -118,20 +121,22 @@ private fun BackupActionRows(
     create: () -> Unit,
     load: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Column {
         SettingsItemRow(
-            SettingsItem.Action("Создать резервную копию", null, onClick = {
+            SettingsItem.Action(res.getString(L.ui_create_backup), null, onClick = {
                 if (!actions.busy && !actions.exportReady) create()
             }),
         )
         HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         SettingsItemRow(
-            SettingsItem.Action("Восстановить из копии", null, onClick = {
+            SettingsItem.Action(res.getString(L.ui_restore_from_copy), null, onClick = {
                 if (!actions.busy && !actions.exportReady) load()
             }),
         )
         Text(
-            "Без вкладок, черновиков, скачанных файлов, авторизации и PIN приложения.",
+            res.getString(L.ui_no_tabs_drafts_downloaded_files),
             Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodySmall,
         )

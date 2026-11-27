@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -36,6 +35,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.uiOptionColors
+import com.solthariel.pawchan.core.ui.uiSelectionIconTint
 import com.solthariel.pawchan.feature.composer.R
 
 @Composable
@@ -47,12 +47,6 @@ internal fun AttachmentOptionTile(
     val icon = attachmentTileIcon(state.label, state.checked)
     val description = stringResource(state.label)
     val status = stringResource(if (state.checked) R.string.composer_option_on else R.string.composer_option_off)
-    val tone = uiOptionColors(state.checked, state.enabled)
-    val foreground by animateColorAsState(
-        tone.foreground,
-        tween(TILE_TRANSITION_MS),
-        label = "attachment-control-color",
-    )
     val interactionSource = remember { MutableInteractionSource() }
     // Apply the caller's weight to the direct Column child of the row.
     Column(
@@ -73,7 +67,7 @@ internal fun AttachmentOptionTile(
                 .height(EDITOR_CONTROL_HEIGHT),
             contentAlignment = Alignment.Center,
         ) {
-            AttachmentOptionIcon(state, icon, foreground, interactionSource)
+            AttachmentOptionIcon(state, icon, interactionSource)
         }
         Text(
             text = stringResource(attachmentTileCaption(state.label)),
@@ -91,10 +85,16 @@ internal fun AttachmentOptionTile(
 private fun AttachmentOptionIcon(
     state: AttachmentTileState,
     icon: Int,
-    foreground: Color,
     interactionSource: MutableInteractionSource,
 ) {
-    val tone = uiOptionColors(state.checked, state.enabled)
+    val iconOnly = state.iconOnlySelection
+    val tone = uiOptionColors(state.checked && !iconOnly, state.enabled)
+    val iconTint by animateColorAsState(
+        if (iconOnly) uiSelectionIconTint(state.checked, state.enabled) else tone.foreground,
+        tween(TILE_TRANSITION_MS),
+        label = "attachment-control-color",
+    )
+    val outline = if (iconOnly) tone.foreground else iconTint
     val pressed by interactionSource.collectIsPressedAsState()
     val focused by interactionSource.collectIsFocusedAsState()
     Box(
@@ -104,17 +104,17 @@ private fun AttachmentOptionIcon(
             .background(tone.background)
             .border(
                 1.dp,
-                foreground,
+                outline,
                 RoundedCornerShape(10.dp),
             )
             // Keep press/focus feedback inside the fixed tile, not the wider touch target.
             .drawWithContent {
                 drawContent()
-                if (pressed || focused) drawRect(foreground.copy(alpha = 0.12f))
+                if (pressed || focused) drawRect(outline.copy(alpha = 0.12f))
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = foreground, modifier = Modifier.size(20.dp))
+        Icon(painterResource(icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
     }
 }
 

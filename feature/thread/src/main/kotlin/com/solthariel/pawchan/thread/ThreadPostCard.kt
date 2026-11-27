@@ -71,7 +71,11 @@ internal fun ThreadPostCard(
 
 @Composable
 private fun postCardColor(options: ThreadPostOptions) =
-    if (options.selected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+    if (options.selected && !options.selectionOutsideRow) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
 
 private fun Modifier.postCardModifier(
     options: ThreadPostOptions,

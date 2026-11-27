@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">再試行</string>
+    <string name="core_ui_challenge_open">確認を完了</string>
+    <string name="core_ui_error_loading_data">データの読み込みエラー</string>
+    <string name="core_ui_fast_scrollbar">リストのスクロール</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">上から更新</string>
+    <string name="core_ui_pull_refresh_bottom">下から更新</string>
+    <string name="core_ui_thread_author">スレッド作成者</string>
+    <string name="core_ui_post_sage">上げない</string>
+    <string name="core_ui_post_email">投稿者のメールアドレス</string>
+    <string name="core_ui_thread_sticky">固定スレッド</string>
+    <string name="core_ui_thread_closed">スレッドは閉鎖されています</string>
+    <string name="core_ui_thread_cyclical">循環スレッド</string>
+    <string name="core_ui_post_banned">投稿者はBANされています</string>
+    <string name="core_ui_archive_active">アーカイバー：スレッドは有効で更新中です</string>
+    <string name="core_ui_archive_maybe_deleted">アーカイバー：元のスレッドは削除された可能性があります</string>
+    <string name="core_ui_archive_saved">アーカイバー：スレッドを保存しました</string>
+    <string name="core_ui_archive_lost">アーカイバー：スレッドは紛失としてマークされています</string>
+    <string name="core_ui_archive_queued">アーカイバー：スレッドは処理待ちです</string>
+    <string name="core_ui_archive_other">別のアーカイバーの状態</string>
+    <string name="core_ui_copied">コピーしました</string>
+    <string name="ui_enter_jpeg_quality">JPEG 品質を入力</string>
+    <string name="ui_value">値</string>
+    <string name="ui_quality">品質</string>
+    <string name="ui_jpeg_quality_906d">JPEG品質、%</string>
+    <string name="ui_from_to">%1$d から %2$d</string>
+    <string name="ui_cancel">キャンセル</string>
+    <string name="ui_apply">適用</string>
+    <string name="ui_expanded">展開済み</string>
+    <string name="ui_expand">展開</string>
+    <string name="ui_collapsed">折りたたみ済み</string>
+    <string name="ui_removed">削除済み</string>
+</resources>

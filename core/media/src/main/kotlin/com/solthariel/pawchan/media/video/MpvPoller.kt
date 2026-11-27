@@ -33,6 +33,7 @@ internal interface MpvPollHost {
 @OptIn(MpvNativeApi::class)
 internal class MpvPoller(
     private val host: MpvPollHost,
+    private val onFrameCounters: ((MpvFrameCounters) -> Unit)? = null,
 ) {
     private var lastLogAt = 0L
     private var lastDetailsAt = 0L
@@ -55,7 +56,9 @@ internal class MpvPoller(
             if (refresh && sample.hasFile) lastDetailsAt = now
             previous = sample
             if (refresh || !sample.hasFile) host.facts = sample.facts
-            logSample(handle, sample)
+            val measured = if (sample.hasFile && onFrameCounters != null) readMpvFrameCounters(handle, sample) else null
+            if (measured != null) onFrameCounters?.invoke(measured)
+            logSample(handle, sample, measured)
             host.onMain {
                 if (current == host.token && !host.closed) host.onSample(sample)
             }
@@ -89,17 +92,18 @@ internal class MpvPoller(
     private fun logSample(
         handle: Long,
         sample: MpvPollSample,
+        measured: MpvFrameCounters?,
     ) {
         val now = SystemClock.elapsedRealtime()
         if (sample.hasFile && now - lastLogAt >= LOG_INTERVAL_MILLIS) {
             lastLogAt = now
             val facts = host.facts
-            val drops = MpvNative.getPropertyString(handle, "frame-drop-count")
-            val outputDrops = MpvNative.getPropertyString(handle, "vo-drop-frame-count")
+            val counters = measured ?: readMpvFrameCounters(handle, sample)
             Log.i(
                 "PawMpv",
                 "decoder=${sample.decoder} size=${facts["width"]}x${facts["height"]} " +
-                    "fps=${facts["frame_rate"]} drops=$drops vo_drops=$outputDrops",
+                    "fps=${facts["frame_rate"]} decoder_drops=${counters.decoderDrops} " +
+                    "vo_drops=${counters.outputDrops}",
             )
         }
     }

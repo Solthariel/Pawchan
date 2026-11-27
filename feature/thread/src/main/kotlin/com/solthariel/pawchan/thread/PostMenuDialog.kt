@@ -10,10 +10,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.MenuNavigation
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun PostMenuDialog(
@@ -22,12 +24,18 @@ internal fun PostMenuDialog(
     onClose: () -> Unit,
     canAddRule: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     var page by remember { mutableStateOf(PostMenuPage.MAIN) }
     val back = { if (page == PostMenuPage.MAIN) onClose() else page = PostMenuPage.MAIN }
     AppDialog(back) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp)) {
             if (page != PostMenuPage.MAIN) {
-                ActionMenuItem("Назад", { page = PostMenuPage.MAIN }, navigation = MenuNavigation.BACK)
+                ActionMenuItem(
+                    res.getString(L.ui_back),
+                    { page = PostMenuPage.MAIN },
+                    navigation = MenuNavigation.BACK,
+                )
             }
             PostMenuContent(page, options, { page = it }, onCommand, canAddRule)
         }

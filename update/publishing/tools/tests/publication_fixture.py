@@ -1,6 +1,5 @@
 """In-memory GitHub service with real file bytes/checksums and a real on-disk metadata tree."""
 import copy
-import hashlib
 import json
 import os
 from pathlib import Path

@@ -3,7 +3,6 @@ package com.solthariel.pawchan.media
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,6 +24,7 @@ import com.solthariel.pawchan.core.ui.APP_TOOLBAR_TITLE_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.core.media.R.string as L
 
 internal fun mediaToolbarSubtitle(
     attachment: MediaAttachmentUi,
@@ -42,6 +43,8 @@ internal fun MediaToolbar(
     onRefresh: () -> Unit,
     onMore: (() -> Unit)? = null,
 ) {
+    val res = LocalResources.current
+
     Surface(color = Color.Transparent) {
         Row(
             Modifier
@@ -52,7 +55,7 @@ internal fun MediaToolbar(
         ) {
             UiToolbarButton(
                 UiIconKind.BACK,
-                "Назад",
+                res.getString(L.ui_back),
                 active = LocalMediaPresentation.current.backHighlighted,
                 onClick = onClose,
             )
@@ -87,5 +90,3 @@ internal fun MediaToolbar(
         }
     }
 }
-
-internal const val MEDIA_TOOLBAR_ALPHA = 0xAA / 255f

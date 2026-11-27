@@ -8,6 +8,7 @@ import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.workspace.ReadingReturnPoint
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import com.solthariel.pawchan.domain.workspace.withReadingReturn
+import com.solthariel.pawchan.domain.workspace.withRoutes
 import com.solthariel.pawchan.domain.workspace.withoutReadingReturn
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -70,4 +71,18 @@ class ReadingReturnPersistenceTest {
         )
         assertEquals(saved, WorkspaceTransfer.merge(saved, WorkspaceState()))
     }
+
+    @Test fun boardAndReadingThreadSurviveARestart() =
+        runTest {
+            val directory = temporary.newFolder()
+            FileWorkspaceRepository(directory).update {
+                it.withRoutes(last = "library", base = "catalog/dvach/po", reading = "thread/dvach/po/42")
+            }
+            val loaded = FileWorkspaceRepository(directory).load()
+            assertEquals("library", loaded.lastRoute)
+            assertEquals("catalog/dvach/po", loaded.baseRoute)
+            assertEquals("thread/dvach/po/42", loaded.readingRoute)
+            FileWorkspaceRepository(directory).update { it.withRoutes(reading = null) }
+            assertNull(FileWorkspaceRepository(directory).load().readingRoute)
+        }
 }

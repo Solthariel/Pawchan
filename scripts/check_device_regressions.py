@@ -31,6 +31,24 @@ NAVIGATION_STATE_CASES = {
 # AndroidJUnitRunner class filters are scoped to the APK for their own module.
 CASES = {
     "app": {
+        "com.solthariel.pawchan.locale.LanguageDeliveryRuntimeTest": [
+            "legacyOverrideResolvesJapaneseAndEmptyChoiceReturnsTheSameBase",
+            "mediaHostUsesAndroidOrReadsStoredLegacyChoice"
+        ],
+        "com.solthariel.pawchan.settings.InterfaceLocalesRuntimeTest": [
+            "allTenConfigurationsResolveUiStringsAndUnsupportedLanguageFallsBackToRussian",
+            "countsUseTypedArgumentsAndAndroidChoosesTheGrammaticalForm"
+        ],
+        "com.solthariel.pawchan.ThreadExportRuntimeTest": [
+            "htmlTargetWritesUtf8AndEscapedTextToChosenFile",
+            "oneOddSizedStripIsNotFramedResampledOrRepainted",
+            "rowsAreJoinedAtTheirExactBoundariesAndRetainEveryPixel",
+            "emptyAndMixedWidthInputCannotWriteAPartialPng"
+        ],
+        "com.solthariel.pawchan.downloads.SavedThumbnailRuntimeTest": [
+            "readsFrameFromSavedMovieWithOffsetWithoutDependingOnAProviderThumbnail",
+            "savedImageIsDecodedSmallAndMissingFileKeepsPlaceholder"
+        ],
         "com.solthariel.pawchan.AboutDetailsRuntimeTest": [
             "licensesShowFontAttributionsInlineAndOpenSourceLinksDirectly"
         ],
@@ -76,6 +94,18 @@ CASES = {
         ]
     },
     "core/media": {
+        "com.solthariel.pawchan.media.video.MediaLocaleHostRuntimeTest": [
+            "pipPassesItsOwnBaseToTheApplicationHost",
+            "missingHostKeepsTheOriginalContext"
+        ],
+        "com.solthariel.pawchan.VideoThumbnailBadgeRuntimeTest": [
+            "neutralScrimAndOpaqueFilledGlyphOnLightAndDarkFrames",
+            "compactBadgeFitsSmallSavedFileThumbnailWithoutDimmingItsCorners",
+            "badgeDoesNotStealTapLongPressOrCreateAnotherAccessibilityButton"
+        ],
+        "com.solthariel.pawchan.MpvClipClockRuntimeTest": [
+            "paddedClipSeeksPausesAndRepeatsRelativeToItsThreeSeconds"
+        ],
         "com.solthariel.pawchan.MpvVideoEngineRuntimeTest": [
             "detachedTextureCannotReportOutputForReplacement",
             "softwareDecoderPlaysH264AndAac",
@@ -102,6 +132,12 @@ CASES = {
         "com.solthariel.pawchan.MpvSurfaceHandoffRuntimeTest": [
             "pausedSoftwarePlaybackRedrawsOnReplacementSurfaces",
             "pausedAutoPlaybackRedrawsOnReplacementSurfaces"
+        ]
+    },
+    "feature/thread": {
+        "com.solthariel.pawchan.ThreadShotPixelRuntimeTest": [
+            "darkPost998MatchesEveryPixelOfVisibleVideoRow",
+            "lightPost998MatchesEveryPixelAfterLeavingComposition"
         ]
     },
     "feature/composer": {

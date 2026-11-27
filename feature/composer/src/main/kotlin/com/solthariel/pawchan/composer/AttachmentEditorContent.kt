@@ -14,9 +14,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import com.solthariel.pawchan.core.ui.TransientNotice
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentEditorContent(
@@ -25,12 +27,14 @@ internal fun AttachmentEditorContent(
     draft: AttachmentViewerDraft,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     val dimensions = rememberAttachmentEditorDimensions(file)
     var limitReached by remember(file.id) { mutableStateOf(false) }
     val actions = AttachmentEditorActions(enabled) { limitReached = true }
     AttachmentEditorLayout(file, imageLoader, draft, dimensions, actions)
     TransientNotice(
-        if (limitReached) "Достигнут предел правок или длины штриха. Проверьте результат." else null,
+        if (limitReached) res.getString(L.ui_edit_or_stroke_length_limit) else null,
         onDismiss = { limitReached = false },
     )
 }

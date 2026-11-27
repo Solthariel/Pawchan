@@ -12,9 +12,15 @@ internal fun ThreadTestTheme(
     preference: ThemePreference,
     content: @Composable () -> Unit,
 ) {
-    require(preference == ThemePreference.DARK || preference == ThemePreference.SYSTEM)
+    val dark =
+        when (preference) {
+            ThemePreference.DARK -> true
+            ThemePreference.LIGHT -> false
+            ThemePreference.SYSTEM -> isSystemInDarkTheme()
+            else -> error("Unsupported fixture theme")
+        }
     MaterialTheme(
-        colorScheme = if (preference == ThemePreference.DARK || isSystemInDarkTheme()) darkColorScheme() else lightColorScheme(),
+        colorScheme = if (dark) darkColorScheme() else lightColorScheme(),
         content = content,
     )
 }

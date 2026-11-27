@@ -1,14 +1,10 @@
 package com.solthariel.pawchan.media.video
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import java.io.IOException
 
 internal class VideoPlaybackSession(
     val engine: VideoEngineBackend,
@@ -19,24 +15,64 @@ internal class VideoPlaybackSession(
 ) : VideoPlaybackControls,
     VideoSoundControls by soundControl,
     AutoCloseable {
-    internal var audio: VideoPlaybackAudio? = null
+    internal var audio: SessionAudioFocus? = null
     val privacy = VideoSessionPrivacy(scope, ::pause)
     private val mutableStatus = MutableStateFlow(VideoPlaybackStatus())
     override val status: StateFlow<VideoPlaybackStatus> = mutableStatus
 
-    /** Первый кадр на текущей поверхности уже показан; до него на месте видео лежит превью. */
+    /** Сигнал первого кадра на текущей поверхности, а не признак открытия файла. */
     val mutableVideoOutput = MutableStateFlow(false)
     val hasVideoOutput: StateFlow<Boolean> = mutableVideoOutput
-    private var attempt = VideoAttempt()
-    private var opening: Job? = null
     private var pendingSeek: Long? = null
     private var requestedPlaying = true
+    private var canAutoReplay = false
     internal val wantsPlayback: Boolean get() = requestedPlaying && !closed && !status.value.ended
     private var closed = false
-    private var generation = 0
 
     /** The PiP window holds this session: the viewer must not pause, close or re-attach it. */
     @Volatile var inPip = false
+
+    private val opening =
+        VideoSessionOpening(
+            scope,
+            engine,
+            url,
+            object : VideoOpenHost {
+                override val requestedPlay: Boolean get() = requestedPlaying
+
+                override fun applySound() = soundControl.apply()
+
+                override fun keepPosition() {
+                    pendingSeek = pendingSeek ?: status.value.position
+                }
+
+                override fun opening(attempt: VideoAttempt) {
+                    canAutoReplay = false
+                    soundControl.hasAudio = false
+                    mutableVideoOutput.value = false
+                    mutableStatus.value =
+                        status.value.copy(
+                            stage = VideoStage.BUFFERING,
+                            playing = false,
+                            seekable = false,
+                            attempt = attempt,
+                            ended = false,
+                        )
+                    audio?.sync()
+                }
+
+                override fun received(
+                    type: VideoEvent,
+                    snapshot: VideoPlaybackStatus,
+                ) = onEvent(type, snapshot)
+
+                override fun terminal(attempt: VideoAttempt) {
+                    mutableStatus.value =
+                        status.value.copy(stage = VideoStage.ERROR, playing = false, ended = false, attempt = attempt)
+                    audio?.sync()
+                }
+            },
+        )
 
     /** Запуск с заданной позиции — например, после возврата из «картинки в картинке». */
     fun startAt(
@@ -48,49 +84,7 @@ internal class VideoPlaybackSession(
         start()
     }
 
-    fun start() {
-        if (closed) return
-        val token = ++generation
-        opening?.cancel()
-        soundControl.hasAudio = false
-        engine.stop()
-        mutableVideoOutput.value = false
-        mutableStatus.value =
-            status.value.copy(
-                stage = VideoStage.BUFFERING,
-                playing = false,
-                seekable = false,
-                attempt = attempt,
-                ended = false,
-            )
-        opening =
-            scope.launch {
-                try {
-                    if (!closed && token == generation) open(url, token)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: IOException) {
-                    if (!closed && token == generation) {
-                        mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
-                    }
-                } catch (_: IllegalArgumentException) {
-                    if (!closed && token == generation) {
-                        mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
-                    }
-                }
-            }
-    }
-
-    private fun open(
-        source: String,
-        token: Int,
-    ) {
-        soundControl.apply()
-        engine.open(source, attempt.software) { type, snapshot ->
-            if (!closed && token == generation) onEvent(type, snapshot)
-        }
-        if (!closed && token == generation && !requestedPlaying) engine.pause()
-    }
+    fun start() = opening.start()
 
     private fun onEvent(
         type: VideoEvent,
@@ -98,43 +92,30 @@ internal class VideoPlaybackSession(
     ) {
         if (closed) return
         soundControl.hasAudio = engine.metadata.containsKey("audio_format")
-        if (type == VideoEvent.INCOMPLETE || type == VideoEvent.ENDED) requestedPlaying = false
-        if (type == VideoEvent.ERROR) {
-            recover()
-        } else {
-            if (type == VideoEvent.OPENING) mutableVideoOutput.value = false
-            if (type == VideoEvent.VIDEO_OUTPUT) mutableVideoOutput.value = true
-            // Новое окно видео пустое до первого кадра: до тех пор виден постер, а не чёрный экран.
-            if (type == VideoEvent.VIDEO_OUTPUT_PENDING) mutableVideoOutput.value = false
-            val stage = if (type == VideoEvent.OPENING) VideoStage.BUFFERING else snapshot.stage
-            mutableStatus.value =
-                snapshot.copy(
-                    stage = stage,
-                    attempt = attempt,
-                    ended = type == VideoEvent.ENDED || snapshot.ended,
-                )
-            if (snapshot.seekable) {
-                pendingSeek?.let {
-                    pendingSeek = null
-                    engine.seekTo(it.coerceIn(0L, snapshot.duration.coerceAtLeast(0L)))
-                }
+        if (type == VideoEvent.ENDED || type == VideoEvent.INCOMPLETE) {
+            canAutoReplay = type == VideoEvent.ENDED && requestedPlaying
+            requestedPlaying = false
+        }
+        when (type) {
+            VideoEvent.OPENING, VideoEvent.VIDEO_OUTPUT_PENDING -> mutableVideoOutput.value = false
+            VideoEvent.VIDEO_OUTPUT -> mutableVideoOutput.value = true
+            else -> Unit
+        }
+        val stage = if (type == VideoEvent.OPENING) VideoStage.BUFFERING else snapshot.stage
+        mutableStatus.value =
+            snapshot.copy(
+                stage = stage,
+                attempt = status.value.attempt,
+                ended = type == VideoEvent.ENDED || snapshot.ended,
+            )
+        if (snapshot.seekable) {
+            pendingSeek?.let {
+                pendingSeek = null
+                engine.seekTo(it.coerceIn(0L, snapshot.duration.coerceAtLeast(0L)))
             }
-            if (type == VideoEvent.PLAYING && !requestedPlaying) engine.pause()
         }
-    }
-
-    private fun recover() {
-        val next = attempt.afterFailure()
-        if (next == null) {
-            generation += 1
-            opening?.cancel()
-            engine.stop()
-            mutableStatus.value = status.value.copy(stage = VideoStage.ERROR, playing = false)
-        } else {
-            pendingSeek = pendingSeek ?: status.value.position
-            attempt = next
-            start()
-        }
+        if (type == VideoEvent.PLAYING && !requestedPlaying) engine.pause()
+        audio?.sync()
     }
 
     override fun retry() {
@@ -143,33 +124,52 @@ internal class VideoPlaybackSession(
         start()
     }
 
-    override fun setSoftware(enabled: Boolean) {
-        if (closed) return
-        val modeChanged = enabled != attempt.software
-        val retryHardware = !enabled && status.value.hardwareDecoded == false && !attempt.software
-        if (modeChanged || retryHardware) {
-            pendingSeek = pendingSeek ?: status.value.position
-            attempt = attempt.copy(software = enabled)
-            start()
-        }
-    }
+    override fun setSoftware(enabled: Boolean) = opening.selectDecoder(enabled, status.value.hardwareDecoded)
 
     override fun togglePlay() {
         if (closed) return
-        requestedPlaying = status.value.stage == VideoStage.ERROR || status.value.ended || !requestedPlaying
+        if (status.value.ended) {
+            replayFromEnd()
+            return
+        }
+        requestedPlaying = status.value.stage == VideoStage.ERROR || !requestedPlaying
         if (requestedPlaying) {
             if (status.value.stage == VideoStage.ERROR) {
                 retry()
-            } else if (status.value.ended) {
-                mutableStatus.value = status.value.copy(ended = false)
-                engine.seekTo(0L)
-                start()
             } else {
                 engine.play()
             }
         } else {
-            engine.pause()
+            pause()
         }
+    }
+
+    fun replayFromEnd(automatic: Boolean = false) {
+        val current = status.value
+        if (closed || !current.ended || !privacy.canPlay) return
+        if (automatic && (!canAutoReplay || inPip)) return
+        canAutoReplay = false
+        requestedPlaying = true
+        pendingSeek = null
+        mutableStatus.value =
+            current.copy(
+                stage = VideoStage.BUFFERING,
+                ended = false,
+                playing = false,
+                timeline = current.timeline.copy(position = 0L),
+            )
+        engine.replay()
+    }
+
+    override fun toggleMuted() {
+        if (closed || !sound.value.hasAudio) return
+        val unmutingDuringPlayback = sound.value.muted && wantsPlayback && status.value.playing
+        if (unmutingDuringPlayback && audio?.allowUnmute() == false) {
+            pause()
+            return
+        }
+        soundControl.toggleMuted()
+        audio?.sync()
     }
 
     override fun seekTo(position: Long) {
@@ -185,19 +185,19 @@ internal class VideoPlaybackSession(
 
     fun pause() {
         if (closed) return
+        canAutoReplay = false
         requestedPlaying = false
-        audio?.update(false)
+        audio?.sync()
         engine.pause()
     }
 
     override fun close() {
         if (closed) return
         closed = true
-        generation += 1
+        opening.close()
         privacy.close()
         audio?.close()
         audio = null
-        opening?.cancel()
         engine.close()
         if (ownsScope) scope.cancel()
     }

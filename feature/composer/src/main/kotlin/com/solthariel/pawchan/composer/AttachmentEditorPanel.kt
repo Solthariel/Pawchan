@@ -16,9 +16,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentEditorPanel(
@@ -77,7 +79,7 @@ internal fun AttachmentEditorPanel(
                     editorState =
                         AttachmentOptionsEditorState(
                             imageEditEnabled = dimensions != null,
-                            showNameRemoval = draft.tab == AttachmentEditorTab.NAME,
+                            namePanelOpen = tab == AttachmentEditorTab.NAME,
                         ),
                 ) { draft.options = it.options }
             } else {
@@ -94,6 +96,8 @@ private fun AttachmentEditorSettings(
     dimensions: ReencodingDimensions?,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     val tab = draft.tab.takeIf { dimensions != null || it == AttachmentEditorTab.NAME } ?: AttachmentEditorTab.FILE
     val interactive = enabled && !draft.editor.inGesture && !draft.comparing
     when (tab) {
@@ -102,7 +106,7 @@ private fun AttachmentEditorSettings(
                 AttachmentReencodingSummary(file, file.options.reencoding)
                 if (dimensions == null) {
                     Text(
-                        "Редактор доступен для декодируемых неподвижных JPEG, PNG и WebP.",
+                        res.getString(L.ui_the_editor_is_available_for),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

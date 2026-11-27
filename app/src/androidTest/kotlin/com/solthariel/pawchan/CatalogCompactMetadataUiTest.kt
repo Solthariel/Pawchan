@@ -9,16 +9,17 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.catalog.CatalogCardMetadata
 import com.solthariel.pawchan.catalog.CatalogThreadAgeUi
 import com.solthariel.pawchan.catalog.CatalogThreadContentUi
 import com.solthariel.pawchan.catalog.CatalogThreadFlagsUi
 import com.solthariel.pawchan.catalog.CatalogThreadStatisticsUi
 import com.solthariel.pawchan.catalog.CatalogThreadTextUi
 import com.solthariel.pawchan.catalog.CatalogThreadUi
+import com.solthariel.pawchan.catalog.toThreadListCardUi
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.navigation.defaultBoardAddress
+import com.solthariel.pawchan.threads.ThreadListCardMetadata
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +40,7 @@ class CatalogCompactMetadataUiTest {
             )
         compose.setContent {
             MaterialTheme {
-                Box(Modifier.width(220.dp)) { CatalogCardMetadata(thread) }
+                Box(Modifier.width(220.dp)) { ThreadListCardMetadata(thread.toThreadListCardUi()) }
             }
         }
         val replies = compose.onNodeWithContentDescription("Ответов: 17")

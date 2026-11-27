@@ -12,8 +12,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.AppDialog
+import com.solthariel.pawchan.feature.applock.R.string as L
 
 @Composable
 fun AppLockSettingsHost(
@@ -45,20 +47,27 @@ private fun LockEditorDialog(
     state: AppLockState,
     activity: Activity,
 ) {
+    val res = LocalResources.current
+
     val editor = state.editor ?: return
     AppDialog(model::cancelEdit) {
-        Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             val title =
                 when (editor.stage) {
-                    PinStage.CURRENT, PinStage.BIOMETRIC -> "Введите PIN-код"
-                    PinStage.NEW -> "Новый PIN-код"
-                    PinStage.CONFIRM -> "Повторите PIN-код"
+                    PinStage.CURRENT, PinStage.BIOMETRIC -> res.getString(L.ui_enter_pin)
+                    PinStage.NEW -> res.getString(L.ui_new_pin)
+                    PinStage.CONFIRM -> res.getString(L.ui_repeat_pin)
                 }
             PinPad(title, state, model::enterPin)
             if (state.biometricSetupReady) {
-                TextButton(onClick = { model.biometric(activity, setup = true) }) { Text("Подтвердить отпечаток") }
+                TextButton(
+                    onClick = { model.biometric(activity, setup = true) },
+                ) { Text(res.getString(L.ui_confirm_fingerprint)) }
             }
-            TextButton(enabled = !state.busy, onClick = model::cancelEdit) { Text("Отмена") }
+            TextButton(enabled = !state.busy, onClick = model::cancelEdit) { Text(res.getString(L.ui_cancel)) }
         }
     }
 }

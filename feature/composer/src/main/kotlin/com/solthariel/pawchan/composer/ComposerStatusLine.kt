@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -23,7 +24,9 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.modelLabel
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ComposerStatusLine(
@@ -116,7 +119,7 @@ private fun RowScope.ComposerStatusBody(
             if (expired && !display.failed && captchaIdle) {
                 stringResource(R.string.captcha_expired)
             } else {
-                inlineLabel
+                modelLabel(inlineLabel)
             },
             Modifier.weight(1f),
             maxLines = 2,
@@ -134,11 +137,13 @@ private fun RowScope.ComposerStatusControls(
     status: ComposerScreenStatus,
     onReload: (() -> Unit)?,
 ) {
+    val res = LocalResources.current
+
     if (remaining != null) {
         Text(
             captchaTimerLabel(remaining),
             Modifier.weight(1f).padding(start = 6.dp).semantics {
-                contentDescription = "Осталось $remaining секунд"
+                contentDescription = res.getString(L.ui_seconds_remaining, remaining)
             },
             color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         )

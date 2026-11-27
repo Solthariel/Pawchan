@@ -27,10 +27,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -64,6 +67,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun DownloadsScreen(
@@ -84,7 +88,7 @@ internal fun DownloadsScreen(
         .collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
     val thumbnails = viewModel<DownloadsCacheViewModel>(viewModelStoreOwner = owner).thumbnails
-    var query by remember { mutableStateOf<String?>(null) }
+    var query by rememberSaveable { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<DownloadRecord?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
     var notice by remember { mutableStateOf<String?>(null) }
@@ -98,7 +102,7 @@ internal fun DownloadsScreen(
     AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS, floatingTop = true) {
         FloatingTopChrome(toolbar = {
             LibraryToolbar(
-                LibraryToolbarState("Загрузки", visible?.size, query, false),
+                LibraryToolbarState(stringResource(L.ui_downloads), visible?.size, query, false),
                 LibraryToolbarActions(
                     onBack,
                     { query = it },
@@ -139,9 +143,11 @@ private fun DownloadRefreshNotice(
     history: DownloadHistoryState,
     showNotice: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     LaunchedEffect(history) {
         if (((history as? DownloadHistoryState.Content)?.refreshFailures ?: 0) > 0) {
-            showNotice("Не удалось обновить загрузки")
+            showNotice(res.getString(L.ui_failed_to_update_downloads))
         }
     }
 }
@@ -168,12 +174,14 @@ internal fun DownloadList(
     onOpen: (DownloadRecord) -> Unit,
     loadError: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     if (visible == null || visible.isEmpty()) {
         val message =
             when {
-                loadError -> "Ошибка при загрузке данных"
-                visible == null -> "Загрузка…"
-                else -> "Загрузок нет"
+                loadError -> res.getString(L.ui_error_loading_data)
+                visible == null -> res.getString(L.ui_loading)
+                else -> res.getString(L.ui_no_downloads)
             }
         Box(Modifier.padding(start = 8.dp, top = LocalTopOverlayInset.current)) { LibraryEmpty(message) }
     } else {
@@ -201,7 +209,8 @@ private fun ReconcileDownloads(
         withContext(Dispatchers.IO) {
             resolved.zip(records).forEach { (current, old) ->
                 if (current.status != old.status &&
-                    current.status in setOf(DownloadStatus.SUCCEEDED, DownloadStatus.FAILED, DownloadStatus.CANCELLED)
+                    current.status in
+                    setOf(DownloadStatus.SUCCEEDED, DownloadStatus.FAILED, DownloadStatus.CANCELLED)
                 ) {
                     store.setStatusIfUnchanged(current.id, old.status, current.status)
                 }
@@ -224,6 +233,8 @@ private fun DownloadSelectedActions(
     scope: CoroutineScope,
     onError: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     DownloadActions(
         record,
@@ -251,7 +262,7 @@ private fun DownloadSelectedActions(
                 close()
                 scope.launch {
                     val success = withContext(Dispatchers.IO) { queue.retry(record) }
-                    if (!success) onError("Не удалось повторить загрузку")
+                    if (!success) onError(res.getString(L.ui_failed_to_retry_upload))
                 }
             },
         ),
@@ -263,17 +274,19 @@ private fun DownloadClearDialog(
     close: () -> Unit,
     clear: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     AppAlertDialog(
         onDismissRequest = close,
-        title = { Text("Очистить историю загрузок?") },
-        text = { Text("Завершённые записи будут удалены из истории. Сами файлы останутся на устройстве.") },
+        title = { Text(res.getString(L.ui_clear_download_history)) },
+        text = { Text(res.getString(L.ui_completed_entries_will_be_removed)) },
         confirmButton = {
             TextButton(onClick = {
                 close()
                 clear()
-            }) { Text("Очистить") }
+            }) { Text(res.getString(L.ui_clear)) }
         },
-        dismissButton = { TextButton(onClick = close) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = close) { Text(res.getString(L.ui_cancel)) } },
     )
 }
 
@@ -319,32 +332,34 @@ private fun DownloadRow(
     onClick: () -> Unit,
     onOpen: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val source =
         when {
             record.origin.archiveId != null -> {
-                "Архивач"
+                res.getString(L.ui_archiver)
             }
 
             record.origin.threadRoute != null -> {
                 when (val site = AppRoute.threadAddress(record.origin.threadRoute)?.site?.value) {
                     "dvach" -> "2ch"
-                    null -> "Источник неизвестен"
+                    null -> res.getString(L.ui_source_unknown)
                     else -> site
                 }
             }
 
             else -> {
-                "Источник неизвестен"
+                res.getString(L.ui_source_unknown)
             }
         }
     val status =
         when (record.status) {
-            DownloadStatus.QUEUED -> "В очереди"
-            DownloadStatus.RUNNING -> "Загрузка"
-            DownloadStatus.WAITING -> "Ожидание повторной попытки"
-            DownloadStatus.SUCCEEDED -> "Сохранено"
-            DownloadStatus.FAILED -> "Ошибка загрузки"
-            DownloadStatus.CANCELLED -> "Отменено"
+            DownloadStatus.QUEUED -> res.getString(L.ui_queued)
+            DownloadStatus.RUNNING -> res.getString(L.ui_loading_5d60)
+            DownloadStatus.WAITING -> res.getString(L.ui_waiting_to_retry)
+            DownloadStatus.SUCCEEDED -> res.getString(L.ui_saved)
+            DownloadStatus.FAILED -> res.getString(L.ui_loading_error)
+            DownloadStatus.CANCELLED -> res.getString(L.ui_canceled)
         }
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -374,11 +389,13 @@ private fun DownloadsMenu(
     canClear: Boolean,
     onClear: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     var open by remember { mutableStateOf(false) }
     Box {
-        CatalogIconButton(UiIconKind.MORE, "Меню") { open = true }
+        CatalogIconButton(UiIconKind.MORE, res.getString(L.ui_menu)) { open = true }
         ModalDropdownMenu(open, { open = false }) {
-            ActionMenuItem("Очистить историю", {
+            ActionMenuItem(res.getString(L.ui_clear_history), {
                 open = false
                 onClear()
             }, enabled = canClear)

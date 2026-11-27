@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Pawchan</string>
+    <string name="app_name" translatable="false">Pawchan</string>
     <string name="search">Поиск…</string>
     <string name="search_threads">Поиск по тредам</string>
     <string name="close_search">Закрыть поиск</string>
@@ -46,7 +46,6 @@
     <string name="thread_closed_short">закрыт</string>
     <string name="thread_endless">бесконечный</string>
     <string name="catalog_media_count">Медиа: %1$d</string>
-    <string name="play_video">▶</string>
     <string name="challenge_done">← Готово</string>
     <string name="challenge_invalid_url">Нельзя открыть этот адрес проверки.</string>
     <string name="board_archive">Архив</string>
@@ -62,7 +61,12 @@
     <string name="board_description_missing">Описание доски не предоставлено.</string>
     <string name="board_default_name">Имя по умолчанию: %1$s</string>
     <string name="board_bump_limit">Бамп-лимит: %1$d</string>
-    <string name="board_comment_limit">Лимит текста: %1$d символов</string>
+    <plurals name="board_comment_limit">
+        <item quantity="one">Лимит текста: %1$d символ</item>
+        <item quantity="few">Лимит текста: %1$d символа</item>
+        <item quantity="many">Лимит текста: %1$d символов</item>
+        <item quantity="other">Лимит текста: %1$d символов</item>
+    </plurals>
     <string name="board_dialog_close">Закрыть</string>
     <string name="board_archive_title">Архив /%1$s/</string>
     <string name="archive_previous">Новее</string>
@@ -84,4 +88,6 @@
     <string name="link_file_post_missing">Пост с этим файлом не найден</string>
     <string name="choose_board">Выбрать доску</string>
     <string name="write">Написать</string>
+    <string name="language_group">Язык</string>
+    <string name="interface_language">Язык интерфейса</string>
 </resources>

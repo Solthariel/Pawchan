@@ -1,6 +1,8 @@
 package com.solthariel.pawchan.data.preferences
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.solthariel.pawchan.domain.filter.ContentFilterConditionSpec
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.model.DomainOutcome
@@ -20,6 +22,14 @@ import java.io.File
 
 class AppSettingsStoreTest {
     @get:Rule val temporary = TemporaryFolder()
+
+    @Test
+    fun olderFileWithOnlyAThreadPreferenceStillShowsHiddenPostRows() {
+        val old = mutablePreferencesOf(booleanPreferencesKey("app_show_hidden_threads") to false)
+        val behavior = old.toAppSettings().behavior
+        assertEquals(false, behavior.showHiddenThreads)
+        assertEquals(true, behavior.showHiddenPosts)
+    }
 
     @Test
     fun defaultsUntilChangedAndChangesSurviveReopening() =
@@ -68,6 +78,7 @@ class AppSettingsStoreTest {
                             videoStartMuted = true,
                             updateSavedCopies = false,
                             showHiddenThreads = true,
+                            showHiddenPosts = false,
                             client =
                                 com.solthariel.pawchan.domain.settings.ClientPreferences(
                                     media =

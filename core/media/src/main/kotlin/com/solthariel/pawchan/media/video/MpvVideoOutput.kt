@@ -6,6 +6,16 @@ import android.view.Surface
 import android.view.TextureView
 import android.widget.FrameLayout
 
+/** Keep attach, detach and snapshots bound to the same rendered output when the session moves to PiP. */
+internal interface MpvSurfaceBackend : VideoEngineBackend {
+    val renderOutput: MpvVideoOutput
+    override val posterFrame: Bitmap? get() = renderOutput.snapshot()
+
+    override fun attach(view: FrameLayout) = renderOutput.attach(view)
+
+    override fun detach(view: FrameLayout) = renderOutput.detach(view)
+}
+
 /** Android surface ownership stays with the engine, including handoff to and from PiP. */
 internal class MpvVideoOutput(
     private val created: (SurfaceTexture, Int, Int) -> Unit,

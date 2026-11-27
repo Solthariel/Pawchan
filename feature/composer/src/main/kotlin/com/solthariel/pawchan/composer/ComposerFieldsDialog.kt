@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -24,6 +25,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.posting.NewThreadDraft
 import com.solthariel.pawchan.domain.settings.ComposerField
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ComposerFieldsDialog(
@@ -32,16 +34,18 @@ internal fun ComposerFieldsDialog(
     onChange: (ComposerDraftState) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     ComposerModal(onDismiss) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "Дополнительные поля",
+                res.getString(L.ui_additional_fields),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
             )
             fields.forEach { ComposerExtraField(it, state.draft, !state.draft.inputBlocked, onChange) }
-            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Готово") }
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(res.getString(L.ui_done)) }
         }
     }
 }
@@ -53,6 +57,8 @@ private fun ComposerExtraField(
     enabled: Boolean,
     onChange: (ComposerDraftState) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val label =
         stringResource(
             when (field) {
@@ -84,7 +90,7 @@ private fun ComposerExtraField(
                 IconButton(
                     onClick = { onChange(draft.withFieldValue(field, "")) },
                     enabled = enabled,
-                    modifier = Modifier.semantics { contentDescription = "Очистить: $label" },
+                    modifier = Modifier.semantics { contentDescription = res.getString(L.ui_clear_994a, label) },
                 ) { UiIcon(UiIconKind.DELETE, MaterialTheme.colorScheme.onSurface, Modifier.size(24.dp)) }
             }
         },

@@ -23,6 +23,7 @@ import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.core.ui.AppDialog
 import com.solthariel.pawchan.core.ui.AppDialogStyle
 import com.solthariel.pawchan.core.ui.copyTextToClipboard
+import com.solthariel.pawchan.core.ui.modelLabel
 
 @Composable
 internal fun MediaMetadataDialog(
@@ -47,7 +48,7 @@ internal fun MediaMetadataDialog(
 @Composable
 private fun MetadataSectionView(section: MediaMetadataSection) {
     Text(
-        section.title,
+        modelLabel(section.title),
         Modifier.padding(top = 16.dp, bottom = 4.dp),
         color = MaterialTheme.colorScheme.primary,
         style = MaterialTheme.typography.labelLarge,
@@ -68,7 +69,7 @@ private fun MetadataRowView(row: MediaMetadataRow) {
             .padding(vertical = 4.dp),
     ) {
         Text(
-            row.label,
+            modelLabel(row.label),
             Modifier.weight(LABEL_WEIGHT).padding(end = 12.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,

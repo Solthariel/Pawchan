@@ -28,26 +28,3 @@ internal fun rememberForumSelection(
     }
     return lastCatalog to selected
 }
-
-/** Last catalog board for each forum, retained across activity recreation. */
-@Composable
-internal fun rememberForumCatalogs(
-    baseRoute: String,
-    currentCatalogRoute: String?,
-): MutableState<String> {
-    val routes = rememberSaveable { mutableStateOf(baseRoute) }
-    LaunchedEffect(currentCatalogRoute) {
-        currentCatalogRoute?.let { route ->
-            val site = AppRoute.catalogBoard(route)?.site?.value ?: return@let
-            routes.value =
-                (routes.value.lineSequence().filter { AppRoute.catalogBoard(it)?.site?.value != site } + route)
-                    .joinToString("\n")
-        }
-    }
-    return routes
-}
-
-internal fun forumCatalogRoute(
-    routes: String,
-    site: String,
-): String? = routes.lineSequence().firstOrNull { AppRoute.catalogBoard(it)?.site?.value == site }

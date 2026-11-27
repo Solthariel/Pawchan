@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.archive.ArchiveCopyUi
@@ -24,6 +25,7 @@ import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
 import com.solthariel.pawchan.navigation.saveableKey
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceBinding
+import com.solthariel.pawchan.R.string as L
 
 internal data class LibraryData(
     val copies: List<ArchiveCopyUi>,
@@ -55,6 +57,8 @@ internal fun SavedCopiesList(
     data: LibraryData,
     view: LibraryView,
 ) {
+    val res = LocalResources.current
+
     val binding = data.binding ?: return
     val query = view.query.trim()
     val copies = data.copies.filter { it.card.matches(query) }
@@ -73,7 +77,11 @@ internal fun SavedCopiesList(
                     bottom = com.solthariel.pawchan.core.ui.LocalBottomOverlayInset.current + 8.dp,
                 ),
         ) {
-            if (copies.isEmpty()) item(key = "copies-empty") { LibraryEmpty("Сохранённых копий пока нет") }
+            if (copies.isEmpty()) {
+                item(
+                    key = "copies-empty",
+                ) { LibraryEmpty(res.getString(L.ui_no_saved_copies_yet)) }
+            }
             itemsIndexed(
                 copies,
                 key = { _, item -> "copy-${item.copy.snapshot.address.saveableKey}" },

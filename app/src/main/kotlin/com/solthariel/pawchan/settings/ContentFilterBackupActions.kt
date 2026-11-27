@@ -3,15 +3,12 @@ package com.solthariel.pawchan.settings
 import android.content.ActivityNotFoundException
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
-import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 internal data class ContentFilterBackupActions(
     val save: () -> Unit,

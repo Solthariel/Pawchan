@@ -2,7 +2,6 @@ package com.solthariel.pawchan.boards
 
 import com.solthariel.pawchan.core.ui.FastScrollItemSizes
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
-import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.model.BoardAddress
 import kotlin.math.roundToInt
 
@@ -127,4 +126,3 @@ internal data class BoardListActions(
 )
 
 internal const val BOARD_GRID_COLUMNS = 3
-internal const val FAVORITES_CATEGORY_KEY = FAVORITES_BOARD_CATEGORY_KEY

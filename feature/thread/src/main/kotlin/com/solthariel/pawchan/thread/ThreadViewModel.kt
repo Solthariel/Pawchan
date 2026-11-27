@@ -14,6 +14,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
 import com.solthariel.pawchan.domain.settings.AppSettingsRepository
+import com.solthariel.pawchan.domain.settings.hiddenPostPlaceholders
 import com.solthariel.pawchan.domain.thread.CachedThreadRepository
 import com.solthariel.pawchan.domain.thread.ReportingThreadRepository
 import com.solthariel.pawchan.domain.thread.ThreadHistoryRepository
@@ -101,7 +102,8 @@ internal class ThreadViewModel(
             mutableState,
             activeContentRules,
             revealedFilters,
-        ) { content, rules, revealed -> content.filteredContent(rules, revealed) }
+            persistence.appSettings.hiddenPostPlaceholders(),
+        ) { content, rules, revealed, placeholders -> content.filteredContent(rules, revealed, placeholders) }
             .flowOn(environment.uiDispatcher)
             .stateIn(viewModelScope, SharingStarted.Eagerly, ThreadUiState.Loading)
     override val reports =

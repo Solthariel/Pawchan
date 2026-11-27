@@ -1,16 +1,11 @@
 package com.solthariel.pawchan.boards
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -38,8 +34,8 @@ import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.ActionMenuItem
-import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
 
 @Composable
@@ -48,6 +44,8 @@ internal fun BoardsSearchField(
     actions: BoardsSearchBarActions,
     favoritesOnly: Boolean,
 ) {
+    val res = LocalResources.current
+
     var overflow by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -75,7 +73,7 @@ internal fun BoardsSearchField(
             Box(Modifier.testTag("boards-overflow")) {
                 CatalogIconButton(
                     UiIconKind.MORE,
-                    "Меню досок",
+                    res.getString(L.ui_boards_menu),
                     onClick = { overflow = true },
                 )
                 DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {

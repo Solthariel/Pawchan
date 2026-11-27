@@ -5,7 +5,6 @@ import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.MediaAttachmentSource
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue

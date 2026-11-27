@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Retry</string>
+    <string name="core_ui_challenge_open">Complete verification</string>
+    <string name="core_ui_error_loading_data">Error loading data</string>
+    <string name="core_ui_fast_scrollbar">List scrolling</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Refresh from top</string>
+    <string name="core_ui_pull_refresh_bottom">Refresh from bottom</string>
+    <string name="core_ui_thread_author">Thread creator</string>
+    <string name="core_ui_post_sage">Do not bump</string>
+    <string name="core_ui_post_email">Author\'s email</string>
+    <string name="core_ui_thread_sticky">Pinned thread</string>
+    <string name="core_ui_thread_closed">Thread closed</string>
+    <string name="core_ui_thread_cyclical">Cyclic thread</string>
+    <string name="core_ui_post_banned">Author banned</string>
+    <string name="core_ui_archive_active">Archiver: thread is active and updating</string>
+    <string name="core_ui_archive_maybe_deleted">Archiver: original thread may have been deleted</string>
+    <string name="core_ui_archive_saved">Archiver: thread saved</string>
+    <string name="core_ui_archive_lost">Archiver: thread marked as lost</string>
+    <string name="core_ui_archive_queued">Archiver: thread is awaiting processing</string>
+    <string name="core_ui_archive_other">Another Archiver status</string>
+    <string name="core_ui_copied">Copied</string>
+    <string name="ui_enter_jpeg_quality">Enter JPEG quality</string>
+    <string name="ui_value">Value</string>
+    <string name="ui_quality">Quality</string>
+    <string name="ui_jpeg_quality_906d">JPEG quality, %</string>
+    <string name="ui_from_to">From %1$d to %2$d</string>
+    <string name="ui_cancel">Cancel</string>
+    <string name="ui_apply">Apply</string>
+    <string name="ui_expanded">Expanded</string>
+    <string name="ui_expand">Expand</string>
+    <string name="ui_collapsed">Collapsed</string>
+    <string name="ui_removed">Removed</string>
+</resources>

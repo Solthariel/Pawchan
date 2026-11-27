@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,19 +18,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.media.R.string as L
 
 @Composable
 internal fun GalleryToolbar(
@@ -39,6 +38,8 @@ internal fun GalleryToolbar(
     actions: GalleryToolbarActions,
     gallery: MediaGalleryContent,
 ) {
+    val res = LocalResources.current
+
     if (state.selecting) {
         GallerySelectionToolbar(state, actions)
         return
@@ -51,11 +52,11 @@ internal fun GalleryToolbar(
             .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GalleryIconButton("Назад", actions.back) {
+        GalleryIconButton(res.getString(L.ui_back), actions.back) {
             UiIcon(UiIconKind.BACK, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
         }
         Text(
-            "Галерея",
+            res.getString(L.ui_gallery),
             Modifier.padding(start = 12.dp),
             style = MaterialTheme.typography.titleLarge,
             maxLines = 1,
@@ -70,7 +71,7 @@ internal fun GalleryToolbar(
                 }
             }
         }
-        GalleryIconButton("Выделить медиа", actions.toggleSelection) {
+        GalleryIconButton(res.getString(L.ui_select_media), actions.toggleSelection) {
             GallerySelectIcon(MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

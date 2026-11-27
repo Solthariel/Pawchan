@@ -9,11 +9,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import coil3.ImageLoader
 import com.solthariel.pawchan.domain.posting.PostingRules
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import java.lang.ref.Reference
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 private val nextImport =
     java.util.concurrent.atomic
@@ -33,6 +35,8 @@ internal fun rememberComposerMediaImporter(
     onChange: (ComposerDraftState) -> Unit,
     imageLoader: ImageLoader,
 ): ComposerMediaImportState {
+    val res = LocalResources.current
+
     val latest = rememberUpdatedState(draft)
     val change = rememberUpdatedState(onChange)
     val context = LocalContext.current
@@ -45,15 +49,15 @@ internal fun rememberComposerMediaImporter(
         if (uris.isNotEmpty()) {
             when {
                 importing || !enabled || current.inputBlocked -> {
-                    error = "Дождитесь завершения текущей операции"
+                    error = res.getString(L.ui_wait_until_the_current_operation)
                 }
 
                 rules == null -> {
-                    error = "Параметры отправки ещё не загружены"
+                    error = res.getString(L.ui_sending_parameters_have_not_loaded)
                 }
 
                 !canAttachComposerMedia(current, rules) -> {
-                    error = "Достигнут лимит вложений"
+                    error = res.getString(L.ui_attachment_limit_reached)
                 }
 
                 else -> {
@@ -64,7 +68,8 @@ internal fun rememberComposerMediaImporter(
                     scope.launch(start = CoroutineStart.UNDISPATCHED) {
                         var completed = false
                         try {
-                            val result = importComposerAttachments(context, uris, current.attachments, rules, defaults)
+                            val result =
+                                importComposerAttachments(context, uris, current.attachments, rules, defaults)
                             if (result is ComposerAttachmentImport.Success) {
                                 prepareComposerThumbnails(
                                     context,

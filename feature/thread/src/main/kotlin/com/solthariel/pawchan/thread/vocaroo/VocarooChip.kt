@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +44,7 @@ import com.solthariel.pawchan.thread.LocalPostLinkAddress
 import com.solthariel.pawchan.thread.LocalPostLinks
 import com.solthariel.pawchan.thread.PostLinkMenu
 import com.solthariel.pawchan.thread.PostLinkTarget
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 /**
  * Плашка на месте ссылки Vocaroo: нажатие — играть/пауза, полоса — перемотка,
@@ -50,6 +52,8 @@ import com.solthariel.pawchan.thread.PostLinkTarget
  */
 @Composable
 internal fun VocarooChip(url: String) {
+    val res = LocalResources.current
+
     val player = LocalVocarooPlayer.current ?: return
     val id = remember(url) { vocarooId(url) } ?: return
     val state = player.state
@@ -63,12 +67,16 @@ internal fun VocarooChip(url: String) {
             .fillMaxSize()
             .clip(RoundedCornerShape(percent = 50))
             .background(accent.copy(alpha = CHIP_BACKGROUND_ALPHA))
-            .semantics { contentDescription = "Голосовое Vocaroo" }
+            .semantics { contentDescription = res.getString(L.ui_vocaroo_voice) }
             .pointerInput(id) {
                 detectTapGestures(
                     onTap = { player.toggle(id) },
                     onLongPress = {
-                        val resolved = RemoteUrl.parse(url)?.let { resolver?.resolve(PostLink.External(it), address) }
+                        val resolved =
+                            RemoteUrl
+                                .parse(
+                                    url,
+                                )?.let { resolver?.resolve(PostLink.External(it), address) }
                         menu = vocarooLinkTarget(url, id, resolved)
                     },
                 )
@@ -106,10 +114,12 @@ private fun VocarooChipIcon(
     active: Boolean,
     state: VocarooState,
 ) {
+    val res = LocalResources.current
+
     val accent = MaterialTheme.colorScheme.primary
     if (active && state.preparing) {
         PageLoadingIndicator(
-            description = "Загрузка Vocaroo",
+            description = res.getString(L.ui_loading_vocaroo),
             modifier = Modifier.fillMaxHeight(ICON_FRACTION).aspectRatio(1f),
         )
     } else {

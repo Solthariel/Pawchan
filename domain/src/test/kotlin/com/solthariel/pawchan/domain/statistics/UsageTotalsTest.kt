@@ -35,11 +35,6 @@ class UsageTotalsTest {
         assertEquals(Long.MAX_VALUE, addUsageValues(Long.MAX_VALUE, 1L))
     }
 
-    @Test fun legacyNoticeIsNeededOnlyForUnidentifiedTotals() {
-        assertEquals(true, UsageDay(1, mapOf(metric to 5L)).hasLegacyUsage())
-        assertEquals(false, day(1, "a").hasLegacyUsage())
-    }
-
     @Test fun postCountUsesTheSameUniqueTotals() {
         val text = appendPostCount("/postcount", listOf(day(1, "a"), day(2, "a")))
         assertEquals(true, text.contains("Открыто тредов: 1"))

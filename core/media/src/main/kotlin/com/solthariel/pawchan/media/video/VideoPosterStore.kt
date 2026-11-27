@@ -40,10 +40,3 @@ internal fun rememberVideoPosterStore(): VideoPosterStore {
 }
 
 internal const val VIDEO_POSTER_MAX_EDGE = 512
-
-/** Immutable reserve for one incoming handoff, independent of later shared-store captures. */
-@Composable
-internal fun rememberVideoPosterReserve(owner: Any): Bitmap? {
-    val store = LocalVideoPosterStore.current
-    return remember(owner, store) { store?.frame }
-}

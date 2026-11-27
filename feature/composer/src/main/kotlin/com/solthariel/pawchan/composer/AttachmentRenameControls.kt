@@ -14,10 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentRenameControls(
@@ -26,6 +28,8 @@ internal fun AttachmentRenameControls(
     onDone: () -> Unit = {},
     onUpdate: (ComposerAttachment) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val options = file.options
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -46,7 +50,7 @@ internal fun AttachmentRenameControls(
                 val customName = it.takeUnless { value -> value == originalBase }
                 onUpdate(file.copy(options = options.copy(customName = customName)))
             },
-            label = { Text("Имя файла") },
+            label = { Text(res.getString(L.ui_filename)) },
             suffix = { Text(if (extension.isEmpty()) "" else ".$extension") },
             modifier = Modifier.weight(1f).focusRequester(focusRequester),
             singleLine = true,

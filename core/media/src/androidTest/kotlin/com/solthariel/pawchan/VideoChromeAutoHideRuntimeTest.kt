@@ -50,7 +50,10 @@ class VideoChromeAutoHideRuntimeTest {
                 if (motion.controlsVisible) Text("controls")
             }
         }
-        compose.mainClock.advanceTimeBy(3_200)
+        compose.mainClock.advanceTimeBy(4_800)
+        compose.waitForIdle()
+        compose.onNodeWithText("controls").assertIsDisplayed()
+        compose.mainClock.advanceTimeBy(400)
         compose.waitForIdle()
         compose.onNodeWithText("controls").assertDoesNotExist()
         compose.onNodeWithTag("video").performClick()

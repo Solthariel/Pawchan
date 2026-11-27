@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.PawchanApplication
 import com.solthariel.pawchan.copyfiles.CopyDocument
 import com.solthariel.pawchan.copyfiles.CopyFileDialogs
@@ -17,12 +18,15 @@ import com.solthariel.pawchan.copyfiles.rememberCopyFiles
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.navigation.AppRoute
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun archiveFileExport(
     controller: ArchiveController,
     address: ThreadAddress,
 ): () -> Unit {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     val files = rememberCopyFiles(CopyFileKind.THREAD)
     val registry = (context.applicationContext as PawchanApplication).zipRegistry
@@ -53,9 +57,18 @@ internal fun archiveFileExport(
                 openCopyFile(context, CopyDocument(uri.toString(), "Архив треда", "application/zip", 0, -1), false)
             }
         }
-    CopyFileDialogs(files, { openCopyFile(context, it, false) }, { open.launch(arrayOf("application/zip")) }, other)
+    CopyFileDialogs(
+        files,
+        { openCopyFile(context, it, false) },
+        { open.launch(arrayOf("application/zip")) },
+        other,
+    )
     savedExternally?.let {
-        TransientNotice("ZIP сохранён: ${it.name}", eventKey = it, onDismiss = { savedExternally = null })
+        TransientNotice(
+            res.getString(L.ui_zip_saved, it.name),
+            eventKey = it,
+            onDismiss = { savedExternally = null },
+        )
     }
     return {
         if (files.ready) {

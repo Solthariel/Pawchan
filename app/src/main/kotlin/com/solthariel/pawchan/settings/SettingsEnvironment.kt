@@ -1,7 +1,9 @@
 package com.solthariel.pawchan.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.domain.settings.AppSettings
+import com.solthariel.pawchan.R.string as L
 
 /** Что экран знает помимо сохранённых настроек: кэш и панель обновлений. */
 internal data class SettingsEnvironment(
@@ -18,14 +20,16 @@ internal fun settingsContent(
     actions: SettingsActions,
     environment: SettingsEnvironment,
 ): Map<SettingsSection, List<SettingsGroup>> {
+    val res = LocalResources.current
+
     val update = actions.onUpdate
     return linkedMapOf(
         SettingsSection.GENERAL to readingGroups(state.app, update) + generalNavigationGroups(state.app, update) +
             listOf(
                 SettingsGroup(
-                    "Безопасность",
+                    res.getString(L.ui_security),
                     listOf(
-                        SettingsItem.Custom("Блокировка приложения") {
+                        SettingsItem.Custom(res.getString(L.ui_app_lock)) {
                             com.solthariel.pawchan.security
                                 .AppLockSettings()
                         },
@@ -44,32 +48,37 @@ internal fun settingsContent(
         SettingsSection.AUTOHIDE to
             listOf(
                 SettingsGroup(
-                    "Правила",
-                    listOf(SettingsItem.Action("Правила автоскрытия", "Фразы и фрагменты по порядку")),
+                    res.getString(L.ui_rules),
+                    listOf(
+                        SettingsItem.Action(
+                            res.getString(L.ui_auto_hide_rules),
+                            res.getString(L.ui_phrases_and_fragments_in_order),
+                        ),
+                    ),
                 ),
             ),
         SettingsSection.NETWORK to
             listOf(
-                SettingsGroup("Прокси", listOf(SettingsItem.Action("Прокси", null, onClick = environment.openProxy))),
+                SettingsGroup(
+                    res.getString(L.ui_proxy),
+                    listOf(SettingsItem.Action(res.getString(L.ui_proxy), null, onClick = environment.openProxy)),
+                ),
             ),
         SettingsSection.STORAGE to storageGroups(state.app, update, environment) +
             listOf(
                 SettingsGroup(
-                    "Резервные копии",
-                    listOf(SettingsItem.Custom("Резервное копирование данных") { ClientBackupSettings() }),
+                    res.getString(L.ui_backups),
+                    listOf(SettingsItem.Custom(res.getString(L.ui_data_backup)) { ClientBackupSettings() }),
                 ),
                 SettingsGroup(
-                    "Статистика",
-                    listOf(SettingsItem.Action("Статистика", null, onClick = actions.onStatistics)),
+                    res.getString(L.ui_statistics),
+                    listOf(
+                        SettingsItem.Action(res.getString(L.ui_statistics), null, onClick = actions.onStatistics),
+                    ),
                 ),
             ),
         SettingsSection.ABOUT to aboutGroups(environment),
-    ).mapValues { (_, groups) ->
-        groups.mapNotNull { group ->
-            val items = group.items
-            if (items.isEmpty()) null else group.copy(items = items)
-        }
-    }
+    ).mapValues { (_, groups) -> groups.localized(res) }
 }
 
 @Composable
@@ -78,49 +87,28 @@ private fun interfaceGroups(
     actions: SettingsActions,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ): List<SettingsGroup> {
+    val res = LocalResources.current
+
     val app = state.app
     return listOf(
+        interfaceLanguageGroup(),
         themeSettingsGroup(state, actions),
         typographySettingsGroup(app, update),
         bottomNavigationSettingsGroup(app, update),
+        bottomBarOrderGroup(app, update),
+        keyboardSettingsGroup(app, update),
+        displaySettingsGroup(app, update),
         SettingsGroup(
-            "Отображение",
+            res.getString(L.ui_post_header),
             listOf(
                 SettingsItem.Toggle(
-                    "Скрывать стикеры",
-                    "Текст постов остаётся",
-                    app.hideStickers,
-                ) { on -> update { it.copy(hideStickers = on) } },
-                SettingsItem.Toggle(
-                    "Скрывать ответы @monkey",
-                    "Только на Дваче. Вопрос автора и ссылки на посты остаются.",
-                    app.hideMonkeyReplies,
-                ) { on -> update { it.copy(hideMonkeyReplies = on) } },
-                SettingsItem.Scale(
-                    "Размер текста",
-                    app.textSize,
-                    AppSettings.MIN_TEXT_SIZE..AppSettings.MAX_TEXT_SIZE,
-                    "sp",
-                    preview = true,
-                ) { size -> update { it.copy(textSize = size) } },
-                SettingsItem.Scale(
-                    "Строк до сворачивания",
-                    app.collapseLines,
-                    AppSettings.MIN_COLLAPSE_LINES..AppSettings.NO_COLLAPSE,
-                    "строк",
-                    preview = false,
-                    endLabel = "Не сворачивать",
-                ) { lines -> update { it.copy(collapseLines = lines) } },
-            ),
-        ),
-        hiddenThreadsSettingsGroup(app, update),
-        SettingsGroup(
-            "Шапка поста",
-            listOf(
-                SettingsItem.Toggle("Значки постов", "ОП, сажа, закреп, закрыт…", app.postMarkers) { on ->
+                    res.getString(L.ui_post_badges),
+                    res.getString(L.ui_op_sage_sticky_closed),
+                    app.postMarkers,
+                ) { on ->
                     update { it.copy(postMarkers = on) }
                 },
-                SettingsItem.Toggle("Показывать «Аноним»", null, app.showDefaultName) { on ->
+                SettingsItem.Toggle(res.getString(L.ui_show_anonymous), null, app.showDefaultName) { on ->
                     update { it.copy(showDefaultName = on) }
                 },
             ),

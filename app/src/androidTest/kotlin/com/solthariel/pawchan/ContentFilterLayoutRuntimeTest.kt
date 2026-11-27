@@ -16,9 +16,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.navigation.defaultBoardAddress
-import com.solthariel.pawchan.settings.ContentFilterDraft
 import com.solthariel.pawchan.settings.ContentFilterProbe
-import com.solthariel.pawchan.settings.FilterEditorFields
 import com.solthariel.pawchan.settings.newContentFilterRule
 import org.junit.Assert.assertEquals
 import org.junit.Rule

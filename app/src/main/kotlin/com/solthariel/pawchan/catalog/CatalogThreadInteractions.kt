@@ -6,11 +6,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppMenuDialog
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.R.string as L
 
 internal data class CatalogThreadInteractions(
     val hidden: Set<ThreadAddress>,
@@ -95,19 +97,37 @@ private fun CatalogThreadMenuDialog(
     onClose: () -> Unit,
     callbacks: CatalogThreadMenuCallbacks,
 ) {
+    val res = LocalResources.current
+
     AppMenuDialog(onClose) {
         if (options.canHide) {
             ActionMenuItem(
-                if (options.favorite == true) "Убрать тред из избранного" else "Добавить тред в избранное",
+                if (options.favorite ==
+                    true
+                ) {
+                    res.getString(L.ui_remove_thread_from_favorites)
+                } else {
+                    res.getString(L.ui_add_thread_to_favorites)
+                },
                 callbacks.favorite,
                 options.favorite != null,
                 icon = if (options.favorite == true) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
             )
         }
-        ActionMenuItem("Копировать ссылку", callbacks.copy, options.canLink, icon = UiIconKind.LINK)
-        ActionMenuItem("Поделиться ссылкой", callbacks.share, options.canLink, icon = UiIconKind.SHARE)
-        if (options.canAddRule) ActionMenuItem("Добавить правило", callbacks.addRule, icon = UiIconKind.FILTER)
-        if (!options.hidden && options.canHide) ActionMenuItem("Скрыть", callbacks.hide, icon = UiIconKind.HIDE)
+        ActionMenuItem(res.getString(L.ui_copy_link), callbacks.copy, options.canLink, icon = UiIconKind.LINK)
+        ActionMenuItem(res.getString(L.ui_share_link), callbacks.share, options.canLink, icon = UiIconKind.SHARE)
+        if (options.canAddRule) {
+            ActionMenuItem(
+                res.getString(L.ui_add_rule),
+                callbacks.addRule,
+                icon = UiIconKind.FILTER,
+            )
+        }
+        if (!options.hidden &&
+            options.canHide
+        ) {
+            ActionMenuItem(res.getString(L.ui_hide), callbacks.hide, icon = UiIconKind.HIDE)
+        }
     }
 }
 

@@ -10,9 +10,7 @@ import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.PostMetadata
 import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.model.ThreadAddress
-import com.solthariel.pawchan.domain.model.ThreadFlags
 import com.solthariel.pawchan.domain.model.ThreadId
-import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -42,7 +40,8 @@ class OwnPostStorageTest {
     @Test fun storingPostDoesNotChangeOpenTabs() {
         val source = post()
         val tabs = listOf(OpenThread(source.address.thread, "tab"))
-        val state = WorkspaceState(tabs = tabs, lastRoute = "route").storePost(source, "title", true)
+        val initial = WorkspaceState(tabs = tabs, routes = WorkspaceRoutes(last = "route"))
+        val state = initial.storePost(source, "title", true)
         assertEquals(tabs, state.tabs)
         assertEquals("route", state.lastRoute)
     }

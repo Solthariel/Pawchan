@@ -14,11 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.FullScreenModalWindow as Dialog
 
 /** A separate scrollable screen, not an unconstrained text block inside an alert. */
@@ -28,6 +30,8 @@ internal fun ChangelogDialog(
     failed: Boolean,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
@@ -40,9 +44,9 @@ internal fun ChangelogDialog(
                     .padding(horizontal = com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                UiToolbarButton(UiIconKind.BACK, "Назад к настройкам", onClick = onClose)
+                UiToolbarButton(UiIconKind.BACK, res.getString(L.ui_back_to_settings), onClick = onClose)
                 Text(
-                    "Список изменений",
+                    res.getString(L.ui_change_log),
                     Modifier.weight(1f).padding(start = 12.dp),
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
@@ -53,9 +57,9 @@ internal fun ChangelogDialog(
             } else {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (failed) {
-                        Text("Не удалось прочитать список изменений")
+                        Text(res.getString(L.ui_failed_to_read_changelog))
                     } else {
-                        PageLoadingIndicator(description = "Загрузка списка изменений")
+                        PageLoadingIndicator(description = res.getString(L.ui_loading_change_log))
                     }
                 }
             }

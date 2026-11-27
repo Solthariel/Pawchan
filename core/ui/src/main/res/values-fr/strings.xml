@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Réessayer</string>
+    <string name="core_ui_challenge_open">Effectuer la vérification</string>
+    <string name="core_ui_error_loading_data">Erreur lors du chargement des données</string>
+    <string name="core_ui_fast_scrollbar">Défilement de la liste</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Actualiser depuis le haut</string>
+    <string name="core_ui_pull_refresh_bottom">Actualiser depuis le bas</string>
+    <string name="core_ui_thread_author">Créateur du fil</string>
+    <string name="core_ui_post_sage">Ne pas remonter</string>
+    <string name="core_ui_post_email">E-mail de l\'auteur</string>
+    <string name="core_ui_thread_sticky">Fil épinglé</string>
+    <string name="core_ui_thread_closed">Fil fermé</string>
+    <string name="core_ui_thread_cyclical">Fil cyclique</string>
+    <string name="core_ui_post_banned">Auteur banni</string>
+    <string name="core_ui_archive_active">Archiveur : le fil est actif et en cours de mise à jour</string>
+    <string name="core_ui_archive_maybe_deleted">Archiveur : le fil d\'origine a peut-être été supprimé</string>
+    <string name="core_ui_archive_saved">Archiveur : fil enregistré</string>
+    <string name="core_ui_archive_lost">Archiveur : le fil est marqué comme perdu</string>
+    <string name="core_ui_archive_queued">Archiveur : le fil est en attente de traitement</string>
+    <string name="core_ui_archive_other">Autre état de l\'Archiveur</string>
+    <string name="core_ui_copied">Copié</string>
+    <string name="ui_enter_jpeg_quality">Saisissez la qualité JPEG</string>
+    <string name="ui_value">Valeur</string>
+    <string name="ui_quality">Qualité</string>
+    <string name="ui_jpeg_quality_906d">Qualité JPEG, %</string>
+    <string name="ui_from_to">De %1$d à %2$d</string>
+    <string name="ui_cancel">Annuler</string>
+    <string name="ui_apply">Appliquer</string>
+    <string name="ui_expanded">Développé</string>
+    <string name="ui_expand">Développer</string>
+    <string name="ui_collapsed">Réduit</string>
+    <string name="ui_removed">Retiré</string>
+</resources>

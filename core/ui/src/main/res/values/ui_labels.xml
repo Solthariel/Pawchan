@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="ui_enter_jpeg_quality">Ввести качество JPEG</string>
+    <string name="ui_value">Значение</string>
+    <string name="ui_quality">Качество</string>
+    <string name="ui_jpeg_quality_906d">Качество JPEG, %</string>
+    <string name="ui_from_to">От %1$d до %2$d</string>
+    <string name="ui_cancel">Отмена</string>
+    <string name="ui_apply">Применить</string>
+    <string name="ui_expanded">Развёрнуто</string>
+    <string name="ui_expand">Раскрыть</string>
+    <string name="ui_collapsed">Свёрнуто</string>
+    <string name="ui_removed">Удалён</string>
+</resources>

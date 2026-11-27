@@ -13,7 +13,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
-import com.solthariel.pawchan.settings.AUTHOR_URL
 import com.solthariel.pawchan.settings.AboutLicenses
 import com.solthariel.pawchan.settings.AboutLink
 import com.solthariel.pawchan.settings.AboutVersions
@@ -38,14 +37,14 @@ class AboutDetailsRuntimeTest {
                 MaterialTheme {
                     Column {
                         AboutLink("Релизы на GitHub", "Последний релиз", RELEASE_URL)
-                        AboutLink("Сайт автора", "solthariel.github.io", AUTHOR_URL)
+                        AboutLink("Сайт автора", "solthariel.github.io", AUTHOR_URL_SAMPLE)
                     }
                 }
             }
         }
         compose.onNodeWithText("Релизы на GitHub").performClick()
         compose.onNodeWithText("Сайт автора").performClick()
-        compose.runOnIdle { assertEquals(listOf(RELEASE_URL, AUTHOR_URL), opened) }
+        compose.runOnIdle { assertEquals(listOf(RELEASE_URL, AUTHOR_URL_SAMPLE), opened) }
     }
 
     @Test fun componentVersionsAndLicenseMenuOpen() {
@@ -100,3 +99,5 @@ class AboutDetailsRuntimeTest {
         compose.onNodeWithText("Лицензии FOSS").assertIsDisplayed()
     }
 }
+
+private const val AUTHOR_URL_SAMPLE = "https://solthariel.github.io/"

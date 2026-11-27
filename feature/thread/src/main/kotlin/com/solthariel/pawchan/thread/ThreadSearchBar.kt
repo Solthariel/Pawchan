@@ -1,21 +1,16 @@
 package com.solthariel.pawchan.thread
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,16 +18,17 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
-import com.solthariel.pawchan.core.ui.UiIcon
+import com.solthariel.pawchan.core.ui.FocusWhenOpened
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun ThreadSearchBar(
@@ -40,6 +36,8 @@ internal fun ThreadSearchBar(
     content: ThreadUiState.Content?,
     onResult: (Int) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -49,10 +47,7 @@ internal fun ThreadSearchBar(
         tools.closeSearch()
     }
     BackHandler(onBack = closeSearch)
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-        keyboard?.show()
-    }
+    FocusWhenOpened(focusRequester)
     Row(
         Modifier
             .fillMaxWidth()
@@ -60,7 +55,7 @@ internal fun ThreadSearchBar(
             .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ThreadToolbarButton(UiIconKind.BACK, "Закрыть поиск", onClick = closeSearch)
+        ThreadToolbarButton(UiIconKind.BACK, res.getString(L.ui_close_search), onClick = closeSearch)
         ThreadSearchField(tools, content, focusRequester)
         ThreadSearchNavigation(tools, onResult)
     }
@@ -72,6 +67,8 @@ private fun RowScope.ThreadSearchField(
     content: ThreadUiState.Content?,
     focusRequester: FocusRequester,
 ) {
+    val res = LocalResources.current
+
     com.solthariel.pawchan.core.ui.UiToolbarSearchLayout(
         Modifier.weight(1f).padding(horizontal = 4.dp),
         if (tools.query.isNotEmpty()) ({ tools.search(content, "") }) else null,
@@ -81,7 +78,7 @@ private fun RowScope.ThreadSearchField(
             onValueChange = { tools.search(content, it) },
             modifier =
                 Modifier.weight(1f).focusRequester(focusRequester).semantics {
-                    contentDescription = "Поиск в треде"
+                    contentDescription = res.getString(L.ui_search_in_thread)
                 },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
@@ -96,9 +93,11 @@ private fun ThreadSearchPlaceholder(
     tools: ThreadToolsState,
     inner: @Composable () -> Unit,
 ) {
+    val res = LocalResources.current
+
     if (tools.query.isEmpty()) {
         Text(
-            tools.flag?.title ?: "Поиск в треде",
+            tools.flag?.title ?: res.getString(L.ui_search_in_thread),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge,
         )
@@ -111,6 +110,8 @@ private fun RowScope.ThreadSearchNavigation(
     tools: ThreadToolsState,
     onResult: (Int) -> Unit,
 ) {
+    val res = LocalResources.current
+
     Text(
         text = if (tools.results.isEmpty()) "0" else "${tools.resultIndex + 1}/${tools.results.size}",
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -119,13 +120,13 @@ private fun RowScope.ThreadSearchNavigation(
     )
     ThreadToolbarButton(
         kind = UiIconKind.UP,
-        description = "Предыдущее совпадение",
+        description = res.getString(L.ui_previous_match),
         enabled = tools.results.isNotEmpty(),
         onClick = { onResult(-1) },
     )
     ThreadToolbarButton(
         kind = UiIconKind.DOWN,
-        description = "Следующее совпадение",
+        description = res.getString(L.ui_next_match),
         enabled = tools.results.isNotEmpty(),
         onClick = { onResult(1) },
     )

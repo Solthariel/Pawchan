@@ -13,10 +13,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppDialogStyle
+import com.solthariel.pawchan.feature.applock.R
+import com.solthariel.pawchan.feature.applock.R.string as L
 
 @Composable
 internal fun PinPad(
@@ -24,6 +27,8 @@ internal fun PinPad(
     state: AppLockState,
     submit: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val input = rememberPinUnlockInput(state)
     val digits = input.digits
     val enabled = state.ready && !state.busy && state.retrySeconds == 0 && !state.biometricSetupReady
@@ -35,7 +40,10 @@ internal fun PinPad(
         Text(title, style = MaterialTheme.typography.titleLarge)
         Text(
             "●".repeat(digits.length) + "○".repeat(PIN_LENGTH - digits.length),
-            Modifier.semantics { contentDescription = "Введено цифр: ${digits.length} из $PIN_LENGTH" },
+            Modifier.semantics {
+                contentDescription =
+                    res.getString(L.ui_digits_entered_of, digits.length, PIN_LENGTH)
+            },
             style = MaterialTheme.typography.headlineMedium,
         )
         PinStatus(state)
@@ -49,7 +57,13 @@ internal fun PinPad(
                                 Modifier
                                     .weight(1f)
                                     .heightIn(min = 64.dp)
-                                    .semantics { if (digit == "⌫") contentDescription = "Удалить цифру" },
+                                    .semantics {
+                                        if (digit ==
+                                            "⌫"
+                                        ) {
+                                            contentDescription = res.getString(L.ui_delete_digit)
+                                        }
+                                    },
                             onClick = { input.press(digit, enabled, submit) },
                         ) { Text(digit, style = MaterialTheme.typography.headlineSmall) }
                     }
@@ -60,12 +74,25 @@ internal fun PinPad(
 
 @Composable
 private fun PinStatus(state: AppLockState) {
+    val res = LocalResources.current
+
     Text(
         when {
-            !state.ready -> "Загрузка…"
-            state.busy -> "Проверка…"
-            state.retrySeconds > 0 -> "Повторите через ${state.retrySeconds} с"
-            else -> state.error.orEmpty()
+            !state.ready -> {
+                res.getString(L.ui_loading)
+            }
+
+            state.busy -> {
+                res.getString(L.ui_checking_e17a)
+            }
+
+            state.retrySeconds > 0 -> {
+                res.getQuantityString(R.plurals.ui_retry_in_sec, state.retrySeconds, state.retrySeconds)
+            }
+
+            else -> {
+                state.error.orEmpty()
+            }
         },
         modifier = Modifier.fillMaxWidth(),
         color = if (state.busy) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,

@@ -1,8 +1,12 @@
 package com.solthariel.pawchan
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -24,6 +28,7 @@ import com.solthariel.pawchan.thread.ThreadContentFlags
 import com.solthariel.pawchan.thread.ThreadContentPresentation
 import com.solthariel.pawchan.thread.ThreadContentStatistics
 import com.solthariel.pawchan.thread.ThreadSelectionActions
+import com.solthariel.pawchan.thread.ThreadShotRow
 import com.solthariel.pawchan.thread.ThreadToolbar
 import com.solthariel.pawchan.thread.ThreadToolsState
 import com.solthariel.pawchan.thread.ThreadTopBar
@@ -64,29 +69,35 @@ class ThreadChromeUiTest {
 
     @Test
     fun selectionReplacesTheNormalToolbarWithIconsAndRestoresItOnCancel() {
+        lateinit var selectedTools: ThreadToolsState
         var screenshots = 0
         var quotes = 0
         var reports = 0
         compose.setContent {
             val scope = rememberCoroutineScope()
-            val tools =
-                remember {
-                    ThreadToolsState(scope).apply {
-                        toggleSelection(1)
-                        toggleSelection(2)
-                    }
-                }
+            val tools = remember { ThreadToolsState(scope).apply { selecting = true } }
+            SideEffect { selectedTools = tools }
             ThreadTestTheme(ThemePreference.DARK) {
-                Box(Modifier.width(360.dp).statusBarsPadding().testTag("toolbar-fixture")) {
-                    ThreadTopBar(
-                        testContent(),
-                        ThreadActions({}, {}, {}, {}),
-                        tools,
-                        ThreadSelectionActions({ quotes++ }, { screenshots++ }, { reports++ }),
-                    ) {}
+                Column {
+                    Box(Modifier.width(360.dp).statusBarsPadding().testTag("toolbar-fixture")) {
+                        ThreadTopBar(
+                            testContent(),
+                            ThreadActions({}, {}, {}, {}),
+                            tools,
+                            ThreadSelectionActions({ quotes++ }, { screenshots++ }, { reports++ }),
+                        ) {}
+                    }
+                    Column {
+                        listOf(1L, 2L).forEach { id -> ThreadShotRow(id, tools) { Spacer(Modifier.height(4.dp)) } }
+                    }
                 }
             }
         }
+        compose.runOnIdle {
+            selectedTools.toggleSelection(1)
+            selectedTools.toggleSelection(2)
+        }
+        compose.waitUntil(10_000L) { selectedTools.shots.ready }
         compose.onNodeWithText("Выбрано: 2").assertIsDisplayed()
         compose.onNodeWithContentDescription("Поиск").assertDoesNotExist()
         compose.onNodeWithText("Цитировать").assertDoesNotExist()

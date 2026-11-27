@@ -1,9 +1,7 @@
 package com.solthariel.pawchan
 
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.solthariel.pawchan.thread.PostMenuCommand
 import com.solthariel.pawchan.thread.PostMenuContent
 import com.solthariel.pawchan.thread.PostMenuOptions

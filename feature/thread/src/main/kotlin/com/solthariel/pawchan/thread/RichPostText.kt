@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -31,6 +32,7 @@ import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.postTextColors
 import com.solthariel.pawchan.domain.model.PostLink
 import com.solthariel.pawchan.thread.vocaroo.rememberVocarooInlineContent
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun RichPostText(
@@ -170,6 +172,8 @@ private fun SelectablePostField(
     onChange: (TextFieldValue) -> Unit,
     onLayout: (TextLayoutResult) -> Unit,
 ) {
+    val res = LocalResources.current
+
     BasicTextField(
         value = field,
         onValueChange = onChange,
@@ -192,7 +196,7 @@ private fun SelectablePostField(
                 .appendTextContextMenuComponents {
                     presentation.onQuoteSelection?.let { quote ->
                         if (!field.selection.collapsed) {
-                            item(QuoteSelectionKey, "Цитировать") {
+                            item(QuoteSelectionKey, res.getString(L.ui_quote)) {
                                 quote(field.text.substring(field.selection.min, field.selection.max))
                                 onChange(field.copy(selection = androidx.compose.ui.text.TextRange.Zero))
                                 close()

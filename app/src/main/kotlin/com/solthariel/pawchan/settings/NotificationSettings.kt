@@ -17,18 +17,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.solthariel.pawchan.domain.settings.AutomationPreferences
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun NotificationSettings(
     value: AutomationPreferences,
     change: ((AutomationPreferences) -> AutomationPreferences) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     val activity = LocalActivity.current
     var enabled by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
@@ -47,17 +51,8 @@ internal fun NotificationSettings(
         )
     }
     val allow = {
-        val runtimeGranted =
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED
-        val rationale =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                activity?.let {
-                    ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS)
-                } == true
+        val runtimeGranted = notificationPermissionGranted(context)
+        val rationale = needsNotificationRationale(activity)
         val action = notificationAccessAction(Build.VERSION.SDK_INT, runtimeGranted, enabled, rationale)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && action == NotificationAccessAction.REQUEST) {
             permission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -67,21 +62,45 @@ internal fun NotificationSettings(
     }
     Column {
         SettingsItemRow(
-            SettingsItem.Toggle("Уведомления об ответах", null, enabled && value.notifications.replies) { on ->
+            SettingsItem.Toggle(
+                res.getString(L.ui_reply_notifications),
+                null,
+                enabled && value.notifications.replies,
+            ) { on ->
                 change { it.copy(notifications = it.notifications.copy(replies = on)) }
                 if (on && !enabled) allow()
             },
         )
         HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         SettingsItemRow(
-            SettingsItem.Toggle("Уведомления о новых постах", null, enabled && value.notifications.posts) { on ->
+            SettingsItem.Toggle(
+                res.getString(L.ui_new_post_notifications),
+                null,
+                enabled && value.notifications.posts,
+            ) { on ->
                 change { it.copy(notifications = it.notifications.copy(posts = on)) }
                 if (on && !enabled) allow()
             },
         )
         if (!enabled) {
             HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-            SettingsItemRow(SettingsItem.Action("Разрешить уведомления", null, onClick = { allow() }))
+            SettingsItemRow(
+                SettingsItem.Action(res.getString(L.ui_allow_notifications), null, onClick = { allow() }),
+            )
         }
     }
 }
+
+private fun notificationPermissionGranted(context: android.content.Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        isGranted(context, Manifest.permission.POST_NOTIFICATIONS)
+
+private fun needsNotificationRationale(activity: android.app.Activity?): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || activity == null) return false
+    return ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
+}
+
+private fun isGranted(
+    context: android.content.Context,
+    permission: String,
+): Boolean = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

@@ -10,9 +10,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import com.solthariel.pawchan.core.ui.PageLoadingIndicator
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ComposerCaptchaDialog(
@@ -21,6 +23,8 @@ internal fun ComposerCaptchaDialog(
     imageLoader: ImageLoader,
     actions: ComposerScreenActions,
 ) {
+    val res = LocalResources.current
+
     val busy = state.status.progress.submitting || state.status.progress.sent
     val dismiss = { if (!busy) flow.dismiss() }
     val captchaActions =
@@ -47,14 +51,19 @@ internal fun ComposerCaptchaDialog(
             ComposerStatusLine(shown, status, captchaActions.onReloadCaptcha, imageLoader)
             if (status.progress.captchaLoading) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    PageLoadingIndicator(description = "Загрузка капчи", size = 32.dp)
+                    PageLoadingIndicator(description = res.getString(L.ui_loading_captcha), size = 32.dp)
                 }
             }
             if (!busy) ComposerCaptcha(shown, status.progress, imageLoader, captchaActions)
             if (!busy && !flow.pending && state.status.canSubmit) {
-                TextButton(onClick = { flow.arm() }, modifier = Modifier.fillMaxWidth()) { Text("Продолжить отправку") }
+                TextButton(
+                    onClick = { flow.arm() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(res.getString(L.ui_continue_sending)) }
             }
-            TextButton(onClick = dismiss, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Отмена") }
+            TextButton(onClick = dismiss, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                Text(res.getString(L.ui_cancel))
+            }
         }
     }
 }

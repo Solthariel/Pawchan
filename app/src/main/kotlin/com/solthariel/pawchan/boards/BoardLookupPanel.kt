@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.domain.model.BoardAddress
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun BoardLookupPanel(
@@ -35,6 +37,8 @@ private fun BoardLookupQuickBoards(
     content: BoardLookupContent,
     select: (BoardAddress) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val columns = BOARD_LOOKUP_COLUMNS
     val favoriteRows = (content.favorites.size + columns - 1) / columns
     val recentRows = (content.recent.size + columns - 1) / columns
@@ -50,7 +54,7 @@ private fun BoardLookupQuickBoards(
         )
         if (rows.favorites > 0 && rows.recent > 0) HorizontalDivider()
         BoardLookupGrid(content.recent, columns, rows.recent, select, "board-lookup-recent", content.interactive)
-        if (rows.favorites + rows.recent == 0) BoardLookupMessage("Введите код или название доски")
+        if (rows.favorites + rows.recent == 0) BoardLookupMessage(res.getString(L.ui_enter_board_code_or_name))
     }
 }
 

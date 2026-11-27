@@ -1,6 +1,3 @@
-import os
-from unittest.mock import patch
-
 from publication_fixture import PublicationFixture, assets, state
 
 

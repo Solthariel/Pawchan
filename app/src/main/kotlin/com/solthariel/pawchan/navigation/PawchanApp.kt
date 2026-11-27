@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.navigation
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.solthariel.pawchan.archive.ArchiveController
@@ -22,9 +22,12 @@ import com.solthariel.pawchan.archive.BindArchiveNotices
 import com.solthariel.pawchan.composer.ComposerDraftNotices
 import com.solthariel.pawchan.composer.LocalComposerPreferences
 import com.solthariel.pawchan.core.ui.AppNoticeHost
+import com.solthariel.pawchan.core.ui.LocalAutoOpenKeyboard
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
+import com.solthariel.pawchan.core.ui.LocalTopBarTransparency
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
 import com.solthariel.pawchan.domain.settings.AppSettings
+import com.solthariel.pawchan.domain.settings.NavigationPreferences
 import com.solthariel.pawchan.infrastructure.AppNetworkStack
 import com.solthariel.pawchan.infrastructure.AppNetworkViewModel
 import com.solthariel.pawchan.infrastructure.AppPreferencesViewModel
@@ -36,8 +39,9 @@ import com.solthariel.pawchan.infrastructure.media.MediaPresentationHost
 import com.solthariel.pawchan.media.LocalMediaPreferences
 import com.solthariel.pawchan.media.thumbnail.LocalThumbnailLoader
 import com.solthariel.pawchan.media.video.setVideoStartMuted
+import com.solthariel.pawchan.navigation.chrome.LocalBottomBarOrder
+import com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency
 import com.solthariel.pawchan.settings.SettingsViewModel
-import com.solthariel.pawchan.settings.toPostDisplay
 import com.solthariel.pawchan.ui.PawchanTheme
 import com.solthariel.pawchan.watch.ThreadWatchScheduler
 import com.solthariel.pawchan.workspace.BindWorkspaceLifecycle
@@ -45,9 +49,12 @@ import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.WorkspaceBinding
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun PawchanApp() {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     val preferenceOwner: AppPreferencesViewModel =
         viewModel(
@@ -79,11 +86,13 @@ internal fun PawchanApp() {
         }
 
         ProxyStartup.Failed -> {
-            Text("Не удалось прочитать настройки прокси. Подключения остановлены.")
+            Text(res.getString(L.ui_failed_to_read_proxy_settings))
         }
 
         is ProxyStartup.Ready -> {
-            loaded?.let { initial -> LoadedPawchanApp(settings, preferenceOwner.settings, initial, state.preferences) }
+            loaded?.let { initial ->
+                LoadedPawchanApp(settings, preferenceOwner.settings, initial, state.preferences)
+            }
         }
     }
 }
@@ -126,7 +135,10 @@ private fun LoadedPawchanApp(
     val loadedSettings by settings.loaded.collectAsStateWithLifecycle()
     val appSettings = loadedSettings ?: AppSettings()
     BindAppSettingsEffects(appSettings, archives, dependencies.mediaLoaders, network.stack)
-    androidx.compose.runtime.SideEffect { storage.workspace.readingPreferences = appSettings.behavior.client.reading }
+    androidx.compose.runtime.SideEffect {
+        storage.workspace.readingPreferences =
+            appSettings.behavior.client.reading
+    }
     BindWorkspaceLifecycle(storage.workspace)
     BindArchiveNotices(archives)
 
@@ -138,6 +150,21 @@ private fun LoadedPawchanApp(
             AppSessionSurface(appSettings, storage, dependencies, archives, settings, network.stack.github)
         }
     }
+}
+
+/** Прозрачность панелей, порядок кнопок и клавиатура из «Интерфейса» для всех экранов. */
+@Composable
+private fun ProvideNavigationChrome(
+    navigation: NavigationPreferences,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(
+        LocalTopBarTransparency provides navigation.topBarTransparencyPercent,
+        LocalBottomBarTransparency provides navigation.bottomBarTransparencyPercent,
+        LocalBottomBarOrder provides navigation.bottomBarOrder,
+        LocalAutoOpenKeyboard provides navigation.autoOpenKeyboard,
+        content = content,
+    )
 }
 
 @Composable
@@ -165,10 +192,6 @@ private fun AppSessionSurface(
                             CompositionLocalProvider(
                                 com.solthariel.pawchan.infrastructure.LocalGithubNetwork provides github,
                                 LocalPostDisplayPreferences provides rememberPhonePostDisplay(appSettings),
-                                com.solthariel.pawchan.core.ui.LocalTopBarTransparency provides
-                                    appSettings.behavior.client.reading.navigation.topBarTransparencyPercent,
-                                com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency provides
-                                    appSettings.behavior.client.reading.navigation.bottomBarTransparencyPercent,
                                 LocalComposerPreferences provides appSettings.behavior.client.composer,
                                 LocalMediaPreferences provides appSettings.behavior.client.media,
                                 com.solthariel.pawchan.media.LocalMediaViewEvents provides
@@ -194,8 +217,10 @@ private fun AppSessionSurface(
                                     },
                                 LocalThumbnailLoader provides dependencies.mediaLoaders.thumbnailLoader,
                             ) {
-                                MediaPresentationHost {
-                                    PawchanNavHost(dependencies, settings, loaded.board ?: defaultBoardAddress())
+                                ProvideNavigationChrome(appSettings.behavior.client.reading.navigation) {
+                                    MediaPresentationHost {
+                                        PawchanNavHost(dependencies, settings, loaded.board ?: defaultBoardAddress())
+                                    }
                                 }
                             }
                         }
@@ -223,7 +248,9 @@ private fun BindAppSettingsEffects(
         stack.clearCacheOnExit = appSettings.behavior.client.media.clearCacheOnExit
         loaders.mediaDownloadQueue.preferences = appSettings.behavior.client.downloads
     }
-    LaunchedEffect(appSettings.behavior.videoStartMuted) { setVideoStartMuted(appSettings.behavior.videoStartMuted) }
+    LaunchedEffect(
+        appSettings.behavior.videoStartMuted,
+    ) { setVideoStartMuted(appSettings.behavior.videoStartMuted) }
     LaunchedEffect(archives, appSettings.behavior.updateSavedCopies) {
         archives.updatesEnabled = appSettings.behavior.updateSavedCopies
         ArchiveUpdatePreference.set(context, appSettings.behavior.updateSavedCopies)

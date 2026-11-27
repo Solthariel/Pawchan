@@ -40,6 +40,7 @@ enum class UiIconKind {
     INFINITY,
     SAVE,
     PLAY,
+    VIDEO_PREVIEW_PLAY,
     PAUSE,
     PREVIOUS,
     NEXT,

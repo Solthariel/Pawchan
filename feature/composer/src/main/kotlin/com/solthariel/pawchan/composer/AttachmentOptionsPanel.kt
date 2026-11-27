@@ -18,7 +18,8 @@ internal fun AttachmentOptionsPanel(
     editorState: AttachmentOptionsEditorState = AttachmentOptionsEditorState(),
     onUpdate: (ComposerAttachment) -> Unit,
 ) {
-    val items = attachmentOptionLabels(file, onEditorAction != null, editorState.showNameRemoval)
+    val items = attachmentOptionLabels(file, onEditorAction != null)
+    val nameActive = editorState.namePanelOpen || file.options.customName != null || file.options.removeFileName
     AttachmentControlRow(items.size, modifier, centeredLikeSix = onEditorAction != null && file.video) {
         items.forEach { label ->
             key(label) {
@@ -29,8 +30,7 @@ internal fun AttachmentOptionsPanel(
                     AttachmentOptionTile(
                         AttachmentTileState(
                             label,
-                            label == R.string.attachment_rename &&
-                                (file.options.customName != null || file.options.removeFileName),
+                            label == R.string.attachment_rename && nameActive,
                             enabled && (label != R.string.attachment_edit_image || editorState.imageEditEnabled),
                             action = true,
                         ),
@@ -38,9 +38,7 @@ internal fun AttachmentOptionsPanel(
                         { onEditorAction(label) },
                     )
                 } else {
-                    val staysOnNameTab = editorState.showNameRemoval && label == R.string.attachment_remove_name
-                    val onOtherAction =
-                        onEditorAction?.takeUnless { staysOnNameTab }?.let { action -> { action(label) } }
+                    val onOtherAction = onEditorAction?.let { action -> { action(label) } }
                     AttachmentPanelItem(file, label, enabled, Modifier.weight(1f), onUpdate, onOtherAction)
                 }
             }
@@ -51,13 +49,13 @@ internal fun AttachmentOptionsPanel(
 private fun attachmentOptionLabels(
     file: ComposerAttachment,
     inEditor: Boolean,
-    showNameRemovalInEditor: Boolean,
 ): List<Int> =
     buildList {
         if (inEditor && file.canReencode) add(R.string.attachment_edit_image)
         if (file.format != null) add(R.string.attachment_unique_hash)
         if (file.canStripMetadata || file.options.edit != null) add(R.string.attachment_strip_metadata)
-        if (!inEditor || showNameRemovalInEditor) add(R.string.attachment_remove_name)
+        // The editor has its own remove-name button next to the text field.
+        if (!inEditor) add(R.string.attachment_remove_name)
         add(R.string.markup_spoiler)
         if (file.canReencode) add(R.string.attachment_reencode)
         add(R.string.attachment_rename)

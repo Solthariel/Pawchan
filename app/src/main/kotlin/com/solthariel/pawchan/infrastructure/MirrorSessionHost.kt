@@ -7,9 +7,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.domain.network.ForumMirrors
 import com.solthariel.pawchan.infrastructure.sites.LocalForumMirror
+import com.solthariel.pawchan.R.string as L
 
 internal val LocalForumMirrors = staticCompositionLocalOf<ForumMirrors?> { null }
 
@@ -18,6 +20,8 @@ internal fun MirrorSessionHost(
     stack: AppNetworkStack,
     content: @Composable () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val recovery = stack.mirror.recovery
     if (recovery == null) {
         content()
@@ -31,7 +35,7 @@ internal fun MirrorSessionHost(
             Toast
                 .makeText(
                     context,
-                    "Зеркало недоступно. Переключено на ${state.activeHost}",
+                    res.getString(L.ui_mirror_unavailable_switched_to, state.activeHost),
                     Toast.LENGTH_LONG,
                 ).show()
         }

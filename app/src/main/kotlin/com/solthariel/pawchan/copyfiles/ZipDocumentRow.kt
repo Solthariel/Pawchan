@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -25,6 +26,7 @@ import com.solthariel.pawchan.core.ui.UiMenuIcon
 import com.solthariel.pawchan.core.ui.UiSpacing
 import java.text.DateFormat
 import java.util.Date
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ZipDocumentRow(
@@ -33,6 +35,8 @@ internal fun ZipDocumentRow(
     onMore: (() -> Unit)?,
     available: Boolean = true,
 ) {
+    val res = LocalResources.current
+
     val metadata = remember(document.modified, document.bytes, available) { zipMetadata(document, available) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Row(
@@ -60,7 +64,7 @@ internal fun ZipDocumentRow(
                 )
             }
         }
-        if (onMore != null) CatalogIconButton(UiIconKind.MORE, "Действия с файлом", onClick = onMore)
+        if (onMore != null) CatalogIconButton(UiIconKind.MORE, res.getString(L.ui_file_actions), onClick = onMore)
     }
 }
 

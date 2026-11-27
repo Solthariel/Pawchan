@@ -15,10 +15,19 @@ internal fun BindThreadPendingPost(
 ) {
     val target = address?.let { reading?.pendingPost(it) }
     val index = target?.let { content?.presentation?.postPositions?.get(it) }
-    LaunchedEffect(reading, address, target, index, memory.list) {
+    val omitted =
+        target != null && content
+            ?.presentation
+            ?.contentFilters
+            ?.omittedPosts
+            ?.containsKey(target) == true
+    LaunchedEffect(reading, address, target, index, omitted, memory.list) {
         if (address != null && target != null) {
             if (index != null) {
                 memory.list.scrollToItem(index)
+                reading?.clearPendingPost(address)
+            } else if (omitted) {
+                memory.tools.openPostPreview(PostPreviewTarget(address, target), content)
                 reading?.clearPendingPost(address)
             } else if (content != null) {
                 requestPost(target)

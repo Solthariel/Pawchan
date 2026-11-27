@@ -3,14 +3,18 @@ package com.solthariel.pawchan.thread
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -122,6 +126,7 @@ internal fun rememberThreadScreenMemory(
     val body = rememberSaveable { mutableIntStateOf(defaults.textSize) }
     val maxLines = rememberSaveable { mutableIntStateOf(defaults.collapseLines) }
     val syncPosition = com.solthariel.pawchan.media.LocalMediaPreferences.current.syncThreadPosition
+    val search = rememberSaveable(address, saver = threadSearchSaver) { mutableStateOf(ThreadSearchMemory()) }
     val memory =
         remember(
             list,
@@ -129,7 +134,19 @@ internal fun rememberThreadScreenMemory(
             body,
             maxLines,
             gallery,
-        ) { ThreadScreenMemory(list, ThreadToolsState(scope), scope, body, maxLines, gallery) }
+        ) {
+            val tools = ThreadToolsState(scope).apply { restoreSearch(search.value) }
+            ThreadScreenMemory(list, tools, scope, body, maxLines, gallery)
+        }
     androidx.compose.runtime.SideEffect { memory.syncThreadPosition = syncPosition }
+    LaunchedEffect(memory.tools) {
+        snapshotFlow { memory.tools.searchMemory() }.collect { search.value = it }
+    }
     return memory
 }
+
+private val threadSearchSaver =
+    Saver<MutableState<ThreadSearchMemory>, List<Any?>>(
+        save = { listOf(it.value.open, it.value.query, it.value.flag) },
+        restore = { mutableStateOf(ThreadSearchMemory(it[0] as Boolean, it[1] as String, it[2] as String?)) },
+    )

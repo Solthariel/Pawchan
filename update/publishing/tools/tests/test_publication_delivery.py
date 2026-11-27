@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 import tempfile
 
-from publication_fixture import PublicationFixture, assets, delivery, state
+from publication_fixture import PublicationFixture, assets, state
 
 
 class DeliveryTest(PublicationFixture):

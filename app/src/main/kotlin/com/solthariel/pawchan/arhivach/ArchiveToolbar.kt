@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,13 +38,14 @@ import com.solthariel.pawchan.catalog.CatalogBoardLookupToolbar
 import com.solthariel.pawchan.catalog.CatalogSearchBar
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
+import com.solthariel.pawchan.core.ui.FocusWhenOpened
 import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
-import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiRefreshButton
 import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.core.ui.UiToolbarSearchTransition
 import com.solthariel.pawchan.domain.archive.ArchiveTag
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ArchiveToolbar(
@@ -53,9 +54,11 @@ internal fun ArchiveToolbar(
     searchBindings: ArchiveToolbarSearchBindings,
     galleryEnabled: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     var menuVisible by rememberSaveable { mutableStateOf(false) }
     if (searchBindings.lookup.visible) {
-        CatalogBoardLookupToolbar(searchBindings.lookup, "Введите тег…")
+        CatalogBoardLookupToolbar(searchBindings.lookup, res.getString(L.ui_enter_tag))
     } else if (state.selectedThread != null) {
         ArchiveThreadToolbar(state, actions, searchBindings.words, galleryEnabled)
     } else {
@@ -71,6 +74,8 @@ private fun ArchiveBrowseToolbar(
     menuVisible: Boolean,
     onMenuVisibilityChange: (Boolean) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val pageSearchVisible = searchBindings.words.visible
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -83,12 +88,7 @@ private fun ArchiveBrowseToolbar(
         Unit
     }
     BackHandler(enabled = pageSearchVisible, onBack = closePageSearch)
-    LaunchedEffect(pageSearchVisible) {
-        if (pageSearchVisible) {
-            focusRequester.requestFocus()
-            keyboard?.show()
-        }
-    }
+    FocusWhenOpened(focusRequester, open = pageSearchVisible)
     Row(
         Modifier
             .fillMaxWidth()
@@ -96,7 +96,16 @@ private fun ArchiveBrowseToolbar(
             .padding(horizontal = APP_TOOLBAR_HORIZONTAL_INSET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        UiToolbarButton(UiIconKind.BACK, if (pageSearchVisible) "Закрыть поиск" else "Назад") {
+        UiToolbarButton(
+            UiIconKind.BACK,
+            if (pageSearchVisible) {
+                res.getString(
+                    L.ui_close_search,
+                )
+            } else {
+                res.getString(L.ui_back)
+            },
+        ) {
             if (pageSearchVisible) {
                 closePageSearch()
             } else {
@@ -123,6 +132,8 @@ private fun RowScope.ArchiveListToolbarContent(
     onMenuVisibilityChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
 ) {
+    val res = LocalResources.current
+
     UiToolbarSearchTransition(
         searchVisible = searchBindings.words.visible,
         modifier = Modifier.weight(1f),
@@ -147,9 +158,10 @@ private fun RowScope.ArchiveListToolbarContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Архивач", style = MaterialTheme.typography.titleMedium)
+                    Text(res.getString(L.ui_archiver), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        state.tags.takeIf { it.isNotEmpty() }?.joinToString(" + ") { it.title } ?: "Выбрать тег",
+                        state.tags.takeIf { it.isNotEmpty() }?.joinToString(" + ") { it.title }
+                            ?: res.getString(L.ui_choose_tag),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -161,11 +173,14 @@ private fun RowScope.ArchiveListToolbarContent(
         }
     }
     if (!searchBindings.words.visible) {
-        UiToolbarButton(UiIconKind.SEARCH, "Поиск по словам") { searchBindings.words.setVisible(true) }
+        UiToolbarButton(
+            UiIconKind.SEARCH,
+            res.getString(L.ui_search_by_words),
+        ) { searchBindings.words.setVisible(true) }
     }
     ArchiveRefreshButton(state, actions.model)
     Box {
-        UiToolbarButton(UiIconKind.MORE, "Меню страниц") { onMenuVisibilityChange(true) }
+        UiToolbarButton(UiIconKind.MORE, res.getString(L.ui_pages_menu)) { onMenuVisibilityChange(true) }
         ArchivePageMenu(state, actions.model, menuVisible) { onMenuVisibilityChange(false) }
     }
 }
@@ -175,10 +190,12 @@ private fun ArchiveRefreshButton(
     state: ArchiveBrowseState,
     model: ArchiveBrowseModel,
 ) {
+    val res = LocalResources.current
+
     UiRefreshButton(
         isRefreshing = state.load.loading,
         onClick = model::refresh,
-        description = "Обновить",
+        description = res.getString(L.ui_refresh),
         enabled = !state.load.loading,
     )
 }
@@ -201,6 +218,8 @@ internal fun ArchiveTagSuggestions(
     model: ArchiveBrowseModel,
     close: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     LazyColumn(
         modifier =
             Modifier
@@ -209,10 +228,10 @@ internal fun ArchiveTagSuggestions(
                 .testTag("archive-tag-suggestions"),
     ) {
         if (state.search.error) {
-            item { ArchiveTagSuggestionMessage("Не удалось найти теги") }
+            item { ArchiveTagSuggestionMessage(res.getString(L.ui_failed_to_find_tags)) }
         }
         if (state.search.query.isBlank()) {
-            item { ArchiveTagSuggestionMessage("Введите название тега") }
+            item { ArchiveTagSuggestionMessage(res.getString(L.ui_enter_tag_name)) }
         }
         items(state.search.suggestions, key = { it.id }) { tag ->
             val selected = state.tags.any { it.id == tag.id }

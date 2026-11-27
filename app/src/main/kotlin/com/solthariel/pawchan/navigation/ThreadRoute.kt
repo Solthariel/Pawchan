@@ -69,7 +69,6 @@ internal fun ThreadRoute(
             AppNavigationWorkspace(
                 actions = bottomActions.copy(onWriteClick = onWrite),
                 selected = null,
-                hideWithKeyboard = true,
                 floatingTop = true,
                 content = content,
             )

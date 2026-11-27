@@ -4,8 +4,6 @@ import com.solthariel.pawchan.domain.drafts.DraftMarkTool
 import com.solthariel.pawchan.domain.drafts.DraftRedactionMode
 import com.solthariel.pawchan.domain.drafts.DraftRedactionTool
 import com.solthariel.pawchan.domain.drafts.DraftShapeKind
-import com.solthariel.pawchan.domain.drafts.DraftTextAlignment
-import com.solthariel.pawchan.domain.drafts.DraftTextStyle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,18 +52,5 @@ class ImageToolSelectionTest {
             tools.redactionConfig().markTool,
         )
         assertEquals(8, IMAGE_EDITOR_COLORS.size)
-    }
-
-    @Test
-    fun textStyleColorAndAlignmentBecomeAppearance() {
-        val tools = ImageToolSelection()
-        assertEquals(DraftTextStyle.MEME, tools.textAppearance().style)
-        tools.textStyle = DraftTextStyle.BANNER
-        tools.textAlignment = DraftTextAlignment.RIGHT
-        tools.color = IMAGE_EDITOR_COLORS.last()
-        val appearance = tools.textAppearance()
-        assertEquals(DraftTextStyle.BANNER, appearance.style)
-        assertEquals(DraftTextAlignment.RIGHT, appearance.alignment)
-        assertEquals(IMAGE_EDITOR_COLORS.last(), appearance.color)
     }
 }

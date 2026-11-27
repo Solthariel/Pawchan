@@ -11,6 +11,7 @@ import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
 import com.solthariel.pawchan.domain.proxy.ProxyService
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
+import com.solthariel.pawchan.infrastructure.CookieRuleStore
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
@@ -53,7 +54,7 @@ internal class ArchiveMediaWorker(
             }
         val client =
             DvachHttpClient
-                .create(AndroidCookieJar())
+                .create(AndroidCookieJar(rules = CookieRuleStore.get(applicationContext)::current))
                 .newBuilder()
                 .viaProxyRouter(router)
                 .addInterceptor(

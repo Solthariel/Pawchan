@@ -25,11 +25,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.drafts.DraftCrop
-import com.solthariel.pawchan.domain.drafts.DraftTextMark
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 /** Preview and hit targets share the same fitted frame and viewport transform. */
 @Composable
@@ -43,14 +44,13 @@ internal fun ImageEditorCanvas(
 ) {
     var viewport by remember(source) { mutableStateOf(ImageViewport()) }
     val preview = rememberCanvasPreview(source, state, config)
-    val canZoom = config.mode != ImageEditorCanvasMode.TEXT || config.textIndex == null
     val frame =
         modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .testTag("attachment-image-canvas")
             .clipToBounds()
-            .imageViewportInput(options.enabled && canZoom, config.mode) { viewport = viewport.transform(it) }
+            .imageViewportInput(options.enabled, config.mode) { viewport = viewport.transform(it) }
     BoxWithConstraints(frame, contentAlignment = Alignment.Center) {
         if (preview.dimensions == null) {
             AttachmentPreviewPlaceholder(preview.failed)
@@ -69,6 +69,8 @@ private fun androidx.compose.foundation.layout.BoxWithConstraintsScope.ImageEdit
     viewport: ImageViewport,
     options: ImageCanvasOptions,
 ) {
+    val res = LocalResources.current
+
     val dimensions = requireNotNull(preview.dimensions)
     val cropPadding = 24.dp
     val ratio = dimensions.width.toFloat() / dimensions.height
@@ -96,7 +98,7 @@ private fun androidx.compose.foundation.layout.BoxWithConstraintsScope.ImageEdit
             if (options.comparisonBitmap != null) {
                 Image(
                     options.comparisonBitmap.asImageBitmap(),
-                    "Оригинал",
+                    res.getString(L.ui_original_64ea),
                     Modifier.fillMaxSize().testTag("editor-comparison-image"),
                     contentScale = ContentScale.Fit,
                 )
@@ -117,7 +119,13 @@ private fun androidx.compose.foundation.layout.BoxWithConstraintsScope.ImageEdit
             }
         }
         if (options.comparisonBitmap == null) {
-            EditorCropLayer(state, config, dimensions, options.enabled && preview.rendered && frameStable, cropPadding)
+            EditorCropLayer(
+                state,
+                config,
+                dimensions,
+                options.enabled && preview.rendered && frameStable,
+                cropPadding,
+            )
         }
     }
 }
@@ -154,7 +162,7 @@ private fun rememberCanvasPreview(
     state: ImageEditorState,
     config: ImageEditorCanvasConfig,
 ): CanvasPreview {
-    val displayEdit = imageEditorDisplayEdit(state.edit, config.mode)
+    val displayEdit = imageEditorDisplayEdit(state.edit)
     val liveMark = state.inGesture && state.gestureStart != null && config.markTool != null
     val previewEdit = if (liveMark) requireNotNull(state.gestureStart).copy(crop = DraftCrop()) else displayEdit
     val frame = rememberEditorPreview(source, previewEdit)
@@ -163,11 +171,24 @@ private fun rememberCanvasPreview(
         frame?.let {
             imagePreviewContinuation(it.edit, displayEdit) ?: imagePreviewFallback(it.edit, displayEdit)
         }
-    val transform = if (rendered == null) frame?.let { imagePreviewFallbackTransform(it.edit, previewEdit) } else null
+    val transform =
+        if (rendered ==
+            null
+        ) {
+            frame?.let { imagePreviewFallbackTransform(it.edit, previewEdit) }
+        } else {
+            null
+        }
     val visible = rendered ?: frame?.bitmap.takeIf { pending != null || transform != null }
     val visibleSize =
         visible?.let {
-            if (transform?.quarterTurns?.rem(2) == 1) IntSize(it.height, it.width) else IntSize(it.width, it.height)
+            if (transform?.quarterTurns?.rem(2) ==
+                1
+            ) {
+                IntSize(it.height, it.width)
+            } else {
+                IntSize(it.width, it.height)
+            }
         }
     return CanvasPreview(
         displayEdit,
@@ -208,6 +229,8 @@ private fun androidx.compose.foundation.layout.BoxScope.CanvasImageLayers(
     onLimit: () -> Unit,
     presentation: ImageCanvasPresentation,
 ) {
+    val res = LocalResources.current
+
     if (visible != null) {
         BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             val turns = presentation.transform?.quarterTurns ?: 0
@@ -232,11 +255,14 @@ private fun androidx.compose.foundation.layout.BoxScope.CanvasImageLayers(
         presentation.pendingMarks?.forEach { mark ->
             ImagePendingMarkOverlay(presentation.displayEdit, mark, sourceSize, Modifier.fillMaxSize())
         }
-        val showCropMask = config.mode != ImageEditorCanvasMode.CROP && config.mode != ImageEditorCanvasMode.TEXT
-        if (showCropMask) ImageCropPreviewMask(state.edit, Modifier.fillMaxSize())
+        if (config.mode != ImageEditorCanvasMode.CROP) ImageCropPreviewMask(state.edit, Modifier.fillMaxSize())
     }
     if (presentation.failed) {
-        Text("Не удалось обработать предпросмотр", color = Color.White, modifier = Modifier.align(Alignment.Center))
+        Text(
+            res.getString(L.ui_failed_to_process_preview),
+            color = Color.White,
+            modifier = Modifier.align(Alignment.Center),
+        )
     }
     if (presentation.interactive) ImageEditorCanvasOverlay(state, config, onLimit)
 }
@@ -255,14 +281,6 @@ private fun ImageEditorCanvasOverlay(
         ImageEditorCanvasMode.MARK -> {
             config.markTool?.let { tool ->
                 ImageMarkOverlay(state.edit, tool, state.markActions(onLimit), Modifier.fillMaxSize())
-            }
-        }
-
-        ImageEditorCanvasMode.TEXT -> {
-            if (state.edit.marks.getOrNull(config.textIndex ?: -1) is DraftTextMark) {
-                ImageTextTransformOverlay(state, requireNotNull(config.textIndex), Modifier.fillMaxSize())
-            } else {
-                ImageTextOverlay(config.onTextPoint, Modifier.fillMaxSize())
             }
         }
 

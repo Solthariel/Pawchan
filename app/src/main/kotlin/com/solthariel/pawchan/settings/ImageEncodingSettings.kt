@@ -11,10 +11,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.ImageQualityControl
 import com.solthariel.pawchan.domain.settings.AttachmentDefaults
 import com.solthariel.pawchan.domain.settings.ReencodeFormat
+import com.solthariel.pawchan.R.string as L
 
 internal fun imageEncodingGroup(
     files: AttachmentDefaults,
@@ -63,6 +65,8 @@ internal fun UploadNameSetting(
     value: String,
     onChange: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     var text by rememberSaveable(value) { mutableStateOf(value) }
     val valid = validUploadBase(text)
     OutlinedTextField(
@@ -71,13 +75,13 @@ internal fun UploadNameSetting(
             text = it
             if (validUploadBase(it)) onChange(it)
         },
-        label = { Text("Имя без расширения") },
+        label = { Text(res.getString(L.ui_name_without_extension)) },
         supportingText = {
             Text(
                 if (valid) {
-                    "Расширение добавляется по формату файла"
+                    res.getString(L.ui_the_extension_is_added_according)
                 } else {
-                    "От 1 до 120 символов, без /, \\ и управляющих символов"
+                    res.getString(L.ui_1_to_120_characters_without)
                 },
             )
         },

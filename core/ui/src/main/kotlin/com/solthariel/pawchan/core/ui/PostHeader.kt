@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.solthariel.pawchan.core.ui.R.string as L
 
 /** Shared post header: identifiers and state, followed by byline and optional rating. */
 @Composable
@@ -48,11 +50,13 @@ fun PostHeaderIndex(
     deleted: Boolean,
     index: Int,
 ) {
+    val res = LocalResources.current
+
     if (deleted) {
         PostHeaderText(
             "X",
             MaterialTheme.colorScheme.error,
-            Modifier.semantics { contentDescription = "Удалён" },
+            Modifier.semantics { contentDescription = res.getString(L.ui_removed) },
             weight = FontWeight.Bold,
         )
     } else {

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.activeContentFilters
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.domain.settings.DEFAULT_SHOW_HIDDEN_POSTS
 import com.solthariel.pawchan.domain.thread.ThreadRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ internal data class PostPreviewState(
     val posts: List<ThreadPostUi> = emptyList(),
     val failure: String? = null,
     val remote: Boolean = false,
+    val replies: Boolean = false,
 )
 
 internal fun postPreviewIsMissing(
@@ -41,20 +43,15 @@ internal class PostPreviewViewModel(
     rules: Flow<List<ContentFilterRule>> = flowOf(emptyList()),
     initial: PostPreviewState = PostPreviewState(),
     private val presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    showHiddenPosts: Flow<Boolean> = flowOf(DEFAULT_SHOW_HIDDEN_POSTS),
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(initial)
     private var job: Job? = null
     private var loadedTarget: PostPreviewTarget? = null
     private var loadedLocal: ThreadUiState.Content? = null
     val state =
-        combine(mutableState, rules.activeContentFilters()) { raw, filters ->
-            if (!raw.remote) {
-                raw
-            } else {
-                val content = raw.content?.filteredContent(filters) as? ThreadUiState.Content
-                val ids = raw.posts.map { it.id }.toSet()
-                raw.copy(content = content, posts = content?.posts.orEmpty().filter { it.id in ids })
-            }
+        combine(mutableState, rules.activeContentFilters(), showHiddenPosts) { raw, filters, placeholders ->
+            raw.withPreviewFilters(filters, placeholders)
         }.flowOn(presentationDispatcher).stateIn(viewModelScope, SharingStarted.Eagerly, initial)
 
     fun load(
@@ -108,6 +105,7 @@ internal class PostPreviewViewModel(
                 posts,
                 if (content == null) "Не удалось загрузить пост" else null,
                 remote = !(matches && (target.replies || localPost)),
+                replies = target.replies,
             )
         }
     }
@@ -139,11 +137,12 @@ internal class PostPreviewViewModel(
             target: PostPreviewTarget? = null,
             local: ThreadUiState.Content? = null,
             presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
+            showHiddenPosts: Flow<Boolean> = flowOf(DEFAULT_SHOW_HIDDEN_POSTS),
         ): ViewModelProvider.Factory {
             val initial = target?.let { localPostPreview(it, local) } ?: PostPreviewState()
             return viewModelFactory {
                 initializer {
-                    PostPreviewViewModel(repository, rules, initial, presentationDispatcher)
+                    PostPreviewViewModel(repository, rules, initial, presentationDispatcher, showHiddenPosts)
                 }
             }
         }

@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.PostSeparator
@@ -18,6 +19,7 @@ import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
 import com.solthariel.pawchan.thread.SharedPostPreviewStack
 import com.solthariel.pawchan.thread.SharedPostPreviewWindow
 import com.solthariel.pawchan.thread.SharedPreviewEntry
+import com.solthariel.pawchan.R.string as L
 
 internal data class ArchivePreviewTarget(
     val number: Long,
@@ -65,6 +67,8 @@ private fun ArchivePreviewWindow(
     threadStatus: String?,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val posts =
         if (target.replies) {
             presentation.replies[target.number].orEmpty()
@@ -75,7 +79,16 @@ private fun ArchivePreviewWindow(
     val thumbnails = rememberThumbnailLoading(loaders.thumbnailLoader, list)
     SharedPostPreviewWindow(onClose) {
         if (posts.isEmpty()) {
-            Text(if (target.replies) "Ответов пока нет" else "Пост отсутствует или удалён", Modifier.padding(12.dp))
+            Text(
+                if (target.replies) {
+                    res.getString(
+                        L.ui_no_replies_yet,
+                    )
+                } else {
+                    res.getString(L.ui_post_is_missing_or_deleted)
+                },
+                Modifier.padding(12.dp),
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.testTag("preview-list"),

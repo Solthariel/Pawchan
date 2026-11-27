@@ -7,12 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.core.ui.AppAlertDialog
+import com.solthariel.pawchan.R.string as L
 
 internal const val RELEASE_URL = "https://github.com/Solthariel/Pawchan/releases/latest"
-internal const val AUTHOR_URL = "https://solthariel.github.io/"
 
 @Composable
 internal fun AboutLink(
@@ -26,14 +27,21 @@ internal fun AboutLink(
 
 @Composable
 internal fun AboutVersions() {
+    val res = LocalResources.current
+
     var open by remember { mutableStateOf(false) }
-    SettingsItemRow(SettingsItem.Action("Версии компонентов", "Инструменты и основные библиотеки") { open = true })
+    SettingsItemRow(
+        SettingsItem.Action(res.getString(L.ui_component_versions), res.getString(L.ui_tools_and_core_libraries)) {
+            open =
+                true
+        },
+    )
     if (open) {
         AppAlertDialog(
             onDismissRequest = { open = false },
-            title = { Text("Версии компонентов") },
+            title = { Text(res.getString(L.ui_component_versions)) },
             text = { Text(BuildConfig.COMPONENT_VERSIONS) },
-            confirmButton = { TextButton(onClick = { open = false }) { Text("Закрыть") } },
+            confirmButton = { TextButton(onClick = { open = false }) { Text(res.getString(L.ui_close)) } },
         )
     }
 }

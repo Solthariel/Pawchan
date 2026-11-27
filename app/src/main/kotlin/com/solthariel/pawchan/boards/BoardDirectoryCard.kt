@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun BoardDirectoryCard(
@@ -32,6 +34,9 @@ internal fun BoardDirectoryCard(
     actions: BoardListActions,
     modifier: Modifier = Modifier,
 ) {
+    val res = LocalResources.current
+
+    val bookmarkLabel = if (board.favorite) L.ui_remove_board_from_favorites else L.ui_add_board_to_favorites
     val shape = RoundedCornerShape(14.dp)
     Surface(
         modifier =
@@ -42,7 +47,11 @@ internal fun BoardDirectoryCard(
                 .semantics { contentDescription = "${board.codeLabel} ${board.entry.title}" }
                 .testTag("board-card:${board.entry.address.board.value}"),
         shape = shape,
-        color = boardCardSurface(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainerLow),
+        color =
+            boardCardSurface(
+                MaterialTheme.colorScheme.background,
+                MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = BOARD_CARD_VERTICAL_PADDING),
@@ -65,12 +74,7 @@ internal fun BoardDirectoryCard(
                 BoardStatus(board.entry, postsPerHour = null, unavailable = board.unavailable)
                 UiToolbarButton(
                     kind = if (board.favorite) UiIconKind.BOOKMARK_FILLED else UiIconKind.BOOKMARK_ADD,
-                    description =
-                        if (board.favorite) {
-                            "Убрать доску из избранного"
-                        } else {
-                            "Добавить доску в избранное"
-                        },
+                    description = res.getString(bookmarkLabel),
                     active = board.favorite,
                     onClick = {
                         actions.onFavoriteChanged(board.entry.address, !board.favorite)

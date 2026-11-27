@@ -8,12 +8,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 internal data class ComposerFieldsAccess(
     val count: Int,
@@ -25,14 +27,16 @@ internal fun ComposerFieldsButton(
     access: ComposerFieldsAccess,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     val colors = MaterialTheme.colorScheme
     IconButton(
         onClick = access.onOpen,
         enabled = enabled,
         modifier =
             Modifier.size(48.dp).semantics {
-                contentDescription = "Дополнительные поля"
-                stateDescription = "Заполнено ${access.count}"
+                contentDescription = res.getString(L.ui_additional_fields)
+                stateDescription = res.getString(L.ui_filled, access.count)
             },
     ) {
         BadgedBox(badge = {

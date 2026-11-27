@@ -6,23 +6,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.infrastructure.LocalForumMirrors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun MirrorAvailabilitySetting(
     app: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
+    val res = LocalResources.current
+
     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
     SettingsItemRow(
         SettingsItem.Toggle(
-            "Автовыбор зеркала",
-            "При недоступности выбранного",
+            res.getString(L.ui_auto_select_mirror),
+            res.getString(L.ui_when_the_selected_one_is),
             app.behavior.client.connection.automaticFallback,
         ) { enabled ->
             update { it.withClient { c -> c.copy(connection = c.connection.copy(automaticFallback = enabled)) } }

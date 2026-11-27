@@ -2,10 +2,8 @@ package com.solthariel.pawchan.infrastructure.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.solthariel.pawchan.domain.model.BoardPost
-import com.solthariel.pawchan.domain.model.PostAddress
 import com.solthariel.pawchan.domain.model.ThreadAddress
+import com.solthariel.pawchan.domain.settings.hiddenPostPlaceholders
 import com.solthariel.pawchan.thread.PostPreviewActions
 import com.solthariel.pawchan.thread.PostPreviewResources
 import com.solthariel.pawchan.workspace.LocalWorkspace
@@ -27,6 +25,7 @@ internal fun rememberAppPostPreviewResources(): PostPreviewResources? {
         binding.loaders.thumbnailLoader,
         actions,
         binding.appSettings?.appSettings?.map { it.contentFilters } ?: kotlinx.coroutines.flow.flowOf(emptyList()),
+        binding.appSettings.hiddenPostPlaceholders(),
     )
 }
 

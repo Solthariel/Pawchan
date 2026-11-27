@@ -18,16 +18,20 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
+import kotlinx.coroutines.delay
+import com.solthariel.pawchan.core.media.R.string as L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +41,18 @@ internal fun VideoSeekRow(
     seekColors: ColorScheme = MaterialTheme.colorScheme,
 ) {
     var scrubbing by remember(player) { mutableStateOf<Float?>(null) }
-    val position = scrubbing?.toLong() ?: progress.position
+    var pendingSeek by remember(player) { mutableStateOf<Long?>(null) }
+    val smooth by rememberSmoothVideoPosition(progress, rememberVideoSpeed(player))
+    val position = scrubbing?.toLong() ?: pendingSeek ?: smooth
+    LaunchedEffect(pendingSeek) {
+        if (pendingSeek != null) {
+            delay(SEEK_SETTLE_TIMEOUT_MS)
+            pendingSeek = null
+        }
+    }
+    LaunchedEffect(progress.position) {
+        if (pendingSeek?.let { seekSettled(progress.position, it) } == true) pendingSeek = null
+    }
     Row(Modifier.fillMaxWidth().height(SEEK_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         VideoTimeLabel(videoTimeLabel(position))
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
@@ -47,7 +62,10 @@ internal fun VideoSeekRow(
                 seekColors,
                 onChange = { scrubbing = it },
                 onFinish = {
-                    scrubbing?.let { player.seekTo(it.toLong()) }
+                    scrubbing?.let {
+                        pendingSeek = it.toLong()
+                        player.seekTo(it.toLong())
+                    }
                     scrubbing = null
                 },
             )
@@ -65,12 +83,18 @@ private fun RowScope.VideoSeekSlider(
     onChange: (Float) -> Unit,
     onFinish: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val seekable = progress.duration > 0L && progress.seekable
     Slider(
         value = if (seekable) position else 0f,
         onValueChange = onChange,
         onValueChangeFinished = onFinish,
-        modifier = Modifier.weight(1f).padding(horizontal = 12.dp).semantics { contentDescription = "Перемотка видео" },
+        modifier =
+            Modifier.weight(1f).padding(horizontal = 12.dp).semantics {
+                contentDescription =
+                    res.getString(L.ui_video_seek)
+            },
         enabled = seekable,
         valueRange = 0f..progress.duration.coerceAtLeast(1L).toFloat(),
         thumb = { VideoSeekThumb(seekable, seekColors) },

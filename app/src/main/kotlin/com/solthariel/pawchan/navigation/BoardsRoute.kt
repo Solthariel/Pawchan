@@ -1,13 +1,8 @@
 package com.solthariel.pawchan.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -16,12 +11,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.solthariel.pawchan.boards.ARCHIVE_SOURCE_ID
 import com.solthariel.pawchan.boards.BoardSwipeDirection
 import com.solthariel.pawchan.boards.BoardsAddressBindings
@@ -40,16 +32,7 @@ import com.solthariel.pawchan.core.ui.APP_TOP_BAR_HEIGHT
 import com.solthariel.pawchan.core.ui.FloatingTopChromeState
 import com.solthariel.pawchan.core.ui.rememberFloatingTopChromeState
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
-import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
-import com.solthariel.pawchan.domain.boards.PostingAccessRepository
-import com.solthariel.pawchan.domain.catalog.CatalogRepository
-import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.ThreadAddress
-import com.solthariel.pawchan.domain.posting.PostingRepository
-import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
-import com.solthariel.pawchan.domain.settings.ThemePreference
-import com.solthariel.pawchan.domain.thread.ThreadRepository
 import com.solthariel.pawchan.infrastructure.sites.ForumWebLink
 import com.solthariel.pawchan.infrastructure.sites.LocalForumMirror
 import com.solthariel.pawchan.infrastructure.sites.appForumWebLinks
@@ -59,7 +42,7 @@ import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.openThread
-import kotlinx.coroutines.flow.map
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun BoardsRoute(
@@ -136,9 +119,11 @@ private fun ArchiveDirectoryPlaceholder(
     onForumSwipe: (BoardSwipeDirection) -> Unit,
     chrome: FloatingTopChromeState,
 ) {
+    val res = LocalResources.current
+
     com.solthariel.pawchan.core.ui.FloatingTopChrome(state = chrome, toolbar = {
         com.solthariel.pawchan.settings.SettingsPageToolbar(
-            title = "Архивач",
+            title = res.getString(L.ui_archiver),
             back = onBack,
             actions = {},
         )

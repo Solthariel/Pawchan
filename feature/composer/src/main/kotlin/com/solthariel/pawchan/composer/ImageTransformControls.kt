@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.uiChoiceGroup
 import com.solthariel.pawchan.domain.drafts.cropToAspect
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ImageAspectRatioControls(
@@ -17,14 +19,20 @@ internal fun ImageAspectRatioControls(
     size: ReencodingDimensions,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         CropPresetGroup(draft, size, enabled, COMPACT_CROP_PRESETS, Modifier.weight(CROP_GROUP_WEIGHT))
         EditorChoiceButton(
-            EditorChoice("Изменить ориентацию пропорции", R.drawable.ic_tool_orientation),
+            EditorChoice(res.getString(L.ui_change_aspect_ratio_orientation), R.drawable.ic_tool_orientation),
             enabled && draft.cropPreset !in setOf(ImageCropPreset.FREE, ImageCropPreset.SQUARE),
             Modifier.weight(1f),
         ) {
-            if (draft.cropPreset == ImageCropPreset.ORIGINAL) draft.cropOriginalInverted = !draft.cropOriginalInverted
+            if (draft.cropPreset ==
+                ImageCropPreset.ORIGINAL
+            ) {
+                draft.cropOriginalInverted = !draft.cropOriginalInverted
+            }
             selectCropPreset(draft, size, draft.cropPreset.rotated(), applyAspect = true)
         }
     }
@@ -80,9 +88,11 @@ internal fun ImageRotationControls(
     draft: AttachmentViewerDraft,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         EditorChoiceButton(
-            EditorChoice("Повернуть влево на 90°", R.drawable.ic_tool_rotate_left),
+            EditorChoice(res.getString(L.ui_rotate_left_90), R.drawable.ic_tool_rotate_left),
             enabled,
             Modifier.weight(1f),
         ) {
@@ -90,7 +100,7 @@ internal fun ImageRotationControls(
             draft.cropPreset = draft.cropPreset.rotated()
         }
         EditorChoiceButton(
-            EditorChoice("Повернуть вправо на 90°", R.drawable.ic_tool_rotate_right),
+            EditorChoice(res.getString(L.ui_rotate_right_90), R.drawable.ic_tool_rotate_right),
             enabled,
             Modifier.weight(1f),
         ) {
@@ -107,15 +117,17 @@ private fun androidx.compose.foundation.layout.RowScope.ImageMirrorControls(
     draft: AttachmentViewerDraft,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     EditorChoiceButton(
-        EditorChoice("Отразить по горизонтали", R.drawable.ic_tool_mirror_horizontal),
+        EditorChoice(res.getString(L.ui_flip_horizontally), R.drawable.ic_tool_mirror_horizontal),
         enabled,
         Modifier.weight(1f),
     ) {
         draft.editor.commit(draft.editor.edit.flipHorizontal())
     }
     EditorChoiceButton(
-        EditorChoice("Отразить по вертикали", R.drawable.ic_tool_mirror_vertical),
+        EditorChoice(res.getString(L.ui_flip_vertically), R.drawable.ic_tool_mirror_vertical),
         enabled,
         Modifier.weight(1f),
     ) {

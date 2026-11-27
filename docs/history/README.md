@@ -24,6 +24,7 @@
 | [POST_SHAPE_STANDARD.md](POST_SHAPE_STANDARD.md) | Post state geometry (0.1.24) |
 | [PREVIEW_PULL_FIX.md](PREVIEW_PULL_FIX.md) | История исправления жеста окон ответов |
 | [PUBLICATION_0_1_29.md](PUBLICATION_0_1_29.md) | Разбор сбоя повторной публикации 0.1.29 |
+| [Ревью 0.1.52](REVIEW_0_1_52.md) | Заметки к предыдущим исходникам, не инструкция для текущей версии |
 | [RELEASE_0_1_0.md](RELEASE_0_1_0.md) | Подготовка выпуска 0.1.0 |
 | [ROBUSTNESS_AUDIT.md](ROBUSTNESS_AUDIT.md) | Защита фильтрации, превью и сессий капчи — 0.1.21 |
 | [TECHNICAL_AUDIT_0_1_27.md](TECHNICAL_AUDIT_0_1_27.md) | Технический аудит Pawchan 0.1.27 |

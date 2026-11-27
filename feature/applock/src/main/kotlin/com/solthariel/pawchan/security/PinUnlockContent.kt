@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.feature.applock.R
+import com.solthariel.pawchan.feature.applock.R.string as L
 
 /** No protected content, screenshots, or saved PIN digits are used for this background. */
 @Composable
@@ -70,9 +73,11 @@ private fun PinUnlockHeading(
     digits: String,
     state: AppLockState,
 ) {
+    val res = LocalResources.current
+
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            "Введите PIN-код",
+            res.getString(L.ui_enter_pin),
             modifier = Modifier.fillMaxWidth(),
             color = Color.White,
             style = MaterialTheme.typography.titleLarge,
@@ -80,16 +85,30 @@ private fun PinUnlockHeading(
         )
         Text(
             "●".repeat(digits.length) + "○".repeat(PIN_LENGTH - digits.length),
-            Modifier.semantics { contentDescription = "Введено цифр: ${digits.length} из $PIN_LENGTH" },
+            Modifier.semantics {
+                contentDescription =
+                    res.getString(L.ui_digits_entered_of, digits.length, PIN_LENGTH)
+            },
             color = Color.White,
             style = MaterialTheme.typography.headlineMedium,
         )
         Text(
             when {
-                !state.ready -> "Загрузка…"
-                state.busy -> "Проверка…"
-                state.retrySeconds > 0 -> "Повторите через ${state.retrySeconds} с"
-                else -> state.error.orEmpty()
+                !state.ready -> {
+                    res.getString(L.ui_loading)
+                }
+
+                state.busy -> {
+                    res.getString(L.ui_checking_e17a)
+                }
+
+                state.retrySeconds > 0 -> {
+                    res.getQuantityString(R.plurals.ui_retry_in_sec, state.retrySeconds, state.retrySeconds)
+                }
+
+                else -> {
+                    state.error.orEmpty()
+                }
             },
             Modifier.fillMaxWidth(),
             color = if (state.error != null && !state.busy && state.ready) UNLOCK_ERROR else Color.White,

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="update_current_version">Asennettu: %1$s</string>
+    <string name="update_check">Tarkista päivitykset</string>
+    <string name="update_checking">Päivityksiä tarkistetaan…</string>
+    <string name="update_up_to_date">Uusin versio on asennettu.</string>
+    <string name="update_available">Saatavilla: %1$s</string>
+    <string name="update_download">Lataa päivitys</string>
+    <string name="update_downloading">Ladataan: %1$d%%</string>
+    <string name="update_install">Asenna päivitys</string>
+    <string name="update_not_configured">Päivityspalvelimen osoitetta ei ole vielä määritetty.</string>
+    <string name="update_error">Päivityksen tarkistaminen tai lataaminen epäonnistui.</string>
+    <string name="update_permission">Salli päivitysten asennus ja paina ”Asenna” uudelleen.</string>
+</resources>

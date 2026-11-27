@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -23,22 +21,11 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
-import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
-import com.solthariel.pawchan.domain.boards.PostingAccessRepository
-import com.solthariel.pawchan.domain.catalog.CatalogRepository
-import com.solthariel.pawchan.domain.library.ThreadLibraryRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
-import com.solthariel.pawchan.domain.model.ThreadAddress
-import com.solthariel.pawchan.domain.posting.PostingRepository
-import com.solthariel.pawchan.domain.postpreferences.PostPreferencesRepository
-import com.solthariel.pawchan.domain.thread.ThreadRepository
 import com.solthariel.pawchan.infrastructure.thread.AppPostLinkHost
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomBar
@@ -51,7 +38,6 @@ import com.solthariel.pawchan.workspace.BindWorkspaceRoute
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import com.solthariel.pawchan.workspace.validRestorableRoute
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 
 // Последний экран читается один раз до того, как стек начнёт перезаписывать его.
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -62,9 +48,9 @@ internal fun PawchanNavHost(
     homeBoard: BoardAddress,
 ) {
     val workspace = LocalWorkspace.current
-    val restoredRoute =
+    val restored =
         remember {
-            initialWorkspaceRoute(
+            initialWorkspaceRestore(
                 workspace?.controller,
                 settings.loaded.value
                     ?.behavior
@@ -73,7 +59,8 @@ internal fun PawchanNavHost(
                     ?.restoreLastScreen == true,
             )
         }
-    val baseRoute = rememberSaveable { AppRoute.catalog(restoredBaseBoard(restoredRoute, homeBoard)) }
+    val baseRoute =
+        rememberSaveable { AppRoute.catalog(restoredBaseBoard(restored.route, homeBoard, restored.base)) }
     val navController = rememberNavController(remember { InstantNavigator() })
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destinationRoute = backStackEntry?.destination?.route
@@ -84,16 +71,13 @@ internal fun PawchanNavHost(
             ?.toBoardAddress()
             ?.let(AppRoute::catalog)
     val (lastCatalogRoute, selectedForum) = rememberForumSelection(baseRoute, currentCatalogRoute)
-    val forumCatalogs = rememberForumCatalogs(baseRoute, currentCatalogRoute)
     val catalogStates = rememberSaveableStateHolder()
     val archiveOwner = checkNotNull(LocalViewModelStoreOwner.current)
     val boardLists = remember { mutableStateMapOf<String, com.solthariel.pawchan.boards.BoardsListUi>() }
     PrewarmBoardLists(dependencies, archiveOwner, boardLists)
     val lastThreadRoute = rememberLastThreadRoute(navController)
-    val bottomActions =
-        bottomActions(navController) {
-            openSelectedCatalog(navController, selectedForum.value, forumCatalogs.value, lastCatalogRoute.value)
-        }
+    // «Каталог» всегда возвращает туда, где читали: выбор форума в «Досках» меняет только список.
+    val bottomActions = bottomActions(navController) { navController.navigateCatalogTab() }
     BindWorkspaceRoute(navController, workspace?.controller)
     workspace?.let { BindWorkspaceReplyChecks(it) }
     val threadSessions = rememberThreadSessionStores(workspace?.controller)
@@ -115,7 +99,7 @@ internal fun PawchanNavHost(
             if (destinationRoute in THREAD_WORKSPACE_ROUTES) SharedThreadsBar(bottomActions)
         }
     }
-    BindTabNavigation(navController, destinationRoute, restoredRoute)
+    BindTabNavigation(navController, backStackEntry?.id, destinationRoute, restored)
 }
 
 @Composable
@@ -127,7 +111,7 @@ private fun AppNavigationContent(
     catalogSession: CatalogSession,
     baseRoute: String,
 ) {
-    AppPostLinkHost(onOpenBoard = navController::navigateBoard) {
+    AppPostLinkHost(onOpenBoard = navController::openLinkedBoard) {
         ThreadPostVoteHost(dependencies.postVotes) {
             AppAnimatedNavHost(navController, baseRoute) {
                 appDestinations(navController, dependencies, settings, bottomActions, catalogSession)
@@ -139,16 +123,17 @@ private fun AppNavigationContent(
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun androidx.compose.foundation.layout.BoxScope.SharedThreadsBar(actions: AppBottomActions) {
-    AppBottomBar(
-        actions = actions,
-        selected = AppBottomDestination.THREADS,
-        modifier =
-            Modifier
-                .align(Alignment.BottomCenter)
-                .windowInsetsPadding(
-                    WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Horizontal),
-                ),
-    )
+    com.solthariel.pawchan.navigation.chrome.KeyboardAwareBar(
+        com.solthariel.pawchan.navigation.chrome
+            .keyboardShown(),
+        Modifier
+            .align(Alignment.BottomCenter)
+            .windowInsetsPadding(
+                WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Horizontal),
+            ),
+    ) {
+        AppBottomBar(actions = actions, selected = AppBottomDestination.THREADS)
+    }
 }
 
 private fun rememberCatalogSession(
@@ -165,28 +150,6 @@ private fun rememberCatalogSession(
     boardLists,
 )
 
-private fun openSelectedCatalog(
-    navController: androidx.navigation.NavHostController,
-    selected: String,
-    catalogs: String,
-    lastCatalog: String,
-) {
-    if (selected == "arhivach") {
-        navController.discardSuspendedCatalog()
-        navController.navigateCatalogBase()
-    } else {
-        val target =
-            forumCatalogRoute(catalogs, selected)?.let(AppRoute::catalogBoard)
-                ?: boardAddress(selected, DEFAULT_BOARD)
-        val current = AppRoute.catalogBoard(lastCatalog)
-        if (target != null && target != current) {
-            navController.navigateBoard(target)
-        } else {
-            navController.navigateCatalogTab()
-        }
-    }
-}
-
 /**
  * Запуск: основание стека — каталог, последний сохранённый экран открывается поверх (один раз, не при
  * пересоздании активности). «Назад» с корня вкладки сохраняет её стек, как переход на «Каталог».
@@ -194,8 +157,9 @@ private fun openSelectedCatalog(
 @Composable
 private fun BindTabNavigation(
     navController: androidx.navigation.NavHostController,
+    entryId: String?,
     destinationRoute: String?,
-    restoredRoute: String?,
+    restored: RestoredScreen,
 ) {
     var restorePending by rememberSaveable { mutableStateOf(true) }
     val incoming = LocalIncomingLinks.current
@@ -204,7 +168,7 @@ private fun BindTabNavigation(
     LaunchedEffect(navController, pending, workspace) {
         if (restorePending) {
             restorePending = false
-            if (pending == null) navController.openRestoredRoute(restoredRoute)
+            if (pending == null) navController.openRestoredRoute(restored.route, restored.reading)
         }
         pending?.let { url ->
             workspace?.ready?.first { it }
@@ -213,6 +177,8 @@ private fun BindTabNavigation(
         }
     }
     BackHandler(enabled = destinationRoute in TAB_ROUTES) { navController.navigateCatalogTab() }
+    val linkedBoard = remember(entryId) { entryId != null && navController.canReturnFromLinkedBoard() }
+    BackHandler(enabled = linkedBoard) { navController.returnFromLinkedBoard() }
 }
 
 /** Последний открытый тред — подсвечивается в «Страницах». */
@@ -243,16 +209,25 @@ private fun bottomActions(
         onSettingsClick = { navController.navigateTab(AppRoute.SETTINGS) },
     )
 
-private fun initialWorkspaceRoute(
+/** Что открыть при запуске: последний экран, доска, которую читали, и тред до ухода на вкладку. */
+private data class RestoredScreen(
+    val route: String? = null,
+    val base: String? = null,
+    val reading: String? = null,
+)
+
+private fun initialWorkspaceRestore(
     workspace: com.solthariel.pawchan.workspace.WorkspaceController?,
     restore: Boolean,
-): String? =
-    if (restore) {
-        workspace
-            ?.state
-            ?.value
-            ?.lastRoute
-            .validRestorableRoute()
+): RestoredScreen {
+    val state = workspace?.state?.value
+    return if (restore && state != null) {
+        RestoredScreen(
+            state.lastRoute.validRestorableRoute(),
+            state.baseRoute?.takeIf { AppRoute.catalogBoard(it) != null },
+            state.readingRoute.validRestorableRoute(),
+        )
     } else {
-        null
+        RestoredScreen()
     }
+}

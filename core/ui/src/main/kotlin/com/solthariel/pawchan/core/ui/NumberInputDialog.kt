@@ -17,12 +17,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import com.solthariel.pawchan.core.ui.R.string as L
 
 /** Explicit confirmation keeps invalid or cancelled input out of saved settings. */
 @Composable
@@ -33,6 +35,8 @@ fun NumberInputDialog(
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit,
 ) {
+    val res = LocalResources.current
+
     var input by rememberSaveable(value, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(value.toString(), TextRange(0, value.toString().length)))
     }
@@ -56,20 +60,24 @@ fun NumberInputDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("number-input"),
-                    label = { Text("Значение") },
+                    label = { Text(res.getString(L.ui_value)) },
                     singleLine = true,
                     isError = number == null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
                     keyboardActions = KeyboardActions(onDone = { number?.let(onConfirm) }),
-                    supportingText = { Text("От ${range.first} до ${range.last}") },
+                    supportingText = { Text(res.getString(L.ui_from_to, range.first, range.last)) },
                 )
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(res.getString(L.ui_cancel)) } },
         confirmButton = {
             TextButton(modifier = Modifier.testTag("number-confirm"), enabled = number != null, onClick = {
                 number?.let(onConfirm)
-            }) { Text("Применить") }
+            }) { Text(res.getString(L.ui_apply)) }
         },
     )
 }

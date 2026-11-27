@@ -1,9 +1,5 @@
 package com.solthariel.pawchan
 
-import androidx.compose.runtime.Composable
-import com.solthariel.pawchan.domain.model.BoardPost
-import com.solthariel.pawchan.domain.model.PostAddress
-import com.solthariel.pawchan.domain.model.PostId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.thread.PostMenuCommand
 import com.solthariel.pawchan.thread.PostMenuTransfer

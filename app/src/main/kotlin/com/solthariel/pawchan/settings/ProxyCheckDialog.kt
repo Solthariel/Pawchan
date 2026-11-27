@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,7 @@ import com.solthariel.pawchan.data.network.proxy.ProxyProbeResult
 import com.solthariel.pawchan.domain.proxy.ProxyService
 import com.solthariel.pawchan.domain.proxy.SavedProxy
 import kotlinx.coroutines.CancellationException
+import com.solthariel.pawchan.R.string as L
 
 internal typealias ProxyCheck = suspend (SavedProxy, ProxyService, String) -> ProxyProbeResult
 
@@ -51,6 +53,8 @@ internal fun ProxyCheckDialog(
     check: ProxyCheck,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val services = remember(draft.services) { ProxyService.entries.filter { it in draft.services } }
     var attempt by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<Map<ProxyService, ProxyProbeResult>>(emptyMap()) }
@@ -71,7 +75,7 @@ internal fun ProxyCheckDialog(
     }
     ProxyCheckModal(onClose) {
         Text(
-            "Проверка прокси",
+            res.getString(L.ui_checking_proxy),
             Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleLarge,
@@ -79,7 +83,13 @@ internal fun ProxyCheckDialog(
         services.forEach { service ->
             val status =
                 results[service]?.let(::proxyProbeLabel)
-                    ?: if (current == service) "Проверяется…" else "Ожидает проверки"
+                    ?: if (current ==
+                        service
+                    ) {
+                        res.getString(L.ui_checking)
+                    } else {
+                        res.getString(L.ui_awaiting_verification)
+                    }
             Text("${service.proxyLabel}: $status", style = MaterialTheme.typography.bodyMedium)
         }
         if (!checking) {
@@ -87,10 +97,10 @@ internal fun ProxyCheckDialog(
                 checking = true
                 attempt++
             }, modifier = Modifier.fillMaxWidth()) {
-                Text("Повторить")
+                Text(res.getString(L.ui_retry))
             }
         }
-        TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Закрыть") }
+        TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(res.getString(L.ui_close)) }
     }
 }
 

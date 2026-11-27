@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import org.junit.Assert.assertEquals
@@ -19,8 +18,6 @@ class ContentFilterStatisticsFormatTest {
 
     @Test fun removingEmptyMessageDoesNotDisableValidation() {
         val rule = newContentFilterRule(defaultBoardAddress())
-        assertNull(filterConditionPresentation(ContentFilterMode.PHRASE.name).error)
-        assertEquals("Введите фразу целиком", filterConditionPresentation(ContentFilterMode.PHRASE.name).hint)
         assertNotNull(contentFilterValidationError(rule))
         assertNull(contentFilterValidationError(newContentFilterRule(defaultBoardAddress(), "фраза")))
     }

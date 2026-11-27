@@ -6,35 +6,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import com.solthariel.pawchan.core.ui.AppAlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import com.solthariel.pawchan.R.string as L
 
 /** A single bundled document; no network is needed to read help. */
 @Composable
 internal fun AutohideHelpDialog(close: () -> Unit) {
+    val res = LocalResources.current
+
     val assets = LocalContext.current.applicationContext.assets
-    val text by produceState("Загрузка справки…", assets) {
+    val text by produceState(res.getString(L.ui_loading_help), assets) {
         value =
             withContext(Dispatchers.IO) {
                 try {
                     assets.open("AUTOHIDE.md").bufferedReader().use { it.readText() }
                 } catch (_: IOException) {
-                    "Не удалось открыть справку. Документ docs/AUTOHIDE.md есть в архиве проекта."
+                    res.getString(L.ui_failed_to_open_help_the)
                 }
             }
     }
     val uri = LocalUriHandler.current
     AppAlertDialog(
         onDismissRequest = close,
-        title = { Text("Как работает автоскрытие") },
+        title = { Text(res.getString(L.ui_how_auto_hide_works)) },
         // AppAlertDialog owns the bounded scrolling body.
         text = { Text(text) },
-        confirmButton = { TextButton(onClick = close) { Text("Закрыть") } },
+        confirmButton = { TextButton(onClick = close) { Text(res.getString(L.ui_close)) } },
         dismissButton = {
-            TextButton(onClick = { uri.openUri(AUTOHIDE_HELP_URL) }) { Text("Открыть на GitHub") }
+            TextButton(onClick = { uri.openUri(AUTOHIDE_HELP_URL) }) { Text(res.getString(L.ui_open_on_github)) }
         },
     )
 }

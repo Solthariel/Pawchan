@@ -2,7 +2,6 @@ package com.solthariel.pawchan.library
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
@@ -38,6 +38,7 @@ import com.solthariel.pawchan.threads.ThreadSourceUi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.solthariel.pawchan.R.string as L
 
 /** История просмотренных тредов одной строкой, последние — сверху. */
 @Composable
@@ -49,12 +50,14 @@ internal fun HistoryScreen(
     onHistoryCleared: () -> Unit = {},
     sources: Map<SiteId, ThreadSourceUi> = emptyMap(),
 ) {
+    val res = LocalResources.current
+
     var query by rememberSaveable { mutableStateOf<String?>(null) }
     var refreshNotice by remember { mutableStateOf<String?>(null) }
     val refreshFailures = (state as? LibraryUiState.Content)?.refreshFailures ?: 0
     LaunchedEffect(refreshFailures) {
         if (refreshFailures > 0) {
-            refreshNotice = "Не удалось обновить историю"
+            refreshNotice = res.getString(L.ui_failed_to_update_history)
         }
     }
     val entries =
@@ -67,7 +70,7 @@ internal fun HistoryScreen(
     AppNavigationWorkspace(actions = bottomActions, selected = AppBottomDestination.THREADS, floatingTop = true) {
         com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
             LibraryToolbar(
-                LibraryToolbarState("История", entries?.size, query, false),
+                LibraryToolbarState(res.getString(L.ui_history), entries?.size, query, false),
                 LibraryToolbarActions(
                     onBack = onBack,
                     onQuery = { query = it },
@@ -82,15 +85,15 @@ internal fun HistoryScreen(
                         state is LibraryUiState.Content && state.refreshFailures > 0 &&
                             state.entries.none { it.lastVisitedAtEpochMillis > 0 }
                     ) -> {
-                    HistoryEmpty("Ошибка при загрузке данных")
+                    HistoryEmpty(res.getString(L.ui_error_loading_data))
                 }
 
                 entries == null -> {
-                    HistoryEmpty("Загрузка…")
+                    HistoryEmpty(res.getString(L.ui_loading))
                 }
 
                 entries.isEmpty() -> {
-                    HistoryEmpty("История пуста")
+                    HistoryEmpty(res.getString(L.ui_history_empty))
                 }
 
                 else -> {
@@ -119,6 +122,8 @@ private fun HistoryList(
     onThreadClick: (ThreadAddress) -> Unit,
     sources: Map<SiteId, ThreadSourceUi>,
 ) {
+    val res = LocalResources.current
+
     val list = rememberLazyListState()
     val format = remember { SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()) }
     Box(Modifier.fillMaxSize()) {
@@ -141,11 +146,12 @@ private fun HistoryList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ThreadSourceIcon(
-                        source = sources[entry.address.board.site] ?: ThreadSourceUi(entry.address.board.site.value),
+                        source =
+                            sources[entry.address.board.site] ?: ThreadSourceUi(entry.address.board.site.value),
                         current = false,
                     )
                     Text(
-                        entry.subject?.takeIf(String::isNotBlank) ?: "Тред №${entry.threadId}",
+                        entry.subject?.takeIf(String::isNotBlank) ?: res.getString(L.ui_thread_no, entry.threadId),
                         Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1,

@@ -2,13 +2,13 @@ package com.solthariel.pawchan
 
 import com.solthariel.pawchan.boards.BoardsUiState
 import com.solthariel.pawchan.boards.BoardsViewModel
-import com.solthariel.pawchan.boards.FAVORITES_CATEGORY_KEY
 import com.solthariel.pawchan.boards.boardCategories
 import com.solthariel.pawchan.boards.filterBoards
 import com.solthariel.pawchan.domain.boards.BoardDirectoryEntry
 import com.solthariel.pawchan.domain.boards.BoardDirectoryRepository
 import com.solthariel.pawchan.domain.boards.BoardDirectorySnapshots
 import com.solthariel.pawchan.domain.boards.BoardPreferencesRepository
+import com.solthariel.pawchan.domain.boards.FAVORITES_BOARD_CATEGORY_KEY
 import com.solthariel.pawchan.domain.boards.PostingAccessRepository
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
@@ -81,7 +81,7 @@ class BoardsViewModelTest {
 
                 val content = viewModel.state.value as BoardsUiState.Content
                 assertEquals(
-                    setOf(FAVORITES_CATEGORY_KEY, "Японская культура"),
+                    setOf(FAVORITES_BOARD_CATEGORY_KEY, "Японская культура"),
                     content.expandedCategories,
                 )
             } finally {
@@ -285,7 +285,7 @@ private class FakeBoardDirectoryRepository(
 
 private class FakeBoardPreferences : BoardPreferencesRepository {
     private val favorites = MutableStateFlow(emptySet<BoardAddress>())
-    private val expanded = MutableStateFlow(setOf(FAVORITES_CATEGORY_KEY))
+    private val expanded = MutableStateFlow(setOf(FAVORITES_BOARD_CATEGORY_KEY))
     var favoriteWrites = 0
         private set
 

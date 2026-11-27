@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.ActionMenuItem
@@ -18,6 +19,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiSpacing
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.workspace.LocalWorkspace
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 /** Offline copies remain internal; completed saving exposes opening and ZIP export actions. */
@@ -26,6 +28,8 @@ internal fun ThreadArchiveDialog(
     address: ThreadAddress?,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     if (address == null) return
     val binding = LocalWorkspace.current
     val controller = binding?.archives ?: return
@@ -43,33 +47,33 @@ internal fun ThreadArchiveDialog(
     }
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text(if (completed) "Копия сохранена" else "Сохранить копию") },
+        title = { Text(res.getString(if (completed) L.ui_copy_saved else L.ui_save_copy)) },
         text = {
             Column {
                 if (exists) {
-                    ActionMenuItem("Открыть сохранённую копию", {
+                    ActionMenuItem(res.getString(L.ui_open_saved_copy), {
                         binding.controller.offlineAddress = address
                         binding.navigate(address)
                         onClose()
                     }, icon = UiIconKind.FORUM, contentPadding = PaddingValues(0.dp))
                     ActionMenuItem(
-                        "Сохранить ZIP",
+                        res.getString(L.ui_save_zip),
                         export,
                         icon = UiIconKind.ARCHIVE,
                         contentPadding = PaddingValues(0.dp),
                     )
                 }
-                if (busy) Text("Сохранение…")
+                if (busy) Text(res.getString(L.ui_saving))
                 if (!completed) {
                     ActionMenuItem(
-                        "С медиа",
+                        res.getString(L.ui_with_media),
                         { choose(true) },
                         enabled = !busy,
                         icon = UiIconKind.MEDIA_MULTIPLE,
                         contentPadding = PaddingValues(0.dp),
                     )
                     ActionMenuItem(
-                        "Без медиа",
+                        res.getString(L.ui_no_media),
                         { choose(false) },
                         enabled = !busy,
                         icon = UiIconKind.DOCUMENT,
@@ -85,8 +89,10 @@ internal fun ThreadArchiveDialog(
 
 @Composable
 private fun ArchiveZipHint() {
+    val res = LocalResources.current
+
     Text(
-        "ZIP включает только уже загруженные медиа.",
+        res.getString(L.ui_zip_includes_only_already_uploaded),
         Modifier.padding(top = UiSpacing.small),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

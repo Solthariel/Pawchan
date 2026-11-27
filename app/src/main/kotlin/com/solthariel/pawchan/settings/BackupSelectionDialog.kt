@@ -14,9 +14,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.backup.BackupSection
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 @Composable
@@ -28,18 +30,24 @@ internal fun BackupSelectionDialog(
     confirm: () -> Unit,
     info: BackupSelectionInfo? = null,
 ) {
+    val res = LocalResources.current
+
     val available = info?.available ?: BackupSection.entries.toSet()
     AlertDialog(
         onDismissRequest = close,
-        title = { Text(if (restoring) "Что восстановить?" else "Что сохранить?") },
+        title = {
+            Text(
+                if (restoring) res.getString(L.ui_what_to_restore) else res.getString(L.ui_what_to_save),
+            )
+        },
         text = {
             // AppAlertDialog already scrolls its text slot.
             Column {
                 info?.details?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 if (restoring) {
                     Text(
-                        "Выбранные разделы будут заменены. Пустой раздел очистит текущие данные. " +
-                            "Остальное не изменится.",
+                        res.getString(L.ui_selected_sections_will_be_replaced) +
+                            res.getString(L.ui_the_rest_will_not_change),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -58,17 +66,29 @@ internal fun BackupSelectionDialog(
                             Modifier.weight(1f),
                             style = MaterialTheme.typography.bodyLarge,
                         )
-                        Checkbox(checked = section in selected, onCheckedChange = null, modifier = Modifier.size(24.dp))
+                        Checkbox(
+                            checked = section in selected,
+                            onCheckedChange = null,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(enabled = selected.isNotEmpty() && available.containsAll(selected), onClick = confirm) {
-                Text(if (restoring) "Восстановить" else "Сохранить")
+                Text(
+                    if (restoring) {
+                        res.getString(
+                            L.ui_restore,
+                        )
+                    } else {
+                        res.getString(L.ui_save)
+                    },
+                )
             }
         },
-        dismissButton = { TextButton(onClick = close) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = close) { Text(res.getString(L.ui_cancel)) } },
     )
 }
 

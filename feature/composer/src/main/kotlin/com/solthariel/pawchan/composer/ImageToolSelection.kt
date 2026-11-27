@@ -10,9 +10,6 @@ import com.solthariel.pawchan.domain.drafts.DraftMarkTool
 import com.solthariel.pawchan.domain.drafts.DraftRedactionMode
 import com.solthariel.pawchan.domain.drafts.DraftRedactionTool
 import com.solthariel.pawchan.domain.drafts.DraftShapeKind
-import com.solthariel.pawchan.domain.drafts.DraftTextAlignment
-import com.solthariel.pawchan.domain.drafts.DraftTextAppearance
-import com.solthariel.pawchan.domain.drafts.DraftTextStyle
 
 internal enum class ImageDrawingTool(
     val label: String,
@@ -32,11 +29,6 @@ internal class ImageToolSelection {
     var redactionColor by mutableIntStateOf(DEFAULT_REDACTION_COLOR)
     var redactionMode by mutableStateOf(DraftRedactionMode.FILL)
     var redactionTool by mutableStateOf(DraftRedactionTool.BRUSH)
-    var textStyle by mutableStateOf(DraftTextStyle.MEME)
-    var textAlignment by mutableStateOf(DraftTextAlignment.CENTER)
-
-    fun textAppearance(): DraftTextAppearance =
-        DraftTextAppearance(color = color, size = DEFAULT_TEXT_SIZE, style = textStyle, alignment = textAlignment)
 
     fun drawingConfig(
         sourceWidth: Int,
@@ -85,7 +77,6 @@ internal val IMAGE_EDITOR_COLORS =
         COLOR_PURPLE,
     ).map(Long::toInt)
 internal const val DEFAULT_MARK_WIDTH = .02f
-private const val DEFAULT_TEXT_SIZE = .08f
 private const val COLOR_WHITE = 0xFFFFFFFF
 private const val COLOR_BLACK = 0xFF000000
 private const val COLOR_RED = 0xFFFF3B30

@@ -30,6 +30,10 @@
   app-host (навигационные inset, theme/media lifecycle) остаются у владельца.
   Геометрия, контроллеры и анимационная реализация закрыты; тесты внутренних
   деталей живут в самом модуле, не требуют публикации internals для app.
+- Языки интерфейса, хранилище выбора до Android 13 и миграция в `LocaleManager`
+  принадлежат `:app`. Все поддерживаемые языки остаются в базовом модуле App Bundle,
+  без сетевой догрузки. PiP получает контекст через `MediaLocaleHost`, а без него
+  использует исходный контекст окна. `:core:ui` не управляет локалью приложения.
 - Media не импортирует thread/composer и не принимает их UiState/ViewModel.
   Экран передаёт подготовленные media-модели и callbacks; порядок и принадлежность
   вложений задаёт caller. Галерея/раскладка принадлежат media, экранные post/thread
@@ -145,15 +149,19 @@
   Copy/share без поддержанного URL не выдаёт успех и не создаёт фиктивный адрес.
   Capability в меню вычисляется явно; отсутствие реализации не означает поддержку.
 
-- Экспорт треда разделяет session и platform. Feature владеет выбором постов,
-  захваченным стилем, CreateDocument launcher, единственной активной операцией,
-  сообщениями результата и отменой screen scope. App предоставляет ThreadExportTarget
-  для выбранного URI и владеет ContentResolver stream/HTML/PNG rendering.
-- Export adapter получает только ThreadExportDocument/ThreadExportPost/ThreadShotStyle,
-  не ThreadUiState/ThreadPostUi/ThreadToolsState/ThreadScreenMemory или workspace.
-  Подготовка snapshot выполняется вне композиции на Default, I/O — на IO.
-  Borrowed ImageLoader не закрывается адаптером; stream/bitmap закрываются локально.
-  URI, MIME, filenames, HTML escaping и PNG layout не меняются при переносе.
+- Для HTML feature передаёт `ThreadExportDocument`, для PNG только `CapturedThreadShot`:
+  неизменный список кадров обычных строк в физических пикселях. App не получает
+  ThreadUiState/ThreadPostUi, mutable tools, workspace или ImageLoader для PNG.
+- В режиме выбора `feature/thread` записывает drawContent реальной строки, включая
+  боковые отступы, разделитель и состояние вложений. Цвет выбора рисуется после
+  записи. Кадр фиксируется при выборе, переживает уход строки из LazyColumn,
+  освобождается при снятии выбора или закрытии экрана. При нажатии камеры видимые строки
+  заново считываются из того же экранного слоя. Список кадров в порядке
+  треда фиксируется до CreateDocument. Разная ширина, недостающий кадр и превышение
+  лимита не приводят к масштабированию или тихому пропуску поста.
+- App владеет ContentResolver OutputStream и кодированием PNG на IO. Пиксели
+  копируются без Canvas-шаблона, перерисовки, ресайза и повторных HTTP-запросов.
+  HTML escaping, имена файлов и MIME не изменены.
 - Clipboard/Intent для post menus реализует app-owned PostMenuTransfer. Thread
   потребляет переданный scoped transfer, не создаёт Android adapter и не извлекает
   Context ради этих действий. Отсутствие binding не создаёт фиктивный service locator.

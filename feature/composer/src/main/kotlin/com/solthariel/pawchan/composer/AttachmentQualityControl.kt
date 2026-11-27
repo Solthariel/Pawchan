@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.UiOptionRow
 import kotlin.math.roundToInt
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun AttachmentQualityControl(
@@ -22,7 +24,9 @@ internal fun AttachmentQualityControl(
     enabled: Boolean,
     onQualityChange: (Int) -> Unit,
 ) {
-    UiOptionRow("Качество") {
+    val res = LocalResources.current
+
+    UiOptionRow(res.getString(L.ui_quality)) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -35,7 +39,7 @@ internal fun AttachmentQualityControl(
                 enabled = enabled,
                 modifier =
                     Modifier.weight(1f).semantics {
-                        contentDescription = "Качество JPEG"
+                        contentDescription = res.getString(L.ui_jpeg_quality)
                         stateDescription = "$quality%"
                     },
             )

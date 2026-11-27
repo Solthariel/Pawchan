@@ -14,7 +14,6 @@ internal data class MirrorStatusRow(
 
 internal data class MirrorAvailabilityPresentation(
     val rows: List<MirrorStatusRow> = emptyList(),
-    val checkedCaption: String? = null,
     val summary: String? = null,
 )
 
@@ -48,7 +47,6 @@ internal fun mirrorAvailabilityPresentation(
                 },
             )
         },
-        checked?.let { "Проверено с этого устройства в $it" },
         checked?.let {
             "Доступны ${observations.count { row -> row.availability == MirrorAvailability.AVAILABLE }} " +
                 "из ${observations.size} — проверено в $it"

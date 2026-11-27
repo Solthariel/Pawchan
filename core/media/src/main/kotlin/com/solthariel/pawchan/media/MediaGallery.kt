@@ -11,19 +11,16 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -32,8 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.media.R
 import com.solthariel.pawchan.core.ui.PawchanThinRowScrollbar
-import com.solthariel.pawchan.core.ui.UiIcon
-import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.media.MEDIA_ATTACHMENT_COLUMNS
 import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoader
@@ -209,7 +204,7 @@ private fun GalleryCell(
             Modifier.fillMaxSize(),
         )
         if (attachment.viewer == AttachmentViewer.VIDEO) {
-            UiIcon(UiIconKind.PLAY, Color.White, Modifier.align(Alignment.Center).size(24.dp))
+            VideoThumbnailBadge(Modifier.align(Alignment.Center))
         }
         AttachmentCaption(attachment, Modifier.align(Alignment.BottomStart))
         if (state.selecting) {

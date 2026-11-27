@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Tentar novamente</string>
+    <string name="core_ui_challenge_open">Concluir verificação</string>
+    <string name="core_ui_error_loading_data">Erro ao carregar os dados</string>
+    <string name="core_ui_fast_scrollbar">Rolagem da lista</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Atualizar de cima</string>
+    <string name="core_ui_pull_refresh_bottom">Unten aktualisieren</string>
+    <string name="core_ui_thread_author">Criador do thread</string>
+    <string name="core_ui_post_sage">Não subir</string>
+    <string name="core_ui_post_email">E-mail do autor</string>
+    <string name="core_ui_thread_sticky">Tópico fixado</string>
+    <string name="core_ui_thread_closed">Thread fechado</string>
+    <string name="core_ui_thread_cyclical">Thread cíclico</string>
+    <string name="core_ui_post_banned">Autor banido</string>
+    <string name="core_ui_archive_active">Arquivador: o thread está ativo e sendo atualizado</string>
+    <string name="core_ui_archive_maybe_deleted">Arquivador: o thread original pode ter sido excluído</string>
+    <string name="core_ui_archive_saved">Arquivador: thread salvo</string>
+    <string name="core_ui_archive_lost">Arquivador: o thread foi marcado como perdido</string>
+    <string name="core_ui_archive_queued">Arquivador: o thread aguarda processamento</string>
+    <string name="core_ui_archive_other">Outro status do Arquivador</string>
+    <string name="core_ui_copied">Copiado</string>
+    <string name="ui_enter_jpeg_quality">Digite a qualidade JPEG</string>
+    <string name="ui_value">Valor</string>
+    <string name="ui_quality">Qualidade</string>
+    <string name="ui_jpeg_quality_906d">Qualidade JPEG, %</string>
+    <string name="ui_from_to">De %1$d a %2$d</string>
+    <string name="ui_cancel">Cancelar</string>
+    <string name="ui_apply">Aplicar</string>
+    <string name="ui_expanded">Expandido</string>
+    <string name="ui_expand">Expandir</string>
+    <string name="ui_collapsed">Recolhido</string>
+    <string name="ui_removed">Removido</string>
+</resources>

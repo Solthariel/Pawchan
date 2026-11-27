@@ -9,6 +9,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -16,12 +17,15 @@ import com.solthariel.pawchan.core.ui.uiChoiceGroup
 import com.solthariel.pawchan.domain.drafts.DraftRedactionMode
 import com.solthariel.pawchan.domain.drafts.DraftRedactionTool
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ImageRedactionToolbar(
     selection: ImageToolSelection,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     Column {
         ImageRedactionBrushControls(selection, enabled)
         Row(Modifier.fillMaxWidth()) {
@@ -30,7 +34,13 @@ internal fun ImageRedactionToolbar(
                     val fill = mode == DraftRedactionMode.FILL
                     EditorChoiceButton(
                         EditorChoice(
-                            if (fill) "Заливка" else "Пиксели",
+                            if (fill) {
+                                res.getString(
+                                    L.ui_upload,
+                                )
+                            } else {
+                                res.getString(L.ui_pixels)
+                            },
                             if (fill) R.drawable.ic_tool_fill else R.drawable.ic_tool_pixels,
                             selected = selection.redactionMode == mode,
                         ),
@@ -50,7 +60,13 @@ internal fun ImageRedactionToolbar(
                     val rectangle = tool == DraftRedactionTool.RECTANGLE
                     EditorChoiceButton(
                         EditorChoice(
-                            if (rectangle) "Рамкой" else "Кистью",
+                            if (rectangle) {
+                                res.getString(
+                                    L.ui_with_a_frame,
+                                )
+                            } else {
+                                res.getString(L.ui_with_brush)
+                            },
                             if (rectangle) R.drawable.ic_tool_rectangle else R.drawable.ic_tool_brush,
                             selected = selection.redactionTool == tool,
                         ),
@@ -68,6 +84,8 @@ private fun ImageRedactionBrushControls(
     selection: ImageToolSelection,
     enabled: Boolean,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         ImageColorControl(
             selection,
@@ -79,7 +97,11 @@ private fun ImageRedactionBrushControls(
             onValueChange = { selection.width = it },
             valueRange = .005f..0.12f,
             enabled = enabled && selection.redactionTool == DraftRedactionTool.BRUSH,
-            modifier = Modifier.weight(1f).semantics { contentDescription = "Размер кисти замазки" },
+            modifier =
+                Modifier.weight(1f).semantics {
+                    contentDescription =
+                        res.getString(L.ui_redaction_brush_size)
+                },
         )
     }
 }

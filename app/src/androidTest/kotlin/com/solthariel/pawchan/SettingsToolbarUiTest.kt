@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
+import androidx.test.espresso.Espresso
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.settings.SettingsActions
 import com.solthariel.pawchan.settings.SettingsScreen
@@ -100,6 +102,13 @@ class SettingsToolbarUiTest {
             compose.onNodeWithContentDescription("Поиск настроек").assertTextEquals("зеркало")
             compose.onNodeWithText("Зеркало сайта").assertIsDisplayed()
         }
+        // While the keyboard is open the bar is gone and cannot be tapped; it fades back once the keyboard closes.
+        searchStep("close-keyboard") {
+            Espresso.closeSoftKeyboard()
+            compose.waitUntil(BAR_RETURN_TIMEOUT_MS) {
+                compose.onAllNodesWithContentDescription("Настройки").fetchSemanticsNodes().isNotEmpty()
+            }
+        }
         searchStep("return-to-settings") { compose.onNodeWithContentDescription("Настройки").performClick() }
         searchStep("check-search-closed") {
             compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
@@ -136,3 +145,5 @@ class SettingsToolbarUiTest {
         }
     }
 }
+
+private const val BAR_RETURN_TIMEOUT_MS = 5_000L

@@ -23,4 +23,20 @@ class RouteRestorationTest {
         assertEquals(home, restoredBaseBoard("settings", home))
         assertEquals(home, restoredBaseBoard(null, home))
     }
+
+    /** Приложение закрыли на вкладке: под ней открывается доска, которую читали, а не стартовая /b/. */
+    @Test fun closingOnATabKeepsTheBoardThatWasRead() {
+        val read = AppRoute.catalog(thread.board)
+        assertEquals(thread.board, restoredBaseBoard("settings", home, read))
+        assertEquals(thread.board, restoredBaseBoard("library", home, read))
+        assertEquals(home, restoredBaseBoard("library", home, "not-a-route"))
+        val other = requireNotNull(threadAddress("dvach", "po", 7L))
+        assertEquals(other.board, restoredBaseBoard(AppRoute.thread(other), home, read))
+    }
+
+    @Test fun archiveOpenedFromDownloadsIsRestorable() {
+        assertEquals("download-archive/12", "download-archive/12".validRestorableRoute())
+        assertEquals(null, "download-archive/0".validRestorableRoute())
+        assertEquals("download-archive/12", AppRoute.downloadArchive(12))
+    }
 }

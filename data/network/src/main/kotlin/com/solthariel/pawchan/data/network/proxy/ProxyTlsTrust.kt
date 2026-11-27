@@ -2,6 +2,7 @@ package com.solthariel.pawchan.data.network.proxy
 
 import okhttp3.OkHttpClient
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.net.Socket
 import java.security.cert.CertificateException
 import javax.net.ssl.HostnameVerifier
@@ -37,8 +38,8 @@ class ProxyTlsTrust(
     private fun handshake(tls: SSLSocket) {
         try {
             tls.startHandshake()
-        } catch (failure: SSLException) {
-            throw ProxyTunnelException(failure.tlsFailure(), "TLS handshake with the proxy failed", failure)
+        } catch (failure: IOException) {
+            throw handshakeFailure(failure)
         }
     }
 
@@ -66,6 +67,27 @@ private fun SSLException.tlsFailure(): ProxyFailure =
         ProxyFailure.TLS_UNTRUSTED
     } else {
         ProxyFailure.TLS_FAILED
+    }
+
+/**
+ * A rejected certificate is untrusted, any other TLS error a failed handshake. A connection the server
+ * resets or drops mid-handshake is a failed handshake too: some TLS providers report it as an
+ * [SSLException], others (the JDK one among them) pass the bare socket error on, and on Windows a reset
+ * also discards whatever the server had sent before it. A timeout stays a timeout for the caller.
+ */
+private fun handshakeFailure(failure: IOException): IOException =
+    when (failure) {
+        is SSLException -> {
+            ProxyTunnelException(failure.tlsFailure(), "TLS handshake with the proxy failed", failure)
+        }
+
+        is InterruptedIOException -> {
+            failure
+        }
+
+        else -> {
+            ProxyTunnelException(ProxyFailure.TLS_FAILED, "The proxy dropped the TLS handshake", failure)
+        }
     }
 
 private val MODERN_PROTOCOLS = listOf("TLSv1.3", "TLSv1.2")

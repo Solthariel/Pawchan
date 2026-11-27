@@ -14,15 +14,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.settings.FilterLineInput
-import com.solthariel.pawchan.settings.filterConditionPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -30,14 +27,6 @@ import org.junit.Test
 
 class ContentFilterInputSizeRuntimeTest {
     @get:Rule val compose = createComposeRule()
-
-    @Test fun filledConditionKeepsHeightWhenModeChanges() = checkModeChanges("ГОЛОВА ДАЙ ДЕНЕГ", 1f)
-
-    @Test fun emptyConditionKeepsHeightWhenHintChanges() = checkModeChanges("", 1f)
-
-    @Test fun largeTextKeepsHeightWhenHintChanges() = checkModeChanges("", 1.5f)
-
-    @Test fun smallTextKeepsHeightWhenHintChanges() = checkModeChanges("", 0.9f)
 
     @Test fun newlinesPreserveFirstBaselineAndGrowOnlyUpToThreeLines() {
         var text by mutableStateOf("строка")
@@ -98,33 +87,5 @@ class ContentFilterInputSizeRuntimeTest {
             .onNodeWithContentDescription("Условие")
             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         return layouts.single().firstBaseline
-    }
-
-    private fun checkModeChanges(
-        text: String,
-        fontScale: Float,
-    ) {
-        var mode by mutableStateOf(ContentFilterMode.PHRASE)
-        compose.setContent {
-            val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                MaterialTheme {
-                    Column(Modifier.width(240.dp).testTag("editor")) {
-                        FilterLineInput("Условие", text, {}, presentation = filterConditionPresentation(mode.name))
-                        Text("После поля", Modifier.testTag("after"))
-                    }
-                }
-            }
-        }
-        val before = compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot
-        val marker = compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot
-        repeat(3) {
-            compose.runOnIdle { mode = ContentFilterMode.ALL_TERMS }
-            assertEquals(before, compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot)
-            assertEquals(marker, compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot)
-            compose.runOnIdle { mode = ContentFilterMode.PHRASE }
-            assertEquals(before, compose.onNodeWithTag("editor").fetchSemanticsNode().boundsInRoot)
-            assertEquals(marker, compose.onNodeWithTag("after").fetchSemanticsNode().boundsInRoot)
-        }
     }
 }

@@ -48,17 +48,3 @@ data class ReplyActions(
     val onSubmit: () -> Unit,
     val onClose: () -> Unit,
 )
-
-val ReplyError.messageResource: Int
-    get() =
-        when (this) {
-            ReplyError.NETWORK -> R.string.error_network
-            ReplyError.TIMEOUT -> R.string.error_timeout
-            ReplyError.SECURE_CONNECTION -> R.string.error_secure_connection
-            ReplyError.SUBMISSION_UNCONFIRMED -> R.string.reply_error_unconfirmed
-            ReplyError.INVALID_RESPONSE -> R.string.error_invalid_response
-            ReplyError.CAPTCHA -> R.string.reply_error_captcha
-            ReplyError.THREAD_CLOSED -> R.string.thread_closed
-            ReplyError.SERVER -> R.string.error_server
-            ReplyError.REJECTED -> R.string.reply_error_rejected
-        }

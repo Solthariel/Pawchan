@@ -14,39 +14,50 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.filter.ContentFilterMode
 import com.solthariel.pawchan.domain.filter.FilterBoundary
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun FilterEditorFields(draft: ContentFilterDraft) {
+    val res = LocalResources.current
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FilterLineInput("Доски", draft.boards, { draft.boards = it }, Modifier.weight(1f), singleLine = true)
-            FilterLineInput("Треды", draft.threadIds, { draft.threadIds = it }, Modifier.weight(1f), singleLine = true)
+            FilterLineInput(res.getString(L.ui_boards), draft.boards, {
+                draft.boards = it
+            }, Modifier.weight(1f), singleLine = true)
+            FilterLineInput(res.getString(L.ui_threads), draft.threadIds, {
+                draft.threadIds = it
+            }, Modifier.weight(1f), singleLine = true)
         }
         FilterOptionGroup(
-            "Где скрывать",
+            res.getString(L.ui_where_to_hide),
             FilterPostScope.entries.map { it.name to it.label },
             draft.postScope,
         ) { draft.postScope = it }
         FilterOptionGroup(
-            "Как искать",
+            res.getString(L.ui_how_to_search),
             FILTER_EDITOR_MODES.map { it.name to filterModeLabel(it) },
             draft.mode,
         ) { draft.selectMode(ContentFilterMode.valueOf(it)) }
         Text(filterModeHint(draft.mode), style = MaterialTheme.typography.bodySmall)
-        FilterLineInput("Что искать", draft.text, { draft.text = it })
+        FilterLineInput(res.getString(L.ui_what_to_search), draft.text, { draft.text = it })
         FilterOptionGroup(
-            "Совпадение",
-            listOf(FilterBoundary.WORD.name to "Слово целиком", FilterBoundary.PART.name to "Часть слова"),
+            res.getString(L.ui_match),
+            listOf(
+                FilterBoundary.WORD.name to res.getString(L.ui_whole_word),
+                FilterBoundary.PART.name to res.getString(L.ui_part_of_word),
+            ),
             draft.boundary,
         ) { draft.boundary = it }
         Text(filterBoundaryHint(draft.boundary), style = MaterialTheme.typography.bodySmall)
-        FilterLineInput("Не скрывать, если есть…", draft.exceptions, { draft.exceptions = it })
+        FilterLineInput(res.getString(L.ui_do_not_hide_if_there), draft.exceptions, { draft.exceptions = it })
         Text(
-            "Исключения разделяйте запятыми или с новой строки.",
+            res.getString(L.ui_separate_exceptions_with_commas_or),
             style = MaterialTheme.typography.bodySmall,
         )
     }

@@ -11,6 +11,7 @@ internal class VideoSessionPrivacy(
 ) : AutoCloseable {
     private var binding: Job? = null
     private var access: VideoPrivacyAccess? = null
+    val canPlay: Boolean get() = access?.isAllowed() != false
 
     fun bind(next: VideoPrivacyAccess?) {
         if (access === next && binding?.isActive == true) return

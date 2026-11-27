@@ -6,7 +6,6 @@ import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.MediaAttachmentSource
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.attachmentFormat
-import com.solthariel.pawchan.media.attachmentTypeAndSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -69,7 +68,7 @@ class MediaCaptionFormattingTest {
     fun usesOneSizeFormatterForCaptionAndComposer() {
         val attachment = attachment("image", "original.png", 2_202_010, 811, 1000)
 
-        assertEquals("PNG ${formatByteSizeForUi(2_202_010)}", attachmentTypeAndSize(attachment))
+        assertEquals("PNG ${formatByteSizeForUi(2_202_010)}", attachment.display.typeAndSize)
     }
 
     private fun attachment(

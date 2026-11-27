@@ -10,7 +10,6 @@ import java.time.ZoneOffset
 class MirrorAvailabilityPresentationTest {
     @Test fun emptyResultsDoNotInventATimeOrStatus() {
         assertEquals(emptyList<MirrorStatusRow>(), mirrorAvailabilityPresentation(emptyList()).rows)
-        assertNull(mirrorAvailabilityPresentation(emptyList()).checkedCaption)
     }
 
     @Test fun resultsPreserveHostsStatusesAndUseOneLatestLocalTime() {
@@ -26,7 +25,6 @@ class MirrorAvailabilityPresentationTest {
             listOf(MirrorStatusRow("2ch.su", "Доступно"), MirrorStatusRow("2ch.org", "Нет ответа вовремя")),
             result.rows,
         )
-        assertEquals("Проверено с этого устройства в 03:00:05", result.checkedCaption)
     }
 
     @Test fun responseTimeIsOptionalAndSummaryCountsOnlyWorkingMirrors() {

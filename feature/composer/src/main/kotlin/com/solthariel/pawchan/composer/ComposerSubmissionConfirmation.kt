@@ -7,33 +7,37 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun confirmedCaptchaReload(
     failure: ComposerFailureState,
     onReload: () -> Unit,
 ): () -> Unit {
+    val res = LocalResources.current
+
     var confirming by remember(failure.error) { mutableStateOf(false) }
     if (confirming && failure.error == ReplyError.SUBMISSION_UNCONFIRMED) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text("Проверили результат отправки?") },
+            title = { Text(res.getString(L.ui_did_you_check_the_submission)) },
             text = {
                 Text(
-                    "Сервер мог принять сообщение. Проверьте тред или каталог. " +
-                        "Повторная отправка может создать дубликат. " +
-                        "Продолжение только загрузит капчу — сообщение не отправится.",
+                    res.getString(L.ui_the_server_may_have_accepted) +
+                        res.getString(L.ui_retrying_may_create_a_duplicate) +
+                        res.getString(L.ui_continuing_will_only_load_the),
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false
                     onReload()
-                }) { Text("Подготовить повторную попытку") }
+                }) { Text(res.getString(L.ui_prepare_retry)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text("Отмена") }
+                TextButton(onClick = { confirming = false }) { Text(res.getString(L.ui_cancel)) }
             },
         )
     }

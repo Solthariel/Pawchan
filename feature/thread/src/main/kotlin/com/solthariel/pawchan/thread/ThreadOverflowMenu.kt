@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.MenuNavigation
 import com.solthariel.pawchan.core.ui.OVAL_BUTTON_SHAPE
 import com.solthariel.pawchan.core.ui.UiBackwardIndicator
@@ -15,6 +16,7 @@ import com.solthariel.pawchan.core.ui.UiMenuIcon
 import com.solthariel.pawchan.core.ui.UiSubmenuIndicator
 import kotlinx.coroutines.CoroutineScope
 import com.solthariel.pawchan.core.ui.ModalDropdownMenu as DropdownMenu
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun ThreadOverflowMenu(
@@ -49,26 +51,31 @@ private fun ThreadMainMenuItems(
     actions: ThreadActions?,
     scope: CoroutineScope,
 ) {
+    val res = LocalResources.current
+
     if (tools.readingReturn != null) {
-        ThreadMenuItem("Вернуться к месту чтения", icon = UiIconKind.HISTORY) {
+        ThreadMenuItem(res.getString(L.ui_return_to_reading_position), icon = UiIconKind.HISTORY) {
             tools.closeMenu()
             tools.onReadingReturn()
         }
     }
-    ThreadMenuItem("Расширенный поиск", icon = UiIconKind.SEARCH) { tools.advanced = true }
-    ThreadMenuItem("Выделить", icon = UiIconKind.SELECT_ALL) {
+    ThreadMenuItem(res.getString(L.ui_advanced_search), icon = UiIconKind.SEARCH) { tools.advanced = true }
+    ThreadMenuItem(res.getString(L.ui_select), icon = UiIconKind.SELECT_ALL) {
         tools.menu = false
         tools.selecting = true
     }
     ThreadMenuItem(
-        "Содержимое",
+        res.getString(L.ui_content),
         icon = UiIconKind.DOCUMENT,
         navigation = MenuNavigation.FORWARD,
     ) { tools.contents = true }
-    ThreadMenuItem("Внешний вид", icon = UiIconKind.PALETTE) { tools.openDialog(ThreadDialog.APPEARANCE) }
+    ThreadMenuItem(
+        res.getString(L.ui_appearance_0983),
+        icon = UiIconKind.PALETTE,
+    ) { tools.openDialog(ThreadDialog.APPEARANCE) }
     HorizontalDivider()
     ThreadMenuItem(
-        "Сохранить копию…",
+        res.getString(L.ui_save_copy_cac8),
         icon = UiIconKind.SAVE,
         enabled = !tools.exporting,
     ) { tools.openDialog(ThreadDialog.ARCHIVE) }
@@ -81,13 +88,11 @@ private fun ThreadMainMenuItems(
 
 @Composable
 private fun ThreadSearchFlagItems(tools: ThreadToolsState) {
-    ThreadMenuItem("Назад", navigation = MenuNavigation.BACK) { tools.advanced = false }
+    val res = LocalResources.current
+
+    ThreadMenuItem(res.getString(L.ui_back), navigation = MenuNavigation.BACK) { tools.advanced = false }
     ThreadSearchFlag.entries.forEach { flag ->
-        ThreadMenuItem(flag.title) {
-            tools.flag = flag
-            tools.searchOpen = true
-            tools.closeMenu()
-        }
+        ThreadMenuItem(flag.title) { tools.selectFlag(flag) }
     }
 }
 
@@ -98,25 +103,27 @@ private fun ThreadContentsItems(
     content: ThreadUiState.Content?,
     actions: ThreadActions?,
 ) {
+    val res = LocalResources.current
+
     val history = actions?.history
-    ThreadMenuItem("Назад", navigation = MenuNavigation.BACK) { tools.contents = false }
-    ThreadMenuItem("Перезагрузить", icon = UiIconKind.REFRESH) {
+    ThreadMenuItem(res.getString(L.ui_back), navigation = MenuNavigation.BACK) { tools.contents = false }
+    ThreadMenuItem(res.getString(L.ui_reload), icon = UiIconKind.REFRESH) {
         tools.closeMenu()
         actions?.onRefresh?.invoke()
     }
     if (history != null) {
-        ThreadMenuItem("Стереть", icon = UiIconKind.DELETE) {
+        ThreadMenuItem(res.getString(L.ui_erase), icon = UiIconKind.DELETE) {
             tools.closeMenu()
             history.erase()
         }
         if (content?.hasOldDeletedPosts() == true) {
-            ThreadMenuItem("Очистить старые", icon = UiIconKind.DELETE) {
+            ThreadMenuItem(res.getString(L.ui_clear_old), icon = UiIconKind.DELETE) {
                 tools.closeMenu()
                 history.clearOld()
             }
         }
         ThreadMenuItem(
-            "Очистить удалённые",
+            res.getString(L.ui_clear_deleted),
             icon = UiIconKind.DELETE,
             enabled = content?.posts?.any { it.metadata.changes.deleted } == true,
         ) {
@@ -124,7 +131,10 @@ private fun ThreadContentsItems(
             history.clearDeleted()
         }
     }
-    ThreadMenuItem("Скрытые посты", icon = UiIconKind.HIDE) { tools.openDialog(ThreadDialog.HIDDEN_RULES) }
+    ThreadMenuItem(
+        res.getString(L.ui_hidden_posts),
+        icon = UiIconKind.HIDE,
+    ) { tools.openDialog(ThreadDialog.HIDDEN_RULES) }
 }
 
 @Composable

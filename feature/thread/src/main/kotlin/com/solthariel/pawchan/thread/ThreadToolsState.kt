@@ -28,7 +28,15 @@ internal data class ThreadAppearance(
     val maxLines: Int = DEFAULT_THREAD_MAX_LINES,
 )
 
+/** What of the in-thread search is kept while the thread is off screen (another tab, a linked thread). */
+internal data class ThreadSearchMemory(
+    val open: Boolean = false,
+    val query: String = "",
+    val flag: String? = null,
+)
+
 internal const val DEFAULT_THREAD_MAX_LINES = 20
+internal const val DEFAULT_THREAD_TEXT_SIZE = 12
 
 internal class ThreadToolsState(
     private val scope: CoroutineScope,
@@ -49,6 +57,7 @@ internal class ThreadToolsState(
     var results by mutableStateOf<List<Long>>(emptyList())
     var resultIndex by mutableIntStateOf(-1)
     var selecting by mutableStateOf(false)
+    val shots = ThreadShotCapture(scope)
     var selected by mutableStateOf<Set<Long>>(emptySet())
     var notice by mutableStateOf<String?>(null)
     var exporting by mutableStateOf(false)
@@ -64,7 +73,7 @@ internal class ThreadToolsState(
         local: ThreadUiState.Content?,
     ) {
         val isLocal = local != null && (target.address == null || target.address == local.address)
-        if (isLocal && !target.replies && target.postId !in requireNotNull(local).presentation.postPositions) {
+        if (isLocal && !target.replies && requireNotNull(local).postForPreview(target.postId) == null) {
             notice = "Сообщение не найдено"
         } else {
             previews = previews + target
@@ -109,16 +118,22 @@ internal class ThreadToolsState(
             }
     }
 
-    fun setFlag(
-        value: ThreadSearchFlag,
-        content: ThreadUiState.Content?,
-    ) {
+    /** Search survives leaving the screen: the restored query runs again once the thread content is shown. */
+    fun restoreSearch(saved: ThreadSearchMemory) {
+        searchOpen = saved.open
+        query = saved.query
+        flag = saved.flag?.let { name -> ThreadSearchFlag.entries.firstOrNull { it.name == name } }
+    }
+
+    fun searchMemory(): ThreadSearchMemory = ThreadSearchMemory(searchOpen, query, flag?.name)
+
+    /** Choosing a flag opens the search; the screen effect starts the search for the current content. */
+    fun selectFlag(value: ThreadSearchFlag) {
         flag = value
         searchOpen = true
         menu = false
         advanced = false
         contents = false
-        search(content)
     }
 
     fun closeSearch() {
@@ -133,15 +148,23 @@ internal class ThreadToolsState(
 
     fun toggleSelection(id: Long) {
         selecting = true
-        selected = if (id in selected) selected - id else selected + id
+        if (id in selected) {
+            selected -= id
+            shots.deselect(id)
+        } else {
+            selected += id
+            shots.request(id) { notice = it }
+        }
     }
 
     fun clearSelection() {
         selecting = false
         selected = emptySet()
+        shots.clear()
     }
 
     fun cancel() {
+        shots.clear()
         job?.cancel()
     }
 }

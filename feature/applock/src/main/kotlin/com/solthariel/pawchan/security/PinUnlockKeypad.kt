@@ -15,10 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.feature.applock.R.string as L
 
 @Composable
 internal fun PinUnlockKeypad(
@@ -28,6 +30,8 @@ internal fun PinUnlockKeypad(
     onKey: (String) -> Unit,
     onFingerprint: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val enabled = state.ready && !state.busy && state.retrySeconds == 0
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9")).forEach { row ->
@@ -40,7 +44,7 @@ internal fun PinUnlockKeypad(
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            PinUnlockKey("Удалить цифру", enabled && digits.isNotEmpty(), { onKey("⌫") }) {
+            PinUnlockKey(res.getString(L.ui_delete_digit), enabled && digits.isNotEmpty(), { onKey("⌫") }) {
                 PinDeleteGlyph(Modifier.size(24.dp))
             }
             PinUnlockKey("0", enabled && digits.length < PIN_LENGTH, { onKey("0") }) {
@@ -58,9 +62,11 @@ private fun PinUnlockBiometric(
     biometricEnabled: Boolean,
     onFingerprint: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val modifier = Modifier.size(72.dp).testTag("pin-unlock-action")
     if (digits.isEmpty() && biometricEnabled) {
-        PinUnlockKey("Отпечаток пальца", state.ready && !state.busy, onFingerprint, modifier) {
+        PinUnlockKey(res.getString(L.ui_fingerprint), state.ready && !state.busy, onFingerprint, modifier) {
             FingerprintGlyph(Modifier.size(30.dp))
         }
     } else {

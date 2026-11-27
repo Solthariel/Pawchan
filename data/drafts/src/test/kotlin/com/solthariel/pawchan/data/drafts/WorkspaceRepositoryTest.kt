@@ -20,6 +20,7 @@ import com.solthariel.pawchan.domain.workspace.OpenThread
 import com.solthariel.pawchan.domain.workspace.ThreadCopy
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import com.solthariel.pawchan.domain.workspace.storePost
+import com.solthariel.pawchan.domain.workspace.withRoutes
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -67,7 +68,8 @@ class WorkspaceRepositoryTest {
                         post(),
                         "title",
                         true,
-                    ).copy(tabs = listOf(OpenThread(address, "title", 101, 25)), lastRoute = "thread/dvach/b/100")
+                    ).copy(tabs = listOf(OpenThread(address, "title", 101, 25)))
+                    .withRoutes(last = "thread/dvach/b/100")
             }
             val loaded = FileWorkspaceRepository(directory).load()
             assertEquals("thread/dvach/b/100", loaded.lastRoute)
@@ -91,7 +93,7 @@ class WorkspaceRepositoryTest {
             val directory = temporary.newFolder()
             val first = FileWorkspaceRepository(directory)
             val second = FileWorkspaceRepository(directory)
-            val one = launch { first.update { it.copy(lastRoute = "boards") } }
+            val one = launch { first.update { it.withRoutes(last = "boards") } }
             val two = launch { second.update { it.storePost(post(), "title") } }
             one.join()
             two.join()

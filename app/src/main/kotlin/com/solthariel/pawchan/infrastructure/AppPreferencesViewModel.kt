@@ -7,7 +7,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.solthariel.pawchan.PawchanApplication
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
-import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Borrows the Application-owned preferences without creating a second DataStore. */
 internal class AppPreferencesViewModel(

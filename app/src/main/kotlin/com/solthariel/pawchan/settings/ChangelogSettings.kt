@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -23,12 +24,15 @@ import androidx.compose.ui.text.withStyle
 import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import java.io.File
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ChangelogSettings(
     history: ChangelogHistoryController = rememberChangelogHistory(),
     showVersion: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     var open by remember { mutableStateOf(false) }
     val state by history.state.collectAsState()
     LaunchedEffect(open) {
@@ -40,7 +44,7 @@ internal fun ChangelogSettings(
                 val secondary = MaterialTheme.colorScheme.onSurfaceVariant
                 Text(
                     buildAnnotatedString {
-                        append("Версия ")
+                        append(res.getString(L.ui_version))
                         withStyle(SpanStyle(color = secondary)) { append(BuildConfig.VERSION_NAME) }
                     },
                     Modifier.testTag("about-version"),
@@ -48,14 +52,14 @@ internal fun ChangelogSettings(
             },
             trailingContent = {
                 TextButton(onClick = { open = true }) {
-                    Text("Список изменений")
+                    Text(res.getString(L.ui_change_log))
                     UiForwardIndicator()
                 }
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
     } else {
-        SettingsItemRow(SettingsItem.Action("Список изменений", null, onClick = { open = true }))
+        SettingsItemRow(SettingsItem.Action(res.getString(L.ui_change_log), null, onClick = { open = true }))
     }
     if (open) ChangelogDialog(state.releases, state.failed) { open = false }
 }

@@ -17,5 +17,3 @@ fun canonicalMediaFormat(extension: String): String =
         "" -> "ФАЙЛ"
         else -> format
     }
-
-internal fun attachmentTypeAndSize(attachment: MediaAttachmentUi): String = attachment.display.typeAndSize

@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 /**
  * «Сохранить в Архивач»: ссылка и «свернуть» подставляются сами, пользователь вводит только капчу.
@@ -63,6 +65,8 @@ internal fun ArhivachSubmitDialog(
     address: ThreadAddress,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val form = remember { ArhivachSubmitForm() }
@@ -105,7 +109,7 @@ internal fun ArhivachSubmitDialog(
                 form.code,
                 onValueChange = { form.code = it },
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                label = { Text("Текст с картинки") },
+                label = { Text(res.getString(L.ui_text_from_image)) },
                 singleLine = true,
                 enabled = !form.busy,
             )
@@ -120,6 +124,8 @@ private fun ArhivachSubmitButton(
     form: ArhivachSubmitForm,
     onSubmit: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Button(
         onClick = onSubmit,
         enabled = !form.busy && form.code.isNotBlank() && form.captcha is CaptchaState.Ready,
@@ -127,13 +133,13 @@ private fun ArhivachSubmitButton(
     ) {
         if (form.busy) {
             PageLoadingIndicator(
-                description = "Отправка в Архивач",
+                description = res.getString(L.ui_sending_to_arhivach),
                 size = 20.dp,
                 backgroundColor = MaterialTheme.colorScheme.onSurface,
                 foregroundColor = MaterialTheme.colorScheme.surface,
             )
         } else {
-            Text("Отправить")
+            Text(res.getString(L.ui_send))
         }
     }
 }
@@ -161,15 +167,21 @@ private fun ArhivachSubmitHeader(
     enabled: Boolean,
     onRefresh: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Сохранить в Архивач", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        Text(res.getString(L.ui_save_to), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
         IconButton(
             onClick = onRefresh,
             enabled = enabled,
-            modifier = Modifier.semantics { contentDescription = "Другая картинка" },
+            modifier = Modifier.semantics { contentDescription = res.getString(L.ui_another_image) },
         ) {
             val tint = MaterialTheme.colorScheme.onSurfaceVariant
-            UiIcon(UiIconKind.REFRESH, if (enabled) tint else tint.copy(alpha = DISABLED_ALPHA), Modifier.size(24.dp))
+            UiIcon(
+                UiIconKind.REFRESH,
+                if (enabled) tint else tint.copy(alpha = DISABLED_ALPHA),
+                Modifier.size(24.dp),
+            )
         }
     }
 }
@@ -183,6 +195,8 @@ private fun CaptchaImage(
     modifier: Modifier = Modifier,
     onRefresh: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Box(
         modifier
             .fillMaxWidth()
@@ -195,7 +209,7 @@ private fun CaptchaImage(
         when (state) {
             CaptchaState.Loading -> {
                 PageLoadingIndicator(
-                    description = "Загрузка капчи",
+                    description = res.getString(L.ui_loading_captcha),
                     backgroundColor = Color.DarkGray,
                     foregroundColor = Color.White,
                 )
@@ -203,14 +217,19 @@ private fun CaptchaImage(
 
             CaptchaState.Failed -> {
                 Text(
-                    "Не удалось загрузить капчу.\nНажмите, чтобы повторить.",
+                    res.getString(L.ui_failed_to_load_captcha_nclick),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     color = Color.DarkGray,
                 )
             }
 
             is CaptchaState.Ready -> {
-                Image(state.image, "Капча", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                Image(
+                    state.image,
+                    res.getString(L.ui_captcha),
+                    Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
+                )
             }
         }
     }

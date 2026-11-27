@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Yritä uudelleen</string>
+    <string name="core_ui_challenge_open">Suorita vahvistus</string>
+    <string name="core_ui_error_loading_data">Virhe tietojen latauksessa</string>
+    <string name="core_ui_fast_scrollbar">Luettelon vieritys</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Päivitä ylhäältä</string>
+    <string name="core_ui_pull_refresh_bottom">Päivitä alhaalta</string>
+    <string name="core_ui_thread_author">Ketjun luoja</string>
+    <string name="core_ui_post_sage">Älä nosta</string>
+    <string name="core_ui_post_email">Tekijän sähköposti</string>
+    <string name="core_ui_thread_sticky">Kiinnitetty ketju</string>
+    <string name="core_ui_thread_closed">Ketju suljettu</string>
+    <string name="core_ui_thread_cyclical">Kiertävä ketju</string>
+    <string name="core_ui_post_banned">Kirjoittaja on estetty</string>
+    <string name="core_ui_archive_active">Arkistoija: viestiketju on aktiivinen ja sitä päivitetään</string>
+    <string name="core_ui_archive_maybe_deleted">Arkistoija: alkuperäinen viestiketju on ehkä poistettu</string>
+    <string name="core_ui_archive_saved">Arkistoija: viestiketju tallennettu</string>
+    <string name="core_ui_archive_lost">Arkistoija: viestiketju on merkitty kadonneeksi</string>
+    <string name="core_ui_archive_queued">Arkistoija: viestiketju odottaa käsittelyä</string>
+    <string name="core_ui_archive_other">Muu arkistoijan tila</string>
+    <string name="core_ui_copied">Kopioitu</string>
+    <string name="ui_enter_jpeg_quality">Anna JPEG-laatu</string>
+    <string name="ui_value">Arvo</string>
+    <string name="ui_quality">Laatu</string>
+    <string name="ui_jpeg_quality_906d">JPEG-laatu, %</string>
+    <string name="ui_from_to">%1$d–%2$d</string>
+    <string name="ui_cancel">Peruuta</string>
+    <string name="ui_apply">Käytä</string>
+    <string name="ui_expanded">Laajennettu</string>
+    <string name="ui_expand">Laajenna</string>
+    <string name="ui_collapsed">Kutistettu</string>
+    <string name="ui_removed">Poistettu</string>
+</resources>

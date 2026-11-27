@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.data.drafts
 
 import com.solthariel.pawchan.domain.archive.ArchiveMediaState
-import com.solthariel.pawchan.domain.archive.ArchivedMedia
 import com.solthariel.pawchan.domain.workspace.ThreadCopy
 import com.solthariel.pawchan.domain.workspace.WorkspaceRepository
 import java.io.IOException

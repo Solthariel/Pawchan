@@ -4,6 +4,7 @@ import com.solthariel.pawchan.media.video.MpvPlaybackEvents
 import com.solthariel.pawchan.media.video.MpvPollSample
 import com.solthariel.pawchan.media.video.MpvPollTiming
 import com.solthariel.pawchan.media.video.VideoEvent
+import com.solthariel.pawchan.media.video.VideoFailure
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
 import com.solthariel.pawchan.media.video.VideoStage
 import org.junit.Assert.assertEquals
@@ -15,6 +16,28 @@ class MpvPlaybackEventsTest {
     private val events = MpvPlaybackEvents()
     private val received = mutableListOf<Pair<VideoEvent, VideoPlaybackStatus>>()
     private val playing = MpvPollSample(MpvPollTiming(700, 3000), true, false, false, 1.5, "mediacodec", emptyMap())
+
+    @Test
+    fun backgroundReadAheadIsNotShownAsBufferingWhilePlaybackAdvancesOrIsPaused() {
+        events.open { event, status -> received.add(event to status) }
+        events.sample(playing, waitingForBytes = true)
+        assertEquals(VideoStage.READY, received.last().second.stage)
+        events.sample(playing, waitingForBytes = true)
+        assertEquals(VideoStage.BUFFERING, received.last().second.stage)
+        events.sample(playing.copy(timing = MpvPollTiming(900, 3000)), waitingForBytes = true)
+        assertEquals(VideoStage.READY, received.last().second.stage)
+        events.sample(playing.copy(paused = true), waitingForBytes = true)
+        events.sample(playing.copy(paused = true), waitingForBytes = true)
+        assertEquals(VideoStage.READY, received.last().second.stage)
+        events.sourceError()
+        assertEquals(VideoEvent.ERROR, received.last().first)
+        assertEquals(
+            VideoFailure.SOURCE,
+            received
+                .last()
+                .second.attempt.failure,
+        )
+    }
 
     @Test
     fun pollUpdatesTimelineAndDecoderStatus() {

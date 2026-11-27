@@ -4,7 +4,6 @@ import com.solthariel.pawchan.domain.model.MediaDimensions
 import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.MediaAttachmentSource
 import com.solthariel.pawchan.media.MediaAttachmentUi
-import com.solthariel.pawchan.media.attachmentTypeAndSize
 import com.solthariel.pawchan.media.calculateAttachmentGridMetrics
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -56,7 +55,7 @@ class CatalogAttachmentPickerTest {
                 dimensions = MediaDimensions.create(1024, 1320),
             )
 
-        assertEquals("PNG 1.4 МБ", attachmentTypeAndSize(attachment))
+        assertEquals("PNG 1.4 МБ", attachment.display.typeAndSize)
         assertEquals("1024×1320", "${attachment.dimensions?.width}×${attachment.dimensions?.height}")
     }
 }

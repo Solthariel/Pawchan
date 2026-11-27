@@ -23,6 +23,7 @@ private val ROUNDED_ICON_RESOURCES =
         UiIconKind.INFINITY to R.drawable.ic_rounded_autorenew,
         UiIconKind.SAVE to R.drawable.ic_rounded_download,
         UiIconKind.PLAY to R.drawable.ic_rounded_play_arrow,
+        UiIconKind.VIDEO_PREVIEW_PLAY to R.drawable.ic_rounded_play_arrow_fill,
         UiIconKind.PAUSE to R.drawable.ic_rounded_pause,
         UiIconKind.PREVIOUS to R.drawable.ic_rounded_skip_previous,
         UiIconKind.NEXT to R.drawable.ic_rounded_skip_next,

@@ -64,6 +64,15 @@ class HttpsProxyEndToEndTest {
         assertEquals(ProxyFailure.TLS_FAILED, failure.proxyFailure())
         assertEquals(0, bed.resource.requests.get())
     }
+
+    /** What a plain server's reset looks like on Windows, made deterministic on every system. */
+    @Test fun resetDuringTheTlsHandshakeIsATlsFailure() {
+        val server = bed.proxy(TestProxyKind.RESETS_CONNECTION)
+        val failure = failureOf { bed.client(ProxyRoute.Https(server.endpoint, LOGIN)).get(bed.resource.url()) }
+        assertEquals(ProxyFailure.TLS_FAILED, failure.proxyFailure())
+        assertNoSecret(failure, LOGIN.password, LOGIN_BASIC)
+        assertEquals(0, bed.resource.requests.get())
+    }
 }
 
 private const val UPLOAD_BYTES = 1024 * 1024 + 3

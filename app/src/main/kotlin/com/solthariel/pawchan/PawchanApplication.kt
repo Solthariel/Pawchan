@@ -1,9 +1,12 @@
 package com.solthariel.pawchan
 
 import android.app.Application
+import android.content.Context
 import androidx.work.Configuration
 import com.solthariel.pawchan.backup.BackupRecovery
 import com.solthariel.pawchan.data.preferences.DataStoreSettingsRepository
+import com.solthariel.pawchan.locale.PawchanLocales
+import com.solthariel.pawchan.media.video.MediaLocaleHost
 import com.solthariel.pawchan.watch.SettingsWorkerFactory
 import com.solthariel.pawchan.watch.ThreadWatchNotifier
 import com.solthariel.pawchan.watch.ThreadWatchScheduler
@@ -14,7 +17,8 @@ import kotlinx.coroutines.cancel
 
 class PawchanApplication :
     Application(),
-    Configuration.Provider {
+    Configuration.Provider,
+    MediaLocaleHost {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     internal val backupRecovery by lazy {
         BackupRecovery(this, preferences, applicationScope) {
@@ -59,6 +63,10 @@ class PawchanApplication :
         applicationScope.cancel()
         super.onTerminate()
     }
+
+    override fun localizedMediaContext(base: Context): Context = PawchanLocales.attach(base)
+
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(localizedMediaContext(base))
 
     override fun onCreate() {
         super.onCreate()

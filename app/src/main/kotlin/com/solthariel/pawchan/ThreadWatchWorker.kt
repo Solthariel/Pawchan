@@ -4,24 +4,16 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.solthariel.pawchan.data.database.RoomStorage
-import com.solthariel.pawchan.data.drafts.FileWorkspaceRepository
 import com.solthariel.pawchan.data.network.DvachHttpClient
 import com.solthariel.pawchan.data.network.DvachThreadApi
 import com.solthariel.pawchan.data.network.proxy.ScopedProxySelector
 import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.proxy.ProxyService
-import com.solthariel.pawchan.domain.settings.AppSettingsRepository
 import com.solthariel.pawchan.domain.settings.AutomationPreferences
 import com.solthariel.pawchan.domain.thread.ThreadCheckPassRepository
-import com.solthariel.pawchan.domain.watch.CheckWatchedThread
-import com.solthariel.pawchan.domain.watch.ThreadWatchSubscription
 import com.solthariel.pawchan.infrastructure.AndroidCookieJar
-import com.solthariel.pawchan.watch.BackgroundWatchRunResult
+import com.solthariel.pawchan.infrastructure.CookieRuleStore
 import com.solthariel.pawchan.watch.BackgroundWifiInterceptor
-import com.solthariel.pawchan.watch.ThreadWatchBackgroundRunner
-import com.solthariel.pawchan.watch.ThreadWatchEventSink
-import com.solthariel.pawchan.watch.ThreadWatchNotifier
-import com.solthariel.pawchan.workspace.checkWorkspaceReplies
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -91,13 +83,18 @@ internal class ThreadWatchWorker(
         }
     }
 
+    private fun watchCookies(mirror: String): AndroidCookieJar {
+        val rules = CookieRuleStore.get(applicationContext)
+        return AndroidCookieJar(rules = rules::current).apply { selectOrigin(mirror) }
+    }
+
     private fun watchClient(
         mirror: String,
         wifiOnly: Boolean,
         router: ScopedProxySelector,
     ): okhttp3.OkHttpClient =
         DvachHttpClient
-            .create(AndroidCookieJar().apply { selectOrigin(mirror) })
+            .create(watchCookies(mirror))
             .newBuilder()
             .viaProxyRouter(router)
             .addInterceptor(

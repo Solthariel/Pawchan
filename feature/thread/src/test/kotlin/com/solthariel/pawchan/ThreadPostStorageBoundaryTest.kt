@@ -1,6 +1,5 @@
 package com.solthariel.pawchan
 
-import androidx.compose.runtime.Composable
 import com.solthariel.pawchan.domain.model.DomainFailure
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.domain.model.PostAddress

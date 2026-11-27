@@ -14,10 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ImageEditorPalette(
@@ -26,6 +28,8 @@ internal fun ImageEditorPalette(
     redaction: Boolean = false,
     onSelected: () -> Unit = {},
 ) {
+    val res = LocalResources.current
+
     Column {
         IMAGE_EDITOR_COLORS.chunked(PALETTE_COLUMNS).forEachIndexed { row, colors ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -35,7 +39,7 @@ internal fun ImageEditorPalette(
                     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                     val semantics =
                         Modifier.semantics {
-                            contentDescription = "Цвет ${index + 1}"
+                            contentDescription = res.getString(L.ui_color, index + 1)
                             this.selected = selected
                         }
                     Box(

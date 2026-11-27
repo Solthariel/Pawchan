@@ -6,6 +6,8 @@ import com.solthariel.pawchan.ffmpeg.ProgressiveSource
 import io.github.yuroyami.libmpvkt.jni.MpvNative
 import io.github.yuroyami.libmpvkt.jni.MpvNativeApi
 import java.io.File
+import java.io.FileNotFoundException
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Values owned by the engine and callbacks back into its worker/main-thread coordinators. */
 internal interface MpvNativeSessionHost {
@@ -35,6 +37,10 @@ internal class MpvNativeSession(
 
     @Volatile private var provider: MpvProgressiveProvider? = null
 
+    @Volatile private var readWait = AtomicBoolean(false)
+    val waitingForBytes: Boolean get() = readWait.get()
+    val inputFailed: Boolean get() = provider?.failed == true
+
     fun start(
         file: File,
         download: ProgressiveSource?,
@@ -43,13 +49,17 @@ internal class MpvNativeSession(
     ) {
         worker.execute(current, "open") {
             if (current != host.token || host.closed) return@execute
+            if (!file.isFile || !file.canRead()) throw FileNotFoundException("Video source is not readable")
             MpvNative.initAndroid(app)
             val h = MpvNative.create()
             check(h != 0L)
             handle = h
             configureMpvOptions(h, software)
             check(MpvNative.initialize(h) >= 0)
-            val next = MpvProgressiveProvider(file, download, Runnable {}, Runnable {})
+            val waiting = AtomicBoolean(false)
+            readWait = waiting
+            val next =
+                MpvProgressiveProvider(file, download, Runnable { waiting.set(true) }, Runnable { waiting.set(false) })
             provider = next
             if (current != host.token || host.closed) {
                 next.close()
@@ -57,13 +67,26 @@ internal class MpvNativeSession(
             }
             check(MpvNative.streamCbAddRo(h, "pawvideo", next) >= 0)
             host.mountSurface(h)
-            check(MpvNative.command(h, arrayOf("loadfile", "pawvideo://video")) >= 0)
-            MpvNative.setPropertyString(h, "volume", host.volume.toString())
-            MpvNative.setPropertyString(h, "mute", if (host.muted) "yes" else "no")
-            MpvNative.setPropertyString(h, "speed", (host.speed / MILLIS_PER_SECOND).toString())
-            MpvNative.setPropertyString(h, "pause", if (host.wantsPlay) "no" else "yes")
+            loadRegisteredFile(h)
             host.onStarted(current)
         }
+    }
+
+    /** EOF unloads the demuxer, not our provider. Its next reader starts at byte zero in the same file. */
+    fun replay(current: Int) {
+        worker.execute(current, "replay") {
+            if (current != host.token || host.closed) return@execute
+            check(handle != 0L && provider != null)
+            loadRegisteredFile(handle)
+        }
+    }
+
+    private fun loadRegisteredFile(h: Long) {
+        MpvNative.setPropertyString(h, "volume", host.volume.toString())
+        MpvNative.setPropertyString(h, "mute", if (host.muted) "yes" else "no")
+        MpvNative.setPropertyString(h, "speed", (host.speed / MILLIS_PER_SECOND).toString())
+        MpvNative.setPropertyString(h, "pause", if (host.wantsPlay) "no" else "yes")
+        check(MpvNative.command(h, arrayOf("loadfile", "pawvideo://video", "replace")) >= 0)
     }
 
     fun setProperty(

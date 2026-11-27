@@ -12,10 +12,12 @@ internal fun localPostPreview(
                 ?.posts
                 .orEmpty()
         } else {
-            local.presentation.postPositions[target.postId]
-                ?.let(local.posts::getOrNull)
-                ?.takeIf { it.id == target.postId }
-                ?.let(::listOf)
+            local.postForPreview(target.postId)?.let(::listOf)
         }
-    return posts?.let { PostPreviewState(content = local, posts = it) }
+    return posts?.let { PostPreviewState(content = local, posts = it, replies = target.replies) }
 }
+
+/** Explicit links may open a collapsed post even if it has no scroll position in the list. */
+internal fun ThreadUiState.Content.postForPreview(id: Long): ThreadPostUi? =
+    presentation.postPositions[id]?.let(posts::getOrNull)?.takeIf { it.id == id }
+        ?: presentation.contentFilters.omittedPosts[id]

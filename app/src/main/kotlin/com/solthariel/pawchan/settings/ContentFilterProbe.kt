@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -20,11 +21,11 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.filter.ContentFilterEngine
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
-import com.solthariel.pawchan.domain.filter.FilterMatchField
 import com.solthariel.pawchan.domain.filter.contentFilterValidationError
 import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ContentFilterProbe(
@@ -33,6 +34,8 @@ internal fun ContentFilterProbe(
     sourceText: String? = null,
     onTextChange: ((String) -> Unit)? = null,
 ) {
+    val res = LocalResources.current
+
     var localText by rememberSaveable { mutableStateOf(initialFilterProbeText(rule, samples)) }
     val text = sourceText ?: localText
     val state = remember { ContentFilterProbeState() }
@@ -41,7 +44,7 @@ internal fun ContentFilterProbe(
     LaunchedEffect(input) { state.check(input) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FilterLineInput(
-            "Проверяемый текст",
+            res.getString(L.ui_text_being_checked),
             text,
             { value -> if (onTextChange != null) onTextChange(value) else localText = value },
             presentation = ContentFilterInputPresentation(preview = state.preview(input)),
@@ -108,19 +111,5 @@ private fun probeRanges(
         engine.commentMatch(board, text, threadId),
     ).flatMap { it.ranges }.distinct()
 }
-
-internal fun highlightedMatches(
-    matches: List<com.solthariel.pawchan.domain.filter.FilterMatch>,
-    subject: String,
-    text: String,
-): AnnotatedString =
-    buildAnnotatedString {
-        matches.forEach { match ->
-            val source = if (match.field == FilterMatchField.SUBJECT) subject else text
-            append("Совпало: ")
-            append(match.ranges.joinToString { "«${source.substring(it)}»" })
-            append("\n")
-        }
-    }
 
 private const val FILTER_PROBE_HIGHLIGHT_ARGB = 0x66FFD54F

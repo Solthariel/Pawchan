@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.AppAlertDialog
 import com.solthariel.pawchan.domain.settings.ThemeColors
@@ -24,6 +25,7 @@ import com.solthariel.pawchan.ui.generatedColorScheme
 import com.solthariel.pawchan.ui.withPureBlackSurfaces
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun CustomColorDialog(
@@ -31,6 +33,8 @@ internal fun CustomColorDialog(
     onChange: (ThemeColors) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val systemAccent =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.primary.toArgb() else null
     var hex by rememberSaveable { mutableStateOf(seedHex(initialCustomSeed(state.themeColors, systemAccent))) }
@@ -52,10 +56,10 @@ internal fun CustomColorDialog(
     val ready = request != null && preview?.request == request
     AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Свой цвет") },
+        title = { Text(res.getString(L.ui_own_color_ea7c)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Выберите исходный цвет. Оттенки интерфейса будут подобраны автоматически.")
+                Text(res.getString(L.ui_select_the_base_color_interface))
                 ColorSeedInput(hex) { hex = it }
                 ColorSchemePreview(preview?.colors ?: MaterialTheme.colorScheme)
             }
@@ -67,8 +71,8 @@ internal fun CustomColorDialog(
                     onChange(state.themeColors.copy(palette = ThemePalette.CUSTOM, customSeed = current.seed))
                     onDismiss()
                 }
-            }) { Text("Применить") }
+            }) { Text(res.getString(L.ui_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(res.getString(L.ui_cancel)) } },
     )
 }

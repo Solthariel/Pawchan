@@ -19,17 +19,6 @@ class ThreadExportSnapshotTest {
         assertEquals(listOf("Первый", "Второй"), result.posts.map { it.document.plainText })
     }
 
-    @Test fun shotSelectionUsesContentOrderNotSetOrder() {
-        val result = toolsContent(listOf(toolsPost(9), toolsPost(3), toolsPost(7))).exportDocument(linkedSetOf(7, 9))
-        assertEquals(listOf(9, 7), result.posts.map { it.index })
-    }
-
-    @Test fun emptyAndStaleSelectionNeverExportsAllPosts() {
-        val content = toolsContent(listOf(toolsPost(9)))
-        assertTrue(content.exportDocument(emptySet()).posts.isEmpty())
-        assertTrue(content.exportDocument(setOf(100)).posts.isEmpty())
-    }
-
     @Test fun preparedHeaderSubjectAndDocumentRunsArePreserved() {
         val original = toolsPost(4, "Text")
         val document = PostDocument(listOf(PostTextRun("Text", setOf(PostTextStyle.BOLD, PostTextStyle.SPOILER))))

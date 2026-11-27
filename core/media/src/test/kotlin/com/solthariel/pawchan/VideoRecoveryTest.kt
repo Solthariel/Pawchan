@@ -1,12 +1,16 @@
 package com.solthariel.pawchan
 
 import android.widget.FrameLayout
+import com.solthariel.pawchan.media.video.PlaybackFocusGate
+import com.solthariel.pawchan.media.video.SessionAudioFocus
 import com.solthariel.pawchan.media.video.VideoAttempt
 import com.solthariel.pawchan.media.video.VideoEngineBackend
 import com.solthariel.pawchan.media.video.VideoEvent
 import com.solthariel.pawchan.media.video.VideoPlaybackSession
 import com.solthariel.pawchan.media.video.VideoPlaybackStatus
+import com.solthariel.pawchan.media.video.VideoSoundMemory
 import com.solthariel.pawchan.media.video.VideoTimeline
+import com.solthariel.pawchan.media.video.needsAudioFocus
 import com.solthariel.pawchan.media.video.reattach
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -19,6 +23,56 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VideoRecoveryTest {
+    @Test
+    fun muteAndUnmuteUpdateFocusBeforeTheNextProgressTickIncludingInPip() =
+        runTest {
+            val original = VideoSoundMemory.muted
+            VideoSoundMemory.muted = true
+            val engine = TestVideoEngine().apply { hasAudio = true }
+            val player = VideoPlaybackSession(engine, backgroundScope, VIDEO_TEST_URL)
+            var requests = 0
+            var abandons = 0
+            var grant = true
+            val gate =
+                PlaybackFocusGate({
+                    requests++
+                    grant
+                }, { abandons++ })
+            player.audio =
+                object : SessionAudioFocus {
+                    override fun allowUnmute(): Boolean = gate.update(true)
+
+                    override fun sync() {
+                        if (!gate.update(player.needsAudioFocus)) player.pause()
+                    }
+
+                    override fun close() {
+                        gate.update(false)
+                    }
+                }
+            try {
+                player.start()
+                engine.opened.receive()
+                engine.emit(VideoEvent.PLAYING, VideoPlaybackStatus(playing = true))
+                assertEquals(0, requests)
+                player.inPip = true
+                player.toggleMuted()
+                assertEquals(1, requests)
+                assertFalse(player.sound.value.muted)
+                player.toggleMuted()
+                assertEquals(1, abandons)
+                grant = false
+                player.toggleMuted()
+                assertEquals(2, requests)
+                assertTrue(player.sound.value.muted)
+                assertFalse(gate.isHeld)
+                assertEquals(1, engine.pauses)
+            } finally {
+                player.close()
+                VideoSoundMemory.muted = original
+            }
+        }
+
     @Test
     fun playAfterTerminalFailureReopensTheSource() =
         runTest {

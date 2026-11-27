@@ -2,8 +2,10 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $gradle = Join-Path $root 'gradlew.bat'
 if (!(Test-Path $gradle)) { throw 'Run from the extracted project.' }
-$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$out = Join-Path $root "navigation-production-$stamp"
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
+$reportRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Pawchan-checks'
+New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
+$out = Join-Path $reportRoot "navigation-production-$stamp"
 if (Test-Path $out) { throw "Output already exists: $out" }
 New-Item -ItemType Directory -Path $out | Out-Null
 $tests = @(

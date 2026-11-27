@@ -221,6 +221,13 @@ android {
         buildConfigField("String", "UPDATE_MANIFEST_URL", "\"$updateManifestUrl\"")
     }
 
+    // The in-app picker must work without a network, even if Android installs this app from an AAB.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     buildFeatures {
         buildConfig = true
         compose = true
@@ -310,6 +317,18 @@ val prepareChangelogHistory =
         installedCode.set(appVersionCode)
         assetsDirectory.set(layout.buildDirectory.dir("generated/changelogAssets"))
     }
+
+// README screenshots (scripts/readme-shots.ps1): release speed under its own package, so its data can be wiped
+// without touching the installed app. Exists only when the script passes -Ppawchan.showcase=true.
+if (providers.gradleProperty("pawchan.showcase").isPresent) {
+    android.buildTypes.create("showcase") {
+        initWith(android.buildTypes.getByName("release"))
+        applicationIdSuffix = ".showcase"
+        versionNameSuffix = "-showcase"
+        signingConfig = android.signingConfigs.getByName("debug")
+        matchingFallbacks += "release"
+    }
+}
 
 androidComponents {
     onVariants { variant ->

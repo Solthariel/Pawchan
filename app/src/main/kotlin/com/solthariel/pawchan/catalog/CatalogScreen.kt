@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.catalog
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
@@ -199,18 +198,11 @@ private fun CatalogBody(
     }
 }
 
-internal data class CatalogAutoHideControls(
-    val count: Int,
-    val revealed: Boolean,
-    val toggle: () -> Unit,
-)
-
 internal data class CatalogPresentation(
     val board: BoardAddress,
     val state: CatalogUiState,
     val imageLoader: ImageLoader,
     val thumbnailLoader: ThumbnailLoader,
-    val autoHideControls: CatalogAutoHideControls? = null,
 )
 
 private data class CatalogScreenActions(

@@ -16,7 +16,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_SUBTITLE_SIZE
-import com.solthariel.pawchan.core.ui.APP_TOOLBAR_TITLE_SIZE
 import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
 import com.solthariel.pawchan.core.ui.UiToolbarSearchField
 import com.solthariel.pawchan.domain.model.BoardAddress

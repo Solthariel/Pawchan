@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -32,6 +33,7 @@ import com.solthariel.pawchan.R
 import com.solthariel.pawchan.data.network.proxy.ProxyRuntimeStatus
 import com.solthariel.pawchan.data.network.proxy.ProxyRuntimeStatus.DIRECT
 import com.solthariel.pawchan.domain.proxy.ProxyService
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ChallengeScreen(
@@ -39,6 +41,8 @@ internal fun ChallengeScreen(
     onBack: () -> Unit,
     onDone: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     BackHandler(onBack = onBack)
     val allowed = com.solthariel.pawchan.infrastructure.sites.LocalForumMirror.current
     val proxy = LocalProxyRuntime.current
@@ -52,13 +56,13 @@ internal fun ChallengeScreen(
                 .navigationBarsPadding(),
     ) {
         TextButton(onClick = if (canOpen) onDone else onBack) {
-            Text(if (canOpen) stringResource(R.string.challenge_done) else "Назад")
+            Text(if (canOpen) stringResource(R.string.challenge_done) else res.getString(L.ui_back))
         }
         HorizontalDivider()
         if (!canOpen) {
             Text(
-                "Проверка в браузере недоступна при включённом прокси для 2ch: WebView не использует этот SOCKS5. " +
-                    "Чтобы продолжить, отключите прокси для 2ch или используйте другой способ доступа.",
+                res.getString(L.ui_browser_check_unavailable_when_the) +
+                    res.getString(L.ui_to_continue_disable_the_proxy),
                 modifier = Modifier.padding(24.dp),
             )
         } else if (url != null && isAllowedChallengeUri(url.toUri(), allowed)) {

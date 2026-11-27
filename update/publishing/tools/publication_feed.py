@@ -1,14 +1,13 @@
 """Idempotent feed commit after verified publication, with bounded fast-forward retries."""
 import copy
 import json
-import os
 from pathlib import Path
 import subprocess
 import tempfile
 
 import publication_assets as assets
 import publication_state as state
-from release_sequence import identity, read_history, validate_local
+from release_sequence import read_history, validate_local
 
 
 def contents(tree, context, digest, length):

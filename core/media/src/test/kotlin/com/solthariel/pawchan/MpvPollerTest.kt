@@ -2,11 +2,26 @@ package com.solthariel.pawchan
 
 import com.solthariel.pawchan.media.video.MpvPollHost
 import com.solthariel.pawchan.media.video.MpvPollSample
+import com.solthariel.pawchan.media.video.MpvPollTiming
 import com.solthariel.pawchan.media.video.MpvPoller
+import com.solthariel.pawchan.media.video.mpvFrameCounters
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MpvPollerTest {
+    @Test
+    fun decoderAndOutputDropsUseDistinctNativePropertiesAndUnknownIsNotZero() {
+        val sample = MpvPollSample(MpvPollTiming(400, 4000), true, false, false, null, "no", emptyMap())
+        val native = mapOf("decoder-frame-drop-count" to "0", "frame-drop-count" to "7")
+        val measured = mpvFrameCounters(sample, native::get)
+        assertEquals(0L, measured.decoderDrops)
+        assertEquals(7L, measured.outputDrops)
+        assertEquals(false, measured.hardware)
+        for (invalid in listOf(null, "unavailable", "-1")) {
+            assertEquals(null, mpvFrameCounters(sample) { invalid }.outputDrops)
+        }
+    }
+
     @Test
     fun staleGenerationDoesNotReadOrReschedule() {
         val host = FakePollHost()

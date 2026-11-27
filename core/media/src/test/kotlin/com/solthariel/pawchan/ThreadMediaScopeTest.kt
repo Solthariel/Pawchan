@@ -1,7 +1,6 @@
 package com.solthariel.pawchan
 
 import com.solthariel.pawchan.media.AttachmentViewer
-import com.solthariel.pawchan.media.MEDIA_TOOLBAR_ALPHA
 import com.solthariel.pawchan.media.MediaAttachmentSource
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.MediaViewerSelection
@@ -33,11 +32,6 @@ class ThreadMediaScopeTest {
         val first = attachment("same", 101)
         val second = attachment("same", 102)
         assertEquals(2, MediaViewerSelection(second, listOf(first, second)) {}.navigation().position)
-    }
-
-    @Test
-    fun mediaUsesMediaOverlayOpacity() {
-        assertEquals(170f / 255f, MEDIA_TOOLBAR_ALPHA, 0.00001f)
     }
 
     private fun attachment(

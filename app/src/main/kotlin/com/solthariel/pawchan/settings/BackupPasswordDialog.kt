@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.data.maintenance.BackupProtection
+import com.solthariel.pawchan.R.string as L
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
 
 @Composable
@@ -37,6 +39,8 @@ internal fun BackupPasswordDialog(
     close: () -> Unit,
     confirm: (CharArray?) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val input = remember { BackupPasswordInput() }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, input) {
@@ -50,7 +54,11 @@ internal fun BackupPasswordDialog(
     AlertDialog(
         onDismissRequest = { if (!busy) close() },
         properties = DialogProperties(securePolicy = SecureFlagPolicy.SecureOn),
-        title = { Text(if (creating) "Защита резервной копии" else "Пароль резервной копии") },
+        title = {
+            Text(
+                if (creating) res.getString(L.ui_backup_protection) else res.getString(L.ui_backup_password),
+            )
+        },
         text = { BackupPasswordFields(input, creating, busy, error) },
         confirmButton = {
             TextButton(enabled = !busy && input.valid(creating), onClick = {
@@ -60,16 +68,16 @@ internal fun BackupPasswordDialog(
             }) {
                 Text(
                     if (busy) {
-                        "Обработка…"
+                        res.getString(L.ui_processing)
                     } else if (creating) {
-                        "Продолжить"
+                        res.getString(L.ui_continue)
                     } else {
-                        "Открыть"
+                        res.getString(L.ui_open)
                     },
                 )
             }
         },
-        dismissButton = { TextButton(enabled = !busy, onClick = close) { Text("Отмена") } },
+        dismissButton = { TextButton(enabled = !busy, onClick = close) { Text(res.getString(L.ui_cancel)) } },
     )
 }
 
@@ -80,6 +88,8 @@ private fun BackupPasswordFields(
     busy: Boolean,
     error: String?,
 ) {
+    val res = LocalResources.current
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (creating) {
             Row {
@@ -87,7 +97,7 @@ private fun BackupPasswordFields(
                     input.encrypted = it
                     input.clear()
                 })
-                Text("Защитить копию паролем", Modifier.padding(top = 12.dp))
+                Text(res.getString(L.ui_protect_backup_with_a_password), Modifier.padding(top = 12.dp))
             }
         }
         if (!creating || input.encrypted) {
@@ -96,9 +106,13 @@ private fun BackupPasswordFields(
                 onValueChange = { input.password = it },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !busy,
-                label = { Text("Пароль") },
+                label = { Text(res.getString(L.ui_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        autoCorrectEnabled = false,
+                    ),
                 singleLine = true,
             )
             if (creating) {
@@ -107,9 +121,13 @@ private fun BackupPasswordFields(
                     onValueChange = { input.repeated = it },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !busy,
-                    label = { Text("Повторите пароль") },
+                    label = { Text(res.getString(L.ui_repeat_password)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            autoCorrectEnabled = false,
+                        ),
                     singleLine = true,
                 )
             }

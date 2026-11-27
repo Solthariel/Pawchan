@@ -41,9 +41,28 @@ data class WorkspaceState(
     val tabs: List<OpenThread> = emptyList(),
     val media: List<MediaAttachment> = emptyList(),
     val copies: List<ThreadCopy> = emptyList(),
-    val lastRoute: String? = null,
+    val routes: WorkspaceRoutes = WorkspaceRoutes(),
     val marks: ThreadMarks = ThreadMarks(),
+) {
+    val lastRoute: String? get() = routes.last
+    val baseRoute: String? get() = routes.base
+    val readingRoute: String? get() = routes.reading
+}
+
+/** Где остановились: последний экран, каталог в основании стека и тред до ухода на вкладку. */
+data class WorkspaceRoutes(
+    val last: String? = null,
+    /** Каталог в основании стека: перезапуск открывает его, даже если закрыли приложение на вкладке. */
+    val base: String? = null,
+    /** Тред, который читали до ухода на вкладку: остаётся точкой возврата и после перезапуска. */
+    val reading: String? = null,
 )
+
+fun WorkspaceState.withRoutes(
+    last: String? = lastRoute,
+    base: String? = baseRoute,
+    reading: String? = readingRoute,
+): WorkspaceState = copy(routes = WorkspaceRoutes(last, base, reading))
 
 /** Пометки тредов по адресу: скрытые в каталоге и известные копии на Архиваче. */
 data class ThreadMarks(

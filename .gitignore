@@ -28,3 +28,8 @@ __pycache__/
 !data/network/src/test/resources/proxy-test.p12
 !data/network/src/test/resources/proxy-host-test.p12
 !data/network/src/test/resources/proxy-wrong-host-test.p12
+
+# Historical outputs from the two manual QA launchers. Do not ignore unrelated ZIPs.
+/interface-v11-full-check.log
+/navigation-production-*/
+/navigation-production-*.zip

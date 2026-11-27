@@ -15,11 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import com.solthariel.pawchan.core.ui.AppAlertDialog as AlertDialog
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 /** «Скрытые посты»: правила скрытия этого треда, каждое можно убрать. */
 @Composable
@@ -27,15 +29,17 @@ internal fun HiddenPostRulesDialog(
     preferences: ThreadPostPreferencesController,
     onClose: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val rules by preferences.currentRules.collectAsStateWithLifecycle()
     val list = rules?.hiddenRules().orEmpty()
     val scope = rememberCoroutineScope()
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text("Скрытые посты") },
+        title = { Text(res.getString(L.ui_hidden_posts)) },
         text = {
             if (list.isEmpty()) {
-                Text("В этом треде ничего не скрыто")
+                Text(res.getString(L.ui_nothing_is_hidden_in_this))
             } else {
                 Column(Modifier.heightIn(max = RULES_MAX_HEIGHT).verticalScroll(rememberScrollState())) {
                     list.forEach { rule ->
@@ -53,6 +57,8 @@ private fun HiddenRuleRow(
     rule: HiddenPostRule,
     onRemove: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             rule.title,
@@ -61,7 +67,7 @@ private fun HiddenRuleRow(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        TextButton(onClick = onRemove) { Text("Показать") }
+        TextButton(onClick = onRemove) { Text(res.getString(L.ui_show)) }
     }
 }
 

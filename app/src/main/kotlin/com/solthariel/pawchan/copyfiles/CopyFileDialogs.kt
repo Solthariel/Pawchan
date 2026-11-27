@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.solthariel.pawchan.catalog.CatalogIconButton
@@ -33,6 +34,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiSpacing
 import java.text.DateFormat
 import java.util.Date
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun CopyFileDialogs(
@@ -42,11 +44,17 @@ internal fun CopyFileDialogs(
     saveOther: () -> Unit = other,
     listExtras: CopyFileListExtras? = null,
 ) {
-    TransientNotice("Запись файла…".takeIf { actions.busy && !actions.browsing })
+    val res = LocalResources.current
+
+    TransientNotice(res.getString(L.ui_saving_file).takeIf { actions.busy && !actions.browsing })
     if (actions.browsing) CopyFileListDialog(actions, choose, other, listExtras)
     actions.saved?.let { document ->
         if (actions.kind == CopyFileKind.THREAD) {
-            TransientNotice("ZIP сохранён: ${document.name}", eventKey = document, onDismiss = actions::closeResult)
+            TransientNotice(
+                res.getString(L.ui_zip_saved, document.name),
+                eventKey = document,
+                onDismiss = actions::closeResult,
+            )
         } else {
             SavedCopyFileDialog(document, actions::closeResult, actions::browse)
         }
@@ -54,7 +62,7 @@ internal fun CopyFileDialogs(
     TransientNotice(
         actions.error,
         action =
-            NoticeAction("Выбрать другой файл…") {
+            NoticeAction(res.getString(L.ui_choose_another_file)) {
                 actions.clearError()
                 saveOther()
             },
@@ -69,13 +77,25 @@ private fun CopyFileListDialog(
     other: () -> Unit,
     listExtras: CopyFileListExtras?,
 ) {
+    val res = LocalResources.current
+
     val documents =
         sortedCopyDocuments((actions.documents + listExtras?.additional.orEmpty()).distinctBy { it.uri })
     val unavailable =
         listExtras?.unavailable.orEmpty().filterNot { missing -> documents.any { it.uri == missing.uri } }
     AppAlertDialog(
         onDismissRequest = actions::closeList,
-        title = { Text(if (actions.kind == CopyFileKind.THREAD) "ZIP-файлы" else "Сохранённые копии") },
+        title = {
+            Text(
+                if (actions.kind ==
+                    CopyFileKind.THREAD
+                ) {
+                    res.getString(L.ui_zip_files)
+                } else {
+                    res.getString(L.ui_saved_copies)
+                },
+            )
+        },
         text = {
             Column {
                 CopyFileList(actions, documents, unavailable, choose, listExtras)
@@ -83,7 +103,7 @@ private fun CopyFileListDialog(
                     androidx.compose.foundation.layout
                         .Spacer(Modifier.height(UiSpacing.small))
                     ActionMenuItem(
-                        "Выбрать другой файл…",
+                        res.getString(L.ui_choose_another_file),
                         {
                             actions.closeList()
                             other()
@@ -102,7 +122,7 @@ private fun CopyFileListDialog(
                     TextButton(onClick = {
                         actions.closeList()
                         other()
-                    }) { Text("Выбрать другой файл…") }
+                    }) { Text(res.getString(L.ui_choose_another_file)) }
                 }
             },
     )
@@ -116,14 +136,16 @@ private fun CopyFileList(
     choose: (CopyDocument) -> Unit,
     listExtras: CopyFileListExtras?,
 ) {
+    val res = LocalResources.current
+
     Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
-        if (actions.busy) Text("Чтение папки…")
+        if (actions.busy) Text(res.getString(L.ui_reading_folder))
         if (!actions.busy && documents.isEmpty() && unavailable.isEmpty()) {
             Text(
                 if (actions.kind == CopyFileKind.THREAD) {
-                    "В этой папке пока нет ZIP-файлов"
+                    res.getString(L.ui_there_are_no_zip_files)
                 } else {
-                    "В этой папке пока нет копий"
+                    res.getString(L.ui_there_are_no_copies_in)
                 },
             )
         }
@@ -157,9 +179,11 @@ internal fun CopyDocumentRow(
     onOpen: () -> Unit,
     onMore: (() -> Unit)?,
 ) {
+    val res = LocalResources.current
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) { ActionMenuItem(copyDocumentLabel(document), onOpen) }
-        if (onMore != null) CatalogIconButton(UiIconKind.MORE, "Действия с файлом", onClick = onMore)
+        if (onMore != null) CatalogIconButton(UiIconKind.MORE, res.getString(L.ui_file_actions), onClick = onMore)
     }
 }
 
@@ -169,34 +193,36 @@ internal fun SavedCopyFileDialog(
     close: () -> Unit,
     browse: (() -> Unit)?,
 ) {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     var showActions by remember(document) { mutableStateOf(false) }
     TransientNotice(
-        "Копия сохранена: ${document.name}",
+        res.getString(L.ui_copy_saved_cb58, document.name),
         eventKey = document,
         action =
-            NoticeAction("Действия") { showActions = true },
+            NoticeAction(res.getString(L.ui_actions)) { showActions = true },
     )
     if (!showActions) return
     AppAlertDialog(
         onDismissRequest = close,
-        title = { Text("Копия сохранена") },
+        title = { Text(res.getString(L.ui_copy_saved)) },
         text = {
             Column {
                 Text(document.name)
                 if (document.mime == "application/zip") {
-                    ActionMenuItem("Открыть", { openCopyFile(context, document, false) })
+                    ActionMenuItem(res.getString(L.ui_open), { openCopyFile(context, document, false) })
                 }
-                ActionMenuItem("Поделиться", { openCopyFile(context, document, true) })
+                ActionMenuItem(res.getString(L.ui_share), { openCopyFile(context, document, true) })
                 if (browse != null) {
-                    ActionMenuItem("Показать копии", {
+                    ActionMenuItem(res.getString(L.ui_show_copies), {
                         close()
                         browse()
                     })
                 }
             }
         },
-        confirmButton = { TextButton(onClick = close) { Text("Готово") } },
+        confirmButton = { TextButton(onClick = close) { Text(res.getString(L.ui_done)) } },
     )
 }
 

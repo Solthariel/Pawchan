@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 from unittest.mock import patch
 
-from publication_fixture import PublicationFixture, assets, state
+from publication_fixture import PublicationFixture, assets
 import release_entry as entry
 
 

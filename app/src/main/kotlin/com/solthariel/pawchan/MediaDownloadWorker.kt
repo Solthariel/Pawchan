@@ -12,6 +12,7 @@ import com.solthariel.pawchan.data.network.proxy.viaProxyRouter
 import com.solthariel.pawchan.domain.proxy.ProxyService
 import com.solthariel.pawchan.downloads.DownloadNotifications
 import com.solthariel.pawchan.downloads.DownloadStatus
+import com.solthariel.pawchan.infrastructure.CookieRuleStore
 import com.solthariel.pawchan.media.MediaDownloadResult
 import com.solthariel.pawchan.media.MediaDownloader
 import com.solthariel.pawchan.media.copyCancellableBytes
@@ -118,7 +119,7 @@ internal class MediaDownloadWorker(
             }
         val apiClient =
             DvachHttpClient
-                .create(mediaDownloadCookieJar(mirror))
+                .create(mediaDownloadCookieJar(mirror).also { CookieRuleStore.get(applicationContext) })
                 .newBuilder()
                 .viaProxyRouter(router)
                 .addInterceptor(

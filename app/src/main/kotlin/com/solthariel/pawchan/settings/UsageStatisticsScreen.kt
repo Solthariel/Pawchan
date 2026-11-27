@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,18 +20,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
+import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.statistics.UsageMetric
 import com.solthariel.pawchan.domain.statistics.UsageStatisticsRepository
-import com.solthariel.pawchan.domain.statistics.hasLegacyUsage
 import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun UsageStatisticsScreen(
@@ -40,18 +41,13 @@ internal fun UsageStatisticsScreen(
     onBack: () -> Unit,
     bottomActions: AppBottomActions,
 ) {
+    val res = LocalResources.current
+
     val repository =
         com.solthariel.pawchan.workspace.LocalWorkspace.current
             ?.appSettings
-    val app by (
-        repository?.appSettings ?: flowOf(
-            com.solthariel.pawchan.domain.settings
-                .AppSettings(),
-        )
-    ).collectAsStateWithLifecycle(
-        com.solthariel.pawchan.domain.settings
-            .AppSettings(),
-    )
+    val defaults = AppSettings()
+    val app by (repository?.appSettings ?: flowOf(defaults)).collectAsStateWithLifecycle(defaults)
     val days by (stats?.days ?: flowOf(emptyList())).collectAsStateWithLifecycle(emptyList())
     val available by (stats?.available ?: flowOf(false)).collectAsStateWithLifecycle(stats != null)
     var period by rememberSaveable { mutableIntStateOf(0) }
@@ -62,7 +58,7 @@ internal fun UsageStatisticsScreen(
     val values = remember(days, period, today) { usagePeriodTotals(days, period, today) }
     AppNavigationWorkspace(bottomActions, AppBottomDestination.SETTINGS, floatingTop = true) {
         com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
-            SettingsPageToolbar("Статистика", onBack) {
+            SettingsPageToolbar(res.getString(L.ui_statistics), onBack) {
                 UsageStatisticsMenu(
                     app.postCountEnabled,
                     { enabled ->
@@ -80,16 +76,19 @@ internal fun UsageStatisticsScreen(
             if (available) UsageDataStart(days)
         }) {
             if (available) {
-                UsageStatisticsList(values, days.any { it.hasLegacyUsage() }, Modifier.fillMaxSize())
+                UsageStatisticsList(values, Modifier.fillMaxSize())
             } else {
                 Text(
-                    "Не удалось прочитать или сохранить статистику",
-                    Modifier.padding(top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current).padding(20.dp),
+                    res.getString(L.ui_failed_to_read_or_save),
+                    Modifier
+                        .padding(
+                            top = com.solthariel.pawchan.core.ui.LocalTopOverlayInset.current,
+                        ).padding(20.dp),
                 )
             }
         }
     }
-    if (writeFailed) CacheNotice("Не удалось сохранить настройку /postcount") { writeFailed = false }
+    if (writeFailed) CacheNotice(res.getString(L.ui_failed_to_save_postcount_setting)) { writeFailed = false }
     if (confirm) {
         UsageResetDialog({ confirm = false }) {
             confirm = false
@@ -101,7 +100,6 @@ internal fun UsageStatisticsScreen(
 @Composable
 private fun UsageStatisticsList(
     values: Map<UsageMetric, Long>,
-    hasLegacy: Boolean,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -112,7 +110,6 @@ private fun UsageStatisticsList(
                 bottom = LocalBottomOverlayInset.current + 8.dp,
             ),
     ) {
-        if (hasLegacy) item(key = "legacy-usage-notice") { LegacyUsageNotice() }
         items(UsageMetric.entries, key = { it.name }) { metric ->
             UsageValueRow(metric.usageLabel(), usageValue(metric, values[metric] ?: 0L))
         }
@@ -138,21 +135,13 @@ internal fun UsageValueRow(
 }
 
 @Composable
-private fun LegacyUsageNotice() {
-    Text(
-        "Старые итоги сохранены. Уникальность данных до обновления восстановить нельзя.",
-        Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
 private fun UsageDataStart(days: List<com.solthariel.pawchan.domain.statistics.UsageDay>) {
+    val res = LocalResources.current
+
     val first = days.minOfOrNull { it.epochDay }
     val label =
         if (first == null) {
-            "Сохранённых записей пока нет"
+            res.getString(L.ui_no_saved_entries_yet)
         } else {
             val date = LocalDate.ofEpochDay(first)
             "Первые сохранённые данные: ${date.format(

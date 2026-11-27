@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.core.ui.FAST_SCROLL_BAR_WIDTH
+import com.solthariel.pawchan.domain.settings.BottomBarButton
 import com.solthariel.pawchan.core.ui.R as CoreUiR
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -55,6 +58,22 @@ internal fun AppBottomBar(
                         ),
                     ).padding(top = BOTTOM_FADE_HEIGHT),
         ) {
+            LocalBottomBarOrder.current.forEach { button ->
+                key(button) { AppBottomButton(button, actions, selected) }
+            }
+        }
+    }
+}
+
+/** Одна кнопка панели; порядок задаёт настройка, действия и бейдж остаются за своей кнопкой. */
+@Composable
+private fun RowScope.AppBottomButton(
+    button: BottomBarButton,
+    actions: AppBottomActions,
+    selected: AppBottomDestination?,
+) {
+    when (button) {
+        BottomBarButton.CATALOG -> {
             AppBottomItem(
                 AppBottomItemState(
                     stringResource(R.string.catalog),
@@ -63,6 +82,9 @@ internal fun AppBottomBar(
                 ),
                 actions.onCatalogClick,
             )
+        }
+
+        BottomBarButton.THREADS -> {
             AppBottomItem(
                 AppBottomItemState(
                     stringResource(R.string.threads_hub),
@@ -72,6 +94,9 @@ internal fun AppBottomBar(
                 ),
                 actions.onLibraryClick,
             )
+        }
+
+        BottomBarButton.BOARDS -> {
             AppBottomItem(
                 AppBottomItemState(
                     stringResource(R.string.boards),
@@ -80,6 +105,9 @@ internal fun AppBottomBar(
                 ),
                 actions.onBoardsClick,
             )
+        }
+
+        BottomBarButton.SETTINGS -> {
             AppBottomItem(
                 AppBottomItemState(
                     stringResource(R.string.settings_short),
@@ -88,6 +116,9 @@ internal fun AppBottomBar(
                 ),
                 actions.onSettingsClick,
             )
+        }
+
+        BottomBarButton.WRITE -> {
             AppBottomItem(
                 AppBottomItemState(stringResource(R.string.write), CoreUiR.drawable.ic_rounded_edit_square),
                 actions.onWriteClick,

@@ -59,11 +59,6 @@ class ServiceProxyRuntime(
         )
     val states: StateFlow<Map<ProxyService, ProxyRuntimeState>> = mutableStates.asStateFlow()
 
-    suspend fun checkResource(
-        service: ProxyService,
-        mirror: String,
-    ): ProxyProbeResult = ProxyResourceProbe(router).check(service, mirror)
-
     init {
         ProxyService.entries.forEach { service -> startSaved(service, initial.profile(service)) }
     }

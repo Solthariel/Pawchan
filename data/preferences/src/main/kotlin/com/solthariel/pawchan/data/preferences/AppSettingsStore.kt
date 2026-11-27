@@ -58,6 +58,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
                         this[CONTENT_FILTER_RESET_NOTICE] ?: false,
                     ),
                 showHiddenThreads = this[SHOW_HIDDEN_THREADS] ?: defaults.behavior.showHiddenThreads,
+                showHiddenPosts = this[SHOW_HIDDEN_POSTS] ?: defaults.behavior.showHiddenPosts,
                 videoStartMuted = this[VIDEO_MUTED] ?: defaults.behavior.videoStartMuted,
                 updateSavedCopies = this[UPDATE_COPIES] ?: defaults.behavior.updateSavedCopies,
             ),
@@ -69,6 +70,7 @@ internal fun MutablePreferences.write(settings: AppSettings) {
     this[CONTENT_FILTER_RECORDS] = encodeContentFilters(settings.contentFilters)
     this[CONTENT_FILTER_RESET_NOTICE] = settings.behavior.contentFilterResetNotice
     this[SHOW_HIDDEN_THREADS] = settings.behavior.showHiddenThreads
+    this[SHOW_HIDDEN_POSTS] = settings.behavior.showHiddenPosts
     this[POST_MARKERS] = settings.postMarkers
     this[HIDE_STICKERS] = settings.hideStickers
     this[HIDE_MONKEY_REPLIES] = settings.hideMonkeyReplies
@@ -90,3 +92,4 @@ private val COLLAPSE_LINES = intPreferencesKey("app_collapse_lines")
 private val VIDEO_MUTED = booleanPreferencesKey("app_video_start_muted")
 private val UPDATE_COPIES = booleanPreferencesKey("app_update_saved_copies")
 private val SHOW_HIDDEN_THREADS = booleanPreferencesKey("app_show_hidden_threads")
+private val SHOW_HIDDEN_POSTS = booleanPreferencesKey("app_show_hidden_posts")

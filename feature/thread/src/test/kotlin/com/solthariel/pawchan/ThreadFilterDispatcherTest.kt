@@ -72,6 +72,14 @@ class ThreadFilterDispatcherTest {
                 assertEquals(rules.single().label, filtered.presentation.contentFilterNotice)
                 assertFalse(op.metadata.hidden)
                 assertTrue(reply.metadata.hidden)
+                settings.updateAppSettings { it.copy(behavior = it.behavior.copy(showHiddenPosts = false)) }
+                advanceUntilIdle()
+                val withoutRows = model.state.value as ThreadUiState.Content
+                assertEquals(listOf(op.id), withoutRows.posts.map { it.id })
+                assertEquals(filtered.presentation.contentFilters.hits, withoutRows.presentation.contentFilters.hits)
+                settings.updateAppSettings { it.copy(behavior = it.behavior.copy(showHiddenPosts = true)) }
+                advanceUntilIdle()
+                assertEquals(filtered.posts, (model.state.value as ThreadUiState.Content).posts)
                 model.revealContentFilter(reply.id)
                 advanceUntilIdle()
                 val revealed = model.state.value as ThreadUiState.Content

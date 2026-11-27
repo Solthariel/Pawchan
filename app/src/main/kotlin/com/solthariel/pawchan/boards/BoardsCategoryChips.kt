@@ -15,8 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.R.string as L
 
 internal val CATEGORY_CHIPS_HEIGHT = 48.dp
 
@@ -26,6 +28,8 @@ internal fun BoardsCategoryChips(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
+    val res = LocalResources.current
+
     Row(
         modifier =
             Modifier
@@ -37,7 +41,7 @@ internal fun BoardsCategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CategoryChip("Все", selected.isEmpty()) { onSelect("") }
+        CategoryChip(res.getString(L.ui_all), selected.isEmpty()) { onSelect("") }
         categories.forEach { category ->
             CategoryChip(category.title, selected == category.title) { onSelect(category.title) }
         }

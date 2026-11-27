@@ -13,9 +13,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.LocalPostDisplayPreferences
 import com.solthariel.pawchan.core.ui.PostDisplayPreferences
 import com.solthariel.pawchan.domain.model.BoardAddress
@@ -83,7 +85,49 @@ class ThreadCompactDialogsUiTest {
         compose.onNodeWithText("Второй ответ с более длинным комментарием", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Ответы на #1").assertDoesNotExist()
         compose.onNodeWithText("Закрыть").assertDoesNotExist()
+        compose.onNodeWithText("Открыть тред").assertDoesNotExist()
         saveThreadChromeScreenshot("replies")
+    }
+
+    @Test
+    fun openThreadButtonSpansTheCardAndKeepsItsPostTarget() {
+        val address =
+            ThreadAddress(
+                BoardAddress(requireNotNull(SiteId.parse("2ch")), requireNotNull(BoardId.parse("b"))),
+                requireNotNull(ThreadId.parse(10)),
+            )
+        val posts = listOf(previewPost(11, "Из другого треда"))
+        val content =
+            ThreadUiState
+                .Content(
+                    10,
+                    null,
+                    posts,
+                    ThreadContentFlags(false),
+                    ThreadContentPresentation(false),
+                    ThreadContentStatistics(),
+                ).withPostNavigation()
+        var opened: Pair<ThreadAddress, Long>? = null
+        compose.setContent {
+            ThreadTestTheme(ThemePreference.DARK) {
+                PostPreviewWindow(
+                    PostPreviewState(content, posts),
+                    PostPreviewTarget(address, 11),
+                    rememberPreviewPresentation(),
+                    PostPreviewBindings({}, {}, {}, {}, {}, onOpenThread = { thread, post -> opened = thread to post }),
+                    {},
+                    {},
+                )
+            }
+        }
+        val card = compose.onNodeWithTag("preview-active", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val button = compose.onNodeWithText("Открыть тред")
+        val bounds = button.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val inset = with(compose.density) { 16.dp.toPx() }
+        assertEquals(inset, bounds.left - card.left, 1f)
+        assertEquals(inset, card.right - bounds.right, 1f)
+        button.performClick()
+        compose.runOnIdle { assertEquals(address to 11L, opened) }
     }
 
     @Test

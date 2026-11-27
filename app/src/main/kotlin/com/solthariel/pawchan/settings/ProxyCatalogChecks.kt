@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.data.network.proxy.ProxyFailure
@@ -23,12 +24,15 @@ import com.solthariel.pawchan.data.network.proxy.proxyRouteFor
 import com.solthariel.pawchan.domain.proxy.SavedProxy
 import com.solthariel.pawchan.domain.proxy.validProxyCredentials
 import com.solthariel.pawchan.infrastructure.LocalProxyCatalog
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ProxyDraftChecks(
     draft: SavedProxy,
     mirror: String,
 ) {
+    val res = LocalResources.current
+
     val runtime = LocalProxyCatalog.current ?: return
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -47,7 +51,7 @@ internal fun ProxyDraftChecks(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ),
-    ) { Text("Проверить выбранные") }
+    ) { Text(res.getString(L.ui_check_selected)) }
     if (open) {
         ProxyCheckDialog(draft, mirror, runtime::check) { open = false }
     }

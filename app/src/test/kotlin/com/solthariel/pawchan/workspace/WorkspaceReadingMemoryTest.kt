@@ -4,12 +4,8 @@ import com.solthariel.pawchan.domain.model.ThreadFlags
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.navigation.defaultThreadAddress
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 
 class WorkspaceReadingMemoryTest {

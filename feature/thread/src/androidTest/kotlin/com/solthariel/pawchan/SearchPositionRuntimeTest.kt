@@ -55,7 +55,10 @@ class SearchPositionRuntimeTest {
         compose.waitForIdle()
         compose.waitUntil(5_000) { memory.tools.results.size == 8 }
         compose.runOnIdle { assertEquals(20, memory.list.firstVisibleItemIndex) }
-        compose.runOnIdle { memory.tools.setFlag(ThreadSearchFlag.OP, content) }
+        compose.runOnIdle {
+            memory.tools.selectFlag(ThreadSearchFlag.OP)
+            memory.tools.search(content)
+        }
         compose.mainClock.advanceTimeBy(300)
         compose.waitForIdle()
         compose.waitUntil(5_000) { !memory.tools.searching }

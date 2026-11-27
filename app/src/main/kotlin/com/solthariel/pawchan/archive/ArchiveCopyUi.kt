@@ -10,7 +10,6 @@ internal data class ArchiveCopyUi(
     val title: String,
     /** Карточка как в каталоге; строка состояния — загрузка файлов, «Тред умер», ошибка. */
     val card: CatalogThreadUi,
-    val pendingMedia: Boolean,
 )
 
 internal fun prepareArchiveCopy(copy: ThreadCopy): ArchiveCopyUi {
@@ -38,6 +37,5 @@ internal fun prepareArchiveCopy(copy: ThreadCopy): ArchiveCopyUi {
         copy,
         copy.snapshot.subject ?: "/${copy.snapshot.address.board.board.value}/${copy.snapshot.address.thread.value}",
         copy.snapshot.toCatalogThreadUi(note = note),
-        copy.archive.includeMedia && (missing.isNotEmpty() || copy.archive.media.failure != null),
     )
 }

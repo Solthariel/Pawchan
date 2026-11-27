@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -21,6 +22,7 @@ import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.domain.settings.AppSettings
 import com.solthariel.pawchan.domain.settings.StoragePreferences
 import kotlin.math.roundToInt
+import com.solthariel.pawchan.R.string as L
 
 internal fun cacheLimitItem(
     app: AppSettings,
@@ -37,10 +39,12 @@ private fun CacheLimitSetting(
     size: Int,
     save: (Int) -> Unit,
 ) {
+    val res = LocalResources.current
+
     var value by remember(size) { mutableIntStateOf(size) }
     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(Modifier.fillMaxWidth()) {
-            Text("Лимит кэша", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Text(res.getString(L.ui_cache_limit), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Text(
                 formatByteSizeForUi(value.toLong() * BYTES_PER_MB),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -50,7 +54,7 @@ private fun CacheLimitSetting(
         Slider(
             modifier =
                 Modifier.semantics {
-                    contentDescription = "Лимит кэша"
+                    contentDescription = res.getString(L.ui_cache_limit)
                     stateDescription = formatByteSizeForUi(value.toLong() * BYTES_PER_MB)
                 },
             value = cacheSliderPosition(value),
@@ -60,7 +64,7 @@ private fun CacheLimitSetting(
             valueRange = 0f..1f,
         )
         Text(
-            "Применяется после перезапуска",
+            res.getString(L.ui_applied_after_restart),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

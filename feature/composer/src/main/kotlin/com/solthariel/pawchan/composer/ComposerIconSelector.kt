@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -39,6 +40,7 @@ import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.domain.posting.PostingIcon
 import com.solthariel.pawchan.domain.posting.PostingRules
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ComposerIconSelector(
@@ -48,6 +50,8 @@ internal fun ComposerIconSelector(
     onChange: (ComposerDraftState) -> Unit,
     compact: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     val icons = rules?.icons.orEmpty()
     if (icons.isEmpty()) return
     var expanded by remember(icons) { mutableStateOf(false) }
@@ -55,7 +59,9 @@ internal fun ComposerIconSelector(
     val menuScroll = rememberScrollState()
     Box(if (compact) Modifier else Modifier.fillMaxWidth()) {
         if (compact) {
-            val description = selected?.name?.let { "Иконка поста: $it" } ?: "Выбрать иконку поста"
+            val description =
+                selected?.name?.let { res.getString(L.ui_post_icon, it) }
+                    ?: res.getString(L.ui_choose_post_icon)
             IconButton(
                 onClick = { expanded = true },
                 enabled = enabled,
@@ -69,7 +75,7 @@ internal fun ComposerIconSelector(
             }
         } else {
             TextButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                Text(selected?.name ?: "Нет иконки", Modifier.weight(1f))
+                Text(selected?.name ?: res.getString(L.ui_no_icon), Modifier.weight(1f))
                 UiDisclosureIndicator(expanded)
             }
         }
@@ -118,7 +124,11 @@ private fun Modifier.menuScrollbar(
         val progress = scroll.value.toFloat() / scroll.maxValue
         drawRoundRect(
             color = color,
-            topLeft = Offset(size.width - ICON_MENU_SCROLLBAR_WIDTH.toPx(), (size.height - thumbHeight) * progress),
+            topLeft =
+                Offset(
+                    size.width - ICON_MENU_SCROLLBAR_WIDTH.toPx(),
+                    (size.height - thumbHeight) * progress,
+                ),
             size = Size(ICON_MENU_SCROLLBAR_WIDTH.toPx(), thumbHeight),
             cornerRadius = CornerRadius(ICON_MENU_SCROLLBAR_WIDTH.toPx()),
         )
@@ -155,9 +165,11 @@ private fun ClearPostingIconItem(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     DropdownMenuItem(
         modifier = Modifier.clip(OVAL_BUTTON_SHAPE).semantics { selected = isSelected },
-        text = { Text("Нет иконки") },
+        text = { Text(res.getString(L.ui_no_icon)) },
         leadingIcon = { Box(Modifier.size(width = 22.dp, height = 16.dp)) },
         trailingIcon = { PostingIconSelectionMark(isSelected) },
         contentPadding = PaddingValues(horizontal = 16.dp),

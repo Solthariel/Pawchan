@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Volver a intentar</string>
+    <string name="core_ui_challenge_open">Completar la verificación</string>
+    <string name="core_ui_error_loading_data">Error al cargar los datos</string>
+    <string name="core_ui_fast_scrollbar">Desplazamiento de la lista</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Actualizar desde arriba</string>
+    <string name="core_ui_pull_refresh_bottom">Aktualizar desde abajo</string>
+    <string name="core_ui_thread_author">Creador del hilo</string>
+    <string name="core_ui_post_sage">No subir</string>
+    <string name="core_ui_post_email">Correo del autor</string>
+    <string name="core_ui_thread_sticky">Hilo fijado</string>
+    <string name="core_ui_thread_closed">Hilo cerrado</string>
+    <string name="core_ui_thread_cyclical">Hilo cíclico</string>
+    <string name="core_ui_post_banned">Autor bloqueado</string>
+    <string name="core_ui_archive_active">Archivador: el hilo está activo y se está actualizando</string>
+    <string name="core_ui_archive_maybe_deleted">Archivador: es posible que se haya eliminado el hilo original</string>
+    <string name="core_ui_archive_saved">Archivador: hilo guardado</string>
+    <string name="core_ui_archive_lost">Archivador: el hilo está marcado como perdido</string>
+    <string name="core_ui_archive_queued">Archivador: el hilo espera ser procesado</string>
+    <string name="core_ui_archive_other">Otro estado del Archivador</string>
+    <string name="core_ui_copied">Copiado</string>
+    <string name="ui_enter_jpeg_quality">Introduce la calidad JPEG</string>
+    <string name="ui_value">Valor</string>
+    <string name="ui_quality">Calidad</string>
+    <string name="ui_jpeg_quality_906d">Calidad JPEG, %</string>
+    <string name="ui_from_to">De %1$d a %2$d</string>
+    <string name="ui_cancel">Cancelar</string>
+    <string name="ui_apply">Aplicar</string>
+    <string name="ui_expanded">Expandido</string>
+    <string name="ui_expand">Expandir</string>
+    <string name="ui_collapsed">Contraído</string>
+    <string name="ui_removed">Quitado</string>
+</resources>

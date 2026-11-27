@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.TransientNotice
@@ -17,51 +18,66 @@ import com.solthariel.pawchan.domain.filter.ContentFilterStatistics
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ContentFilterStatisticsBody(
     statistics: ContentFilterStatistics,
     resetFailed: Boolean,
 ) {
+    val res = LocalResources.current
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (statistics.available) {
             FilterStatisticsSummary(statistics)
             statistics.boards.forEach { board -> FilterStatisticsBoard(board) }
         } else {
-            Text(if (statistics.storageFailure) "Статистика недоступна" else "Статистика загружается…")
+            Text(
+                if (statistics.storageFailure) {
+                    res.getString(
+                        L.ui_statistics_unavailable,
+                    )
+                } else {
+                    res.getString(L.ui_statistics_are_loading_2346)
+                },
+            )
         }
         if (statistics.storageFailure || resetFailed) {
-            TransientNotice("Ошибка хранения статистики: данные могут быть неполными")
+            TransientNotice(res.getString(L.ui_statistics_storage_error_data_may))
         }
     }
 }
 
 @Composable
 private fun FilterStatisticsSummary(statistics: ContentFilterStatistics) {
+    val res = LocalResources.current
+
     FilterStatisticsGroup(
-        if (statistics.boards.isEmpty()) null else "Общая статистика",
+        if (statistics.boards.isEmpty()) null else res.getString(L.ui_overall_statistics),
         listOf(
-            "Всего срабатываний" to statistics.total.toString(),
-            "ОП-посты" to statistics.originalPosts.toString(),
-            "Ответы" to statistics.replies.toString(),
-            "Досок" to statistics.boards.size.toString(),
-            "Правил со срабатываниями" to statistics.rules.size.toString(),
+            res.getString(L.ui_total_triggers) to statistics.total.toString(),
+            res.getString(L.ui_op_posts) to statistics.originalPosts.toString(),
+            res.getString(L.ui_replies) to statistics.replies.toString(),
+            res.getString(L.ui_boards_1533) to statistics.boards.size.toString(),
+            res.getString(L.ui_rules_with_triggers) to statistics.rules.size.toString(),
         ),
     )
 }
 
 @Composable
 private fun FilterStatisticsBoard(board: ContentFilterBoardStatistics) {
+    val res = LocalResources.current
+
     FilterStatisticsGroup(
         if (board.site == "dvach") "Двач /${board.board}/" else "${board.site} /${board.board}/",
         listOf(
-            "Срабатываний" to board.total.toString(),
-            "ОП-посты" to board.originalPosts.toString(),
-            "Ответы" to board.replies.toString(),
+            res.getString(L.ui_triggers_bede) to board.total.toString(),
+            res.getString(L.ui_op_posts) to board.originalPosts.toString(),
+            res.getString(L.ui_replies) to board.replies.toString(),
         ),
     )
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Последнее срабатывание", style = MaterialTheme.typography.bodySmall)
+        Text(res.getString(L.ui_last_trigger), style = MaterialTheme.typography.bodySmall)
         Text(formatFilterStatisticsTime(board.lastHitMillis), style = MaterialTheme.typography.bodyMedium)
     }
 }

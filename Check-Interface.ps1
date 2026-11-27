@@ -11,9 +11,12 @@ if (-not (Test-Path -LiteralPath ".\local.properties")) {
 $python = Get-Command python -ErrorAction Stop
 & $python.Source -X utf8 -c "import sys; assert sys.version_info.major == 3"
 if ($LASTEXITCODE -ne 0) { throw "Python 3 is required." }
-$log = Join-Path $PSScriptRoot "interface-v11-full-check.log"
-Start-Transcript -LiteralPath $log
+$reportRoot = Join-Path ([System.IO.Path]::GetTempPath()) "Pawchan-checks"
+New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
+$log = Join-Path $reportRoot ("interface-{0}-full-check.log" -f (Get-Date -Format "yyyyMMdd-HHmmss-fff"))
+Start-Transcript -LiteralPath $log -NoClobber
 try {
+    Write-Host "Source root: $PSScriptRoot"
     Write-Host "Full checks only. No release publication or push."
     Write-Host "Connect an unlocked Android device with authorized USB debugging."
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\local-check.ps1"

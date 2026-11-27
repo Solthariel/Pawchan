@@ -15,9 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 @Composable
 internal fun ImageColorControl(
@@ -25,8 +27,17 @@ internal fun ImageColorControl(
     enabled: Boolean,
     redaction: Boolean = false,
 ) {
+    val res = LocalResources.current
+
     var open by remember { mutableStateOf(false) }
-    val description = if (redaction) "Цвет замазки" else "Выбрать цвет"
+    val description =
+        if (redaction) {
+            res.getString(
+                L.ui_spoiler_color,
+            )
+        } else {
+            res.getString(L.ui_choose_color)
+        }
     Box {
         IconButton(
             onClick = { open = true },

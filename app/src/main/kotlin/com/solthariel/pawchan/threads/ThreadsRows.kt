@@ -32,6 +32,7 @@ import com.solthariel.pawchan.core.ui.APP_TOOLBAR_HORIZONTAL_INSET
 import com.solthariel.pawchan.core.ui.UiDisclosureIndicator
 import com.solthariel.pawchan.core.ui.UiForwardIndicator
 import com.solthariel.pawchan.core.ui.UiIconKind
+import com.solthariel.pawchan.core.ui.modelLabel
 
 /** Заголовок секции: нажатие сворачивает и разворачивает; справа сумма счётчиков и действие секции. */
 @Composable
@@ -194,7 +195,7 @@ internal fun rememberThreadCounterWidth(sections: List<List<ThreadRowUi>>): Dp {
 @Composable
 internal fun ThreadsEmptyRow(text: String) {
     Text(
-        text,
+        modelLabel(text),
         Modifier.fillMaxWidth().padding(horizontal = THREADS_ROW_START, vertical = 12.dp),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

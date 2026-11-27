@@ -12,6 +12,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 
 internal class AndroidCookieJar(
     private val cookieManager: CookieManager = CookieManager.getInstance(),
+    private val rules: () -> CookieRules = { CookieRuleStore.shared?.current() ?: CookieRules() },
 ) : CookieJar,
     PostingAccessRepository {
     @Volatile private var origin = DVACH_ORIGIN
@@ -32,7 +33,7 @@ internal class AndroidCookieJar(
         cookies: List<Cookie>,
     ) {
         if (!forumCookieOriginAllowed(url, origin)) return
-        cookies.forEach { cookie ->
+        cookies.allowedBy(rules()) { it.name }.forEach { cookie ->
             cookieManager.setCookie(url.toString(), cookie.toString())
         }
         cookieManager.flush()
@@ -42,7 +43,7 @@ internal class AndroidCookieJar(
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
         if (!forumCookieOriginAllowed(url, origin)) return emptyList()
         val header = cookieManager.getCookie(url.toString())
-        return parseCookieHeader(header, url)
+        return parseCookieHeader(header, url).allowedBy(rules()) { it.name }
     }
 
     private fun hasPostingCookie(): Boolean =

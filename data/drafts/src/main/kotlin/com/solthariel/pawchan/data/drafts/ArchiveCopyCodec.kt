@@ -6,14 +6,12 @@ import com.solthariel.pawchan.domain.archive.ArchiveState
 import com.solthariel.pawchan.domain.archive.ArchivedMedia
 import com.solthariel.pawchan.domain.workspace.OpenThread
 import com.solthariel.pawchan.domain.workspace.ThreadCopy
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject

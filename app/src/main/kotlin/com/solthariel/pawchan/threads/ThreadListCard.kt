@@ -40,8 +40,10 @@ import com.solthariel.pawchan.core.ui.UiIcon
 import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiSpacing
 import com.solthariel.pawchan.core.ui.postContainerShape
+import com.solthariel.pawchan.media.AttachmentViewer
 import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.PostMediaDisplay
+import com.solthariel.pawchan.media.VideoThumbnailBadge
 import com.solthariel.pawchan.media.rememberMediaThumbnailOrigin
 import com.solthariel.pawchan.media.thumbnail.DeferredThumbnail
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
@@ -183,7 +185,11 @@ private fun ThreadListPreview(
             contentDescription = preview.fileName,
             modifier = Modifier.fillMaxSize(),
         )
-        if (attachments.size > 1) ThreadListMediaBadge(attachments.size)
+        if (attachments.size > 1) {
+            ThreadListMediaBadge(attachments.size)
+        } else if (preview.viewer == AttachmentViewer.VIDEO) {
+            VideoThumbnailBadge()
+        }
     }
 }
 

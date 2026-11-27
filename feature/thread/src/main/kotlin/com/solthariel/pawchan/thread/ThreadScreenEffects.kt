@@ -38,7 +38,7 @@ internal fun BindThreadScreenEffects(
             }
 
             else -> {
-                Toast.makeText(context, notice, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, shotNotice(context, notice), Toast.LENGTH_SHORT).show()
                 tools.notice = null
             }
         }
@@ -60,3 +60,14 @@ internal fun BindThreadScreenEffects(
         }
     }
 }
+
+private fun shotNotice(
+    context: android.content.Context,
+    notice: String,
+): String =
+    when (notice) {
+        SHOT_MISSING -> context.getString(R.string.shot_capture_missing)
+        SHOT_WIDTH_CHANGED -> context.getString(R.string.shot_width_changed)
+        SHOT_TOO_LARGE -> context.getString(R.string.shot_too_large)
+        else -> notice
+    }

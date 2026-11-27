@@ -28,7 +28,7 @@ internal fun ThreadScreen(
     val memory = rememberThreadScreenMemory(content, presentation.postContext?.address, host.reading)
     val hideStickers = LocalPostDisplayPreferences.current.hideStickers
     val save = rememberMediaSaveActions(media.saves)
-    val exports = rememberThreadExportActions(host.exportTarget, memory.tools, memory.appearance)
+    val exports = rememberThreadExportActions(host.exportTarget, memory.tools)
     val selection = rememberThreadSelectionActions(content, memory.tools, actions, presentation, exports)
     memory.onShowHidden = selection.showHidden
     val refreshActions = actions.withThumbnailRetry(content, media.thumbnails)

@@ -2,10 +2,9 @@ package com.solthariel.pawchan.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalResources
 import androidx.core.net.toUri
 import com.solthariel.pawchan.backup.ClientBackupActions
 import com.solthariel.pawchan.copyfiles.CopyFileDialogs
@@ -14,9 +13,12 @@ import com.solthariel.pawchan.copyfiles.SavedCopyFileDialog
 import com.solthariel.pawchan.copyfiles.rememberCopyFiles
 import com.solthariel.pawchan.core.ui.NoticeAction
 import com.solthariel.pawchan.core.ui.TransientNotice
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun backupFileControls(actions: ClientBackupActions): () -> Unit {
+    val res = LocalResources.current
+
     val files = rememberCopyFiles(CopyFileKind.BACKUP)
     val save =
         rememberLauncherForActivityResult(
@@ -42,7 +44,7 @@ internal fun backupFileControls(actions: ClientBackupActions): () -> Unit {
         TransientNotice(
             actions.message,
             action =
-                NoticeAction("Сохранить в другое место…") {
+                NoticeAction(res.getString(L.ui_save_elsewhere)) {
                     save.launch("Pawchan-backup-${System.currentTimeMillis()}.pawbackup")
                 },
         )

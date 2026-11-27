@@ -11,17 +11,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.uiSelectionIconTint
+import com.solthariel.pawchan.R.string as L
 
 internal data class AppBottomItemState(
     val label: String,
@@ -36,10 +38,10 @@ internal fun RowScope.AppBottomItem(
     state: AppBottomItemState,
     onClick: (() -> Unit)?,
 ) {
+    val res = LocalResources.current
+
     val interactionSource = remember { MutableInteractionSource() }
     val enabled = onClick != null
-    val color =
-        if (state.selected == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val interaction =
         if (state.selected != null) {
             Modifier.selectable(
@@ -59,7 +61,8 @@ internal fun RowScope.AppBottomItem(
         }
     Box(
         Modifier.weight(1f).fillMaxSize().then(interaction).semantics {
-            contentDescription = if (state.badge > 0) "${state.label}, ответов: ${state.badge}" else state.label
+            contentDescription =
+                if (state.badge > 0) res.getString(L.ui_replies_6b38, state.label, state.badge) else state.label
         },
         contentAlignment = Alignment.Center,
     ) {
@@ -71,12 +74,10 @@ internal fun RowScope.AppBottomItem(
             Icon(
                 painterResource(state.icon),
                 null,
-                tint = color.copy(alpha = if (enabled && state.selected != false) 1f else DISABLED_ALPHA),
+                tint = uiSelectionIconTint(state.selected, enabled),
                 modifier = Modifier.size(24.dp),
             )
         }
         if (state.badge > 0) AppBottomBadge(state.badge)
     }
 }
-
-private const val DISABLED_ALPHA = 0.55f

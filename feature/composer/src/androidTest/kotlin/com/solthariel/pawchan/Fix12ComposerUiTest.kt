@@ -2,18 +2,14 @@ package com.solthariel.pawchan
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.solthariel.pawchan.composer.AttachmentEditorFooter
-import com.solthariel.pawchan.composer.ComposerAttachment
 import com.solthariel.pawchan.composer.ComposerDraftState
-import com.solthariel.pawchan.composer.ComposerIdentityFields
+import com.solthariel.pawchan.composer.ComposerIconSelector
 import com.solthariel.pawchan.domain.posting.PostingIcon
 import com.solthariel.pawchan.domain.posting.PostingIdentityRules
 import com.solthariel.pawchan.domain.posting.PostingRules
-import com.solthariel.pawchan.domain.posting.ReplyAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +22,7 @@ class Fix12ComposerUiTest {
         val draft = mutableStateOf(ComposerDraftState(email = "test@example.test"))
         compose.setContent {
             Column {
-                ComposerIdentityFields(
+                ComposerIconSelector(
                     draft.value,
                     PostingRules(
                         identity =
@@ -46,17 +42,5 @@ class Fix12ComposerUiTest {
         compose.onNodeWithText("Рено").performClick()
         compose.onNodeWithText("Нет иконки").performClick()
         assertEquals(null, draft.value.options.icon)
-    }
-
-    @Test
-    fun attachmentFooterHasOnlyRemoveAndNoConfirmation() {
-        var removed = 0
-        val file = ComposerAttachment(ReplyAttachment("test.jpg", "image/jpeg", byteArrayOf(1)))
-        compose.setContent {
-            AttachmentEditorFooter(file, true, {}, { removed++ })
-        }
-        compose.onNodeWithText("Применить").assertDoesNotExist()
-        compose.onNodeWithText("Удалить вложение").assertIsDisplayed().performClick()
-        assertEquals(1, removed)
     }
 }

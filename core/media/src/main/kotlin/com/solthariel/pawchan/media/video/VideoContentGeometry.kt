@@ -16,6 +16,12 @@ internal fun videoContentAspect(
     return decoded ?: dimensions
 }
 
+/** Пропорции кадра на экране: от плеера, а до первого кадра — из размеров вложения. */
+internal fun videoFrameAspect(
+    state: VideoPlaybackStatus,
+    video: com.solthariel.pawchan.media.MediaAttachmentUi,
+): Double? = videoContentAspect(state.videoAspect, video.dimensions?.width, video.dimensions?.height)
+
 /** Fits without cropping; unknown aspect keeps the surface visible rather than hiding the video. */
 internal fun videoContentSize(
     width: Int,

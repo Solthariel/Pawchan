@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Spróbuj ponownie</string>
+    <string name="core_ui_challenge_open">Przejdź weryfikację</string>
+    <string name="core_ui_error_loading_data">Błąd ładowania danych</string>
+    <string name="core_ui_fast_scrollbar">Przewijanie listy</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Odśwież od góry</string>
+    <string name="core_ui_pull_refresh_bottom">Odśwież od dołu</string>
+    <string name="core_ui_thread_author">Twórca wątku</string>
+    <string name="core_ui_post_sage">Nie podbijaj</string>
+    <string name="core_ui_post_email">E-mail autora</string>
+    <string name="core_ui_thread_sticky">Przypięty wątek</string>
+    <string name="core_ui_thread_closed">Wątek zamknięty</string>
+    <string name="core_ui_thread_cyclical">Wątek cykliczny</string>
+    <string name="core_ui_post_banned">Autor zbanowany</string>
+    <string name="core_ui_archive_active">Archiwizator: wątek jest aktywny i aktualizowany</string>
+    <string name="core_ui_archive_maybe_deleted">Archiwizator: oryginalny wątek mógł zostać usunięty</string>
+    <string name="core_ui_archive_saved">Archiwizator: wątek zapisany</string>
+    <string name="core_ui_archive_lost">Archiwizator: wątek oznaczono jako utracony</string>
+    <string name="core_ui_archive_queued">Archiwizator: wątek oczekuje na przetworzenie</string>
+    <string name="core_ui_archive_other">Inny status Archiwizatora</string>
+    <string name="core_ui_copied">Skopiowano</string>
+    <string name="ui_enter_jpeg_quality">Wpisz jakość JPEG</string>
+    <string name="ui_value">Wartość</string>
+    <string name="ui_quality">Jakość</string>
+    <string name="ui_jpeg_quality_906d">Jakość JPEG, %</string>
+    <string name="ui_from_to">Od %1$d do %2$d</string>
+    <string name="ui_cancel">Anuluj</string>
+    <string name="ui_apply">Zastosuj</string>
+    <string name="ui_expanded">Rozwinięte</string>
+    <string name="ui_expand">Rozwiń</string>
+    <string name="ui_collapsed">Zwinięte</string>
+    <string name="ui_removed">Usunięto</string>
+</resources>

@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.catalog.CatalogIconButton
 import com.solthariel.pawchan.core.ui.ActionMenuItem
 import com.solthariel.pawchan.core.ui.AppAlertDialog
@@ -19,9 +20,12 @@ import com.solthariel.pawchan.domain.library.HistoryCleanup
 import com.solthariel.pawchan.domain.model.DomainOutcome
 import com.solthariel.pawchan.workspace.LocalWorkspace
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun HistoryOverflowMenu(onCleared: () -> Unit) {
+    val res = LocalResources.current
+
     val cleanup = LocalWorkspace.current?.library as? HistoryCleanup
     val scope = rememberCoroutineScope()
     var open by remember { mutableStateOf(false) }
@@ -29,9 +33,9 @@ internal fun HistoryOverflowMenu(onCleared: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     Box {
-        CatalogIconButton(UiIconKind.MORE, "Меню истории", onClick = { open = true })
+        CatalogIconButton(UiIconKind.MORE, res.getString(L.ui_history_menu), onClick = { open = true })
         ModalDropdownMenu(open, onDismissRequest = { open = false }) {
-            ActionMenuItem("Очистить историю", {
+            ActionMenuItem(res.getString(L.ui_clear_history), {
                 open = false
                 confirm = true
             }, enabled = cleanup != null && !busy, icon = UiIconKind.DELETE)
@@ -40,8 +44,8 @@ internal fun HistoryOverflowMenu(onCleared: () -> Unit) {
     if (confirm) {
         AppAlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("Очистить историю посещений?") },
-            text = { Text("Избранное, открытые страницы, черновики и сохранённые треды останутся.") },
+            title = { Text(res.getString(L.ui_clear_browsing_history)) },
+            text = { Text(res.getString(L.ui_favorites_open_pages_drafts_and)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirm = false
@@ -50,15 +54,15 @@ internal fun HistoryOverflowMenu(onCleared: () -> Unit) {
                         message =
                             if (cleanup?.clearVisitHistory() is DomainOutcome.Success) {
                                 onCleared()
-                                "История очищена"
+                                res.getString(L.ui_history_cleared)
                             } else {
-                                "Не удалось очистить историю"
+                                res.getString(L.ui_failed_to_clear_history)
                             }
                         busy = false
                     }
-                }) { Text("Очистить") }
+                }) { Text(res.getString(L.ui_clear)) }
             },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Отмена") } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(res.getString(L.ui_cancel)) } },
         )
     }
     TransientNotice(message, onDismiss = { message = null })

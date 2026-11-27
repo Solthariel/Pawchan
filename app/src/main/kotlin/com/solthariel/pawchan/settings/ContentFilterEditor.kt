@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -11,11 +10,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalResources
 import com.solthariel.pawchan.core.ui.TransientNotice
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.ContentFilterSample
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ContentFilterEditor(
@@ -26,6 +27,8 @@ internal fun ContentFilterEditor(
     samples: List<ContentFilterSample> = emptyList(),
     onDelete: (() -> Unit)? = null,
 ) {
+    val res = LocalResources.current
+
     val draft = rememberSaveable(editorKey, saver = ContentFilterDraft.Saver) { ContentFilterDraft(rule) }
     val next = draft.rule(rule)
     var probeText by rememberSaveable(editorKey) { mutableStateOf(initialFilterProbeText(rule, samples)) }
@@ -45,7 +48,7 @@ internal fun ContentFilterEditor(
                     validation.save(draft.rule(rule), draft.inputError(), { draft.rule(rule) }, onSave)
                 }
             }) {
-                Text("Сохранить")
+                Text(res.getString(L.ui_save))
             }
         },
     ) {

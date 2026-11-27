@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.ffmpeg
 
+import java.io.EOFException
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -28,6 +29,9 @@ internal class PublishedInput(
     @Volatile var interrupted = false
         private set
 
+    @Volatile var failed = false
+        private set
+
     /** Seek cancellation is temporary and remains set until the decode thread consumes the seek. */
     @Volatile var readCancelled = false
         set(value) {
@@ -36,15 +40,6 @@ internal class PublishedInput(
                 changed.signalAll()
             }
         }
-
-    fun timingEnabled(): Boolean = timing.enabled()
-
-    fun timingStage(
-        stage: Int,
-        micros: Long,
-    ) {
-        timing.nativeStage(stage, micros)
-    }
 
     @Throws(IOException::class)
     fun open(
@@ -88,17 +83,25 @@ internal class PublishedInput(
         position: Long,
         target: ByteArray,
         maximum: Int,
+    ): Int = read(position, target, maximum, 0)
+
+    fun read(
+        position: Long,
+        target: ByteArray,
+        maximum: Int,
+        offset: Int,
     ): Int {
         val wait = ReadWait(position)
         var result = CANCELLED
         try {
             while (!interrupted && !readCancelled) {
-                result = readPublished(position, target, maximum)
+                result = readPublished(position, target, maximum, offset)
                 if (result != NOTHING_PUBLISHED) break
                 result = CANCELLED
                 wait.await()
             }
         } catch (_: IOException) {
+            failed = true
             result = CANCELLED
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -113,6 +116,7 @@ internal class PublishedInput(
         position: Long,
         target: ByteArray,
         maximum: Int,
+        offset: Int,
     ): Int =
         lock.withLock {
             val available = PublishedRanges.available(position, prefix, tailStart, tailEnd, total)
@@ -128,7 +132,10 @@ internal class PublishedInput(
                 else -> {
                     val source = checkNotNull(file)
                     source.seek(position)
-                    source.read(target, 0, minOf(available, minOf(target.size, maximum).toLong()).toInt())
+                    val length = minOf(available, minOf(target.size - offset, maximum).toLong()).toInt()
+                    val read = source.read(target, offset, length)
+                    if (read < 0) throw EOFException("Published video bytes are missing")
+                    read
                 }
             }
         }

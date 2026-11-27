@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.R.string as L
 
 /** Shared footer layout for reply counts and the expand action. */
 @Composable
@@ -28,8 +30,10 @@ fun RowScope.PostExpandAction(
     enabled: Boolean,
     onExpand: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     PostStatsText(
-        "Раскрыть",
+        res.getString(L.ui_expand),
         Modifier
             .weight(1f)
             .clickable(enabled = enabled, role = Role.Button, onClick = onExpand),

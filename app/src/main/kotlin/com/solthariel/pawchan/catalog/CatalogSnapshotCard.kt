@@ -2,7 +2,6 @@ package com.solthariel.pawchan.catalog
 
 import com.solthariel.pawchan.core.ui.visiblePostSubject
 import com.solthariel.pawchan.domain.model.MediaAttachment
-import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadSnapshot
 import com.solthariel.pawchan.media.toMediaAttachmentUi
 import com.solthariel.pawchan.media.withMediaOwner
@@ -44,24 +43,3 @@ internal fun ThreadSnapshot.toCatalogThreadUi(
         age = catalogThreadAge(op?.content?.details?.timestamp, nowEpochSeconds),
     )
 }
-
-/** Тред, о котором известен только заголовок (ещё не открывался): карточка без превью и счётчиков. */
-internal fun placeholderCatalogThread(
-    address: ThreadAddress,
-    subject: String?,
-): CatalogThreadUi =
-    CatalogThreadUi(
-        address = address,
-        content =
-            CatalogThreadContentUi(
-                subject = subject,
-                text = CatalogThreadTextUi(""),
-                author = null,
-                date = null,
-                sage = false,
-                displaySubject = subject ?: "Тред №${address.thread.value}",
-            ),
-        attachments = emptyList(),
-        flags = CatalogThreadFlagsUi(pinned = false, closed = false, endless = false),
-        statistics = CatalogThreadStatisticsUi(0, 0, 0L, mediaBytesComplete = true),
-    )

@@ -1,5 +1,6 @@
 package com.solthariel.pawchan.ffmpeg
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody
@@ -14,7 +15,8 @@ private const val HTTP_RANGE_NOT_SATISFIABLE = 416
 
 /** Encoded HTTP bodies cannot be addressed using file byte offsets. */
 internal fun mediaRequest(url: String): Request.Builder {
-    val builder = Request.Builder().url(url)
+    val address = url.toHttpUrlOrNull() ?: throw IOException("Invalid video source address")
+    val builder = Request.Builder().url(address)
     return builder.header("Accept-Encoding", "identity")
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.APP_TOOLBAR_BUTTON_SIZE
 import com.solthariel.pawchan.core.ui.PageLoadingIndicator
 import com.solthariel.pawchan.feature.composer.R
+import com.solthariel.pawchan.feature.composer.R.string as L
 
 /** Two independent actions inside one capsule; only send ripples across its full width. */
 @Composable
@@ -100,9 +102,11 @@ private fun ComposerSendLabel(
     newThread: Boolean,
     foreground: androidx.compose.ui.graphics.Color,
 ) {
+    val res = LocalResources.current
+
     if (submitting) {
         PageLoadingIndicator(
-            description = "Отправка сообщения",
+            description = res.getString(L.ui_sending_message),
             size = 20.dp,
             backgroundColor = MaterialTheme.colorScheme.onSurface,
             foregroundColor = MaterialTheme.colorScheme.surface,

@@ -3,7 +3,9 @@ package com.solthariel.pawchan.composer
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +26,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
@@ -104,7 +108,8 @@ internal fun ComposerEditorScreen(
                         ComposerFieldsAccess(filledComposerFieldCount(state.draft, it)) { showFields = true }
                     },
             )
-            ComposerScreenBody(state, imageLoader, actions.fields, enabled, picker, Modifier.weight(1f))
+            ComposerScreenBody(state, actions.fields, enabled, picker, Modifier.weight(1f))
+            ComposerMediaDock(state, imageLoader, actions.fields, enabled, picker)
             ComposerEditorDock(
                 state.copy(status = state.status.copy(canSubmit = state.status.canRequestSubmit)),
                 newThread,
@@ -118,31 +123,63 @@ internal fun ComposerEditorScreen(
     if (flow.visible) ComposerCaptchaDialog(state, flow, imageLoader, actions)
 }
 
+/**
+ * Текст вместе с панелью форматирования занимает всю свободную высоту; вложения стоят отдельно над отправкой,
+ * и поле уменьшается на их высоту. Если места меньше [COMPOSER_EDITOR_FILL_HEIGHT], поле держит 120dp и
+ * область прокручивается.
+ */
 @Composable
 private fun ComposerScreenBody(
     state: ComposerScreenState,
-    imageLoader: ImageLoader,
     actions: ComposerFieldActions,
     enabled: Boolean,
     picker: ComposerAttachmentPickerState,
     modifier: Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val fill = composerEditorFills(maxHeight)
+        Column(
+            Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState(), overscrollEffect = null)
-                .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        key(state.draft.resetId) {
-            ComposerTextEditor(state.draft, state.rules, enabled, actions, picker.onReceive)
-            composerUploadBudget(state.draft.attachments, state.rules).status?.let {
-                Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Column(Modifier.padding(vertical = 8.dp)) {
-                ComposerMediaSection(state.draft, imageLoader, enabled, picker.error, actions.onChange)
+                .then(
+                    if (fill) {
+                        Modifier.fillMaxHeight()
+                    } else {
+                        Modifier.verticalScroll(rememberScrollState(), overscrollEffect = null)
+                    },
+                ).padding(horizontal = 16.dp),
+        ) {
+            key(state.draft.resetId) {
+                ComposerTextEditor(state.draft, state.rules, enabled, actions, picker.onReceive, fill)
             }
         }
     }
 }
+
+/** Вложения, остаток лимита и сообщения о файлах; без вложений блок не занимает места. */
+@Composable
+private fun ComposerMediaDock(
+    state: ComposerScreenState,
+    imageLoader: ImageLoader,
+    actions: ComposerFieldActions,
+    enabled: Boolean,
+    picker: ComposerAttachmentPickerState,
+) {
+    val status = composerUploadBudget(state.draft.attachments, state.rules).status
+    val padding = if (state.draft.attachments.isEmpty() && status == null) 0.dp else 8.dp
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = padding)
+            .testTag("composer-media-dock"),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        ComposerMediaSection(state.draft, imageLoader, enabled, picker.error, actions.onChange)
+    }
+}
+
+internal fun composerEditorFills(height: Dp): Boolean = height >= COMPOSER_EDITOR_FILL_HEIGHT
+
+/** Поле 120dp, счётчик, отступ и панель форматирования. */
+internal val COMPOSER_EDITOR_FILL_HEIGHT = 240.dp

@@ -62,6 +62,8 @@ internal object AppRoute {
 
     fun newThread(board: BoardAddress): String = "new-thread/${board.site.value}/${board.board.value}"
 
+    fun downloadArchive(id: Long): String = "download-archive/$id"
+
     fun challenge(url: String): String = "challenge?$CHALLENGE_ARGUMENT=${Uri.encode(url)}"
 }
 

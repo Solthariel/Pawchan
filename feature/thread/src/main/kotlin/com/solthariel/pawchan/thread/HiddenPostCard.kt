@@ -11,8 +11,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.core.ui.postContainerShape
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun HiddenPostCard(
@@ -20,6 +22,8 @@ internal fun HiddenPostCard(
     onShow: () -> Unit,
     onMenu: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val shape = postContainerShape()
     Surface(
         modifier =
@@ -33,9 +37,9 @@ internal fun HiddenPostCard(
         Column {
             Text(
                 if (post.metadata.contentFilterLabel != null) {
-                    "Скрыто фильтром: ${post.metadata.contentFilterLabel}  Нажмите, чтобы показать"
+                    res.getString(L.ui_hidden_by_filter_tap_to, post.metadata.contentFilterLabel)
                 } else {
-                    "Пост #${post.id} скрыт  Нажмите, чтобы показать"
+                    res.getString(L.ui_post_hidden_tap_to_show, post.id)
                 },
                 Modifier.padding(12.dp),
                 style = MaterialTheme.typography.bodySmall,
@@ -43,7 +47,7 @@ internal fun HiddenPostCard(
             val edit = LocalEditContentFilter.current
             val ruleId = post.metadata.contentFilterId
             if (edit != null && ruleId != null) {
-                TextButton(onClick = { edit(ruleId) }) { Text("Правило") }
+                TextButton(onClick = { edit(ruleId) }) { Text(res.getString(L.ui_rule)) }
             }
         }
     }

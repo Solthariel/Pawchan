@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.solthariel.pawchan.core.ui.FullScreenModalWindow
@@ -26,6 +27,7 @@ import com.solthariel.pawchan.domain.proxy.ProxyMode
 import com.solthariel.pawchan.domain.proxy.SavedProxy
 import com.solthariel.pawchan.domain.proxy.validProxyCredentials
 import java.util.UUID
+import com.solthariel.pawchan.R.string as L
 
 internal fun newProxy() = SavedProxy(UUID.randomUUID().toString(), "", ProxyMode.SOCKS5, "", true, emptySet())
 
@@ -38,6 +40,8 @@ internal fun ProxyCatalogEditor(
     onSave: (SavedProxy) -> Unit,
     onDelete: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val state = remember(initial.id) { ProxyEditorState(initial) }
     val current = state.current
     val conflict =
@@ -56,21 +60,37 @@ internal fun ProxyCatalogEditor(
                 .systemBarsPadding()
                 .imePadding(),
         ) {
-            SettingsPageToolbar("Прокси", close) {
+            SettingsPageToolbar(res.getString(L.ui_proxy), close) {
                 if (catalog.any { it.id == initial.id }) {
-                    UiToolbarButton(UiIconKind.DELETE, "Удалить", onClick = { state.deleting = true })
+                    UiToolbarButton(
+                        UiIconKind.DELETE,
+                        res.getString(L.ui_delete),
+                        onClick = { state.deleting = true },
+                    )
                 }
-                UiToolbarButton(UiIconKind.SAVE, "Сохранить", enabled = validDraft(current) && !conflict) {
+                UiToolbarButton(
+                    UiIconKind.SAVE,
+                    res.getString(L.ui_save),
+                    enabled =
+                        validDraft(current) && !conflict,
+                ) {
                     onSave(current.copy(name = current.name.trim()))
                 }
             }
             Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+                Modifier
+                    .weight(
+                        1f,
+                    ).verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ProxyEditorFields(state)
                 if (conflict) {
-                    Text("Ресурс уже назначен другому включённому прокси", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        res.getString(L.ui_the_resource_is_already_assigned),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
                 ProxyDraftChecks(current, mirror)
             }
@@ -85,11 +105,13 @@ private fun ProxyEditorDialogs(
     onClose: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     if (state.deleting) {
         ConfirmationDialog(
-            "Удалить прокси?",
-            "Назначения этого профиля будут удалены.",
-            "Удалить",
+            res.getString(L.ui_delete_proxy),
+            res.getString(L.ui_assignments_for_this_profile_will),
+            res.getString(L.ui_delete),
             { state.deleting = false },
         ) {
             state.deleting = false
@@ -98,9 +120,9 @@ private fun ProxyEditorDialogs(
     }
     if (state.discarding) {
         ConfirmationDialog(
-            "Не сохранять изменения?",
-            "Изменения будут потеряны.",
-            "Не сохранять",
+            res.getString(L.ui_don_t_save_changes),
+            res.getString(L.ui_changes_will_be_lost),
+            res.getString(L.ui_do_not_save),
             { state.discarding = false },
             onClose,
         )
@@ -115,12 +137,14 @@ private fun ConfirmationDialog(
     close: () -> Unit,
     confirm: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     AlertDialog(
         onDismissRequest = close,
         title = { Text(title) },
         text = { Text(message) },
         confirmButton = { TextButton(onClick = confirm) { Text(action) } },
-        dismissButton = { TextButton(onClick = close) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = close) { Text(res.getString(L.ui_cancel)) } },
     )
 }
 

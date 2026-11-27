@@ -1,7 +1,10 @@
 package com.solthariel.pawchan
 
+import com.solthariel.pawchan.catalog.CatalogThreadContentUi
+import com.solthariel.pawchan.catalog.CatalogThreadFlagsUi
 import com.solthariel.pawchan.catalog.CatalogThreadStatisticsUi
-import com.solthariel.pawchan.catalog.placeholderCatalogThread
+import com.solthariel.pawchan.catalog.CatalogThreadTextUi
+import com.solthariel.pawchan.catalog.CatalogThreadUi
 import com.solthariel.pawchan.catalog.toThreadListCardUi
 import com.solthariel.pawchan.core.ui.formatByteSizeForUi
 import com.solthariel.pawchan.domain.model.ThreadAddress
@@ -35,3 +38,24 @@ class MediaSizeLabelsTest {
         assertEquals("", CatalogThreadStatisticsUi(12, 3, 0L, false).sizeText)
     }
 }
+
+/** Тред, о котором известен только заголовок (ещё не открывался): карточка без превью и счётчиков. */
+private fun placeholderCatalogThread(
+    address: ThreadAddress,
+    subject: String?,
+): CatalogThreadUi =
+    CatalogThreadUi(
+        address = address,
+        content =
+            CatalogThreadContentUi(
+                subject = subject,
+                text = CatalogThreadTextUi(""),
+                author = null,
+                date = null,
+                sage = false,
+                displaySubject = subject ?: "Тред №${address.thread.value}",
+            ),
+        attachments = emptyList(),
+        flags = CatalogThreadFlagsUi(pinned = false, closed = false, endless = false),
+        statistics = CatalogThreadStatisticsUi(0, 0, 0L, mediaBytesComplete = true),
+    )

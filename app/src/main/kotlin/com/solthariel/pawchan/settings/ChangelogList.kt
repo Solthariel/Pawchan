@@ -11,12 +11,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.BuildConfig
 import com.solthariel.pawchan.update.ReleaseNotesEntry
 import com.solthariel.pawchan.update.ReleaseNotesHeading
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ChangelogList(
@@ -58,6 +60,8 @@ internal fun ChangelogList(
 
 @Composable
 private fun ChangelogReleaseHeading(release: ChangelogRelease) {
+    val res = LocalResources.current
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("changelog-version-${release.code}"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -92,7 +96,7 @@ private fun ChangelogReleaseHeading(release: ChangelogRelease) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Установлена",
+                res.getString(L.ui_installed),
                 Modifier.alignByBaseline().testTag("changelog-installed-${release.code}"),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,

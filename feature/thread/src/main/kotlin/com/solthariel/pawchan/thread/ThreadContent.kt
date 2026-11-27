@@ -2,6 +2,7 @@ package com.solthariel.pawchan.thread
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -10,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.solthariel.pawchan.core.ui.LocalBottomOverlayInset
+import com.solthariel.pawchan.core.ui.LocalTopOverlayInset
 import com.solthariel.pawchan.core.ui.PawchanFastScrollbar
 import com.solthariel.pawchan.core.ui.PostSeparator
-import com.solthariel.pawchan.core.ui.threadPostListPadding
 import com.solthariel.pawchan.media.thumbnail.ThumbnailLoading
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
 import kotlinx.coroutines.launch
@@ -33,24 +36,26 @@ internal fun ThreadContent(
         LazyColumn(
             state = list,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = threadPostListPadding(),
+            contentPadding = threadVerticalInsets(),
         ) {
             itemsIndexed(
                 content.posts,
                 key = { _, post -> post.id },
                 contentType = { _, _ -> "thread-post" },
             ) { index, post ->
-                Column(Modifier.readingReturnMarker(post.id == bindings.tools.readingReturn?.postId)) {
-                    if (post.metadata.hidden) {
-                        HiddenPostCard(
-                            post,
-                            onShow = { bindings.postActions.onShowHidden(post) },
-                            onMenu = { bindings.tools.postMenuId = post.id },
-                        )
-                    } else {
-                        ThreadPostItem(post, content, bindings, loading, reference, post.id in fresh.unseen)
+                ThreadShotRow(post.id, bindings.tools) {
+                    Column(Modifier.readingReturnMarker(post.id == bindings.tools.readingReturn?.postId)) {
+                        if (post.metadata.hidden) {
+                            HiddenPostCard(
+                                post,
+                                onShow = { bindings.postActions.onShowHidden(post) },
+                                onMenu = { bindings.tools.postMenuId = post.id },
+                            )
+                        } else {
+                            ThreadPostItem(post, content, bindings, loading, reference, post.id in fresh.unseen)
+                        }
+                        PostSeparator(index, content.posts.lastIndex)
                     }
-                    PostSeparator(index, content.posts.lastIndex)
                 }
             }
         }
@@ -90,6 +95,7 @@ private fun ThreadPostItem(
                 appearance = bindings.appearance,
                 selecting = bindings.tools.selecting,
                 selected = post.id in bindings.tools.selected,
+                selectionOutsideRow = true,
                 changes = post.metadata.changes,
                 replyLabel = content.presentation.replyIndex[post.id]?.label,
                 interactions =
@@ -105,4 +111,10 @@ private fun ThreadPostItem(
         )
         FreshPostHighlight(fresh)
     }
+}
+
+@Composable
+private fun threadVerticalInsets(): PaddingValues {
+    val bottom = LocalBottomOverlayInset.current + 8.dp
+    return PaddingValues(top = LocalTopOverlayInset.current, bottom = bottom)
 }

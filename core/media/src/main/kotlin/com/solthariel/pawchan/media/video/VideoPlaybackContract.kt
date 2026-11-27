@@ -18,6 +18,8 @@ internal enum class VideoEvent {
 
 internal enum class VideoStage { BUFFERING, READY, ERROR }
 
+internal enum class VideoFailure { SOURCE, PLAYBACK }
+
 internal data class VideoPlaybackStatus(
     val stage: VideoStage = VideoStage.BUFFERING,
     val timeline: VideoTimeline = VideoTimeline(),
@@ -139,6 +141,7 @@ internal interface VideoPlaybackControls : VideoSoundControls {
 internal data class VideoAttempt(
     val software: Boolean = false,
     val local: Boolean = true,
+    val failure: VideoFailure? = null,
 ) {
     fun afterFailure(): VideoAttempt? =
         when {
@@ -159,6 +162,12 @@ internal interface VideoEngineBackend : AutoCloseable {
     fun detach(view: android.widget.FrameLayout)
 
     fun play()
+
+    /** Replay on the already opened source. No HTTP client or new open is needed here. */
+    fun replay() {
+        seekTo(0L)
+        play()
+    }
 
     fun pause()
 

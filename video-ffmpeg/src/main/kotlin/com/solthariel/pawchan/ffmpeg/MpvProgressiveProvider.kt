@@ -17,6 +17,8 @@ class MpvProgressiveProvider(
     private val gate = Any()
     private var active: MpvPublishedStream? = null
     private var closed = false
+    private var readerFailed = false
+    val failed: Boolean get() = synchronized(gate) { readerFailed || active?.failed == true }
 
     override fun open(uri: String): MpvStream? =
         synchronized(gate) {
@@ -27,6 +29,7 @@ class MpvProgressiveProvider(
                 input.open(file, source)
                 MpvPublishedStream(input, ::release).also { active = it }
             } catch (_: IOException) {
+                readerFailed = true
                 source?.bind(null)
                 input.close()
                 null
@@ -36,6 +39,7 @@ class MpvProgressiveProvider(
     private fun release(stream: MpvPublishedStream) {
         synchronized(gate) {
             if (active === stream) {
+                if (stream.failed) readerFailed = true
                 source?.bind(null)
                 active = null
             }
@@ -60,11 +64,13 @@ internal class MpvPublishedStream(
 ) : MpvStream {
     private var position = 0L
     private val scratch = ByteArray(STREAM_SCRATCH_BYTES)
+    private val timeline = Mp4StreamTimeline(input)
     override val isSeekable: Boolean = true
+    val failed: Boolean get() = input.failed
 
     override fun read(into: ByteBuffer): Int {
         if (!into.hasRemaining()) return 0
-        val count = input.read(position, scratch, minOf(into.remaining(), scratch.size))
+        val count = timeline.read(position, scratch, minOf(into.remaining(), scratch.size))
         if (count > 0) {
             into.put(scratch, 0, count)
             position += count

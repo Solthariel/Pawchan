@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
 import com.solthariel.pawchan.domain.filter.isCurrentFilterMode
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ContentFilterRuleRow(
@@ -39,7 +41,19 @@ internal fun ContentFilterRuleRow(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = edit)
-            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = if (onEnabledChange != null) 4.dp else 16.dp),
+            .padding(
+                start = 16.dp,
+                top = 12.dp,
+                bottom = 12.dp,
+                end =
+                    if (onEnabledChange !=
+                        null
+                    ) {
+                        4.dp
+                    } else {
+                        16.dp
+                    },
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -75,7 +89,17 @@ private fun FilterRuleEnabledCheckbox(
     rule: ContentFilterRule,
     onEnabledChange: (Boolean) -> Unit,
 ) {
-    val description = if (rule.enabled) "Выключить правило «${rule.label}»" else "Включить правило «${rule.label}»"
+    val res = LocalResources.current
+
+    val description =
+        if (rule.enabled) {
+            res.getString(
+                L.ui_disable_rule,
+                rule.label,
+            )
+        } else {
+            res.getString(L.ui_enable_rule, rule.label)
+        }
     Box(
         Modifier
             .padding(start = 4.dp)
@@ -107,6 +131,8 @@ internal fun Long?.orZeroWhenAvailable(available: Boolean): Long? = if (availabl
 
 @Composable
 private fun FilterRuleCounter(count: Long?) {
+    val res = LocalResources.current
+
     val shape = RoundedCornerShape(4.dp)
     Box(
         Modifier
@@ -116,7 +142,11 @@ private fun FilterRuleCounter(count: Long?) {
             .background(MaterialTheme.colorScheme.surfaceVariant, shape)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .padding(horizontal = 6.dp, vertical = 4.dp)
-            .semantics { contentDescription = count?.let { "Срабатываний: $it" } ?: "Статистика загружается" },
+            .semantics {
+                contentDescription =
+                    count?.let { res.getString(L.ui_triggers, it) }
+                        ?: res.getString(L.ui_statistics_are_loading)
+            },
         contentAlignment = Alignment.Center,
     ) {
         Text(count?.toString() ?: "—", style = MaterialTheme.typography.bodyMedium)

@@ -54,7 +54,7 @@ private fun LazyListScope.fullScreenErrorItem(
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    text = customMessage ?: stringResource(message),
+                    text = customMessage?.let { modelLabel(it) } ?: stringResource(message),
                     modifier = Modifier.padding(horizontal = 24.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

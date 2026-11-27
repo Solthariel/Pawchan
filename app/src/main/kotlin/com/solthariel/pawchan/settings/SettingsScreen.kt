@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,7 @@ import com.solthariel.pawchan.navigation.chrome.AppBottomActions
 import com.solthariel.pawchan.navigation.chrome.AppBottomDestination
 import com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace
 import com.solthariel.pawchan.update.rememberUpdatePanel
+import com.solthariel.pawchan.R.string as L
 
 /** Settings search lives in the fixed toolbar, just as in the catalog. */
 @Composable
@@ -109,6 +111,8 @@ private fun SettingsSectionSurface(
     content: Map<SettingsSection, List<SettingsGroup>>,
     openSection: (SettingsSection?) -> Unit,
 ) {
+    val res = LocalResources.current
+
     when (active) {
         SettingsSection.AUTOHIDE -> {
             ContentFilterSettings(state, actions) { openSection(null) }
@@ -121,9 +125,13 @@ private fun SettingsSectionSurface(
         else -> {
             com.solthariel.pawchan.core.ui.FloatingTopChrome(toolbar = {
                 SettingsToolbar(
-                    active?.title ?: stringResource(R.string.settings_title),
+                    active?.title?.let {
+                        androidx.compose.ui.platform.LocalResources.current
+                            .settingsLabel(it)
+                    }
+                        ?: stringResource(R.string.settings_title),
                     search,
-                    "Поиск настроек",
+                    res.getString(L.ui_search_settings),
                     { if (active != null) openSection(null) else actions.onBack() },
                 ) { SettingsOverflowMenu(openSection) }
             }) {
@@ -143,6 +151,8 @@ private fun SettingsBody(
     onOpen: (SettingsSection) -> Unit,
     modifier: Modifier,
 ) {
+    val res = LocalResources.current
+
     val scroll = rememberScrollState()
     Column(
         modifier
@@ -157,9 +167,21 @@ private fun SettingsBody(
         if (query.isNotBlank()) {
             val found = searchSettings(query, content)
             if (found.isEmpty()) {
-                Text("Ничего не найдено", Modifier.padding(24.dp), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    res.getString(L.ui_nothing_found),
+                    Modifier.padding(24.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             } else {
-                found.forEach { SettingsGroupCard(it) }
+                found.forEach {
+                    SettingsGroupCard(
+                        it.copy(
+                            title =
+                                androidx.compose.ui.platform.LocalResources.current
+                                    .settingsLabel(it.title),
+                        ),
+                    )
+                }
             }
         } else if (section != null) {
             content[section].orEmpty().forEach { SettingsGroupCard(it) }
@@ -184,9 +206,14 @@ private fun SettingsSectionList(onOpen: (SettingsSection) -> Unit) {
             ) {
                 UiIcon(section.icon, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(24.dp))
                 Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                    Text(section.title, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        section.summary,
+                        androidx.compose.ui.platform.LocalResources.current
+                            .settingsLabel(section.title),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        androidx.compose.ui.platform.LocalResources.current
+                            .settingsLabel(section.summary),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )

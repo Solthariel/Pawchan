@@ -3,7 +3,6 @@ package com.solthariel.pawchan.media.video
 import android.content.Context
 import android.os.Handler
 import android.util.Log
-import android.widget.FrameLayout
 import com.solthariel.pawchan.ffmpeg.ProgressiveSource
 import okhttp3.OkHttpClient
 import java.io.File
@@ -15,12 +14,21 @@ internal class MpvVideoEngine(
     context: Context,
     private val client: OkHttpClient?,
     private val directory: File,
-) : VideoEngineBackend {
+    frameCounters: ((MpvFrameCounters) -> Unit)? = null,
+) : MpvSurfaceBackend {
     private val main = Handler(context.mainLooper)
     private val worker =
         MpvWorker { generation, operation, error ->
             Log.e("PawMpv", "$operation failure: ${error.javaClass.simpleName}")
-            main.post { if (generation == token && !closed) events.emit(VideoEvent.ERROR) }
+            main.post {
+                if (generation == token && !closed) {
+                    if (error is IOException || sourceFailed) {
+                        events.sourceError()
+                    } else {
+                        events.emit(VideoEvent.ERROR)
+                    }
+                }
+            }
         }
 
     @Volatile private var token = 0
@@ -28,6 +36,7 @@ internal class MpvVideoEngine(
     @Volatile private var closed = false
 
     private var source: ProgressiveSource? = null // main thread
+    private val sourceFailed: Boolean get() = source?.failed == true || nativeSession.inputFailed
 
     private val events = MpvPlaybackEvents()
 
@@ -91,12 +100,15 @@ internal class MpvVideoEngine(
                     main.post(action)
                 }
 
-                override fun onSample(sample: MpvPollSample) = events.sample(sample)
+                override fun onSample(sample: MpvPollSample) = events.sample(sample, nativeSession.waitingForBytes)
 
-                override fun onEnd(reason: String?) = events.end(reason)
+                override fun onEnd(reason: String?) {
+                    if (sourceFailed) events.sourceError() else events.end(reason)
+                }
 
                 override fun onPlaybackRestart() = surface.playbackRestarted()
             },
+            frameCounters,
         )
 
     private val nativeSession: MpvNativeSession =
@@ -132,7 +144,7 @@ internal class MpvVideoEngine(
         Log.i("PawMpv", "open mode=${if (software) "software" else "auto"}")
         events.emit(VideoEvent.OPENING)
         if (source.startsWith("file:")) {
-            nativeSession.start(File(URI(source)), null, software, current)
+            nativeSession.start(File(URI.create(source)), null, software, current)
         } else {
             val download =
                 ProgressiveSource(
@@ -152,7 +164,7 @@ internal class MpvVideoEngine(
 
                         override fun onError(error: IOException) {
                             Log.w("PawMpv", "source failure: ${error.javaClass.simpleName}")
-                            main.post { if (current == token && !closed) events.emit(VideoEvent.ERROR) }
+                            main.post { if (current == token && !closed) events.sourceError() }
                         }
                     },
                 )
@@ -165,6 +177,13 @@ internal class MpvVideoEngine(
         wantsPlay = true
         events.resumeOrSeek()
         nativeSession.setProperty("pause", "no")
+    }
+
+    override fun replay() {
+        if (closed) return
+        wantsPlay = true
+        events.resumeOrSeek()
+        nativeSession.replay(token)
     }
 
     override fun pause() {
@@ -194,11 +213,7 @@ internal class MpvVideoEngine(
     }
 
     override val metadata: Map<String, String> get() = facts
-    override val posterFrame: android.graphics.Bitmap? get() = surface.output.snapshot()
-
-    override fun attach(view: FrameLayout) = surface.output.attach(view)
-
-    override fun detach(view: FrameLayout) = surface.output.detach(view)
+    override val renderOutput: MpvVideoOutput get() = surface.output
 
     override fun stop() {
         token++

@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.solthariel.pawchan.MainActivity
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.R.string as PlatformStrings
 
 internal class DownloadNotifications(
     private val context: Context,
@@ -33,15 +34,21 @@ internal class DownloadNotifications(
         }
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.cancel("media-downloads-group", NOTIFICATION_ID)
-        manager.createNotificationChannel(NotificationChannel(CHANNEL, "Загрузки", NotificationManager.IMPORTANCE_LOW))
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL,
+                context.getString(PlatformStrings.platform_downloads),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
         val text =
             when (status) {
-                DownloadStatus.QUEUED -> "Ожидание загрузки"
-                DownloadStatus.RUNNING -> "Загрузка"
-                DownloadStatus.WAITING -> "Ожидание повторной попытки"
-                DownloadStatus.SUCCEEDED -> "Сохранено"
-                DownloadStatus.FAILED -> "Не удалось сохранить"
-                DownloadStatus.CANCELLED -> "Загрузка отменена"
+                DownloadStatus.QUEUED -> context.getString(PlatformStrings.platform_waiting_for_upload)
+                DownloadStatus.RUNNING -> context.getString(PlatformStrings.platform_loading)
+                DownloadStatus.WAITING -> context.getString(PlatformStrings.platform_waiting_to_retry)
+                DownloadStatus.SUCCEEDED -> context.getString(PlatformStrings.platform_saved)
+                DownloadStatus.FAILED -> context.getString(PlatformStrings.platform_failed_to_save)
+                DownloadStatus.CANCELLED -> context.getString(PlatformStrings.platform_loading_canceled)
             }
         val pending = status in setOf(DownloadStatus.QUEUED, DownloadStatus.RUNNING, DownloadStatus.WAITING)
         val intent =

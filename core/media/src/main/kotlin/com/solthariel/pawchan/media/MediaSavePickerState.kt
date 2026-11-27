@@ -3,6 +3,7 @@ package com.solthariel.pawchan.media
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
@@ -15,7 +16,7 @@ internal class MediaSavePickerState(
     private val context: Context,
     private val scope: CoroutineScope,
 ) {
-    var noticeVersion by mutableStateOf(0L)
+    var noticeVersion by mutableLongStateOf(0L)
         private set
     var status by mutableStateOf<MediaSaveStatus>(MediaSaveStatus.Idle)
     var needsDirectory by mutableStateOf(false)

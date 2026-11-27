@@ -1,6 +1,5 @@
 package com.solthariel.pawchan.settings
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -11,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solthariel.pawchan.catalog.rememberCatalogSearchState
 import com.solthariel.pawchan.domain.filter.ContentFilterRule
@@ -19,6 +19,7 @@ import com.solthariel.pawchan.navigation.defaultBoardAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ContentFilterSettings(
@@ -26,6 +27,8 @@ internal fun ContentFilterSettings(
     actions: SettingsActions,
     onBack: (() -> Unit)? = null,
 ) {
+    val res = LocalResources.current
+
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var helpVisible by rememberSaveable { mutableStateOf(false) }
@@ -43,7 +46,9 @@ internal fun ContentFilterSettings(
         if (state.app.behavior.contentFilterResetNotice) {
             ContentFilterResetNotice {
                 actions.onUpdate { app ->
-                    app.copy(behavior = app.behavior.copy(autohide = app.behavior.autohide.copy(resetNotice = false)))
+                    app.copy(
+                        behavior = app.behavior.copy(autohide = app.behavior.autohide.copy(resetNotice = false)),
+                    )
                 }
             }
         }
@@ -51,7 +56,7 @@ internal fun ContentFilterSettings(
         ContentFilterRulesList(
             visible,
             statistics,
-            if (rules.isEmpty()) "Правил пока нет" else "Подходящих правил нет",
+            if (rules.isEmpty()) res.getString(L.ui_no_rules_yet) else res.getString(L.ui_no_matching_rules),
             Modifier.fillMaxSize(),
             setEnabled = { id, enabled ->
                 actions.onUpdate { app -> app.withContentFilters(app.contentFilters.withRuleEnabled(id, enabled)) }

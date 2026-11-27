@@ -5,6 +5,7 @@ import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.domain.model.SiteId
 import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
+import com.solthariel.pawchan.domain.workspace.WorkspaceRoutes
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import com.solthariel.pawchan.domain.workspace.withHiddenThread
 import com.solthariel.pawchan.domain.workspace.withRepliesDismissed
@@ -39,9 +40,10 @@ class HiddenCatalogThreadsTest {
 
     @Test
     fun priorWorkspaceVersionWithoutHiddenThreadsStillLoads() {
-        val legacy = Json.parseToJsonElement(encodeWorkspace(WorkspaceState(lastRoute = "catalog"))).jsonObject
+        val state = WorkspaceState(routes = WorkspaceRoutes(last = "catalog"))
+        val legacy = Json.parseToJsonElement(encodeWorkspace(state)).jsonObject
         val withoutNewField = JsonObject(legacy - "hiddenThreads").toString()
-        assertEquals(WorkspaceState(lastRoute = "catalog"), decodeWorkspace(withoutNewField))
+        assertEquals(state, decodeWorkspace(withoutNewField))
     }
 
     @Test

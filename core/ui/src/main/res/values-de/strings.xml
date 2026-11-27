@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_ui_retry">Erneut versuchen</string>
+    <string name="core_ui_challenge_open">Überprüfung durchführen</string>
+    <string name="core_ui_error_loading_data">Fehler beim Laden der Daten</string>
+    <string name="core_ui_fast_scrollbar">Listen-Scrollen</string>
+    <string name="core_ui_error_rate_limited">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_error_refresh_kept">@string/core_ui_error_loading_data</string>
+    <string name="core_ui_pull_refresh_top">Oben aktualisieren</string>
+    <string name="core_ui_pull_refresh_bottom">Unten aktualisieren</string>
+    <string name="core_ui_thread_author">Thread-Ersteller</string>
+    <string name="core_ui_post_sage">Nicht hochschieben</string>
+    <string name="core_ui_post_email">E-Mail des Autors</string>
+    <string name="core_ui_thread_sticky">Angehefteter Thread</string>
+    <string name="core_ui_thread_closed">Thread geschlossen</string>
+    <string name="core_ui_thread_cyclical">Zyklischer Thread</string>
+    <string name="core_ui_post_banned">Autor gesperrt</string>
+    <string name="core_ui_archive_active">Archiver: Thread ist aktiv und wird aktualisiert</string>
+    <string name="core_ui_archive_maybe_deleted">Archiver: Original-Thread wurde möglicherweise gelöscht</string>
+    <string name="core_ui_archive_saved">Archiver: Thread gespeichert</string>
+    <string name="core_ui_archive_lost">Archiver: Thread als verloren markiert</string>
+    <string name="core_ui_archive_queued">Archiver: Thread wartet auf Verarbeitung</string>
+    <string name="core_ui_archive_other">Ein anderer Archiver-Status</string>
+    <string name="core_ui_copied">Kopiert</string>
+    <string name="ui_enter_jpeg_quality">JPEG-Qualität eingeben</string>
+    <string name="ui_value">Wert</string>
+    <string name="ui_quality">Qualität</string>
+    <string name="ui_jpeg_quality_906d">JPEG-Qualität, %</string>
+    <string name="ui_from_to">Von %1$d bis %2$d</string>
+    <string name="ui_cancel">Abbrechen</string>
+    <string name="ui_apply">Anwenden</string>
+    <string name="ui_expanded">Ausgeklappt</string>
+    <string name="ui_expand">Ausklappen</string>
+    <string name="ui_collapsed">Eingeklappt</string>
+    <string name="ui_removed">Entfernt</string>
+</resources>

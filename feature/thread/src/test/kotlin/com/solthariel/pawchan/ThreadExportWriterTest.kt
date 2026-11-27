@@ -1,11 +1,9 @@
 package com.solthariel.pawchan
 
+import com.solthariel.pawchan.thread.CapturedThreadShot
 import com.solthariel.pawchan.thread.ThreadExportDocument
-import com.solthariel.pawchan.thread.ThreadExportPost
-import com.solthariel.pawchan.thread.ThreadExportRequest
 import com.solthariel.pawchan.thread.ThreadExportTarget
 import com.solthariel.pawchan.thread.ThreadExportWriter
-import com.solthariel.pawchan.thread.ThreadShotStyle
 import com.solthariel.pawchan.thread.ThreadToolsState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -53,33 +51,12 @@ class ThreadExportWriterTest {
             val second = RecordingExportTarget()
             val writer = ThreadExportWriter(this, tools, StandardTestDispatcher(testScheduler))
             writer.saveHtml(request(), first)
-            writer.saveShot(request(), second)
+            writer.saveHtml(request(), second)
             runCurrent()
             assertEquals(1, first.html.size)
-            assertTrue(second.shots.isEmpty())
+            assertTrue(second.html.isEmpty())
             first.completed.complete(Unit)
             advanceUntilIdle()
-        }
-
-    @Test fun screenshotPassesOnlySelectedPostsAndCapturedStyle() =
-        runTest {
-            val tools = ThreadToolsState(this)
-            val target = RecordingExportTarget().apply { completed.complete(Unit) }
-            val style = ThreadShotStyle(textSizeSp = 18, accent = 123)
-            val request = ThreadExportRequest(toolsContent(listOf(toolsPost(9), toolsPost(3))), setOf(3), style)
-            tools.selected = setOf(9)
-            ThreadExportWriter(this, tools, StandardTestDispatcher(testScheduler)).saveShot(request, target)
-            advanceUntilIdle()
-            assertEquals(
-                listOf(3),
-                target.shots
-                    .single()
-                    .first
-                    .map { it.index },
-            )
-            assertEquals(style, target.shots.single().second)
-            assertEquals("Скриншот выбранных постов сохранён", tools.notice)
-            assertFalse(tools.exporting)
         }
 
     @Test fun ioFailureKeepsMessageAndAllowsNextExport() =
@@ -142,13 +119,12 @@ class ThreadExportWriterTest {
             assertEquals("Сохранение…", tools.notice)
         }
 
-    private fun request(): ThreadExportRequest = ThreadExportRequest(toolsContent(listOf(toolsPost(9))))
+    private fun request() = toolsContent(listOf(toolsPost(9)))
 }
 
 private class RecordingExportTarget : ThreadExportTarget {
     val completed = CompletableDeferred<Unit>()
     val html = mutableListOf<ThreadExportDocument>()
-    val shots = mutableListOf<Pair<List<ThreadExportPost>, ThreadShotStyle>>()
     var failure: Exception? = null
     var cancelled = false
 
@@ -157,13 +133,7 @@ private class RecordingExportTarget : ThreadExportTarget {
         finish()
     }
 
-    override suspend fun saveShot(
-        posts: List<ThreadExportPost>,
-        style: ThreadShotStyle,
-    ) {
-        shots += posts to style
-        finish()
-    }
+    override suspend fun saveShot(image: CapturedThreadShot) = finish()
 
     private suspend fun finish() {
         failure?.let { throw it }

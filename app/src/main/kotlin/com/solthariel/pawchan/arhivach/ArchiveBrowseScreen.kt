@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,12 +36,12 @@ import com.solthariel.pawchan.core.ui.PostSeparator
 import com.solthariel.pawchan.data.network.proxy.proxyRouter
 import com.solthariel.pawchan.infrastructure.MediaLoaders
 import com.solthariel.pawchan.infrastructure.media.MediaContextMenuHost
-import com.solthariel.pawchan.media.MediaAttachmentUi
 import com.solthariel.pawchan.media.MediaContentHost
 import com.solthariel.pawchan.media.MediaMenuRequest
 import com.solthariel.pawchan.media.MediaViewerSelection
 import com.solthariel.pawchan.media.rememberMediaSaveActions
 import com.solthariel.pawchan.media.thumbnail.rememberThumbnailLoading
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ArchiveBrowseScreen(
@@ -177,6 +178,8 @@ private fun ArchiveThreadRows(
     viewport: ArchiveThreadViewport,
     onOpenMedia: (ArchiveListMediaState) -> Unit,
 ) {
+    val res = LocalResources.current
+
     val shown = viewport.shown
     val listState = viewport.listState
     val thumbnailLoading = viewport.thumbnailLoading
@@ -209,7 +212,7 @@ private fun ArchiveThreadRows(
             }
         }
         if (state.list != null && shown.isEmpty() && !state.load.loading) {
-            item { Text("Треды не найдены на этой странице", Modifier.padding(16.dp)) }
+            item { Text(res.getString(L.ui_no_threads_found_on_this), Modifier.padding(16.dp)) }
         }
         if (state.list?.hasNext == true) {
             item(key = "archive-load-more") {
@@ -229,25 +232,27 @@ internal fun ArchiveLoadMoreFooter(
     autoLoadPages: Boolean,
     onLoadMore: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     if (autoLoadPages && !state.loadingNextPage && state.nextPageError == null) return
     Box(Modifier.fillMaxWidth().padding(16.dp)) {
         when {
             state.loadingNextPage -> {
                 PageLoadingIndicator(
-                    description = "Загрузка следующей страницы",
+                    description = res.getString(L.ui_loading_next_page),
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
 
             state.nextPageError != null -> {
                 TextButton(onClick = onLoadMore) {
-                    Text("${state.nextPageError}. Повторить")
+                    Text(res.getString(L.ui_retry_e94c, state.nextPageError))
                 }
             }
 
             !autoLoadPages -> {
                 TextButton(onClick = onLoadMore) {
-                    Text("Загрузить ещё")
+                    Text(res.getString(L.ui_load_more))
                 }
             }
         }

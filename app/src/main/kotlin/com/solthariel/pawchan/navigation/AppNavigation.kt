@@ -2,6 +2,7 @@ package com.solthariel.pawchan.navigation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -187,24 +188,28 @@ private fun NavGraphBuilder.historyDestinations(
             onThread = { address, post ->
                 if (workspace != null) workspace.openThread(address, post) else navController.navigateThread(address)
             },
-            onArchive = { id -> navController.navigate("download-archive/$id") },
+            onArchive = { id -> navController.navigate(AppRoute.downloadArchive(id)) },
             bottomActions = bottomActions,
             owner = owner,
         )
     }
     appComposable(
         AppRoute.DOWNLOAD_ARCHIVE,
-        arguments = listOf(navArgument("archiveId") { type = NavType.LongType }),
+        arguments = listOf(navArgument(DOWNLOAD_ARCHIVE_ARGUMENT) { type = NavType.LongType }),
     ) { entry ->
-        val archiveId = requireNotNull(entry.arguments).getLong("archiveId")
+        val archiveId = requireNotNull(entry.arguments).getLong(DOWNLOAD_ARCHIVE_ARGUMENT)
+        // В «Тредах» подсвечена вкладка; возвращённый кнопкой «Каталог» архив живёт в цепочке чтения.
+        val inTab = remember(entry) { navController.isInTab() }
         com.solthariel.pawchan.navigation.chrome.AppNavigationWorkspace(
             actions = bottomActions,
-            selected = com.solthariel.pawchan.navigation.chrome.AppBottomDestination.THREADS,
+            selected =
+                com.solthariel.pawchan.navigation.chrome.AppBottomDestination.THREADS
+                    .takeIf { inTab },
             floatingTop = true,
         ) {
             com.solthariel.pawchan.arhivach.ArchiveBrowseScreen(
                 dependencies.mediaLoaders,
-                navController::popBackStack,
+                { navController.popReading() },
                 entry,
                 archiveId,
             )
@@ -253,7 +258,7 @@ private fun NavGraphBuilder.threadDestination(
         ThreadRoute(
             address = address,
             dependencies = dependencies,
-            onBack = { if (!navController.popBackStack()) navController.navigate(AppRoute.catalog(address.board)) },
+            onBack = { if (!navController.popReading()) navController.navigate(AppRoute.catalog(address.board)) },
             onChallenge = { navController.navigate(AppRoute.challenge(it)) },
             challengeRetryToken = retryToken,
             bottomActions = bottomActions,

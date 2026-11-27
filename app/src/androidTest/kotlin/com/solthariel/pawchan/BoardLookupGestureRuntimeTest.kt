@@ -28,7 +28,6 @@ import com.solthariel.pawchan.boards.BoardLookupSource
 import com.solthariel.pawchan.boards.prepareLookup
 import com.solthariel.pawchan.catalog.CatalogBoardLookupBindings
 import com.solthariel.pawchan.catalog.CatalogBoardLookupLayer
-import com.solthariel.pawchan.domain.model.BoardAddress
 import com.solthariel.pawchan.domain.model.BoardId
 import com.solthariel.pawchan.navigation.defaultBoardAddress
 import org.junit.Assert.assertEquals

@@ -10,10 +10,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.solthariel.pawchan.R.string as L
 
 /** Размер и очистка кэша приложения (миниатюры, видео, временные файлы). */
 internal class SettingsCacheState(
@@ -45,6 +47,8 @@ internal class SettingsCacheState(
 
 @Composable
 internal fun rememberSettingsEnvironment(updates: @Composable () -> Unit): SettingsEnvironment {
+    val res = LocalResources.current
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val loaders =
@@ -61,7 +65,7 @@ internal fun rememberSettingsEnvironment(updates: @Composable () -> Unit): Setti
                 try {
                     cache.clear()
                 } catch (_: java.io.IOException) {
-                    failure = "Не удалось полностью очистить кэш"
+                    failure = res.getString(L.ui_failed_to_clear_the_cache)
                 }
             }
         }

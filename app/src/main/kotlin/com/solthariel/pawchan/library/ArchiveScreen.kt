@@ -26,6 +26,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +47,7 @@ import com.solthariel.pawchan.navigation.chrome.BOTTOM_FADE_FRACTION
 import com.solthariel.pawchan.navigation.chrome.LocalBottomBarTransparency
 import com.solthariel.pawchan.navigation.chrome.bottomBarSurfaceAlpha
 import com.solthariel.pawchan.navigation.saveableKey
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun ArchiveScreen(
@@ -119,6 +121,8 @@ private fun ArchivePaging(
     actions: ArchiveActions,
     modifier: Modifier,
 ) {
+    val res = LocalResources.current
+
     val pages =
         state.snapshot
             ?.pages
@@ -147,7 +151,7 @@ private fun ArchivePaging(
         }
         if (state.loading) {
             PageLoadingIndicator(
-                description = "Загрузка страницы архива",
+                description = res.getString(L.ui_loading_archive_page),
                 modifier = Modifier.padding(12.dp).testTag("archive-page-loading"),
                 size = 20.dp,
             )
@@ -167,10 +171,12 @@ private fun ArchiveStatus(
     state: ArchiveUiState,
     retry: () -> Unit,
 ) {
+    val res = LocalResources.current
+
     val message = archiveStatusMessage(state)
     message?.let { Text(stringResource(it), Modifier.padding(16.dp)) }
     if (state.failure != null && !state.loading) {
-        TextButton(onClick = retry) { Text("Повторить") }
+        TextButton(onClick = retry) { Text(res.getString(L.ui_retry)) }
     }
 }
 

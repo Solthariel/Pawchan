@@ -1,7 +1,6 @@
 package com.solthariel.pawchan.boards
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,9 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
 import com.solthariel.pawchan.catalog.BoardsActions
 import com.solthariel.pawchan.catalog.CatalogError
@@ -39,6 +38,7 @@ import com.solthariel.pawchan.ui.APP_REFRESH_BOTTOM_INSET
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun BoardsScreen(
@@ -253,8 +253,10 @@ private fun BoardsContent(
 
 @Composable
 private fun BoardsLoading() {
+    val res = LocalResources.current
+
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        PageLoadingIndicator(description = "Загрузка разделов")
+        PageLoadingIndicator(description = res.getString(L.ui_loading_sections))
     }
 }
 

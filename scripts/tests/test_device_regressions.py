@@ -97,11 +97,18 @@ class DeviceRegressionRunnerTests(unittest.TestCase):
             return SimpleNamespace(returncode=0)
 
         code, summary, names = self.execute(CASES, first_only)
-        self.assertEqual((0, 'PASS', 41, 41), (code, summary['result'], summary['confirmed'], summary['required']))
+        self.assertEqual((0, 'PASS', 59, 59), (code, summary['result'], summary['confirmed'], summary['required']))
         self.assertEqual([(mod, cls + '#' + ids[0] if len(ids) == 1 else cls)
                           for mod, classes in CASES.items() for cls, ids in classes.items()], calls)
         self.assertFalse(any(',' in selector for _, selector in calls))
-        self.assertEqual(21, len(calls))
+        self.assertEqual(29, len(calls))
+        self.assertIn('app/com.solthariel.pawchan.locale.LanguageDeliveryRuntimeTest.html', names)
+        self.assertIn('core/media/com.solthariel.pawchan.media.video.MediaLocaleHostRuntimeTest.html', names)
+        self.assertIn('app/com.solthariel.pawchan.settings.InterfaceLocalesRuntimeTest.html', names)
+        self.assertIn('core/media/com.solthariel.pawchan.VideoThumbnailBadgeRuntimeTest.html', names)
+        self.assertIn('feature/thread/com.solthariel.pawchan.ThreadShotPixelRuntimeTest.html', names)
+        self.assertIn('app/com.solthariel.pawchan.downloads.SavedThumbnailRuntimeTest.html', names)
+        self.assertIn('core/media/com.solthariel.pawchan.MpvClipClockRuntimeTest.html', names)
         self.assertEqual({mod + '/' + cls + '.html' for mod, classes in CASES.items() for cls in classes}, names - {'summary.json'})
 
     def test_navigation_mode_keeps_the_three_reported_failures_and_four_guards(self):

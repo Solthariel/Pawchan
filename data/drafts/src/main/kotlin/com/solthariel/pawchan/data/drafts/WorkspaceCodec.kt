@@ -4,8 +4,8 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.workspace.OpenThread
 import com.solthariel.pawchan.domain.workspace.StoredPost
 import com.solthariel.pawchan.domain.workspace.StoredReply
-import com.solthariel.pawchan.domain.workspace.ThreadCopy
 import com.solthariel.pawchan.domain.workspace.ThreadMarks
+import com.solthariel.pawchan.domain.workspace.WorkspaceRoutes
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -26,6 +26,8 @@ internal fun encodeWorkspace(state: WorkspaceState): String =
     buildJsonObject {
         put("version", 1)
         put("route", state.lastRoute?.let(::JsonPrimitive) ?: JsonNull)
+        put("base", state.baseRoute?.let(::JsonPrimitive) ?: JsonNull)
+        put("reading", state.readingRoute?.let(::JsonPrimitive) ?: JsonNull)
         put(
             "posts",
             JsonArray(
@@ -119,7 +121,12 @@ internal fun decodeWorkspace(text: String): WorkspaceState {
                 val item = element.jsonObject
                 item.decodeCopy()
             },
-        lastRoute = root.nullableString("route"),
+        routes =
+            WorkspaceRoutes(
+                root.nullableString("route"),
+                root.nullableString("base"),
+                root.nullableString("reading"),
+            ),
         marks = root.decodeMarks(),
     )
 }

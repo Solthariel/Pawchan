@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.R
+import com.solthariel.pawchan.R.string as L
 
 @Composable
 internal fun FilterEditorActions(
@@ -60,19 +62,21 @@ private fun CompactFilterActions(
     onDelete: (() -> Unit)?,
     confirm: @Composable () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FilterCheck(
-            "Включено",
+            res.getString(L.ui_enabled),
             draft.enabled,
             { draft.enabled = it },
             Modifier.weight(1f).testTag("filter-editor-enabled"),
         )
         FilterDeleteAction(onDelete)
-        TextButton(onClick = onClose) { Text("Отмена") }
+        TextButton(onClick = onClose) { Text(res.getString(L.ui_cancel)) }
         confirm()
     }
 }
@@ -84,9 +88,11 @@ private fun ExpandedFilterActions(
     onDelete: (() -> Unit)?,
     confirm: @Composable () -> Unit,
 ) {
+    val res = LocalResources.current
+
     Column {
         FilterCheck(
-            "Правило включено",
+            res.getString(L.ui_rule_enabled),
             draft.enabled,
             { draft.enabled = it },
             Modifier.fillMaxWidth().testTag("filter-editor-enabled"),
@@ -94,7 +100,7 @@ private fun ExpandedFilterActions(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             FilterDeleteAction(onDelete)
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = onClose) { Text("Отмена") }
+            TextButton(onClick = onClose) { Text(res.getString(L.ui_cancel)) }
             confirm()
         }
     }
@@ -102,11 +108,13 @@ private fun ExpandedFilterActions(
 
 @Composable
 private fun FilterDeleteAction(onDelete: (() -> Unit)?) {
+    val res = LocalResources.current
+
     if (onDelete != null) {
         IconButton(onClick = onDelete) {
             Icon(
                 painterResource(R.drawable.ic_filter_delete),
-                contentDescription = "Удалить правило",
+                contentDescription = res.getString(L.ui_delete_rule),
                 tint = MaterialTheme.colorScheme.error,
             )
         }

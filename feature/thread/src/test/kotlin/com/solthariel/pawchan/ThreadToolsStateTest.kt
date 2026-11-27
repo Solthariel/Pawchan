@@ -1,6 +1,7 @@
 package com.solthariel.pawchan
 
 import com.solthariel.pawchan.thread.ThreadSearchFlag
+import com.solthariel.pawchan.thread.ThreadSearchMemory
 import com.solthariel.pawchan.thread.ThreadToolsState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,7 +33,8 @@ class ThreadToolsStateTest {
     @Test fun closingSearchCancelsPendingResultsAndClearsTheFlag() =
         runTest {
             val tools = ThreadToolsState(this, StandardTestDispatcher(testScheduler))
-            tools.setFlag(ThreadSearchFlag.MY, toolsContent(listOf(toolsPost(1))))
+            tools.selectFlag(ThreadSearchFlag.MY)
+            tools.search(toolsContent(listOf(toolsPost(1))))
             runCurrent()
             tools.closeSearch()
             advanceUntilIdle()
@@ -64,5 +66,20 @@ class ThreadToolsStateTest {
             tools.clearSelection()
             assertTrue(tools.selected.isEmpty())
             assertFalse(tools.selecting)
+        }
+
+    @Test fun searchMemoryRestoresQueryFlagAndOpenStateIntoANewScreen() =
+        runTest {
+            val first = ThreadToolsState(this, StandardTestDispatcher(testScheduler))
+            first.selectFlag(ThreadSearchFlag.MY)
+            first.query = "кот"
+            val saved = first.searchMemory()
+            val next = ThreadToolsState(this, StandardTestDispatcher(testScheduler))
+            next.restoreSearch(saved)
+            assertTrue(next.searchOpen)
+            assertEquals("кот", next.query)
+            assertEquals(ThreadSearchFlag.MY, next.flag)
+            next.restoreSearch(ThreadSearchMemory(open = true, query = "", flag = "REMOVED_FLAG"))
+            assertEquals(null, next.flag)
         }
 }

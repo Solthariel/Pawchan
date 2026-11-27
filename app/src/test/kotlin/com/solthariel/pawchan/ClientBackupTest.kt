@@ -10,6 +10,7 @@ import com.solthariel.pawchan.domain.model.ThreadAddress
 import com.solthariel.pawchan.domain.model.ThreadId
 import com.solthariel.pawchan.domain.workspace.OpenThread
 import com.solthariel.pawchan.domain.workspace.ThreadMarks
+import com.solthariel.pawchan.domain.workspace.WorkspaceRoutes
 import com.solthariel.pawchan.domain.workspace.WorkspaceState
 import com.solthariel.pawchan.navigation.boardAddress
 import org.junit.Assert.assertEquals
@@ -28,7 +29,7 @@ class ClientBackupTest {
         val state =
             WorkspaceState(
                 tabs = listOf(OpenThread(thread, "private")),
-                lastRoute = "private",
+                routes = WorkspaceRoutes(last = "private"),
                 marks = ThreadMarks(hidden = setOf(thread), seen = mapOf(thread to 45L)),
             )
         val source =

@@ -2,9 +2,11 @@ package com.solthariel.pawchan.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.solthariel.pawchan.feature.thread.R.string as L
 
 @Composable
 internal fun rememberThreadSelectionActions(
@@ -14,6 +16,8 @@ internal fun rememberThreadSelectionActions(
     presentation: ThreadPresentation,
     exports: ThreadExportActions,
 ): ThreadSelectionActions {
+    val res = LocalResources.current
+
     val scope = rememberCoroutineScope()
     val quote: () -> Unit = {
         val selected = tools.selected.toSet()
@@ -42,7 +46,7 @@ internal fun rememberThreadSelectionActions(
                 presentation.postContext
                     ?.preferences
                     ?.change(PostPreferenceAction.SHOW, post) == true
-            if (!changed) tools.notice = "Не удалось показать скрытый пост"
+            if (!changed) tools.notice = res.getString(L.ui_failed_to_show_hidden_post)
         }
     }
     return ThreadSelectionActions(quote.takeIf { presentation.repliesEnabled && content?.closed == false }, {

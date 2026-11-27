@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -14,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.solthariel.pawchan.catalog.CatalogSearchState
@@ -24,6 +24,7 @@ import com.solthariel.pawchan.core.ui.UiIconKind
 import com.solthariel.pawchan.core.ui.UiToolbarButton
 import com.solthariel.pawchan.core.ui.UiToolbarSearchField
 import com.solthariel.pawchan.core.ui.UiToolbarSearchTransition
+import com.solthariel.pawchan.R.string as L
 
 /** Catalog geometry, with the same heading typography as ordinary settings sections. */
 @Composable
@@ -35,6 +36,8 @@ internal fun SettingsToolbar(
     inputDescription: String = placeholder,
     actions: @Composable RowScope.() -> Unit,
 ) {
+    val res = LocalResources.current
+
     Box(Modifier.fillMaxWidth().heightIn(min = APP_TOP_BAR_HEIGHT), contentAlignment = Alignment.Center) {
         Row(
             Modifier
@@ -44,9 +47,19 @@ internal fun SettingsToolbar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (back != null || search.visible) {
-                UiToolbarButton(UiIconKind.BACK, if (search.visible) "Закрыть поиск" else "Назад", onClick = {
-                    if (search.visible) search.close() else back?.invoke()
-                })
+                UiToolbarButton(
+                    UiIconKind.BACK,
+                    if (search.visible) {
+                        res.getString(
+                            L.ui_close_search,
+                        )
+                    } else {
+                        res.getString(L.ui_back)
+                    },
+                    onClick = {
+                        if (search.visible) search.close() else back?.invoke()
+                    },
+                )
             } else {
                 Spacer(Modifier.width(0.dp))
             }
