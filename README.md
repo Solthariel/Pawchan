@@ -12,24 +12,19 @@ Android-клиент для 2ch с чтением 4chan и Архивача. П�
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/board.png" width="250" alt="Доска"><br><sub>Доска</sub></td>
-    <td align="center"><img src="docs/screenshots/thread.png" width="250" alt="Тред"><br><sub>Тред</sub></td>
-    <td align="center"><img src="docs/screenshots/video.png" width="250" alt="Видео"><br><sub>Видео на libmpv</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/tabs.gif" width="250" alt="Нижняя панель"><br><sub>Каталог, треды, доски 2ch и 4chan, настройки</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/board.png" width="250" alt="Доска"><br><sub>Доска</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/thread.gif" width="250" alt="Тред"><br><sub>Тред и превью ответа</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/threads.png" width="250" alt="Треды"><br><sub>Треды и избранное</sub></td>
-    <td align="center"><img src="docs/screenshots/composer.png" width="250" alt="Новый тред"><br><sub>Новый пост</sub></td>
-    <td align="center"><img src="docs/screenshots/bottom-bar.png" width="250" alt="Порядок кнопок"><br><sub>Порядок кнопок панели</sub></td>
+    <td align="center"><img src="docs/screenshots/viewer.gif" width="250" alt="Просмотр файлов"><br><sub>Видео и картинки, закрытие свайпом</sub></td>
+    <td align="center"><img src="docs/screenshots/composer.png" width="250" alt="Новый пост"><br><sub>Новый пост с файлами</sub></td>
+    <td align="center"><img src="docs/screenshots/editor.gif" width="250" alt="Редактор картинок"><br><sub>Редактор: кадр, рисунок, замазка</sub></td>
   </tr>
-</table>
-
-## В движении
-
-<table>
   <tr>
-    <td align="center"><img src="docs/screenshots/viewer.gif" width="250" alt="Просмотр файлов"><br><sub>Листание файлов и закрытие свайпом</sub></td>
-    <td align="center"><img src="docs/screenshots/threadshot.gif" width="250" alt="Тредшот"><br><sub>Тредшот: выделил посты, сохранил картинку</sub></td>
-    <td align="center"><img src="docs/screenshots/threadshot-example.png" width="250" alt="Готовый тредшот"><br><sub>Готовый тредшот</sub></td>
+    <td align="center"><img src="docs/screenshots/threadshot.gif" width="250" alt="Тредшот"><br><sub>Тредшот: посты одной картинкой</sub></td>
+    <td align="center"><img src="docs/screenshots/stats.png" width="250" alt="Статистика треда"><br><sub>Статистика треда</sub></td>
+    <td align="center"><img src="docs/screenshots/themes.gif" width="250" alt="Темы"><br><sub>Светлая, AMOLED и тёмная тема</sub></td>
   </tr>
 </table>
 
@@ -39,6 +34,8 @@ Android-клиент для 2ch с чтением 4chan и Архивача. П�
 - **Просмотр файлов**: листание свайпом, закрытие жестом, загрузка в выбранную папку.
 - **Видео на libmpv**: скорость, аппаратное декодирование, картинка в картинке.
 - **Тредшот**: выделенные посты сохраняются одной картинкой, пиксель в пиксель как на экране.
+- **Новый пост**: файлы из системного выбора или вставкой из буфера обмена, встроенный редактор картинок: кадрирование, поворот, рисование и замазка.
+- **Статистика треда**: посты, файлы, их общий размер и число участников.
 - **Раздел «Треды»**: открытые страницы, избранное, ответы, история, сохранённые копии и загрузки.
 - **Нижняя панель** с настраиваемым порядком кнопок.
 - **Автоскрытие** постов и тредов по своим правилам.
@@ -46,18 +43,6 @@ Android-клиент для 2ch с чтением 4chan и Архивача. П�
 - **Приватность**: блокировка PIN-кодом или биометрией, резервные копии с паролем.
 - **Оформление**: системная, светлая, тёмная и AMOLED-тема, 10 языков интерфейса.
 - **Обновления** прямо из приложения.
-
-<details>
-<summary>Ещё скриншоты</summary>
-<br>
-<table>
-  <tr>
-    <td align="center"><img src="docs/screenshots/boards.png" width="250" alt="Список досок"><br><sub>Список досок</sub></td>
-    <td align="center"><img src="docs/screenshots/viewer.png" width="250" alt="Просмотрщик"><br><sub>Просмотрщик</sub></td>
-    <td align="center"><img src="docs/screenshots/language.png" width="250" alt="Язык интерфейса"><br><sub>Язык интерфейса</sub></td>
-  </tr>
-</table>
-</details>
 
 ## Установка
 

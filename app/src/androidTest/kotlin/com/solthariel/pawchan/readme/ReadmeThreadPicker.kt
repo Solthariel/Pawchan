@@ -1,7 +1,7 @@
 package com.solthariel.pawchan.readme
 
-import org.json.JSONArray
 import org.json.JSONObject
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -27,8 +27,16 @@ internal class ReadmeThreadPicker(
                 .mapNotNull { film -> film.video?.let { film to it.index } }
                 .minByOrNull { (_, index) -> index }
                 ?.first ?: clean.firstOrNull() ?: seen.first()
-        return ReadmePicks(best.thread, best.video, crudeSkipped = seen.size - clean.size, clean = best.clean)
+        return ReadmePicks(best.thread, best.video, seen.size - clean.size, best.clean, best.pictures)
     }
+
+    /** The thread the owner chose: its first video and pictures for the composer, still checked for crude words. */
+    fun thread(number: Long): ReadmePicks {
+        val film = film(number)
+        return ReadmePicks(number, film.video, clean = film.clean, pictures = film.pictures)
+    }
+
+    fun bytes(url: String): ByteArray = connect(url) { it.readBytes() }
 
     private fun threads(): List<Long> {
         val catalog = JSONObject(get("https://$host/$board/catalog.json")).getJSONArray("threads")
@@ -52,8 +60,20 @@ internal class ReadmeThreadPicker(
                 .getJSONObject(0)
                 .getJSONArray("posts")
         val posts = (0 until json.length()).map(json::getJSONObject)
-        return ReadmeFilm(thread, firstVideo(posts), posts.take(SHOWN_POSTS).none(::crude))
+        return ReadmeFilm(thread, firstVideo(posts), posts.take(SHOWN_POSTS).none(::crude), pictures(posts))
     }
+
+    /** Light still pictures from the replies, in thread order, to attach in the composer. */
+    private fun pictures(posts: List<JSONObject>): List<ReadmePicture> =
+        posts
+            .drop(1)
+            .flatMap(::files)
+            .filter { it.optInt("type") in STILL_TYPES && it.optInt("size") in PICTURE_KB }
+            .take(PICTURES)
+            .mapIndexed { index, file ->
+                val path = file.optString("path")
+                ReadmePicture("https://$host$path", "pawchan-${index + 1}.${path.substringAfterLast('.')}")
+            }
 
     /** The first video of a thread and how many files come before it, in the order the viewer pages them. */
     private fun firstVideo(posts: List<JSONObject>): ReadmeVideo? {
@@ -69,13 +89,18 @@ internal class ReadmeThreadPicker(
         return null
     }
 
-    private fun get(url: String): String {
+    private fun get(url: String): String = connect(url) { it.readBytes().decodeToString() }
+
+    private fun <T> connect(
+        url: String,
+        read: (InputStream) -> T,
+    ): T {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.connectTimeout = TIMEOUT_MS
         connection.readTimeout = TIMEOUT_MS
         connection.setRequestProperty("User-Agent", "Pawchan readme shots")
         return try {
-            connection.inputStream.use { it.readBytes().decodeToString() }
+            connection.inputStream.use(read)
         } finally {
             connection.disconnect()
         }
@@ -84,13 +109,20 @@ internal class ReadmeThreadPicker(
 
 /** Everything a post puts on screen as text: subject, message without markup, file names in the viewer title. */
 private fun crude(post: JSONObject): Boolean {
-    val files = post.optJSONArray("files") ?: JSONArray()
-    val names =
-        (0 until files.length())
-            .map(files::getJSONObject)
-            .flatMap { listOf(it.optString("fullname"), it.optString("displayname")) }
+    val names = files(post).flatMap { listOf(it.optString("fullname"), it.optString("displayname")) }
     val text = listOf(post.optString("subject"), post.optString("comment").replace(MARKUP, " ")) + names
     return CRUDE.containsMatchIn(text.joinToString(" ").lowercase().replace('ё', 'е'))
+}
+
+/** Files the owner chose for the composer, in the given order: pawchan-1.mp4, pawchan-2.jpg and so on. */
+internal fun readmeAttachments(urls: List<String>): List<ReadmePicture> =
+    urls.mapIndexed { index, url ->
+        ReadmePicture(url, "pawchan-${index + 1}.${url.substringAfterLast('.').substringBefore('?').lowercase()}")
+    }
+
+private fun files(post: JSONObject): List<JSONObject> {
+    val files = post.optJSONArray("files") ?: return emptyList()
+    return (0 until files.length()).map(files::getJSONObject)
 }
 
 internal data class ReadmePicks(
@@ -98,6 +130,13 @@ internal data class ReadmePicks(
     val video: ReadmeVideo?,
     val crudeSkipped: Int = 0,
     val clean: Boolean = true,
+    val pictures: List<ReadmePicture> = emptyList(),
+)
+
+/** A file of the thread and the name it gets in Download/[PICTURES_FOLDER] for the composer. */
+internal data class ReadmePicture(
+    val url: String,
+    val name: String,
 )
 
 internal data class ReadmeVideo(
@@ -109,12 +148,16 @@ private data class ReadmeFilm(
     val thread: Long,
     val video: ReadmeVideo?,
     val clean: Boolean,
+    val pictures: List<ReadmePicture>,
 )
 
 private const val VIDEO_SEARCH_THREADS = 6
 private const val SEARCH_THREADS = 40
 private const val SHOWN_POSTS = 12
 private const val TIMEOUT_MS = 20_000
+private const val PICTURES = 3
+private val STILL_TYPES = setOf(1, 2)
+private val PICTURE_KB = 100..1_500
 
 private val COMFORTABLE_POSTS = 40..600
 private val MARKUP = Regex("<[^>]*>|&[a-z#0-9]+;")

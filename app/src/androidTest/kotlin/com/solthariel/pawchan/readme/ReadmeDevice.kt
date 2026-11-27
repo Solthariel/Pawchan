@@ -1,11 +1,18 @@
 package com.solthariel.pawchan.readme
 
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.provider.MediaStore
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -22,6 +29,8 @@ internal class ReadmeDevice(
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val automation = instrumentation.uiAutomation
     private val report = StringBuilder()
+    private val pictures = mutableListOf<Uri>()
+    private var clipped = false
     val width: Int
     val height: Int
 
@@ -47,8 +56,71 @@ internal class ReadmeDevice(
             block().also { note("OK   $name") }
         } catch (error: Throwable) {
             note("FAIL $name: ${error.message}")
-            shell("screencap -p $SHOTS_DIR/fail-${name.replace(Regex("[^A-Za-z0-9-]"), "-")}.png")
+            // A system picker shows the owner's own files: only the filmed app may go into a failure picture.
+            repeat(BACK_TRIES) { if (activePackage() != packageName) back() }
+            if (activePackage() == packageName) shell("screencap -p $SHOTS_DIR/fail-${name.replace(Regex("[^A-Za-z0-9-]"), "-")}.png")
             null
+        }
+
+    /**
+     * Puts the files for the composer into Download/[PICTURES_FOLDER], where the system file picker finds them, and
+     * returns the names they really got (MediaStore renames a clash instead of overwriting).
+     */
+    fun addPictures(files: List<Pair<String, ByteArray>>): List<String> {
+        val resolver = instrumentation.targetContext.contentResolver
+        // Rows a stopped run left behind; only this app's own rows match.
+        runCatching {
+            resolver.delete(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                "${MediaStore.MediaColumns.RELATIVE_PATH} = ?",
+                arrayOf(picturesPath()),
+            )
+        }
+        return files.map { (name, bytes) ->
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType(name))
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, picturesPath())
+                }
+            val uri = checkNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)) { "no place for $name" }
+            pictures += uri
+            checkNotNull(resolver.openOutputStream(uri)) { "cannot write $name" }.use { it.write(bytes) }
+            displayName(resolver, uri) ?: name
+        }
+    }
+
+    /**
+     * The prepared files as one clip: the composer takes pasted media like the system picker gives them, without
+     * the picker's own screens. The clip is cleared again in [clearPictures].
+     */
+    fun copyPictures() {
+        val resolver = instrumentation.targetContext.contentResolver
+        val clip = ClipData.newUri(resolver, CLIP_LABEL, pictures.first())
+        pictures.drop(1).forEach { clip.addItem(resolver, ClipData.Item(it)) }
+        clipboard().setPrimaryClip(clip)
+        clipped = true
+    }
+
+    fun clearPictures() {
+        val resolver = instrumentation.targetContext.contentResolver
+        if (clipped) runCatching { clipboard().clearPrimaryClip() }
+        clipped = false
+        pictures.forEach { runCatching { resolver.delete(it, null, null) } }
+        pictures.clear()
+    }
+
+    private fun clipboard(): ClipboardManager =
+        checkNotNull(instrumentation.targetContext.getSystemService(ClipboardManager::class.java)) { "no clipboard" }
+
+    private fun picturesPath(): String = "${Environment.DIRECTORY_DOWNLOADS}/$PICTURES_FOLDER/"
+
+    private fun displayName(
+        resolver: ContentResolver,
+        uri: Uri,
+    ): String? =
+        resolver.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
         }
 
     fun finish() {
@@ -110,6 +182,22 @@ internal class ReadmeDevice(
     fun tap(node: AccessibilityNodeInfo) {
         val area = bounds(node)
         shell("input tap ${area.centerX()} ${area.centerY()}")
+        settle()
+    }
+
+    fun longPress(node: AccessibilityNodeInfo) {
+        val area = bounds(node)
+        shell("input swipe ${area.centerX()} ${area.centerY()} ${area.centerX()} ${area.centerY()} $LONG_PRESS_MS")
+        settle()
+    }
+
+    /** One finger along [points], like a pen: press, move through every point, lift. */
+    fun draw(points: List<Pair<Int, Int>>) {
+        val (startX, startY) = points.first()
+        shell("input motionevent DOWN $startX $startY")
+        points.drop(1).forEach { (x, y) -> shell("input motionevent MOVE $x $y") }
+        val (endX, endY) = points.last()
+        shell("input motionevent UP $endX $endY")
         settle()
     }
 
@@ -207,12 +295,22 @@ internal class ReadmeDevice(
     fun label(node: AccessibilityNodeInfo): String =
         listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(", ")
 
-    private fun parts(node: AccessibilityNodeInfo): List<String> = label(node).split(", ", "\n").map(String::trim)
+    /** What a node says about its state, e.g. a composer tile's «Вложение 2 из 4». */
+    fun state(node: AccessibilityNodeInfo): String = node.stateDescription?.toString().orEmpty()
+
+    /** The pieces of a node's text and description, each one a label [find] can match. */
+    fun parts(node: AccessibilityNodeInfo): List<String> = label(node).split(", ", "\n").map(String::trim)
 }
 
 internal const val SHOTS_DIR = "/sdcard/Download/pawchan-readme"
 internal const val LOAD_MS = 4_000L
+
+// Shared storage ignores letter case: this folder must not be SHOTS_DIR under another spelling.
+internal const val PICTURES_FOLDER = "Pawchan-attach"
+private const val BACK_TRIES = 3
+private const val LONG_PRESS_MS = 900
 private const val LOG_NAME = "readme-log.txt"
+private const val CLIP_LABEL = "Pawchan"
 private const val TAG = "PawchanReadme"
 private const val SETTLE_MS = 900L
 private const val SHOT_SETTLE_MS = 700L
@@ -225,3 +323,16 @@ private const val SCROLL_MS = 400
 private const val SCROLL_TRIES = 8
 private const val DEFAULT_WIDTH = 1080
 private const val DEFAULT_HEIGHT = 2400
+
+/** The type MediaStore stores with a file, from its extension. */
+internal fun mimeType(name: String): String =
+    when (name.substringAfterLast('.').lowercase()) {
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "gif" -> "image/gif"
+        "mp4" -> "video/mp4"
+        "webm" -> "video/webm"
+        else -> "image/jpeg"
+    }
+
+internal fun isVideo(name: String): Boolean = mimeType(name).startsWith("video/")
