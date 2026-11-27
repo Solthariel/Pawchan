@@ -27,13 +27,13 @@ internal class ReadmeThreadPicker(
                 .mapNotNull { film -> film.video?.let { film to it.index } }
                 .minByOrNull { (_, index) -> index }
                 ?.first ?: clean.firstOrNull() ?: seen.first()
-        return ReadmePicks(best.thread, best.video, seen.size - clean.size, best.clean, best.pictures)
+        return ReadmePicks(best.thread, best.video, seen.size - clean.size, best.clean, best.pictures, best.subject)
     }
 
     /** The thread the owner chose: its first video and pictures for the composer, still checked for crude words. */
     fun thread(number: Long): ReadmePicks {
         val film = film(number)
-        return ReadmePicks(number, film.video, clean = film.clean, pictures = film.pictures)
+        return ReadmePicks(number, film.video, clean = film.clean, pictures = film.pictures, subject = film.subject)
     }
 
     fun bytes(url: String): ByteArray = connect(url) { it.readBytes() }
@@ -60,7 +60,8 @@ internal class ReadmeThreadPicker(
                 .getJSONObject(0)
                 .getJSONArray("posts")
         val posts = (0 until json.length()).map(json::getJSONObject)
-        return ReadmeFilm(thread, firstVideo(posts), posts.take(SHOWN_POSTS).none(::crude), pictures(posts))
+        val subject = posts.first().optString("subject")
+        return ReadmeFilm(thread, firstVideo(posts), posts.take(SHOWN_POSTS).none(::crude), pictures(posts), subject)
     }
 
     /** Light still pictures from the replies, in thread order, to attach in the composer. */
@@ -131,6 +132,8 @@ internal data class ReadmePicks(
     val crudeSkipped: Int = 0,
     val clean: Boolean = true,
     val pictures: List<ReadmePicture> = emptyList(),
+    /** The opening post's title, as the board's search finds it. */
+    val subject: String = "",
 )
 
 /** A file of the thread and the name it gets in Download/[PICTURES_FOLDER] for the composer. */
@@ -149,6 +152,7 @@ private data class ReadmeFilm(
     val video: ReadmeVideo?,
     val clean: Boolean,
     val pictures: List<ReadmePicture>,
+    val subject: String,
 )
 
 private const val VIDEO_SEARCH_THREADS = 6

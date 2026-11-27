@@ -90,10 +90,6 @@ try {
     }
     & $adb pull $deviceDir $Out | Out-Null
     & $adb pull "/sdcard/Android/data/$driver/files/readme-log.txt" "$Out/readme-log.txt" | Out-Null
-    $saved = Get-Content "$Out/readme-log.txt" -ErrorAction SilentlyContinue | Where-Object { $_ -like "threadshot file: *" } | Select-Object -First 1
-    if ($saved) {
-        & $adb pull "/sdcard/Download/$($saved.Substring(17).Trim())" "$Out/threadshot.png" | Out-Null
-    }
     & $adb shell rm -rf $deviceDir | Out-Null
     & $adb uninstall $package | Out-Null
     Compress-Archive -Path "$Out/*" -DestinationPath "$Out.zip" -Force

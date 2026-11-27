@@ -4,6 +4,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
@@ -38,8 +39,10 @@ class ReadmeShotsTest {
 }
 
 /**
- * The GitHub page shows each feature once: clips for what moves, single frames for the rest. Every step is
- * independent: a failed one leaves a line in the log (and a fail-*.png when the app is in front), the rest still run.
+ * The GitHub page shows four clips, each feature once: reading (board, search, thread, its menu with the numbers,
+ * files, a reply preview), the thread's gallery, a new post with its files and the picture editor, and the app's
+ * sections with a run through the settings. Every step is independent: a failed one leaves a line in the log (and a
+ * fail-*.png when the app is in front), the rest still run.
  */
 internal class ReadmeFlow(
     private val device: ReadmeDevice,
@@ -51,7 +54,7 @@ internal class ReadmeFlow(
     private var files: List<String> = emptyList()
 
     fun run() {
-        device.note("flow 4")
+        device.note("flow 7")
         val picker = ReadmeThreadPicker(HOST, board)
         val picks = device.step("pick") { thread?.let(picker::thread) ?: picker.pick() }
         device.note("thread ${picks?.thread}, video ${picks?.video}, clean ${picks?.clean}, crude skipped ${picks?.crudeSkipped}")
@@ -62,17 +65,13 @@ internal class ReadmeFlow(
             device.open("https://$HOST/$board/")
             device.shot("02-board")
         }
-        device.step("thread") { openThread(picks) }
-        device.step("stats") { stats() }
+        device.step("reading") { reading(picks) }
         device.step("favorite") { device.tap("Добавить тред в избранное") }
-        device.step("viewer") { viewer(picks?.video) }
-        device.step("threadshot") { threadshot() }
-        device.step("replies") { replies() }
+        device.step("gallery") { gallery(picks) }
         device.step("composer") { composer() }
         device.step("editor") { editor() }
         device.step("draft") { leaveComposer() }
-        device.step("themes") { themes() }
-        device.step("tabs") { tabs() }
+        device.step("sections") { sections() }
     }
 
     /** The files the owner passed (attach=url,url,...), else light pictures of the filmed thread. */
@@ -118,31 +117,80 @@ internal class ReadmeFlow(
         device.tap(button)
     }
 
-    /** Waits for real posts, not the loading placeholders, and lets the thumbnails arrive. */
+    /** One reading run in the order a reader goes: the board and its search, the thread and its menu, files, a reply. */
+    private fun reading(picks: ReadmePicks?) {
+        device.record("gif-reading", READING_GIF_SECONDS) {
+            device.settle(GIF_PAUSE_MS)
+            openThread(picks)
+            device.mark("thread")
+            runCatching { threadMenu() }.onFailure { device.note("menu: ${it.message}") }
+            device.mark("menu closed")
+            watchFiles(picks?.video)
+            device.mark("viewer closed")
+            replyPreview()
+            device.mark("end")
+        }
+    }
+
+    /** The board's search finds the thread by a word of its title; the address opens it when the search cannot. */
     private fun openThread(picks: ReadmePicks?) {
-        if (picks != null) device.open("https://$HOST/$board/res/${picks.thread}.html") else device.tap(thumbnail())
+        val subject = picks?.subject.orEmpty().trim()
+        val found =
+            subject.isNotEmpty() &&
+                runCatching { searchThread(subject) }.onFailure { device.note("search: ${it.message}") }.isSuccess
+        if (!found) {
+            if (picks != null) device.open("https://$HOST/$board/res/${picks.thread}.html") else device.tap(thumbnail())
+        }
+        // Real posts, not the loading placeholders; then the thumbnails arrive.
         device.waitFor("posts", POSTS_WAIT_MS) { DATE.containsMatchIn(device.label(it)) }
         device.settle(THUMBNAILS_MS)
     }
 
-    /** The thread menu opens with the thread's numbers: posts, files, their size and participants. */
-    private fun stats() {
+    /** «Меню треда» right after the thread opens: its actions and the thread's numbers (posts, files, size, people). */
+    private fun threadMenu() {
+        device.settle(GIF_PAUSE_MS / 2)
         device.tap("Меню треда")
-        device.settle(MENU_MS)
-        device.shot("08-stats")
-        device.back()
+        val shown = device.waitUntil(SHORT_WAIT_MS) { menuShown() }
+        // Back closes an open menu only; without the menu it would leave the thread.
+        if (shown) {
+            device.mark("menu")
+            device.settle(MENU_MS)
+            device.back()
+        }
+        device.settle(GIF_PAUSE_MS / 2)
+        check(shown) { "no thread menu" }
     }
 
+    private fun menuShown(): Boolean = device.visible().any { node -> device.parts(node).any(THREAD_MENU_LABELS::contains) }
+
+    /** The keyboard is hidden before the result is tapped: the clip shows the list, not the owner's keyboard. */
+    private fun searchThread(subject: String) {
+        device.tap("Поиск по тредам")
+        val field = device.waitFor("search field", LONG_WAIT_MS) { it.className == EDIT_TEXT }
+        device.mark("search")
+        device.setText(field, searchWord(subject))
+        if (device.waitUntil(KEYBOARD_WAIT_MS) { device.keyboardShown() }) device.back()
+        device.mark("keyboard hidden")
+        device.settle(SEARCH_MS)
+        device.tap(device.waitFor(subject, LONG_WAIT_MS) { subject in device.parts(it) && it.className != EDIT_TEXT })
+    }
+
+    /** The start of the title's longest word: «Убежище для хвостатых» is searched as «хвостат». */
+    private fun searchWord(subject: String): String =
+        subject
+            .split(' ')
+            .maxBy { it.length }
+            .take(SEARCH_LETTERS)
+            .lowercase(Locale.ROOT)
+
     /** The first video plays a few seconds, two pictures follow, a swipe down closes the viewer. */
-    private fun viewer(video: ReadmeVideo?) {
-        device.record("gif-viewer", VIEWER_GIF_SECONDS) {
-            device.tap(thumbnail())
-            repeat(video?.index ?: 0) { page(forward = true, pause = FAST_PAGE_MS) }
-            device.settle(VIDEO_WATCH_MS)
-            repeat(2) { page(forward = true) }
-            device.swipe(device.width / 2 to device.height * 45 / PERCENT, device.width / 2 to device.height * 85 / PERCENT, DISMISS_MS)
-            device.settle(GIF_PAUSE_MS)
-        }
+    private fun watchFiles(video: ReadmeVideo?) {
+        device.tap(thumbnail())
+        repeat(video?.index ?: 0) { page(forward = true, pause = FAST_PAGE_MS) }
+        device.settle(VIDEO_WATCH_MS)
+        repeat(2) { page(forward = true) }
+        device.swipe(device.width / 2 to device.height * 45 / PERCENT, device.width / 2 to device.height * 85 / PERCENT, DISMISS_MS)
+        device.settle(GIF_PAUSE_MS / 2)
     }
 
     private fun page(
@@ -156,67 +204,22 @@ internal class ReadmeFlow(
         device.settle(pause)
     }
 
-    /** Two posts become one picture; the system save dialog is cut out of the clip afterwards. */
-    private fun threadshot() {
-        device.record("gif-threadshot", THREADSHOT_GIF_SECONDS) {
-            device.tap("Меню треда")
-            device.tap("Выделить")
-            selectedPosts().forEach(device::tap)
-            device.shot("06-threadshot")
-            device.tap("Скриншот")
-            save()
-            device.settle(NOTICE_MS)
-        }
-        runCatching { device.tap(device.find("Отменить выделение", SHORT_WAIT_MS)) }.onFailure { device.back() }
-    }
-
-    /** The system save dialog: tap «Сохранить» and wait until it gives the screen back to the app. */
-    private fun save() {
-        check(device.waitUntil(LONG_WAIT_MS) { device.activePackage() != device.packageName }) { "no save dialog" }
-        device.visible().firstOrNull { it.className == EDIT_TEXT }?.let { device.note("threadshot file: ${device.label(it)}") }
-        repeat(SAVE_TRIES) {
-            device.tap(device.findAny(SAVE_LABELS, LONG_WAIT_MS) { it.isClickable })
-            if (device.waitUntil(LONG_WAIT_MS) { device.activePackage() == device.packageName }) return
-        }
+    /** A scroll and a reply link: the quoted post pops up over the thread. */
+    private fun replyPreview() {
+        scroll()
+        val link =
+            device.waitFor("reply link", LONG_WAIT_MS) { node ->
+                val area = device.bounds(node)
+                REPLY.containsMatchIn(device.label(node)) &&
+                    area.top > device.height / TOP_BAR_PART &&
+                    area.bottom < device.height * BAR_TOP_PERCENT / PERCENT
+            }
+        // The link opens the message, so the tap goes on its first characters.
+        val area = device.bounds(link)
+        device.shell("input tap ${area.left + LINK_X_PX} ${area.top + LINK_Y_PX}")
+        device.settle(PREVIEW_MS)
         device.back()
-        error("the save dialog did not close")
-    }
-
-    /** The 4th and 5th posts when they are on screen (in the chosen thread a picture and its reply), else the first two. */
-    private fun selectedPosts(): List<AccessibilityNodeInfo> {
-        val headers =
-            device
-                .visible()
-                .filter { DATE.containsMatchIn(device.label(it)) }
-                .filter { device.bounds(it).top > device.height / TOP_BAR_PART }
-                .filter { device.bounds(it).bottom < device.height * BAR_TOP_PERCENT / PERCENT }
-                .distinctBy { device.bounds(it).top / ROW_STEP_PX }
-                .sortedBy { device.bounds(it).top }
-        check(headers.isNotEmpty()) { "no post headers to select" }
-        return if (headers.size >= PAIR_END) headers.subList(PAIR_START, PAIR_END) else headers.take(2)
-    }
-
-    /** Scrolls the thread and opens a reply link: the quoted post pops up over the thread. */
-    private fun replies() {
-        device.record("gif-thread", THREAD_GIF_SECONDS) {
-            device.settle(GIF_PAUSE_MS)
-            scroll()
-            val link =
-                device.waitFor("reply link", LONG_WAIT_MS) { node ->
-                    val area = device.bounds(node)
-                    REPLY.containsMatchIn(device.label(node)) &&
-                        area.top > device.height / TOP_BAR_PART &&
-                        area.bottom < device.height * BAR_TOP_PERCENT / PERCENT
-                }
-            // The link opens the message, so the tap goes on its first characters.
-            val area = device.bounds(link)
-            device.shell("input tap ${area.left + LINK_X_PX} ${area.top + LINK_Y_PX}")
-            device.settle(PREVIEW_MS)
-            device.back()
-            device.settle(GIF_PAUSE_MS / 2)
-            scroll()
-            device.settle(GIF_PAUSE_MS)
-        }
+        device.settle(GIF_PAUSE_MS)
     }
 
     private fun scroll() {
@@ -226,15 +229,77 @@ internal class ReadmeFlow(
     }
 
     /** A square clickable tile between the toolbars: post thumbnails, whatever their labels say. */
-    private fun thumbnail(): AccessibilityNodeInfo =
-        device.waitFor("thumbnail", LONG_WAIT_MS) { node ->
-            val area = device.bounds(node)
-            node.isClickable &&
-                area.top > device.height / TOP_BAR_PART &&
-                area.bottom < device.height - device.height / TOP_BAR_PART &&
-                area.width() in device.width / TILE_MIN_PART..device.width / 2 &&
-                abs(area.width() - area.height()) < area.width() / TILE_SKEW_PART
+    private fun thumbnail(): AccessibilityNodeInfo = device.waitFor("thumbnail", LONG_WAIT_MS, ::isTile)
+
+    private fun isTile(node: AccessibilityNodeInfo): Boolean {
+        val area = device.bounds(node)
+        return node.isClickable &&
+            area.top > device.height / TOP_BAR_PART &&
+            area.bottom < device.height - device.height / TOP_BAR_PART &&
+            area.width() in device.width / TILE_MIN_PART..device.width / 2 &&
+            abs(area.width() - area.height()) < area.width() / TILE_SKEW_PART
+    }
+
+    /** All the thread's files in one grid: two scrolls, the video filter, then three files picked for the bar. */
+    private fun gallery(picks: ReadmePicks?) {
+        if (device.visible().none { "Галерея" in device.parts(it) }) {
+            checkNotNull(picks) { "no thread for the gallery" }
+            device.open("https://$HOST/$board/res/${picks.thread}.html")
+            device.waitFor("posts", POSTS_WAIT_MS) { DATE.containsMatchIn(device.label(it)) }
+            device.settle(THUMBNAILS_MS)
         }
+        device.record("gif-gallery", GALLERY_GIF_SECONDS) {
+            device.settle(GIF_PAUSE_MS / 2)
+            device.tap("Галерея")
+            galleryTiles(LONG_WAIT_MS)
+            device.mark("grid")
+            device.settle(GALLERY_LOAD_MS)
+            repeat(2) { scroll() }
+            runCatching { videoFilter() }.onFailure { device.note("gallery filter: ${it.message}") }
+            runCatching { pickFiles() }.onFailure { device.note("gallery picks: ${it.message}") }
+            // The gallery is a window of its own: Back closes all of it.
+            device.back()
+            device.settle(GIF_PAUSE_MS)
+        }
+    }
+
+    /** Only the thread's videos, then all files again. */
+    private fun videoFilter() {
+        device.tap(galleryFilter("Видео"))
+        device.mark("videos")
+        device.settle(GIF_PAUSE_MS)
+        device.tap(galleryFilter("Все"))
+        device.settle(GIF_PAUSE_MS / 2)
+    }
+
+    /** A filter button says «Видео: 12»: its name and how many files it keeps. */
+    private fun galleryFilter(name: String): AccessibilityNodeInfo =
+        device.waitFor("$name filter", SHORT_WAIT_MS) { node -> device.parts(node).any { it.startsWith("$name: ") } }
+
+    /** Three files of the top row picked: the bar below offers to download them, copy their links or keep them. */
+    private fun pickFiles() {
+        device.tap("Выделить медиа")
+        galleryTiles(SHORT_WAIT_MS).take(GALLERY_PICKS).forEach(device::tap)
+        device.mark("picked")
+        device.settle(GIF_PAUSE_MS)
+        device.tap(device.find("Отмена", SHORT_WAIT_MS))
+        device.settle(GIF_PAUSE_MS / 2)
+    }
+
+    /** The gallery's own cells, top row first; the thread under its window has square thumbnails as well. */
+    private fun galleryTiles(timeoutMs: Long): List<AccessibilityNodeInfo> {
+        var tiles = emptyList<AccessibilityNodeInfo>()
+        device.waitUntil(timeoutMs) {
+            tiles =
+                device
+                    .front()
+                    .filter(::isTile)
+                    .sortedWith(compareBy({ device.bounds(it).top }, { device.bounds(it).left }))
+            tiles.isNotEmpty()
+        }
+        check(tiles.isNotEmpty()) { "no gallery tiles" }
+        return tiles
+    }
 
     /** «Написать» needs a board behind it; the files go in as one paste, the system file picker is the fallback. */
     private fun composer() {
@@ -330,10 +395,14 @@ internal class ReadmeFlow(
             device.find(name, LONG_WAIT_MS)
         }
 
-    /** The first still picture in the attachment editor: a square crop, a pen line, an oval and a pixelated box. */
+    /**
+     * The composer with its files, then the first still picture in the editor: a square crop, a pen line, an oval and
+     * a pixelated box; Back takes the edits to the post, so the clip ends on the composer with the edited tile.
+     */
     private fun editor() {
         val tile = pictureTile()
         device.record("gif-editor", EDITOR_GIF_SECONDS) {
+            device.settle(GIF_PAUSE_MS)
             device.tap(tile)
             device.settle(EDITOR_MS)
             device.tap("Изменить")
@@ -351,6 +420,8 @@ internal class ReadmeFlow(
             device.settle(EDIT_PAUSE_MS)
             device.tap("Назад к файлу")
             device.settle(EDIT_PAUSE_MS)
+            device.back()
+            device.settle(GIF_PAUSE_MS)
         }
     }
 
@@ -388,45 +459,65 @@ internal class ReadmeFlow(
         yPercent: Double,
     ): Pair<Int, Int> = (device.width * xPercent / PERCENT).toInt() to (device.height * yPercent / PERCENT).toInt()
 
-    /** Out of the editor and the composer; the draft stays with the filmed copy, which is wiped afterwards. */
+    /** Out of the composer, the viewer first if a failed step left it open; the draft stays with the wiped copy. */
     private fun leaveComposer() {
-        device.back()
-        device.back()
-        runCatching { device.tap(device.findAny(DRAFT_LABELS, SHORT_WAIT_MS)) }
-    }
-
-    /** The theme changes live: light, AMOLED and back to dark. */
-    private fun themes() {
-        interfaceSettings()
-        device.scrollTo("Режим темы")
-        device.record("gif-themes", THEMES_GIF_SECONDS) {
-            device.settle(GIF_PAUSE_MS / 2)
-            listOf("Светлый", "AMOLED", "Тёмный").forEach(::chooseTheme)
+        repeat(LEAVE_TRIES) {
+            if (device.visible().any { "Написать" in device.parts(it) }) return
+            device.back()
+            runCatching { device.tap(device.findAny(DRAFT_LABELS, SHORT_WAIT_MS)) }
         }
-        device.back()
     }
 
-    /** The bottom bar in order: catalog, threads, boards with the 2ch/4chan switch, settings. */
-    private fun tabs() {
+    /** The bottom bar's sections with the 2ch and 4chan boards, then a quick look through the settings. */
+    private fun sections() {
         bar("Каталог")
         device.settle(LOAD_MS)
-        device.record("gif-tabs", TABS_GIF_SECONDS) {
+        device.record("gif-sections", SECTIONS_GIF_SECONDS) {
             device.settle(TAB_MS)
             bar("Треды")
             device.settle(TAB_MS)
             bar("Доски")
             device.settle(TAB_MS)
-            runCatching {
-                device.tap(device.find("4chan", SHORT_WAIT_MS))
-                device.settle(TAB_MS)
-                device.tap(device.find("2ch", SHORT_WAIT_MS))
-                device.settle(TAB_MS / 2)
-            }
+            runCatching { sources() }.onFailure { device.note("sources: ${it.message}") }
             bar("Настройки")
             device.settle(TAB_MS)
-            bar("Каталог")
+            device.mark("settings")
+            SETTINGS_TOUR.forEach { section ->
+                runCatching {
+                    device.tap(device.scrollTo(section))
+                    device.settle(SECTION_MS)
+                }.onFailure { device.note("section $section: ${it.message}") }
+                backToSettings()
+            }
             device.settle(TAB_MS)
         }
+    }
+
+    /** 4chan's boards by one creative category, since its full list starts with the adult ones; then 2ch again. */
+    private fun sources() {
+        device.tap(device.find("4chan", SHORT_WAIT_MS))
+        device.mark("4chan")
+        device.settle(CHIP_MS)
+        runCatching { device.tap(device.find("Творчество", SHORT_WAIT_MS)) }
+        device.mark("4chan creative")
+        device.settle(TAB_MS)
+        device.tap(device.find("2ch", SHORT_WAIT_MS))
+        device.settle(TAB_MS / 2)
+    }
+
+    /** Back from a section (a dialog on top of it included) until the settings list shows again. */
+    private fun backToSettings() {
+        repeat(LEAVE_TRIES) {
+            if (onSettingsList()) return
+            device.back()
+            device.waitUntil(SHORT_WAIT_MS) { onSettingsList() }
+        }
+    }
+
+    /** The list shows most section titles at once; a single section shows one of them at most. */
+    private fun onSettingsList(): Boolean {
+        val labels = device.visible().flatMap(device::parts).toSet()
+        return SETTINGS_TITLES.count { it in labels } >= SETTINGS_LIST_MIN
     }
 }
 
@@ -435,7 +526,7 @@ private const val DEFAULT_BOARD = "2d"
 private const val EDIT_TEXT = "android.widget.EditText"
 private const val SAMPLE_MESSAGE = "Привет! Это Pawchan: двач и форчан в одном клиенте."
 private val FIRST_RUN_LABELS = setOf("Понятно", "Закрыть", "Позже")
-private val SAVE_LABELS = setOf("Сохранить", "СОХРАНИТЬ", "Save", "SAVE")
+private val THREAD_MENU_LABELS = setOf("Участников", "Расширенный поиск")
 private val DRAFT_LABELS = setOf("Сохранить", "Сохранить черновик", "Оставить")
 private val RESOLVER_PACKAGES = setOf("android", "com.android.intentresolver")
 private val CHOOSER_LABELS = setOf("Файлы", "Files")
@@ -457,11 +548,10 @@ private const val PICKER_BACKS = 3
 private const val KEYCODE_PASTE = 279
 private const val FAST_PAGE_MS = 700L
 private const val THUMBNAILS_MS = 3_000L
-private const val MENU_MS = 1_000L
-private const val VIDEO_WATCH_MS = 4_500L
+private const val VIDEO_WATCH_MS = 3_500L
 private const val GIF_PAUSE_MS = 1_400L
-private const val NOTICE_MS = 2_500L
 private const val PREVIEW_MS = 2_200L
+private const val MENU_MS = 2_200L
 
 // Long enough for the system's «pasted from clipboard» notice to fade before the frame.
 private const val ATTACH_MS = 4_500L
@@ -469,13 +559,22 @@ private const val EDITOR_MS = 1_500L
 private const val EDIT_PAUSE_MS = 900L
 private const val THEME_MS = 1_600L
 private const val TAB_MS = 1_300L
-private const val VIEWER_GIF_SECONDS = 16
-private const val THREADSHOT_GIF_SECONDS = 20
-private const val THREAD_GIF_SECONDS = 14
-private const val EDITOR_GIF_SECONDS = 24
-private const val THEMES_GIF_SECONDS = 16
-private const val TABS_GIF_SECONDS = 16
-private const val SAVE_TRIES = 2
+private const val EDITOR_GIF_SECONDS = 30
+private const val READING_GIF_SECONDS = 60
+private const val GALLERY_GIF_SECONDS = 45
+private const val GALLERY_LOAD_MS = 1_800L
+private const val GALLERY_PICKS = 3
+private const val SECTIONS_GIF_SECONDS = 40
+private const val SEARCH_MS = 1_200L
+private const val KEYBOARD_WAIT_MS = 1_500L
+private const val SEARCH_LETTERS = 7
+private const val CHIP_MS = 500L
+private const val SECTION_MS = 1_300L
+private const val LEAVE_TRIES = 3
+private const val SETTINGS_LIST_MIN = 4
+private val SETTINGS_TOUR = listOf("Интерфейс", "Медиа", "Автоскрытие", "Сеть", "О программе")
+private val SETTINGS_TITLES =
+    setOf("Общие", "Интерфейс", "Треды и каталог", "Медиа", "Отправка", "Автоскрытие", "Сеть", "Хранилище", "О программе")
 private const val DISMISS_MS = 180
 private const val STROKE_MS = 700
 private const val SCROLL_SWIPE_MS = 650
@@ -485,11 +584,8 @@ private const val BAR_TOP_PERCENT = 85
 private const val SCROLL_FROM_PERCENT = 72
 private const val SCROLL_TO_PERCENT = 40
 private const val TOP_BAR_PART = 8
-private const val ROW_STEP_PX = 60
 private const val LINK_X_PX = 40
 private const val LINK_Y_PX = 25
-private const val PAIR_START = 3
-private const val PAIR_END = 5
 private const val TILE_MIN_PART = 7
 private const val TILE_SKEW_PART = 5
 private const val ATTACH_TILE_MIN_PART = 6
@@ -504,7 +600,7 @@ private const val OVAL_LEFT = 38.0
 private const val OVAL_TOP = 20.0
 private const val OVAL_RIGHT = 62.0
 private const val OVAL_BOTTOM = 34.0
-private const val BOX_LEFT = 30.0
-private const val BOX_TOP = 38.0
-private const val BOX_RIGHT = 55.0
-private const val BOX_BOTTOM = 46.0
+private const val BOX_LEFT = 10.0
+private const val BOX_TOP = 36.0
+private const val BOX_RIGHT = 44.0
+private const val BOX_BOTTOM = 47.0

@@ -12,19 +12,12 @@ Android-клиент для 2ch с чтением 4chan и Архивача. П�
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/screenshots/tabs.gif" width="250" alt="Нижняя панель"><br><sub>Каталог, треды, доски 2ch и 4chan, настройки</sub></td>
-    <td align="center" width="33%"><img src="docs/screenshots/board.png" width="250" alt="Доска"><br><sub>Доска</sub></td>
-    <td align="center" width="33%"><img src="docs/screenshots/thread.gif" width="250" alt="Тред"><br><sub>Тред и превью ответа</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/reading.webp" width="300" alt="Чтение"><br><sub>Доска, поиск, тред и его статистика, видео и картинки, превью ответа</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/gallery.webp" width="300" alt="Галерея треда"><br><sub>Галерея треда: фильтры и выделение файлов</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/viewer.gif" width="250" alt="Просмотр файлов"><br><sub>Видео и картинки, закрытие свайпом</sub></td>
-    <td align="center"><img src="docs/screenshots/composer.png" width="250" alt="Новый пост"><br><sub>Новый пост с файлами</sub></td>
-    <td align="center"><img src="docs/screenshots/editor.gif" width="250" alt="Редактор картинок"><br><sub>Редактор: кадр, рисунок, замазка</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/screenshots/threadshot.gif" width="250" alt="Тредшот"><br><sub>Тредшот: посты одной картинкой</sub></td>
-    <td align="center"><img src="docs/screenshots/stats.png" width="250" alt="Статистика треда"><br><sub>Статистика треда</sub></td>
-    <td align="center"><img src="docs/screenshots/themes.gif" width="250" alt="Темы"><br><sub>Светлая, AMOLED и тёмная тема</sub></td>
+    <td align="center"><img src="docs/screenshots/editor.webp" width="300" alt="Новый пост и редактор"><br><sub>Новый пост с файлами и редактор картинок</sub></td>
+    <td align="center"><img src="docs/screenshots/sections.webp" width="300" alt="Разделы и настройки"><br><sub>Треды, доски 2ch и 4chan, настройки</sub></td>
   </tr>
 </table>
 

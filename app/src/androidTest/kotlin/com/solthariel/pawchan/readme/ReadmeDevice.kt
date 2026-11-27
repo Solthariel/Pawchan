@@ -18,6 +18,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.util.Locale
 
 /**
  * Drives an installed app like a person would: shell taps and swipes, screen nodes found through accessibility.
@@ -31,6 +32,8 @@ internal class ReadmeDevice(
     private val report = StringBuilder()
     private val pictures = mutableListOf<Uri>()
     private var clipped = false
+    private var clip = ""
+    private var clipStart = 0L
     val width: Int
     val height: Int
 
@@ -161,13 +164,25 @@ internal class ReadmeDevice(
     ) {
         val size = "${width * 2 / 3 / 2 * 2}x${height * 2 / 3 / 2 * 2}"
         val recording = automation.executeShellCommand("screenrecord --time-limit $seconds --size $size $SHOTS_DIR/$name.mp4")
+        clip = name
+        clipStart = SystemClock.uptimeMillis()
         settle(RECORD_WARMUP_MS)
         try {
             actions()
         } finally {
+            // The clip ends with its actions, not at the time limit; like Ctrl+C, SIGINT lets screenrecord close the file.
+            settle(RECORD_TAIL_MS)
+            runCatching { shell("pkill -INT screenrecord") }
             ParcelFileDescriptor.AutoCloseInputStream(recording).use { it.readBytes() }
-            note("video $name")
+            val seconds = (SystemClock.uptimeMillis() - clipStart) / MILLIS_PER_SECOND
+            note("video $name ${"%.1f".format(Locale.ROOT, seconds)} s")
         }
+    }
+
+    /** A point of the running clip in the log, seconds from its start, so cuts can be made at the right frames. */
+    fun mark(label: String) {
+        val seconds = (SystemClock.uptimeMillis() - clipStart) / MILLIS_PER_SECOND
+        note("mark $clip ${"%.2f".format(Locale.ROOT, seconds)} $label")
     }
 
     fun settle(millis: Long = SETTLE_MS) = SystemClock.sleep(millis)
@@ -292,6 +307,12 @@ internal class ReadmeDevice(
         return all
     }
 
+    /** Nodes of the focused window only: a dialog's, not those of the screen under it. */
+    fun front(): List<AccessibilityNodeInfo> {
+        val active = automation.rootInActiveWindow ?: return emptyList()
+        return visible().filter { it.windowId == active.windowId }
+    }
+
     fun label(node: AccessibilityNodeInfo): String =
         listOfNotNull(node.text?.toString(), node.contentDescription?.toString()).joinToString(", ")
 
@@ -315,9 +336,11 @@ private const val TAG = "PawchanReadme"
 private const val SETTLE_MS = 900L
 private const val SHOT_SETTLE_MS = 700L
 private const val RECORD_WARMUP_MS = 800L
+private const val RECORD_TAIL_MS = 400L
 private const val FIND_TIMEOUT_MS = 10_000L
 private const val SHORT_TIMEOUT_MS = 1_000L
 private const val POLL_MS = 250L
+private const val MILLIS_PER_SECOND = 1_000.0
 private const val SWIPE_MS = 250
 private const val SCROLL_MS = 400
 private const val SCROLL_TRIES = 8
